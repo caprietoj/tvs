@@ -147,11 +147,43 @@ class PurchaseRequestPermissionService
     {
         $user = $user ?: Auth::user();
         
-        // Solo el propietario puede editar (a menos que tenga rol admin)
+        // Admin siempre puede editar
         if ($user->hasRole('admin')) {
             return true;
         }
         
-        return $purchaseRequest->user_id === $user->id;
+        // El propietario siempre puede editar sus propias solicitudes (si están en estado pendiente)
+        if ($purchaseRequest->user_id === $user->id && $purchaseRequest->status === 'pending') {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Verificar si un usuario puede editar una solicitud de fotocopias aprobada 
+     * (específicamente para roles de almacén y admin antes de marcar como entregado)
+     */
+    public function canEditApprovedCopiesRequest($purchaseRequest, User $user = null)
+    {
+        $user = $user ?: Auth::user();
+        
+        // Solo aplicable a solicitudes de fotocopias
+        if (!$purchaseRequest->isCopiesRequest()) {
+            return false;
+        }
+        
+        // Solo aplicable a solicitudes aprobadas
+        if ($purchaseRequest->status !== 'approved') {
+            return false;
+        }
+        
+        // Solo si no han sido marcadas como entregadas (si la funcionalidad existe)
+        if (method_exists($purchaseRequest, 'isDelivered') && $purchaseRequest->isDelivered()) {
+            return false;
+        }
+        
+        // Solo roles almacén y admin pueden editar solicitudes de fotocopias aprobadas
+        return $user->hasAnyRole(['admin', 'almacen']);
     }
 }

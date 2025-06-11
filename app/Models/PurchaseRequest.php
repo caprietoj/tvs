@@ -188,7 +188,13 @@ class PurchaseRequest extends Model
      */
     public function isDelivered()
     {
-        return $this->delivery_status === 'delivered';
+        // Verificar si la columna delivery_status existe
+        if (\Schema::hasColumn('purchase_requests', 'delivery_status')) {
+            return $this->delivery_status === 'delivered';
+        }
+        
+        // Si no existe la columna, asumir que no está entregada
+        return false;
     }
 
     /**
@@ -196,7 +202,13 @@ class PurchaseRequest extends Model
      */
     public function isNotDelivered()
     {
-        return $this->delivery_status === 'not_delivered';
+        // Verificar si la columna delivery_status existe
+        if (\Schema::hasColumn('purchase_requests', 'delivery_status')) {
+            return $this->delivery_status === 'not_delivered';
+        }
+        
+        // Si no existe la columna, asumir que no está entregada
+        return true;
     }
 
     /**

@@ -26,6 +26,17 @@
                 </a>
             @endif
             
+            {{-- Botón especial para editar solicitudes de fotocopias aprobadas (solo almacén y admin) --}}
+            @php
+                $permissionService = new \App\Services\PurchaseRequestPermissionService();
+            @endphp
+            @if($permissionService->canEditApprovedCopiesRequest($purchaseRequest))
+                <a href="{{ route('purchase-requests.edit', $purchaseRequest) }}" class="btn btn-outline-warning btn-sm mr-2" 
+                   title="Editar fotocopias antes de entregar">
+                    <i class="fas fa-edit"></i> Editar Fotocopias
+                </a>
+            @endif
+            
             @if(auth()->user()->can('approve-purchase-requests'))
                 @if($purchaseRequest->status == 'Pre-aprobada')
                     <a href="{{ route('approvals.show', $purchaseRequest->id) }}" class="btn btn-success btn-sm mr-2">

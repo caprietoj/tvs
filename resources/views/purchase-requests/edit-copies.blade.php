@@ -40,6 +40,15 @@
                     @endif
                 </div>
 
+                @if($purchaseRequest->status === 'approved')
+                <!-- Alerta especial para solicitudes aprobadas -->
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <strong>Edición de Solicitud Aprobada:</strong> Esta funcionalidad permite ajustar las cantidades de fotocopias 
+                    cuando se realizaron más copias de las originalmente solicitadas. Los cambios quedarán registrados en el historial.
+                </div>
+                @endif
+
                 <!-- Datos del usuario -->
                 <table class="table table-bordered mb-4">
                     <tr>
@@ -96,13 +105,15 @@
                         <div class="table-responsive">
                             <table class="table table-bordered" id="copyItemsTable">                                <thead style="background-color: #f8f9fa;">
                                     <tr>
-                                        <th style="width: 10%;">N</th>
-                                        <th style="width: 20%;">ORIGINAL</th>
-                                        <th style="width: 20%;">COPIAS REQUERIDAS</th>
-                                        <th style="width: 20%;">DOBLE CARTA COLOR</th>
-                                        <th style="width: 15%;">BLANCO Y NEGRO</th>
+                                        <th style="width: 8%;">N</th>
+                                        <th style="width: 15%;">ORIGINAL</th>
+                                        <th style="width: 12%;">COPIAS REQUERIDAS</th>
+                                        <th style="width: 12%;">DOBLE CARTA COLOR</th>
+                                        <th style="width: 12%;">BLANCO Y NEGRO</th>
                                         <th style="width: 10%;">COLOR</th>
-                                        <th style="width: 5%;">ACCIÓN</th>
+                                        <th style="width: 10%;">IMPRESIÓN</th>
+                                        <th style="width: 10%;">TOTAL</th>
+                                        <th style="width: 11%;">ACCIÓN</th>
                                     </tr>
                                 </thead>
                                 <tbody id="copyItemsBody">
@@ -110,19 +121,26 @@
                                     <tr id="copyItem-{{ $item['item'] }}">
                                         <td>{{ $item['item'] }}</td>
                                         <td>
-                                            <input type="text" class="form-control form-control-sm" name="copy_items[{{ $index }}][original]" value="{{ $item['original'] ?? '' }}">
+                                            <input type="text" class="form-control form-control-sm" name="copy_items[{{ $index }}][original]" value="{{ $item['original'] ?? '' }}" onchange="calculateTotal(this)">
                                             <input type="hidden" name="copy_items[{{ $index }}][item]" value="{{ $item['item'] }}">
-                                        </td>                                        <td>
-                                            <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][copies_required]" min="0" value="{{ $item['copies_required'] ?? '' }}">
                                         </td>
                                         <td>
-                                            <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][double_letter_color]" min="0" value="{{ $item['double_letter_color'] ?? '' }}" placeholder="0">
+                                            <input type="number" class="form-control form-control-sm copies-required" name="copy_items[{{ $index }}][copies_required]" min="0" value="{{ $item['copies_required'] ?? '' }}" onchange="calculateTotal(this)">
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" class="form-check-input" name="copy_items[{{ $index }}][double_letter_color]" value="1" {{ ($item['double_letter_color'] ?? false) ? 'checked' : '' }}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" class="form-check-input" name="copy_items[{{ $index }}][black_white]" value="1" {{ ($item['black_white'] ?? false) ? 'checked' : '' }}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" class="form-check-input" name="copy_items[{{ $index }}][color]" value="1" {{ ($item['color'] ?? false) ? 'checked' : '' }}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" class="form-check-input" name="copy_items[{{ $index }}][impresion]" value="1" {{ ($item['impresion'] ?? false) ? 'checked' : '' }}>
                                         </td>
                                         <td>
-                                            <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][black_white]" min="0" value="{{ $item['black_white'] ?? '' }}" placeholder="0">
-                                        </td>
-                                        <td>
-                                            <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][color]" min="0" value="{{ $item['color'] ?? '' }}" placeholder="0">
+                                            <input type="number" class="form-control form-control-sm total-field" name="copy_items[{{ $index }}][total]" value="{{ $item['total'] ?? 0 }}" readonly style="background-color: #f8f9fa;">
                                         </td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-sm btn-danger delete-row" {{ count($purchaseRequest->copy_items) <= 1 ? 'disabled' : '' }}>
@@ -134,7 +152,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="7" class="text-center">
+                                        <td colspan="9" class="text-center">
                                             <button type="button" class="btn btn-sm" id="addCopyItem" style="background-color: #364E76; color: white;">
                                                 <i class="fas fa-plus"></i> Agregar
                                             </button>
@@ -142,6 +160,17 @@
                                     </tr>
                                 </tfoot>
                             </table>
+                        </div>
+                        
+                        <!-- Nota informativa -->
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Instrucciones importantes:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li><strong>ORIGINAL:</strong> Indique la cantidad de hojas que contiene el documento adjunto.</li>
+                                <li><strong>COPIAS REQUERIDAS:</strong> Número de copias que necesita de ese documento.</li>
+                                <li><strong>Múltiples documentos:</strong> Si tiene varios documentos diferentes para fotocopiar, agregue un ítem separado para cada uno usando el botón "Agregar".</li>
+                            </ul>
                         </div>
                     </div>                </div>
 
@@ -449,6 +478,36 @@
 
 @section('js')
 <script>
+    // Función global para calcular totales (accesible desde onchange)
+    function calculateTotal(element) {
+        const row = $(element).closest('tr');
+        const originalInput = row.find('input[name*="[original]"]');
+        const copiesInput = row.find('input[name*="[copies_required]"]');
+        const totalInput = row.find('input[name*="[total]"]');
+        
+        // Para el campo original, intentar extraer un número del texto
+        let originalValue = 0;
+        const originalText = originalInput.val() || '';
+        
+        // Si el campo original contiene números, extraerlos
+        const numberMatch = originalText.match(/\d+/);
+        if (numberMatch) {
+            originalValue = parseInt(numberMatch[0]);
+        } else if (!isNaN(originalText) && originalText.trim() !== '') {
+            originalValue = parseInt(originalText) || 1; // Si es un número puro
+        } else if (originalText.trim() !== '') {
+            originalValue = 1; // Si hay texto pero no números, asumir 1 original
+        }
+        
+        const copiesValue = parseInt(copiesInput.val()) || 0;
+        
+        // Calcular total
+        const total = originalValue * copiesValue;
+        
+        // Actualizar el campo total
+        totalInput.val(total);
+    }
+
     $(function() {
         // Variables para contadores de filas
         let copyItemCounter = {{ collect($purchaseRequest->copy_items)->max('item') ?? 0 }};
@@ -460,20 +519,26 @@
                 <tr id="copyItem-${copyItemCounter}">
                     <td>${copyItemCounter}</td>
                     <td>
-                        <input type="text" class="form-control form-control-sm" name="copy_items[${newIndex}][original]">
+                        <input type="text" class="form-control form-control-sm" name="copy_items[${newIndex}][original]" onchange="calculateTotal(this)">
                         <input type="hidden" name="copy_items[${newIndex}][item]" value="${copyItemCounter}">
                     </td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" name="copy_items[${newIndex}][copies_required]" min="0">
+                        <input type="number" class="form-control form-control-sm copies-required" name="copy_items[${newIndex}][copies_required]" min="0" onchange="calculateTotal(this)">
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input" name="copy_items[${newIndex}][double_letter_color]" value="1">
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input" name="copy_items[${newIndex}][black_white]" value="1">
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input" name="copy_items[${newIndex}][color]" value="1">
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input" name="copy_items[${newIndex}][impresion]" value="1">
                     </td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" name="copy_items[${newIndex}][double_letter_color]" min="0" placeholder="0">
-                    </td>
-                    <td>
-                        <input type="number" class="form-control form-control-sm" name="copy_items[${newIndex}][black_white]" min="0" placeholder="0">
-                    </td>
-                    <td>
-                        <input type="number" class="form-control form-control-sm" name="copy_items[${newIndex}][color]" min="0" placeholder="0">
+                        <input type="number" class="form-control form-control-sm total-field" name="copy_items[${newIndex}][total]" value="0" readonly style="background-color: #f8f9fa;">
                     </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-sm btn-danger delete-row">
@@ -599,6 +664,11 @@
                 $('.remove-file-btn').prop('disabled', false);
             }
         }
+        
+        // Calcular totales existentes al cargar la página
+        $('.copies-required').each(function() {
+            calculateTotal(this);
+        });
         
         // Función para mostrar/ocultar detalles especiales
         function toggleSpecialDetails() {

@@ -405,8 +405,12 @@ class PurchaseRequestController extends Controller
     {
         $permissionService = new PurchaseRequestPermissionService();
         
-        // Verificar si el usuario puede editar esta solicitud
-        if (!$permissionService->canEditRequest($purchaseRequest)) {
+        // Verificar permisos de edición
+        $canEditRegular = $permissionService->canEditRequest($purchaseRequest);
+        $canEditApprovedCopies = $permissionService->canEditApprovedCopiesRequest($purchaseRequest);
+        
+        // Si no tiene ningún permiso de edición, denegar acceso
+        if (!$canEditRegular && !$canEditApprovedCopies) {
             abort(403, 'No tienes permisos para editar esta solicitud.');
         }
         
@@ -430,8 +434,12 @@ class PurchaseRequestController extends Controller
     {
         $permissionService = new PurchaseRequestPermissionService();
         
-        // Verificar si el usuario puede editar esta solicitud
-        if (!$permissionService->canEditRequest($purchaseRequest)) {
+        // Verificar permisos de edición
+        $canEditRegular = $permissionService->canEditRequest($purchaseRequest);
+        $canEditApprovedCopies = $permissionService->canEditApprovedCopiesRequest($purchaseRequest);
+        
+        // Si no tiene ningún permiso de edición, denegar acceso
+        if (!$canEditRegular && !$canEditApprovedCopies) {
             abort(403, 'No tienes permisos para editar esta solicitud.');
         }
         
@@ -506,9 +514,11 @@ class PurchaseRequestController extends Controller
     'copy_items.*.item' => 'nullable|integer',
     'copy_items.*.original' => 'nullable|string',
     'copy_items.*.copies_required' => 'nullable|integer|min:1',
-    'copy_items.*.double_letter_color' => 'nullable|integer|min:0',
-    'copy_items.*.black_white' => 'nullable|integer|min:0',
-    'copy_items.*.color' => 'nullable|integer|min:0',
+    'copy_items.*.double_letter_color' => 'nullable|boolean',
+    'copy_items.*.black_white' => 'nullable|boolean',
+    'copy_items.*.color' => 'nullable|boolean',
+    'copy_items.*.impresion' => 'nullable|boolean',
+    'copy_items.*.total' => 'nullable|integer|min:0',
     'material_items' => 'nullable|array',
     'material_items.*.item' => 'required_with:material_items|integer',
     'material_items.*.article' => 'required_with:material_items|string',
@@ -552,9 +562,11 @@ class PurchaseRequestController extends Controller
             'copy_items.*.item' => 'required|integer',
             'copy_items.*.original' => 'required|string',
             'copy_items.*.copies_required' => 'required|integer|min:1',
-            'copy_items.*.double_letter_color' => 'nullable|integer|min:0',
-            'copy_items.*.black_white' => 'nullable|integer|min:0',
-            'copy_items.*.color' => 'nullable|integer|min:0',
+            'copy_items.*.double_letter_color' => 'nullable|boolean',
+            'copy_items.*.black_white' => 'nullable|boolean',
+            'copy_items.*.color' => 'nullable|boolean',
+            'copy_items.*.impresion' => 'nullable|boolean',
+            'copy_items.*.total' => 'nullable|integer|min:0',
             'attached_files' => 'nullable|array|max:5', // Máximo 5 archivos
             'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB máximo cada archivo
             // Validaciones para especificaciones
@@ -603,7 +615,7 @@ class PurchaseRequestController extends Controller
         }
 
         // Actualizar la solicitud de fotocopias
-        $purchaseRequest->update([
+        $updateData = [
             'requester' => $request->requester,
             'code' => $request->code,
             'grade' => $request->grade,
@@ -620,10 +632,22 @@ class PurchaseRequestController extends Controller
             'requires_lamination' => $request->requires_lamination ? true : false,
             'requires_cutting' => $request->requires_cutting ? true : false,
             'special_details' => $request->special_details,
-        ]);
+        ];
+
+        // Si la solicitud está aprobada, agregar nota de edición post-aprobación
+        if ($purchaseRequest->status === 'approved') {
+            $editNote = "\n\n[EDITADO POST-APROBACIÓN el " . now()->format('d/m/Y H:i') . " por " . auth()->user()->name . "]";
+            $updateData['special_details'] = ($request->special_details ?: '') . $editNote;
+        }
+
+        $purchaseRequest->update($updateData);
+
+        $successMessage = $purchaseRequest->status === 'approved' 
+            ? 'Solicitud de fotocopias aprobada actualizada exitosamente. Los cambios han sido registrados.'
+            : 'Solicitud de fotocopias actualizada exitosamente';
 
         return redirect()->route('purchase-requests.show', $purchaseRequest)
-            ->with('success', 'Solicitud de fotocopias actualizada exitosamente');
+            ->with('success', $successMessage);
     }
 
     /**
@@ -707,9 +731,11 @@ class PurchaseRequestController extends Controller
             'copy_items.*.item' => 'required|integer',
             'copy_items.*.original' => 'required|string',
             'copy_items.*.copies_required' => 'required|integer|min:1',
-            'copy_items.*.double_letter_color' => 'nullable|integer|min:0',
-            'copy_items.*.black_white' => 'nullable|integer|min:0',
-            'copy_items.*.color' => 'nullable|integer|min:0',
+            'copy_items.*.double_letter_color' => 'nullable|boolean',
+            'copy_items.*.black_white' => 'nullable|boolean',
+            'copy_items.*.color' => 'nullable|boolean',
+            'copy_items.*.impresion' => 'nullable|boolean',
+            'copy_items.*.total' => 'nullable|integer|min:0',
             'attached_files' => 'nullable|array|max:5', // Máximo 5 archivos
             'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB máximo cada archivo
             // Validaciones para especificaciones
