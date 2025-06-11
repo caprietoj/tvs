@@ -61,15 +61,21 @@ class CopiesRequestController extends Controller
 
         // Encabezados de las columnas según la nueva estructura
         $headers = [
-            'A' => 'MES',
-            'B' => 'NOMBRE DOCENTE', 
-            'C' => 'SECCIÓN',
-            'D' => 'CURSO',
-            'E' => 'IMPRESIONES B/N',
-            'F' => 'IMPRESIONES COLOR',
-            'G' => 'DOBLE CARTA COLOR',
-            'H' => 'FECHA DE ENTREGA',
-            'I' => 'RECIBIDO A SATISFACCIÓN'
+            'A' => 'FECHA',
+            'B' => 'N° SOLICITUD',
+            'C' => 'DOCENTE',
+            'D' => 'SECCIÓN',
+            'E' => 'GRADO',
+            'F' => 'ORIGINAL',
+            'G' => 'COPIAS REQ.',
+            'H' => 'BLANCO Y NEGRO',
+            'I' => 'COLOR',
+            'J' => 'DOBLE CARTA COLOR',
+            'K' => 'IMPRESIÓN',
+            'L' => 'TOTAL',
+            'M' => 'FECHA ENTREGA',
+            'N' => 'ESTADO',
+            'O' => 'APROBADO POR'
         ];
 
         // Establecer encabezados en la fila 3
@@ -98,22 +104,28 @@ class CopiesRequestController extends Controller
                 ]
             ]
         ];
-        $sheet->getStyle('A3:I3')->applyFromArray($headerStyle);
+        $sheet->getStyle('A3:O3')->applyFromArray($headerStyle);
 
         // Ajustar altura de la fila de encabezados
         $sheet->getRowDimension(3)->setRowHeight(25);
 
         // Establecer ancho de las columnas
         $columnWidths = [
-            'A' => 12,  // MES
-            'B' => 25,  // NOMBRE DOCENTE
-            'C' => 15,  // SECCIÓN
-            'D' => 20,  // CURSO
-            'E' => 18,  // IMPRESIONES B/N
-            'F' => 18,  // IMPRESIONES COLOR
-            'G' => 20,  // DOBLE CARTA COLOR
-            'H' => 18,  // FECHA DE ENTREGA
-            'I' => 25   // RECIBIDO A SATISFACCIÓN
+            'A' => 12,  // FECHA
+            'B' => 15,  // N° SOLICITUD
+            'C' => 25,  // DOCENTE
+            'D' => 15,  // SECCIÓN
+            'E' => 12,  // GRADO
+            'F' => 30,  // ORIGINAL
+            'G' => 12,  // COPIAS REQ.
+            'H' => 12,  // BLANCO Y NEGRO
+            'I' => 12,  // COLOR
+            'J' => 18,  // DOBLE CARTA COLOR
+            'K' => 12,  // IMPRESIÓN
+            'L' => 10,  // TOTAL
+            'M' => 15,  // FECHA ENTREGA
+            'N' => 12,  // ESTADO
+            'O' => 20   // APROBADO POR
         ];
 
         foreach ($columnWidths as $column => $width) {
@@ -125,55 +137,82 @@ class CopiesRequestController extends Controller
         foreach ($requests as $request) {
             if (!empty($request->copy_items)) {
                 foreach ($request->copy_items as $item) {
-                    // Solo procesar elementos que tengan al menos un campo de impresiones
-                    if (!empty($item['black_white']) || !empty($item['color']) || !empty($item['double_letter_color'])) {
-                        
-                        // MES - extraer mes de la fecha de solicitud
-                        $month = $request->request_date ? $request->request_date->format('F Y') : 'N/A';
-                        $sheet->setCellValue("A{$row}", $month);
-                        
-                        // NOMBRE DOCENTE
-                        $sheet->setCellValue("B{$row}", $request->requester ?? 'N/A');
-                        
-                        // SECCIÓN
-                        $sheet->setCellValue("C{$row}", $request->section ?? 'N/A');
-                        
-                        // CURSO
-                        $sheet->setCellValue("D{$row}", $request->grade ?? 'N/A');
-                        
-                        // IMPRESIONES B/N
-                        $sheet->setCellValue("E{$row}", intval($item['black_white'] ?? 0));
-                        
-                        // IMPRESIONES COLOR
-                        $sheet->setCellValue("F{$row}", intval($item['color'] ?? 0));
-                        
-                        // DOBLE CARTA COLOR
-                        $sheet->setCellValue("G{$row}", intval($item['double_letter_color'] ?? 0));
-                        
-                        // FECHA DE ENTREGA
-                        $deliveryDate = $request->delivery_date ? $request->delivery_date->format('d/m/Y') : 'N/A';
-                        $sheet->setCellValue("H{$row}", $deliveryDate);
-                        
-                        // RECIBIDO A SATISFACCIÓN
-                        $satisfactionStatus = $request->approved_by ? 'Sí' : 'Pendiente';
-                        $sheet->setCellValue("I{$row}", $satisfactionStatus);
-                        
-                        // Aplicar estilo a la fila de datos
-                        $rowStyle = [
-                            'alignment' => [
-                                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
-                            ],
-                            'borders' => [
-                                'allBorders' => [
-                                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                                    'color' => ['rgb' => '000000']
-                                ]
-                            ]
-                        ];
-                        $sheet->getStyle("A{$row}:I{$row}")->applyFromArray($rowStyle);
-                        
-                        $row++;
+                    // FECHA
+                    $sheet->setCellValue("A{$row}", $request->request_date ? $request->request_date->format('d/m/Y') : 'N/A');
+                    
+                    // N° SOLICITUD
+                    $sheet->setCellValue("B{$row}", $request->request_number ?? 'N/A');
+                    
+                    // DOCENTE
+                    $sheet->setCellValue("C{$row}", $request->requester ?? 'N/A');
+                    
+                    // SECCIÓN
+                    $sheet->setCellValue("D{$row}", $request->section ?? 'N/A');
+                    
+                    // GRADO
+                    $sheet->setCellValue("E{$row}", $request->grade ?? 'N/A');
+                    
+                    // ORIGINAL
+                    $sheet->setCellValue("F{$row}", $item['original'] ?? 'N/A');
+                    
+                    // COPIAS REQUERIDAS
+                    $sheet->setCellValue("G{$row}", intval($item['copies_required'] ?? 0));
+                    
+                    // BLANCO Y NEGRO
+                    $sheet->setCellValue("H{$row}", isset($item['black_white']) && $item['black_white'] ? 'SÍ' : 'NO');
+                    
+                    // COLOR
+                    $sheet->setCellValue("I{$row}", isset($item['color']) && $item['color'] ? 'SÍ' : 'NO');
+                    
+                    // DOBLE CARTA COLOR
+                    $sheet->setCellValue("J{$row}", isset($item['double_letter_color']) && $item['double_letter_color'] ? 'SÍ' : 'NO');
+                    
+                    // IMPRESIÓN
+                    $sheet->setCellValue("K{$row}", isset($item['impresion']) && $item['impresion'] ? 'SÍ' : 'NO');
+                    
+                    // TOTAL
+                    $sheet->setCellValue("L{$row}", intval($item['total'] ?? 0));
+                    
+                    // FECHA DE ENTREGA
+                    $deliveryDate = $request->delivery_date ? $request->delivery_date->format('d/m/Y') : 'N/A';
+                    $sheet->setCellValue("M{$row}", $deliveryDate);
+                    
+                    // ESTADO
+                    $status = '';
+                    switch($request->status) {
+                        case 'pending':
+                            $status = 'Pendiente';
+                            break;
+                        case 'approved':
+                            $status = 'Aprobada';
+                            break;
+                        case 'rejected':
+                            $status = 'Rechazada';
+                            break;
+                        default:
+                            $status = 'N/A';
                     }
+                    $sheet->setCellValue("N{$row}", $status);
+                    
+                    // APROBADO POR
+                    $approver = $request->approved_by ? optional($request->approver)->name : 'Pendiente';
+                    $sheet->setCellValue("O{$row}", $approver);
+                    
+                    // Aplicar estilo a la fila de datos
+                    $rowStyle = [
+                        'alignment' => [
+                            'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                        ],
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                                'color' => ['rgb' => '000000']
+                            ]
+                        ]
+                    ];
+                    $sheet->getStyle("A{$row}:O{$row}")->applyFromArray($rowStyle);
+                    
+                    $row++;
                 }
             }
         }
@@ -181,7 +220,7 @@ class CopiesRequestController extends Controller
         // Si no hay datos, agregar una fila indicándolo
         if ($row === 4) {
             $sheet->setCellValue('A4', 'No hay solicitudes de fotocopias registradas');
-            $sheet->mergeCells('A4:I4');
+            $sheet->mergeCells('A4:O4');
             $sheet->getStyle('A4')->applyFromArray([
                 'alignment' => [
                     'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER

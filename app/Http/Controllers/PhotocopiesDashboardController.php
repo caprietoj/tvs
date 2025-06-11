@@ -75,6 +75,8 @@ class PhotocopiesDashboardController extends Controller
             'blancoNegro' => 0,
             'color' => 0,
             'dobleCarta' => 0,
+            'impresion' => 0, // Nuevo campo
+            'totalCopias' => 0, // Nuevo campo para total de páginas
             'satisfaccion' => ['si' => 0, 'no' => 0],
             'docentes' => [],
             'secciones' => [],
@@ -89,18 +91,37 @@ class PhotocopiesDashboardController extends Controller
             $blancoNegroTotal = 0;
             $colorTotal = 0;
             $dobleCartaTotal = 0;
+            $impresionTotal = 0;
+            $totalCopiasTotal = 0;
             
             if (is_array($request->copy_items)) {
                 foreach ($request->copy_items as $item) {
-                    $blancoNegroTotal += (int)($item['black_white'] ?? 0);
-                    $colorTotal += (int)($item['color'] ?? 0);
-                    $dobleCartaTotal += (int)($item['double_letter_color'] ?? 0);
+                    // Campos existentes (ahora convertidos a boolean)
+                    if (isset($item['black_white']) && $item['black_white']) {
+                        $blancoNegroTotal++;
+                    }
+                    if (isset($item['color']) && $item['color']) {
+                        $colorTotal++;
+                    }
+                    if (isset($item['double_letter_color']) && $item['double_letter_color']) {
+                        $dobleCartaTotal++;
+                    }
+                    
+                    // Nuevo campo IMPRESIÓN
+                    if (isset($item['impresion']) && $item['impresion']) {
+                        $impresionTotal++;
+                    }
+                    
+                    // Nuevo campo TOTAL (páginas totales)
+                    $totalCopiasTotal += (int)($item['total'] ?? 0);
                 }
             }
             
             $stats['blancoNegro'] += $blancoNegroTotal;
             $stats['color'] += $colorTotal;
             $stats['dobleCarta'] += $dobleCartaTotal;
+            $stats['impresion'] += $impresionTotal;
+            $stats['totalCopias'] += $totalCopiasTotal;
             
             // Satisfacción - asumir satisfecho si la solicitud está aprobada o completada
             $satisfecho = in_array($request->status, ['approved', 'completed']);
@@ -111,48 +132,52 @@ class PhotocopiesDashboardController extends Controller
                 $stats['satisfaccion']['no']++;
             }
             
-            // Contadores por categoría
-            $totalImpresiones = $blancoNegroTotal + $colorTotal + $dobleCartaTotal;
+            // Contadores por categoría (usar total de páginas como medida principal)
+            $totalImpresiones = $totalCopiasTotal > 0 ? $totalCopiasTotal : ($blancoNegroTotal + $colorTotal + $dobleCartaTotal + $impresionTotal);
             
             // Por docente
             $docente = $request->requester ?? 'Sin especificar';
             if (!isset($stats['docentes'][$docente])) {
-                $stats['docentes'][$docente] = ['total' => 0, 'solicitudes' => 0, 'satisfecho' => 0];
+                $stats['docentes'][$docente] = ['total' => 0, 'solicitudes' => 0, 'satisfecho' => 0, 'totalCopias' => 0];
             }
             $stats['docentes'][$docente]['total'] += $totalImpresiones;
+            $stats['docentes'][$docente]['totalCopias'] += $totalCopiasTotal;
             $stats['docentes'][$docente]['solicitudes']++;
             if ($satisfecho) $stats['docentes'][$docente]['satisfecho']++;
             
             // Por sección
             $seccion = $request->section ?? 'Sin especificar';
             if (!isset($stats['secciones'][$seccion])) {
-                $stats['secciones'][$seccion] = ['total' => 0, 'solicitudes' => 0, 'satisfecho' => 0];
+                $stats['secciones'][$seccion] = ['total' => 0, 'solicitudes' => 0, 'satisfecho' => 0, 'totalCopias' => 0];
             }
             $stats['secciones'][$seccion]['total'] += $totalImpresiones;
+            $stats['secciones'][$seccion]['totalCopias'] += $totalCopiasTotal;
             $stats['secciones'][$seccion]['solicitudes']++;
             if ($satisfecho) $stats['secciones'][$seccion]['satisfecho']++;
             
             // Por curso
             $curso = $request->grade ?? 'Sin especificar';
             if (!isset($stats['cursos'][$curso])) {
-                $stats['cursos'][$curso] = ['total' => 0, 'solicitudes' => 0, 'satisfecho' => 0];
+                $stats['cursos'][$curso] = ['total' => 0, 'solicitudes' => 0, 'satisfecho' => 0, 'totalCopias' => 0];
             }
             $stats['cursos'][$curso]['total'] += $totalImpresiones;
+            $stats['cursos'][$curso]['totalCopias'] += $totalCopiasTotal;
             $stats['cursos'][$curso]['solicitudes']++;
             if ($satisfecho) $stats['cursos'][$curso]['satisfecho']++;
             
             // Por mes
             $mes = Carbon::parse($request->created_at)->format('M Y');
             if (!isset($stats['meses'][$mes])) {
-                $stats['meses'][$mes] = ['total' => 0, 'solicitudes' => 0, 'satisfecho' => 0];
+                $stats['meses'][$mes] = ['total' => 0, 'solicitudes' => 0, 'satisfecho' => 0, 'totalCopias' => 0];
             }
             $stats['meses'][$mes]['total'] += $totalImpresiones;
+            $stats['meses'][$mes]['totalCopias'] += $totalCopiasTotal;
             $stats['meses'][$mes]['solicitudes']++;
             if ($satisfecho) $stats['meses'][$mes]['satisfecho']++;
         }
 
         // Calcular porcentajes
-        $totalImpresiones = $stats['blancoNegro'] + $stats['color'] + $stats['dobleCarta'];
+        $totalImpresiones = $stats['blancoNegro'] + $stats['color'] + $stats['dobleCarta'] + $stats['impresion'];
         $porcentajeSatisfaccion = $stats['total'] > 0 ? 
             round(($stats['satisfaccion']['si'] / $stats['total']) * 100, 1) : 0;
         
@@ -161,19 +186,25 @@ class PhotocopiesDashboardController extends Controller
         $stats['porcentajeSatisfaccion'] = $porcentajeSatisfaccion;
         $stats['totalImpresiones'] = $totalImpresiones;
         
-        // Top performers
+        // Top performers (ordenar por total de copias cuando esté disponible)
         $stats['topDocentes'] = collect($stats['docentes'])
-            ->sortByDesc('total')
+            ->sortByDesc(function($item) {
+                return $item['totalCopias'] > 0 ? $item['totalCopias'] : $item['total'];
+            })
             ->take(5)
             ->toArray();
             
         $stats['topSecciones'] = collect($stats['secciones'])
-            ->sortByDesc('total')
+            ->sortByDesc(function($item) {
+                return $item['totalCopias'] > 0 ? $item['totalCopias'] : $item['total'];
+            })
             ->take(5)
             ->toArray();
             
         $stats['topCursos'] = collect($stats['cursos'])
-            ->sortByDesc('total')
+            ->sortByDesc(function($item) {
+                return $item['totalCopias'] > 0 ? $item['totalCopias'] : $item['total'];
+            })
             ->take(5)
             ->toArray();
 

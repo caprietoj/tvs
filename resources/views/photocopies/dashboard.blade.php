@@ -28,7 +28,7 @@
         @endif
     </div>    <!-- Tarjetas de Estadísticas Principales -->
     <div class="row mb-4">
-        <div class="col-lg-4 col-md-6">
+        <div class="col-lg-3 col-md-6">
             <div class="small-box bg-institutional">
                 <div class="inner">
                     <h3>{{ number_format($statistics['total']) }}</h3>
@@ -37,8 +37,9 @@
                 <div class="icon">
                     <i class="fas fa-clipboard-list"></i>
                 </div>
-            </div>        </div>
-        <div class="col-lg-4 col-md-6">
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
             <div class="small-box bg-institutional">
                 <div class="inner">
                     <h3>{{ number_format($statistics['totalImpresiones']) }}</h3>
@@ -47,13 +48,26 @@
                 <div class="icon">
                     <i class="fas fa-print"></i>
                 </div>
-            </div>        </div>
-        <div class="col-lg-4 col-md-6">
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="small-box bg-institutional">
+                <div class="inner">
+                    <h3>{{ number_format($statistics['totalCopias']) }}</h3>
+                    <p>Total de Páginas</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-copy"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
             <div class="small-box bg-institutional">
                 <div class="inner">
                     <h3>{{ $statistics['porcentajeSatisfaccion'] }}%</h3>
                     <p>Satisfacción</p>
-                </div>                <div class="icon">
+                </div>
+                <div class="icon">
                     <i class="fas fa-smile"></i>
                 </div>
             </div>
@@ -75,8 +89,10 @@
                             $porcBN = $total > 0 ? round(($statistics['blancoNegro'] / $total) * 100, 1) : 0;
                             $porcColor = $total > 0 ? round(($statistics['color'] / $total) * 100, 1) : 0;
                             $porcDoble = $total > 0 ? round(($statistics['dobleCarta'] / $total) * 100, 1) : 0;
+                            $porcImpresion = $total > 0 ? round(($statistics['impresion'] / $total) * 100, 1) : 0;
                         @endphp
-                          <div class="mb-3">
+                        
+                        <div class="mb-3">
                             <span class="text-muted">Blanco y Negro ({{ $porcBN }}%)</span>
                             <div class="progress mb-2" style="height: 20px;">
                                 <div class="progress-bar progress-bar-institutional" style="width: {{ $porcBN }}%">
@@ -99,6 +115,15 @@
                             <div class="progress mb-2" style="height: 20px;">
                                 <div class="progress-bar progress-bar-institutional" style="width: {{ $porcDoble }}%">
                                     {{ number_format($statistics['dobleCarta']) }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <span class="text-muted">Impresión ({{ $porcImpresion }}%)</span>
+                            <div class="progress mb-2" style="height: 20px;">
+                                <div class="progress-bar bg-warning" style="width: {{ $porcImpresion }}%">
+                                    {{ number_format($statistics['impresion']) }}
                                 </div>
                             </div>
                         </div>
@@ -167,8 +192,13 @@
                                     <div>
                                         <strong>{{ $docente }}</strong><br>
                                         <small class="text-muted">{{ $data['solicitudes'] }} solicitudes</small>
+                                        @if($data['totalCopias'] > 0)
+                                            <br><small class="text-info">{{ number_format($data['totalCopias']) }} páginas</small>
+                                        @endif
                                     </div>
-                                    <span class="badge badge-primary">{{ number_format($data['total']) }}</span>
+                                    <span class="badge badge-primary">
+                                        {{ number_format($data['totalCopias'] > 0 ? $data['totalCopias'] : $data['total']) }}
+                                    </span>
                                 </div>
                             @endforeach
                         @else
@@ -189,8 +219,13 @@
                                     <div>
                                         <strong>{{ $seccion }}</strong><br>
                                         <small class="text-muted">{{ $data['solicitudes'] }} solicitudes</small>
+                                        @if($data['totalCopias'] > 0)
+                                            <br><small class="text-info">{{ number_format($data['totalCopias']) }} páginas</small>
+                                        @endif
                                     </div>
-                                    <span class="badge badge-info">{{ number_format($data['total']) }}</span>
+                                    <span class="badge badge-info">
+                                        {{ number_format($data['totalCopias'] > 0 ? $data['totalCopias'] : $data['total']) }}
+                                    </span>
                                 </div>
                             @endforeach
                         @else
@@ -211,8 +246,13 @@
                                     <div>
                                         <strong>{{ $curso }}</strong><br>
                                         <small class="text-muted">{{ $data['solicitudes'] }} solicitudes</small>
+                                        @if($data['totalCopias'] > 0)
+                                            <br><small class="text-info">{{ number_format($data['totalCopias']) }} páginas</small>
+                                        @endif
                                     </div>
-                                    <span class="badge badge-success">{{ number_format($data['total']) }}</span>
+                                    <span class="badge badge-success">
+                                        {{ number_format($data['totalCopias'] > 0 ? $data['totalCopias'] : $data['total']) }}
+                                    </span>
                                 </div>
                             @endforeach
                         @else
@@ -245,7 +285,8 @@
                                 <th>B/N</th>
                                 <th>Color</th>
                                 <th>Doble Carta</th>
-                                <th>Total</th>
+                                <th>Impresión</th>
+                                <th>Total Páginas</th>
                                 <th>Estado</th>
                                 <th>Detalles</th>
                             </tr>
@@ -256,16 +297,29 @@
                                     $totalBN = 0;
                                     $totalColor = 0;
                                     $totalDobleCarta = 0;
+                                    $totalImpresion = 0;
+                                    $totalPaginas = 0;
                                     
                                     if (is_array($request->copy_items)) {
                                         foreach ($request->copy_items as $item) {
-                                            $totalBN += (int)($item['black_white'] ?? 0);
-                                            $totalColor += (int)($item['color'] ?? 0);
-                                            $totalDobleCarta += (int)($item['double_letter_color'] ?? 0);
+                                            // Contadores por tipo (ahora boolean)
+                                            if (isset($item['black_white']) && $item['black_white']) {
+                                                $totalBN++;
+                                            }
+                                            if (isset($item['color']) && $item['color']) {
+                                                $totalColor++;
+                                            }
+                                            if (isset($item['double_letter_color']) && $item['double_letter_color']) {
+                                                $totalDobleCarta++;
+                                            }
+                                            if (isset($item['impresion']) && $item['impresion']) {
+                                                $totalImpresion++;
+                                            }
+                                            
+                                            // Total de páginas
+                                            $totalPaginas += (int)($item['total'] ?? 0);
                                         }
                                     }
-                                    
-                                    $totalImpresiones = $totalBN + $totalColor + $totalDobleCarta;
                                     
                                     $statusClass = 'secondary';
                                     $statusText = 'Pendiente';
@@ -303,7 +357,10 @@
                                         <span class="badge badge-info">{{ number_format($totalDobleCarta) }}</span>
                                     </td>
                                     <td class="text-center">
-                                        <strong>{{ number_format($totalImpresiones) }}</strong>
+                                        <span class="badge badge-warning">{{ number_format($totalImpresion) }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <strong>{{ number_format($totalPaginas) }}</strong>
                                     </td>
                                     <td class="text-center">
                                         <span class="badge badge-{{ $statusClass }}">{{ $statusText }}</span>
@@ -343,17 +400,23 @@
                                                                 $totalBN = 0;
                                                                 $totalColor = 0;
                                                                 $totalDoble = 0;
+                                                                $totalImpresion = 0;
+                                                                $totalPaginas = 0;
                                                                 foreach($request->copy_items as $item) {
-                                                                    $totalBN += intval($item['black_white'] ?? 0);
-                                                                    $totalColor += intval($item['color'] ?? 0);
-                                                                    $totalDoble += intval($item['double_letter_color'] ?? 0);
+                                                                    if (isset($item['black_white']) && $item['black_white']) $totalBN++;
+                                                                    if (isset($item['color']) && $item['color']) $totalColor++;
+                                                                    if (isset($item['double_letter_color']) && $item['double_letter_color']) $totalDoble++;
+                                                                    if (isset($item['impresion']) && $item['impresion']) $totalImpresion++;
+                                                                    $totalPaginas += intval($item['total'] ?? 0);
                                                                 }
                                                             @endphp
                                                             <ul class="list-unstyled mt-2">
                                                                 <li><i class="fas fa-print mr-1"></i> <strong>Blanco/Negro:</strong> {{ $totalBN }}</li>
                                                                 <li><i class="fas fa-palette mr-1"></i> <strong>Color:</strong> {{ $totalColor }}</li>
                                                                 <li><i class="fas fa-expand mr-1"></i> <strong>Doble Carta:</strong> {{ $totalDoble }}</li>
-                                                                <li><i class="fas fa-calculator mr-1"></i> <strong>Total:</strong> {{ $totalBN + $totalColor + $totalDoble }}</li>
+                                                                <li><i class="fas fa-print-search mr-1"></i> <strong>Impresión:</strong> {{ $totalImpresion }}</li>
+                                                                <li><i class="fas fa-calculator mr-1"></i> <strong>Total Páginas:</strong> {{ $totalPaginas }}</li>
+                                                                <li><i class="fas fa-sum mr-1"></i> <strong>Total Items:</strong> {{ $totalBN + $totalColor + $totalDoble + $totalImpresion }}</li>
                                                             </ul>
                                                         @else
                                                             <p class="text-muted mt-2">No hay detalles de impresión disponibles.</p>
@@ -588,7 +651,7 @@ $(document).ready(function() {
             order: [[0, 'desc']],
             pageLength: 25,
             columnDefs: [
-                { targets: [4, 5, 6, 7, 8, 9], orderable: false }
+                { targets: [4, 5, 6, 7, 8, 9, 10], orderable: false }
             ]
         });
     }
