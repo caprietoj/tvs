@@ -1,0 +1,79 @@
+/* Estilos compactos adicionales para la vista de préstamos */
+
+/* Tabla compacta */
+.table-loans {
+    font-size: 0.85rem !important;
+}
+
+.table-loans td, 
+.table-loans th {
+    padding: 0.4rem 0.5rem !important;
+    vertical-align: middle;
+}
+
+/* Botones de acción más compactos */
+.action-icon-btn {
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    border-radius: 4px !important;
+    margin-right: 3px !important;
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.action-icon-btn i {
+    font-size: 0.8rem !important;
+}
+
+/* Badges más compactos */
+.table-loans .badge {
+    font-size: 0.75rem !important;
+    padding: 0.25em 0.65em !important;
+}
+
+/* Formulario de filtros más compacto */
+#filterForm label {
+    font-size: 0.85rem !important;
+    margin-bottom: 0.2rem !important;
+}
+
+#filterForm .form-control,
+#filterForm .input-group .input-group-text {
+    font-size: 0.85rem !important;
+    padding: 0.25rem 0.5rem !important;
+    height: calc(1.5em + 0.5rem + 2px) !important;
+}
+
+#filterForm .mb-3 {
+    margin-bottom: 0.5rem !important;
+}
+
+#filterForm .mb-2 {
+    margin-bottom: 0.4rem !important;
+}
+
+#filterForm .custom-control-label {
+    font-size: 0.85rem !important;
+}
+
+#filterForm .custom-control-label::before,
+#filterForm .custom-control-label::after {
+    width: 0.85rem !important;
+    height: 0.85rem !important;
+    top: 0.15rem !important;
+}
+
+#filterForm .btn-sm {
+    padding: 0.15rem 0.5rem !important;
+    font-size: 0.75rem !important;
+}
+
+/* Alertas más compactas */
+.alert-sm {
+    padding: 0.4rem 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+}

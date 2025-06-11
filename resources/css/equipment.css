@@ -1,0 +1,23 @@
+#availability-info {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+#availability-info ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+#availability-info li {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.time-slot-occupied {
+    color: #dc3545;
+}
+
+.time-slot-available {
+    color: #28a745;
+}

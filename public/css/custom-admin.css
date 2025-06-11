@@ -1,0 +1,347 @@
+:root {
+    --primary: #364E76;
+    --hover: rgba(52, 152, 219, 0.1);
+    --active: rgba(52, 152, 219, 0.2);
+}
+
+/* Base styles */
+.main-sidebar {
+    background: linear-gradient(165deg, #364E76 0%, #1a2035 100%);
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+/* Estilos generales del menú */
+.nav-sidebar {
+    margin-top: 1rem;
+    padding: 1rem 0.5rem;
+}
+
+/* Estilo para los items del menú principal */
+.nav-sidebar > .nav-item {
+    margin-bottom: 0.5rem;
+    margin: 4px 0;
+}
+
+.nav-sidebar .nav-item > .nav-link {
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    margin: 0.2rem 0.8rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    margin: 2px 5px;
+    border-radius: 6px;
+    color: rgba(255,255,255,0.8);
+    font-size: 0.9rem;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+}
+
+/* Efecto hover mejorado */
+.nav-sidebar .nav-item > .nav-link:hover {
+    background-color: var(--hover);
+    transform: translateX(4px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Hover effect */
+.nav-sidebar .nav-link:hover:not(.active) {
+    color: #fff;
+    padding-left: 1.2rem;
+    background: rgba(255,255,255,0.05);
+}
+
+/* Estado activo */
+.nav-sidebar .nav-item > .nav-link.active {
+    background: var(--active);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Active state */
+.nav-sidebar .nav-link.active {
+    background: transparent !important;
+    color: #fff !important;
+    font-weight: 500;
+}
+
+.nav-sidebar .nav-link.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #E2E6EA, transparent);
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Submenús */
+.nav-treeview {
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 1px solid rgba(255,255,255,0.1);
+    margin-top: 0.3rem;
+    margin-bottom: 0.3rem;
+    padding-left: 1rem;
+    margin-left: 0.5rem;
+    border-left: 1px solid rgba(255,255,255,0.1);
+}
+
+.nav-treeview > .nav-item > .nav-link {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    opacity: 0.85;
+    transition: all 0.3s ease;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    opacity: 0.75;
+}
+
+.nav-treeview .nav-link:hover {
+    opacity: 1;
+}
+
+/* Animación para el despliegue del submenú */
+.nav-treeview {
+    transform-origin: top;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.nav-item.menu-is-opening > .nav-treeview {
+    transform: scaleY(1);
+    opacity: 1;
+}
+
+.nav-item:not(.menu-is-opening) > .nav-treeview {
+    transform: scaleY(0);
+    opacity: 0;
+    display: none;
+}
+
+/* Indicador de submenú */
+.nav-item > .nav-link > .nav-icon {
+    margin-right: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+/* Icons */
+.nav-icon {
+    width: 1.5rem;
+    text-align: center;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+    opacity: 0.8;
+    transition: transform 0.2s ease;
+}
+
+.nav-link:hover .nav-icon {
+    transform: translateX(3px);
+    opacity: 1;
+}
+
+.nav-link.active .nav-icon {
+    color: #E2E6EA;
+    opacity: 1;
+}
+
+/* Efectos de hover */
+.nav-link {
+    position: relative;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary), transparent);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+/* Animación del ícono en hover */
+.nav-link:hover .nav-icon {
+    transform: scale(1.1);
+}
+
+/* Estilo para menús activos */
+.menu-open > .nav-link {
+    font-weight: 500;
+}
+
+/* Parent menu indicator */
+.nav-item.has-treeview > .nav-link::after {
+    content: '';
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-50%) rotate(45deg);
+    transition: transform 0.2s ease;
+}
+
+.nav-item.menu-open > .nav-link::after {
+    transform: translateY(-50%) rotate(-135deg);
+}
+
+/* Espaciado entre secciones principales */
+.nav-header {
+    margin-top: 1.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.5);
+    padding: 1rem 1rem 0.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.4);
+}
+
+/* Animación de entrada para todos los items */
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.nav-sidebar .nav-item {
+    animation: fadeInLeft 0.3s ease-out forwards;
+    animation-delay: calc(var(--item-index) * 0.05s);
+}
+
+/* Animations */
+@keyframes slideIn {
+    from { width: 0; opacity: 0; }
+    to { width: 100%; opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.nav-item {
+    animation: fadeIn 0.3s ease-out forwards;
+    animation-delay: calc(var(--item-index) * 0.05s);
+}
+
+/* Indicador de nivel de profundidad */
+.nav-treeview .nav-link::before {
+    content: '';
+    position: absolute;
+    left: -1rem;
+    top: 50%;
+    width: 0.5rem;
+    height: 1px;
+    background-color: rgba(255,255,255,0.2);
+}
+
+/* Efecto de pulso para items activos */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.nav-link.active {
+    animation: pulse 2s infinite;
+}
+
+/* Indicador de cantidad de subitems */
+.nav-item[data-items]::after {
+    content: attr(data-items);
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    background: rgba(255,255,255,0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+}
+
+/* Ripple effect */
+.ripple {
+    background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 75%);
+    mix-blend-mode: overlay;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .nav-sidebar {
+        padding: 0.5rem;
+    }
+    
+    .nav-link {
+        padding: 0.6rem 0.8rem;
+    }
+}
+
+/* Mejoras para la navegación activa */
+.nav-sidebar .nav-item.menu-open > .nav-link,
+.nav-sidebar .nav-item.menu-is-opening > .nav-link {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.nav-sidebar .nav-treeview .nav-item > .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Indicador visual para menú padre activo */
+.nav-sidebar .nav-item.menu-is-opening > .nav-link::before,
+.nav-sidebar .nav-item.menu-open > .nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: #fff;
+    border-radius: 0 2px 2px 0;
+}
+
+/* Animación suave para la transición del menú */
+.nav-sidebar .nav-link {
+    transition: all 0.3s ease;
+}
+
+/* Efecto de hover persistente para menú activo */
+.nav-sidebar .nav-item.menu-is-opening > .nav-link:hover,
+.nav-sidebar .nav-item.menu-open > .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateX(4px);
+}
+
+/* Mejorar visibilidad del submenú activo */
+.nav-treeview {
+    background-color: rgba(255, 255, 255, 0.05);
+    margin: 0 1rem;
+    border-radius: 4px;
+}
+
+/* Estado activo del enlace actual */
+.nav-sidebar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+    font-weight: 500;
+}

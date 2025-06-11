@@ -1,0 +1,179 @@
+/* 
+* Institutional Styles for TVS Intranet
+* Primary Institutional Blue: #364E76
+*/
+
+/* Estilos generales */
+.bg-institutional, .card-header.bg-institutional {
+    background-color: #364E76 !important;
+    color: #fff !important;
+}
+
+.btn-institutional {
+    background-color: #364E76 !important;
+    color: #fff !important;
+    border-color: #2a3e5c !important;
+}
+
+.btn-institutional:hover {
+    background-color: #2a3e5c !important;
+    border-color: #1f2e44 !important;
+}
+
+.text-institutional {
+    color: #364E76 !important;
+}
+
+/* Sobrescribir estilos de AdminLTE */
+.btn-primary {
+    background-color: #364E76 !important;
+    border-color: #2a3e5c !important;
+}
+
+.btn-primary:hover, .btn-primary:active, .btn-primary:focus {
+    background-color: #2a3e5c !important;
+    border-color: #1f2e44 !important;
+}
+
+/* Estilos para formularios */
+.form-control:focus {
+    border-color: #364E76 !important;
+    box-shadow: 0 0 0 0.2rem rgba(54, 78, 118, 0.25) !important;
+}
+
+/* Estilos para secciones de habilidades */
+#skills-section .card-header, 
+#space-skills-section .card-header {
+    background-color: #364E76 !important;
+    color: #fff !important;
+}
+
+.accordion .btn-link {
+    text-decoration: none;
+}
+
+/* Botones del acordeón dentro de card-body (sin fondo azul) */
+.accordion .card-body .btn-link {
+    color: #364E76 !important;
+}
+
+.accordion .card-body .btn-link:hover, 
+.accordion .card-body .btn-link:focus {
+    color: #2a3e5c !important;
+}
+
+/* Botones del acordeón dentro de card-header (con fondo azul) */
+.accordion .card-header .btn-link {
+    color: white !important;
+}
+
+.accordion .card-header .btn-link:hover, 
+.accordion .card-header .btn-link:focus {
+    color: #f0f0f0 !important;
+}
+
+/* Custom checkbox y switch */
+.custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #364E76 !important;
+    border-color: #2a3e5c !important;
+}
+
+.custom-checkbox .custom-control-input:checked ~ .custom-control-label::before,
+.custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #364E76 !important;
+    border-color: #2a3e5c !important;
+}
+
+/* Estilos para los títulos de sección */
+.card-header {
+    background-color: #364E76 !important;
+    color: white !important;
+}
+
+/* Corregir color del texto en botones dentro de card-header */
+.card-header .btn-link {
+    color: white !important;
+}
+
+.card-header .btn-link:hover,
+.card-header .btn-link:focus {
+    color: #f0f0f0 !important;
+    text-decoration: none;
+}
+
+/* Estilos específicos para las secciones */
+#skills-section .card-body h5,
+#space-skills-section .card-body h5 {
+    color: #364E76 !important;
+}
+
+.add-skill-btn {
+    color: #364E76 !important;
+    border-color: #364E76 !important;
+}
+
+.add-skill-btn:hover {
+    background-color: #364E76 !important;
+    color: white !important;
+}
+
+/* Estilos para implementos y préstamos */
+#space-items-section .card-header {
+    background-color: #364E76 !important;
+}
+
+/* Estilos para alertas e información */
+.alert-info {
+    border-left: 4px solid #364E76 !important;
+}
+
+/* Calendario y horarios */
+.fc-event {
+    background-color: #364E76 !important;
+    border-color: #2a3e5c !important;
+}
+
+.time-schedule-container .reserved-block {
+    background-color: #364E76 !important;
+}
+
+/* Enlaces y navegación */
+/* a.nav-link.active, 
+.nav-pills .nav-link.active {
+    background-color: #364E76 !important;
+}
+
+a {
+    color: #364E76 !important;
+}
+
+a:hover {
+    color: #2a3e5c !important;
+} */
+
+/* Estilos específicos para el acordeón de habilidades */
+#accordionSkills .card-header {
+    background-color: #364E76 !important;
+}
+
+#accordionSkills .card-header .btn-link {
+    color: white !important;
+    font-weight: 500;
+}
+
+#accordionSkills .card-header .btn-link:hover,
+#accordionSkills .card-header .btn-link:focus {
+    color: #f0f0f0 !important;
+    text-decoration: none;
+}
+
+/* Corregir contraste en el acordeón */
+#accordionSkills .card {
+    border: 1px solid rgba(54, 78, 118, 0.3);
+    margin-bottom: 5px;
+}
+
+/* Asegurar que en estado colapsado se vea bien */
+#accordionSkills .collapsed .btn-link {
+    color: white !important;
+}

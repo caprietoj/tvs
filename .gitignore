@@ -1,0 +1,246 @@
+/.phpunit.cache
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/app/public/*
+/vendor
+.env
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/auth.json
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+.qodo
+verify_equipment_fix.php
+verify_auto_return.php
+temp_db_check.php
+documentation
+
+# Test files and verification scripts
+test_*
+verify_*
+verify_*_
+check_carbon.php
+check_dates.php
+check_events_structure.php
+check_permissions.php
+check_skills.php
+check_table_structure.php
+cleanup_test_orders.php
+create_test_order.php
+debug_loan_requests.php
+debug_photocopies_dashboard.php
+debug_space_skills.php
+direct_check_permissions.php
+final_verification_pdf.php
+final_verification.php
+simple_check_permissions.php
+test_browser.html
+test_complete_dashboard.php
+test_controller_methods.php
+test_dashboard_2025.php
+test_dashboard_complete.php
+test_dashboard_final.php
+test_final_pdf_system.php
+test_official_order_format.php
+test_pdf_functionality.php
+test_pdf_generation.php
+test_photocopies_controller.php
+test_photocopies.php
+test_profesor_confirmation.php
+test_purchase_order_pdf.php
+test_purchase_orders_pdf_complete.php
+test_purchase_request_pdf.php
+test_purchase_requests_budget.php
+test_week_start.php
+test_week.php
+verify_final_system.php
+verify_profesor_permissions.php
+verify_skill_categories.php
+verify_skill_subcategories.php
+verify_week_config.php
+rastreador_emails_pre_aprobacion.php
+rastreador_emails_rechazo.php
+analisis_simplificado_emails.php
+diagnostico_detallado_pre_aprobacion.php
+check_carbon.php
+check_date.php
+check_dates.php
+check_events_structure.php
+check_permissions.php
+check_skills.php
+
+
+# Documentation files generated during development
+*.md
+
+# Routes files
+routes_list.txt
+routes.txt
+
+# Additional development files
+entrypoint.sh
+docker-compose.yml
+Dockerfile
+
+# More specific documentation patterns
+ANALISIS_*.md
+CORRECCIONES_*.md
+DOCUMENTACION_*.md
+MEJORA_*.md
+MODIFICACIONES_*.md
+RESUMEN_*.md
+SISTEMA_*.md
+SOLUCION_*.md
+
+# More specific PHP patterns
+*_diagnosis.php
+*_verification.php
+*admin_*.php
+*delivery_*.php
+rastreador_*.php
+verificacion_*.php
+clear_*.php
+find_*.php
+set_*.php
+detailed_*.php
+diagnostic_*.php
+diagnostico_*.php
+
+# HTML test files
+*.html
+
+# Specific files that should be ignored
+artisan.log
+composer.phar
+
+# Test files (all files starting with test_)
+test_*
+
+# Purchase orders directory (if not needed in production)
+purchase_orders/
+
+# Check files
+check_*
+check_*_
+
+# Debug files
+debug_*
+debug_*_
+
+# Diagnose files
+diagnose_*
+diagnose_*_
+
+# Simulation files
+simulate_*
+simulation_*
+
+# Verification files
+verify_*
+verification_*
+
+# Final verification files
+final_*_verification*
+final_*_check*
+final_admin_*
+
+# Analysis files
+analisis_*
+ANALISIS_*
+
+# Cleanup and temporary files
+cleanup_*
+temp_*
+clear_cache_*
+
+# Set status files
+set_*_status*
+
+# Create test files
+create_test_*
+
+# Find and search test files
+find_*
+
+# Fix files
+fix_*
+
+# Specific files visible in workspace
+ANALISIS_EMAILS_ORDENES_COMPRA.md
+CORRECCIONES_COMPLETADAS_FINAL.md
+DOCUMENTACION_CONTROL_ENTREGA_FOTOCOPIAS.md
+DOCUMENTACION_EMAILS_DIFERENCIADOS.md
+DOCUMENTACION_RESTRICCIONES_PROFESOR.md
+DOCUMENTACION_SISTEMA_EMAILS_MATERIALES_FINAL.md
+MEJORA_PLANTILLA_COMPLETADA.md
+MODIFICACIONES_DASHBOARD_FOTOCOPIAS.md
+RESUMEN_MEJORAS_COMPLETADAS.md
+RESUMEN_PROBLEMA_ADMIN_DASHBOARD.md
+SISTEMA_AUTORIZACION_COMPLETADO.md
+SISTEMA_COMPLETADO_FINAL.md
+SISTEMA_EMAILS_DIFERENCIADOS_FINAL.md
+SISTEMA_PDF_COMPLETADO.md
+SISTEMA_PERMISOS_SECCIONES_COMPLETADO.md
+SOLUCION_EMAILS_PRE_APROBACION.md
+SOLUCION_MENU_SOLICITUDES_COMPRA.md
+SOLUCION_PLANTILLA_PDF_FINAL.md
+
+# Specific PHP debug/test files
+check_carbon.php
+check_dates.php
+check_events_structure.php
+check_existing_data.php
+check_permissions.php
+check_profesor_permissions.php
+check_providers.php
+check_purchase_orders.php
+check_request_13.php
+check_skills.php
+check_table_structure.php
+cleanup_test_orders.php
+clear_cache_session.php
+create_test_order.php
+debug_admin_permissions.php
+debug_admin_roles.php
+debug_authorization_button.php
+debug_loan_requests.php
+debug_photocopies_dashboard.php
+debug_space_skills.php
+detailed_delivery_diagnosis.php
+diagnose_duplicate_numbers.php
+diagnose_number_conflict.php
+diagnose_pdf_attachment.php
+diagnostic_photocopy_delivery.php
+diagnostico_emails_pre_aprobacion.php
+direct_check_permissions.php
+final_admin_check.php
+final_admin_delivery_verification.php
+final_delivery_verification.php
+final_verification_pdf.php
+final_verification.php
+find_preapproved_requests.php
+fix_compras_permission_diagnosis.php
+fix_compras_permission.php
+set_preapproved_status.php
+simple_check_permissions.php
+simulate_approval_flow.php
+temp_db_check.php
+test_admin_auth.php
+test_browser.html
+test_complete_dashboard.php
+test_complete_final_system.php
+
+# Documentation files generated during development
+*.md

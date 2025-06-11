@@ -1,0 +1,8 @@
+// Fonts
+@use 'sass:color';
+@use 'sass:math';
+@use 'variables' as *;
+@use 'bootstrap/scss/bootstrap' as *;
+
+// Google Fonts - después de las reglas @use
+@import url('https://fonts.googleapis.com/css?family=Nunito');

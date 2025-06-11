@@ -1,0 +1,7 @@
+@use 'sass:color';
+@use 'sass:math';
+@use 'bootstrap/scss/bootstrap' with (
+  $enable-deprecation-messages: false,
+  $enable-gradients: true,
+  $enable-shadows: true
+);
