@@ -124,11 +124,6 @@ class ApprovalController extends Controller
             'notes' => $validated['comments'] ?? 'Solicitud aprobada definitivamente'
         ]);
 
-        // Crear automáticamente la orden de compra SOLO para solicitudes de compra
-        if ($purchaseRequest->type === 'purchase') {
-            $this->createPurchaseOrder($purchaseRequest);
-        }
-
         // Enviar notificación personalizada al usuario que realizó la solicitud
         if ($purchaseRequest->user) {
             $purchaseRequest->user->notify(new PurchaseRequestApproved($purchaseRequest, 'user'));

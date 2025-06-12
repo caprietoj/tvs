@@ -27,8 +27,8 @@ class PurchaseOrderPdfService
             // Obtener datos de la cotización seleccionada
             $quotation = $order->purchaseRequest->selectedQuotation;
             
-            // Configurar vista para el PDF (usando plantilla mejorada)
-            $view = view('purchases.orders.pdf_improved', [
+            // Configurar vista para el PDF (usando nueva plantilla HTML)
+            $view = view('purchase-orders.pdf-template-new', [
                 'order' => $order,
                 'purchaseRequest' => $order->purchaseRequest,
                 'quotation' => $quotation,
@@ -80,8 +80,8 @@ class PurchaseOrderPdfService
             // Obtener datos de la cotización seleccionada
             $quotation = $order->purchaseRequest->selectedQuotation;
             
-            // Configurar vista para el PDF (usando plantilla mejorada)
-            $view = view('purchases.orders.pdf_improved', [
+            // Configurar vista para el PDF (usando nueva plantilla HTML)
+            $view = view('purchase-orders.pdf-template-new', [
                 'order' => $order,
                 'purchaseRequest' => $order->purchaseRequest,
                 'quotation' => $quotation,

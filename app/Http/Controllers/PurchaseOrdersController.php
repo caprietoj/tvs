@@ -414,6 +414,103 @@ class PurchaseOrdersController extends Controller
     }
 
     /**
+     * Enviar la orden de compra a Compras
+     */
+    public function sendToCompras(PurchaseOrder $purchaseOrder)
+    {
+        try {
+            // Actualizar estado
+            $purchaseOrder->update([
+                'status' => 'sent_to_compras',
+                'sent_by' => Auth::id(),
+            ]);
+            
+            // Registrar en historial
+            RequestHistory::create([
+                'purchase_request_id' => $purchaseOrder->purchaseRequest->id,
+                'user_id' => Auth::id(),
+                'action' => 'Orden enviada a Compras',
+                'notes' => 'Enviada para gestión y procesamiento',
+            ]);
+            
+            // Enviar notificación
+            Notification::route('mail', 'compras@tvs.edu.co')
+                ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'compras'));
+            
+            return redirect()->back()->with('success', 'Orden de compra enviada a Compras exitosamente.');
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar orden a Compras: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al enviar la orden a Compras.');
+        }
+    }
+
+    /**
+     * Enviar la orden de compra a Contabilidad
+     */
+    public function sendToContabilidad(PurchaseOrder $purchaseOrder)
+    {
+        try {
+            // Actualizar estado
+            $purchaseOrder->update([
+                'status' => 'sent_to_accounting',
+                'sent_to_accounting_at' => now(),
+                'sent_by' => Auth::id(),
+            ]);
+            
+            // Registrar en historial
+            RequestHistory::create([
+                'purchase_request_id' => $purchaseOrder->purchaseRequest->id,
+                'user_id' => Auth::id(),
+                'action' => 'Orden enviada a Contabilidad',
+                'notes' => 'Enviada para registro contable',
+            ]);
+            
+            // Enviar notificación
+            Notification::route('mail', 'contabilidad@tvs.edu.co')
+                ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'contabilidad'));
+            
+            return redirect()->back()->with('success', 'Orden de compra enviada a Contabilidad exitosamente.');
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar orden a Contabilidad: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al enviar la orden a Contabilidad.');
+        }
+    }
+
+    /**
+     * Enviar la orden de compra a Tesorería
+     */
+    public function sendToTesoreria(PurchaseOrder $purchaseOrder)
+    {
+        try {
+            // Actualizar estado
+            $purchaseOrder->update([
+                'status' => 'sent_to_treasury',
+                'sent_by' => Auth::id(),
+            ]);
+            
+            // Registrar en historial
+            RequestHistory::create([
+                'purchase_request_id' => $purchaseOrder->purchaseRequest->id,
+                'user_id' => Auth::id(),
+                'action' => 'Orden enviada a Tesorería',
+                'notes' => 'Enviada para gestión de pagos',
+            ]);
+            
+            // Enviar notificación
+            Notification::route('mail', 'tesoreria@tvs.edu.co')
+                ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'tesoreria'));
+            
+            return redirect()->back()->with('success', 'Orden de compra enviada a Tesorería exitosamente.');
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar orden a Tesorería: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al enviar la orden a Tesorería.');
+        }
+    }
+
+    /**
      * Marcar la orden como pagada.
      */
     public function markAsPaid(Request $request, PurchaseOrder $purchaseOrder)

@@ -48,6 +48,22 @@
                     </a>
                 @endif
             @endif
+            
+            {{-- Botón para crear orden de compra manualmente --}}
+            @if($purchaseRequest->status == 'approved' && $purchaseRequest->type == 'purchase')
+                @php
+                    $existingOrder = \App\Models\PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->first();
+                @endphp
+                @if(!$existingOrder)
+                    <a href="{{ url('http://127.0.0.1:8000/purchase-orders') }}" class="btn btn-primary btn-sm mr-2" target="_blank">
+                        <i class="fas fa-file-invoice"></i> Crear Orden de Compra
+                    </a>
+                @else
+                    <a href="{{ route('purchase-orders.show', $existingOrder->id) }}" class="btn btn-info btn-sm mr-2">
+                        <i class="fas fa-eye"></i> Ver Orden de Compra
+                    </a>
+                @endif
+            @endif
         </div>
     </div>
 @stop

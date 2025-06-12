@@ -519,7 +519,7 @@ Route::middleware(['auth'])->group(function () {
     // Rutas para manejo del estado de entrega de fotocopias
     Route::post('purchase-requests/{purchaseRequest}/mark-delivery-status', [PurchaseRequestController::class, 'markDeliveryStatus'])
         ->name('purchase-requests.mark-delivery-status')
-        ->middleware('can:compras.manage');
+        ->middleware('role:compras|admin|almacen');
     
     // Rutas para PDF de solicitudes de compra
     Route::get('purchase-requests/{id}/pdf/download', [PurchaseRequestController::class, 'generatePdf'])
@@ -593,6 +593,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('purchase-orders.payment');
     Route::post('purchase-orders/{purchaseOrder}/send-to-accounting', [PurchaseOrdersController::class, 'sendToAccounting'])
         ->name('purchase-orders.send-to-accounting');
+    Route::post('purchase-orders/{purchaseOrder}/send-to-compras', [PurchaseOrdersController::class, 'sendToCompras'])
+        ->name('purchase-orders.send-to-compras');
+    Route::post('purchase-orders/{purchaseOrder}/send-to-contabilidad', [PurchaseOrdersController::class, 'sendToContabilidad'])
+        ->name('purchase-orders.send-to-contabilidad');
+    Route::post('purchase-orders/{purchaseOrder}/send-to-tesoreria', [PurchaseOrdersController::class, 'sendToTesoreria'])
+        ->name('purchase-orders.send-to-tesoreria');
     Route::post('purchase-orders/{purchaseOrder}/mark-as-paid', [PurchaseOrdersController::class, 'markAsPaid'])
         ->name('purchase-orders.mark-as-paid');
     Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrdersController::class, 'cancel'])

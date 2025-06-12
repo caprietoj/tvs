@@ -169,6 +169,34 @@
                                             <i class="fas fa-paper-plane"></i> Enviar a Contabilidad
                                         @endif
                                     </button>
+                                    
+                                    <!-- Botones para envío a departamentos específicos -->
+                                    <div class="btn-group" role="group">
+                                        <button id="sendToBtn" type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-share"></i> Enviar a Departamento
+                                        </button>
+                                        <div class="dropdown-menu" aria-labelledby="sendToBtn">
+                                            <form action="{{ route('purchase-orders.send-to-compras', $purchaseOrder->id) }}" method="POST" style="display: inline;">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item" onclick="return confirm('¿Enviar orden a Compras?')">
+                                                    <i class="fas fa-shopping-cart text-primary"></i> Compras
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('purchase-orders.send-to-contabilidad', $purchaseOrder->id) }}" method="POST" style="display: inline;">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item" onclick="return confirm('¿Enviar orden a Contabilidad?')">
+                                                    <i class="fas fa-calculator text-success"></i> Contabilidad
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('purchase-orders.send-to-tesoreria', $purchaseOrder->id) }}" method="POST" style="display: inline;">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item" onclick="return confirm('¿Enviar orden a Tesorería?')">
+                                                    <i class="fas fa-coins text-warning"></i> Tesorería
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    
                                     <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#cancelOrderModal">
                                         <i class="fas fa-times"></i> Cancelar
                                     </button>

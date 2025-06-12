@@ -846,7 +846,7 @@ class PurchaseRequestController extends Controller
     public function markDeliveryStatus(Request $request, PurchaseRequest $purchaseRequest)
     {
         // Verificar permisos
-        if (!Auth::user()->hasRole(['compras', 'admin']) && !Auth::user()->can('compras.manage')) {
+        if (!Auth::user()->hasRole(['compras', 'admin', 'almacen'])) {
             return redirect()->back()->with('error', 'No tienes permisos para marcar el estado de entrega.');
         }
 
