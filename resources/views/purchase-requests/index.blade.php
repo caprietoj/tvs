@@ -36,6 +36,48 @@
                 </div>
             @endif
 
+            <!-- Filtros -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <form method="GET" action="{{ route('purchase-requests.index') }}" class="form-inline">
+                        <div class="form-group mr-3">
+                            <label for="type" class="mr-2"><strong>Filtrar por tipo:</strong></label>
+                            <select name="type" id="type" class="form-control">
+                                <option value="">Todos los tipos</option>
+                                <option value="purchase" {{ $typeFilter === 'purchase' ? 'selected' : '' }}>
+                                    Compra
+                                </option>
+                                <option value="materials" {{ $typeFilter === 'materials' ? 'selected' : '' }}>
+                                    Materiales
+                                </option>
+                                <option value="copies" {{ $typeFilter === 'copies' ? 'selected' : '' }}>
+                                    Fotocopias
+                                </option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary mr-2">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                            <a href="{{ route('purchase-requests.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-md-6 text-right">
+                    @if($typeFilter)
+                        <span class="badge badge-info">
+                            Mostrando: 
+                            @if($typeFilter === 'purchase') Compras
+                            @elseif($typeFilter === 'materials') Materiales
+                            @elseif($typeFilter === 'copies') Fotocopias
+                            @endif
+                        </span>
+                    @endif
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-bordered table-striped" id="requestsTable">
                     <thead>

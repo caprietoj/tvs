@@ -85,7 +85,7 @@ class PurchaseRequestController extends Controller
     /**
     * Display a listing of the resource.
     */
-    public function index()
+    public function index(Request $request)
     {
         $permissionService = new PurchaseRequestPermissionService();
         
@@ -93,11 +93,34 @@ class PurchaseRequestController extends Controller
         $query = PurchaseRequest::query();
         $query = $permissionService->applyQueryFilters($query);
         
+        // Filtro por tipo si se especifica
+        $typeFilter = $request->get('type');
+        if ($typeFilter && in_array($typeFilter, ['purchase', 'materials', 'copies'])) {
+            if ($typeFilter === 'purchase') {
+                $query->where('type', 'purchase');
+            } elseif ($typeFilter === 'materials') {
+                $query->where('type', 'materials')
+                      ->where(function($q) {
+                          $q->whereNull('copy_items')
+                            ->orWhereRaw('JSON_LENGTH(copy_items) = 0');
+                      });
+            } elseif ($typeFilter === 'copies') {
+                $query->where('type', 'materials')
+                      ->where(function($q) {
+                          $q->whereNotNull('copy_items')
+                            ->whereRaw('JSON_LENGTH(copy_items) > 0');
+                      });
+            }
+        }
+        
         $requests = $query->with('user')
             ->orderBy('created_at', 'desc')
             ->paginate(10);
         
-        return view('purchase-requests.index', compact('requests'));
+        // Mantener los parámetros de filtro en la paginación
+        $requests->appends($request->query());
+        
+        return view('purchase-requests.index', compact('requests', 'typeFilter'));
     }
 
     /**
