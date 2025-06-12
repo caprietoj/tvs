@@ -470,6 +470,10 @@ class PurchaseOrdersController extends Controller
             Notification::route('mail', 'contabilidad@tvs.edu.co')
                 ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'contabilidad'));
             
+            // Notificar también a compras@tvs.edu.co para que esté al tanto
+            Notification::route('mail', 'compras@tvs.edu.co')
+                ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'compras_copy'));
+            
             return redirect()->back()->with('success', 'Orden de compra enviada a Contabilidad exitosamente.');
             
         } catch (\Exception $e) {
@@ -501,6 +505,10 @@ class PurchaseOrdersController extends Controller
             // Enviar notificación
             Notification::route('mail', 'tesoreria@tvs.edu.co')
                 ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'tesoreria'));
+            
+            // Notificar también a compras@tvs.edu.co para que esté al tanto
+            Notification::route('mail', 'compras@tvs.edu.co')
+                ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'compras_copy'));
             
             return redirect()->back()->with('success', 'Orden de compra enviada a Tesorería exitosamente.');
             

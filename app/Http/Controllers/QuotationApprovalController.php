@@ -103,26 +103,57 @@ class QuotationApprovalController extends Controller
             $sectionClassifier = new \App\Services\SectionClassifierService();
             $directorEmail = $sectionClassifier->getDirectorEmail($purchaseRequest->section_area);
             
+            // Obtener emails específicos de la sección
+            $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area);
+            
+            // Crear lista de todos los emails que deben ser notificados
+            $allEmails = [];
+            
+            // Agregar director
+            if ($directorEmail) {
+                $allEmails[] = $directorEmail;
+            }
+            
+            // Agregar emails específicos de la sección
+            if (!empty($sectionEmails)) {
+                $allEmails = array_merge($allEmails, $sectionEmails);
+            }
+            
+            // Agregar compras@tvs.edu.co siempre
+            $allEmails[] = 'compras@tvs.edu.co';
+            
+            // Eliminar duplicados
+            $allEmails = array_unique($allEmails);
+            
             // Registrar en log a quién se está enviando la notificación
-            \Log::info('Enviando notificación de pre-aprobación al director', [
+            \Log::info('Enviando notificación de pre-aprobación', [
                 'purchase_request' => $purchaseRequest->request_number,
                 'section' => $purchaseRequest->section_area,
                 'classification' => $sectionClassifier->classifySection($purchaseRequest->section_area),
                 'director_email' => $directorEmail,
+                'section_emails' => $sectionEmails,
+                'all_emails' => $allEmails,
                 'quotation_id' => $quotation->id,
                 'provider' => $quotation->provider_name
             ]);
             
-            // Enviar notificación al director correspondiente
-            Notification::route('mail', $directorEmail)
-                ->notify(new \App\Notifications\QuotationPreApproved($purchaseRequest, $directorEmail, $quotation));
-            
-            // Notificar al solicitante
-            if ($purchaseRequest->user) {
-                $purchaseRequest->user->notify(new \App\Notifications\QuotationPreApproved($purchaseRequest, $purchaseRequest->user->email, $quotation));
+            // Enviar notificaciones a todos los emails relevantes
+            foreach ($allEmails as $email) {
+                Notification::route('mail', $email)
+                    ->notify(new \App\Notifications\QuotationPreApproved($purchaseRequest, $email, $quotation));
+                \Log::info("Notificación de pre-aprobación enviada a: $email");
             }
             
-            \Log::info('Notificaciones de pre-aprobación enviadas correctamente');
+            // Notificar al solicitante por separado
+            if ($purchaseRequest->user) {
+                $purchaseRequest->user->notify(new \App\Notifications\QuotationPreApproved($purchaseRequest, $purchaseRequest->user->email, $quotation));
+                \Log::info('Notificación de pre-aprobación enviada al solicitante: ' . $purchaseRequest->user->email);
+            }
+            
+            \Log::info('Notificaciones de pre-aprobación enviadas correctamente', [
+                'emails_sent' => count($allEmails) + ($purchaseRequest->user ? 1 : 0),
+                'recipients' => array_merge($allEmails, $purchaseRequest->user ? [$purchaseRequest->user->email] : [])
+            ]);
             
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificación de pre-aprobación: ' . $e->getMessage(), [

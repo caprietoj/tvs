@@ -100,10 +100,8 @@ return [
     ],
 
     // Correos adicionales que siempre deben ser notificados (independientemente de la sección)
-    // COMENTADO: 'always_notify' causa que jefesistemas reciba todos los emails
-    // Solo se debe usar para emails que verdaderamente necesiten ir a todos
     'always_notify' => [
-        // Email de sistemas comentado temporalmente para solucionar problema de pre-aprobaciones
+        'compras@tvs.edu.co', // Compras debe estar notificado en todas las etapas del flujo
     ],
 
     // Correo predeterminado cuando no se encuentra una sección específica

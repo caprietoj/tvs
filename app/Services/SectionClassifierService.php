@@ -90,4 +90,45 @@ class SectionClassifierService
         // Si no se encuentra configuración específica, devolver array vacío
         return [];
     }
+
+    /**
+     * Obtener los correos específicos de una sección para notificaciones de pre-aprobación
+     *
+     * @param string $sectionName Nombre de la sección
+     * @return array Lista de correos electrónicos de la sección
+     */
+    public function getSectionEmails(string $sectionName): array
+    {
+        $sections = Config::get('section_emails.sections', []);
+        
+        // Buscar coincidencia exacta primero
+        if (isset($sections[$sectionName])) {
+            $emails = $sections[$sectionName];
+            // Si es un string, convertir a array
+            if (is_string($emails)) {
+                return [$emails];
+            }
+            // Si ya es un array, devolverlo
+            if (is_array($emails)) {
+                return $emails;
+            }
+        }
+        
+        // Buscar coincidencias parciales
+        foreach ($sections as $section => $emails) {
+            if (stripos($sectionName, $section) !== false || stripos($section, $sectionName) !== false) {
+                // Si es un string, convertir a array
+                if (is_string($emails)) {
+                    return [$emails];
+                }
+                // Si ya es un array, devolverlo
+                if (is_array($emails)) {
+                    return $emails;
+                }
+            }
+        }
+        
+        // Si no se encuentra configuración específica, devolver array vacío
+        return [];
+    }
 }
