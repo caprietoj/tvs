@@ -586,6 +586,59 @@
                         </div>
                     @endif
                     
+                    <!-- Archivos Adjuntos Múltiples -->
+                    @if($purchaseRequest->isCopiesRequest() && $purchaseRequest->attached_files && count($purchaseRequest->attached_files) > 0)
+                        <div class="card card-info card-outline mt-3">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-paperclip mr-2"></i>
+                                    Archivos Adjuntos ({{ count($purchaseRequest->attached_files) }})
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    @foreach($purchaseRequest->attached_files as $index => $file)
+                                        <div class="col-md-6 mb-3">
+                                            <div class="border rounded p-3">
+                                                <div class="d-flex align-items-center justify-content-between">
+                                                    <div>
+                                                        <p class="mb-1">
+                                                            <i class="fas fa-file-alt mr-2 text-info"></i>
+                                                            <strong>{{ $file['original_name'] ?? 'Archivo ' . ($index + 1) }}</strong>
+                                                        </p>
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-weight-hanging mr-1"></i>
+                                                            Tamaño: {{ isset($file['size']) ? number_format($file['size'] / 1024, 1) : '0' }} KB
+                                                            @if(isset($file['uploaded_at']))
+                                                                <br><i class="fas fa-clock mr-1"></i>
+                                                                Subido: {{ \Carbon\Carbon::parse($file['uploaded_at'])->format('d/m/Y H:i') }}
+                                                            @endif
+                                                        </small>
+                                                    </div>
+                                                    <div>
+                                                        @if(isset($file['file_path']))
+                                                            <a href="{{ route('purchase-requests.download-attached-file', ['id' => $purchaseRequest->id, 'fileIndex' => $index]) }}" 
+                                                               class="btn btn-outline-info btn-sm" title="Descargar archivo">
+                                                                <i class="fas fa-download"></i>
+                                                            </a>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="alert alert-light border-0 mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Estos son los archivos originales que necesitan ser fotocopiados. 
+                                        Puede descargarlos para revisar el contenido antes de proceder con las fotocopias.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    
                     <!-- Especificaciones de Fotocopias -->
                     @if($purchaseRequest->isCopiesRequest() && 
                         ($purchaseRequest->paper_size || $purchaseRequest->paper_type || $purchaseRequest->paper_color || 
