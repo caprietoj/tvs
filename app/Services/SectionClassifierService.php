@@ -100,35 +100,49 @@ class SectionClassifierService
     public function getSectionEmails(string $sectionName): array
     {
         $sections = Config::get('section_emails.sections', []);
+        $result = [];
         
         // Buscar coincidencia exacta primero
         if (isset($sections[$sectionName])) {
             $emails = $sections[$sectionName];
             // Si es un string, convertir a array
             if (is_string($emails)) {
-                return [$emails];
+                $result = [$emails];
             }
-            // Si ya es un array, devolverlo
-            if (is_array($emails)) {
-                return $emails;
+            // Si ya es un array, usarlo
+            elseif (is_array($emails)) {
+                $result = $emails;
+            }
+        } else {
+            // Buscar coincidencias parciales
+            foreach ($sections as $section => $emails) {
+                if (stripos($sectionName, $section) !== false || stripos($section, $sectionName) !== false) {
+                    // Si es un string, convertir a array
+                    if (is_string($emails)) {
+                        $result = [$emails];
+                    }
+                    // Si ya es un array, usarlo
+                    elseif (is_array($emails)) {
+                        $result = $emails;
+                    }
+                    break;
+                }
             }
         }
         
-        // Buscar coincidencias parciales
-        foreach ($sections as $section => $emails) {
-            if (stripos($sectionName, $section) !== false || stripos($section, $sectionName) !== false) {
-                // Si es un string, convertir a array
-                if (is_string($emails)) {
-                    return [$emails];
-                }
-                // Si ya es un array, devolverlo
-                if (is_array($emails)) {
-                    return $emails;
-                }
+        // Si no se encuentra configuración específica, usar el valor por defecto
+        if (empty($result)) {
+            $default = Config::get('section_emails.default');
+            if ($default) {
+                $result = is_array($default) ? $default : [$default];
             }
         }
         
-        // Si no se encuentra configuración específica, devolver array vacío
-        return [];
+        // Asegurarse que compras@tvs.edu.co esté siempre incluido
+        if (!in_array('compras@tvs.edu.co', $result)) {
+            $result[] = 'compras@tvs.edu.co';
+        }
+        
+        return $result;
     }
 }

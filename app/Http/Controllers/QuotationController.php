@@ -101,11 +101,17 @@ class QuotationController extends Controller
             
             // Si ya hay 3 cotizaciones, notificar a la sección correspondiente
             if ($quotationCount >= 3) {
-                // Obtener correos de la sección correspondiente
+                // Obtener correos de la sección correspondiente (ya incluye compras@tvs.edu.co según la nueva implementación)
                 $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
                 
                 // Añadir correos adicionales que siempre deben ser notificados
                 $additionalEmails = config('section_emails.always_notify', []);
+                
+                // Asegurar que compras@tvs.edu.co esté incluido
+                if (!in_array('compras@tvs.edu.co', $additionalEmails)) {
+                    $additionalEmails[] = 'compras@tvs.edu.co';
+                }
+                
                 $allEmails = array_unique(array_merge($sectionEmails, $additionalEmails));
                 
                 \Log::info('Preparando envío de notificación de cotizaciones completas', [

@@ -41,6 +41,7 @@ class PurchaseRequestController extends Controller
 
         try {
             // Email para el área de compras (con botón de acción)
+            // Siempre enviar a compras@tvs.edu.co como está especificado en los requisitos
             Mail::to('compras@tvs.edu.co')
                 ->send(new PurchaseRequestCreatedCompras($purchaseRequest));
             

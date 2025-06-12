@@ -114,13 +114,15 @@ class QuotationApprovalController extends Controller
                 $allEmails[] = $directorEmail;
             }
             
-            // Agregar emails específicos de la sección
+            // Agregar emails específicos de la sección (ya incluye compras@tvs.edu.co según la nueva implementación)
             if (!empty($sectionEmails)) {
                 $allEmails = array_merge($allEmails, $sectionEmails);
             }
             
-            // Agregar compras@tvs.edu.co siempre
-            $allEmails[] = 'compras@tvs.edu.co';
+            // Agregar compras@tvs.edu.co siempre (doble verificación)
+            if (!in_array('compras@tvs.edu.co', $allEmails)) {
+                $allEmails[] = 'compras@tvs.edu.co';
+            }
             
             // Eliminar duplicados
             $allEmails = array_unique($allEmails);
