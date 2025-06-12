@@ -104,16 +104,14 @@
                 <td colspan="3">{{ $order->provider->nombre ?? 'IDENTIDAD PÚBLICA DISEÑO Y MEDIOS PUBLICITARIOS SAS' }}</td>
                 <td class="bold">SECCION</td>
                 <td>{{ $order->purchaseRequest->section_area ?? '' }}</td>
-            </tr>
-            <tr>
+            </tr>            <tr>
                 <td class="bold">NIT.</td>
-                <td colspan="3">{{ $order->provider->documento ?? '' }}</td>
+                <td colspan="3">{{ $order->provider->nit ?? '' }}</td>
                 <td></td>
                 <td></td>
-            </tr>
-            <tr>
+            </tr>            <tr>
                 <td class="bold">ATENCION</td>
-                <td colspan="3">{{ $order->provider->contacto ?? '' }}</td>
+                <td colspan="3">{{ $order->provider->persona_contacto ?? '' }}</td>
                 <td class="bold">TELEFONO</td>
                 <td>{{ $order->provider->telefono ?? '' }}</td>
             </tr>

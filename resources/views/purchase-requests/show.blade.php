@@ -50,7 +50,7 @@
             @endif
             
             {{-- Botón para crear orden de compra manualmente --}}
-            @if($purchaseRequest->status == 'approved' && $purchaseRequest->type == 'purchase')
+            @if(($purchaseRequest->status == 'approved' || $purchaseRequest->status == 'in_process') && $purchaseRequest->type == 'purchase')
                 @php
                     $existingOrder = \App\Models\PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->first();
                 @endphp
@@ -106,14 +106,14 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="timeline-step {{ $purchaseRequest->status == 'approved' ? 'active' : '' }}">
+                        <div class="timeline-step {{ ($purchaseRequest->status == 'approved' || $purchaseRequest->status == 'in_process') ? 'active' : '' }}">
                             <div class="timeline-content">
-                                <div class="inner-circle {{ $purchaseRequest->status == 'approved' ? 'bg-success' : 'bg-secondary' }}">
+                                <div class="inner-circle {{ ($purchaseRequest->status == 'approved' || $purchaseRequest->status == 'in_process') ? 'bg-success' : 'bg-secondary' }}">
                                     <i class="fas fa-check"></i>
                                 </div>
                                 <p class="h6 mt-3 mb-1">Aprobada</p>
                                 <p class="h6 text-muted mb-0 mb-lg-0">
-                                    {{ $purchaseRequest->status == 'approved' && $purchaseRequest->approval_date ? $purchaseRequest->approval_date->format('d/m/Y') : '' }}
+                                    {{ ($purchaseRequest->status == 'approved' || $purchaseRequest->status == 'in_process') && $purchaseRequest->approval_date ? $purchaseRequest->approval_date->format('d/m/Y') : '' }}
                                 </p>
                             </div>
                         </div>
@@ -135,12 +135,12 @@
                     <div class="card-tools">
                         <span class="badge 
                             @if($purchaseRequest->status == 'pending') badge-warning 
-                            @elseif($purchaseRequest->status == 'approved') badge-success 
+                            @elseif($purchaseRequest->status == 'approved' || $purchaseRequest->status == 'in_process') badge-success 
                             @elseif($purchaseRequest->status == 'En Cotización') badge-info
                             @elseif($purchaseRequest->status == 'Pre-aprobada') badge-warning
                             @else badge-danger @endif">
                             @if($purchaseRequest->status == 'pending') Pendiente 
-                            @elseif($purchaseRequest->status == 'approved') Aprobada 
+                            @elseif($purchaseRequest->status == 'approved' || $purchaseRequest->status == 'in_process') Aprobada 
                             @elseif($purchaseRequest->status == 'En Cotización') En Cotización
                             @elseif($purchaseRequest->status == 'Pre-aprobada') Pre-aprobada
                             @else Rechazada @endif

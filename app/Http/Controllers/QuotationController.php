@@ -343,6 +343,23 @@ class QuotationController extends Controller
     }
 
     /**
+     * Mostrar los detalles de una cotización específica
+     *
+     * @param Quotation $quotation
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Quotation $quotation)
+    {
+        // Verificar permisos
+        $this->authorize('view', $quotation);
+        
+        // Obtener la solicitud de compra asociada
+        $purchaseRequest = $quotation->purchaseRequest;
+        
+        return view('purchases.quotations.show', compact('quotation', 'purchaseRequest'));
+    }
+    
+    /**
      * Obtener los correos electrónicos de la sección especificada
      * 
      * @param string $section_area Nombre de la sección o área

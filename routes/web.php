@@ -559,6 +559,9 @@ Route::middleware(['auth'])->group(function () {
         ->name('quotations.ask-for-more');
     Route::post('quotations/process-more/{purchaseRequest}', [QuotationController::class, 'processMoreQuotations'])
         ->name('quotations.process-more');
+    // Ruta para ver detalles de una cotización (debe ir después de las rutas más específicas)
+    Route::get('quotations/{quotation}', [QuotationController::class, 'show'])
+        ->name('quotations.show');
     
     // Ruta para envío de email de pre-aprobación
     Route::post('quotations/send-preapproval/{purchaseRequest}', [QuotationController::class, 'sendPreApprovalEmail'])

@@ -40,7 +40,7 @@ class PurchaseOrdersController extends Controller
             
         // Obtener las solicitudes aprobadas pendientes de generar órdenes de compra
         $approvedRequests = PurchaseRequest::with(['selectedQuotation', 'user', 'approver'])
-            ->where('status', 'approved')
+            ->whereIn('status', ['approved', 'in_process'])
             ->whereNotIn('id', function($query) {
                 $query->select('purchase_request_id')
                     ->from('purchase_orders')
@@ -59,7 +59,7 @@ class PurchaseOrdersController extends Controller
     public function create(PurchaseRequest $purchaseRequest)
     {
         // Verificar que la solicitud esté aprobada
-        if ($purchaseRequest->status !== 'approved') {
+        if (!in_array($purchaseRequest->status, ['approved', 'in_process'])) {
             return redirect()->route('purchase-requests.show', $purchaseRequest->id)
                 ->with('error', 'Solo se pueden generar órdenes de compra para solicitudes aprobadas.');
         }
@@ -91,7 +91,7 @@ class PurchaseOrdersController extends Controller
         $purchaseRequest = PurchaseRequest::findOrFail($purchaseRequestId);
         
         // Verificar que la solicitud esté aprobada
-        if ($purchaseRequest->status !== 'approved') {
+        if (!in_array($purchaseRequest->status, ['approved', 'in_process'])) {
             return redirect()->route('purchase-orders.index')->with('error', 'Solo se pueden crear órdenes de compra para solicitudes aprobadas.');
         }
         
@@ -164,8 +164,8 @@ class PurchaseOrdersController extends Controller
             // Actualizar la ruta del archivo
             $order->update(['file_path' => $pdfPath]);
             
-            // Actualizar el estado de la solicitud
-            $purchaseRequest->update(['status' => 'in_process']);
+            // NO cambiar el estado de la solicitud - debe permanecer como 'approved'
+            // La solicitud ya fue aprobada y la orden de compra es el resultado de esa aprobación
             
             DB::commit();
             
@@ -194,6 +194,12 @@ class PurchaseOrdersController extends Controller
      */
     public function edit(PurchaseOrder $purchaseOrder)
     {
+        // Solo administradores pueden editar órdenes de compra
+        if (!auth()->user()->hasRole('admin')) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'No tienes permisos para editar órdenes de compra.');
+        }
+
         // Solo se pueden editar órdenes pendientes
         if ($purchaseOrder->status !== 'pending') {
             return redirect()->route('purchase-orders.show', $purchaseOrder->id)
@@ -208,6 +214,12 @@ class PurchaseOrdersController extends Controller
      */
     public function update(Request $request, PurchaseOrder $purchaseOrder)
     {
+        // Solo administradores pueden actualizar órdenes de compra
+        if (!auth()->user()->hasRole('admin')) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'No tienes permisos para editar órdenes de compra.');
+        }
+
         // Solo se pueden actualizar órdenes pendientes
         if ($purchaseOrder->status !== 'pending') {
             return redirect()->route('purchase-orders.show', $purchaseOrder->id)

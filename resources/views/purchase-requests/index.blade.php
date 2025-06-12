@@ -70,6 +70,8 @@
                                         <span class="badge badge-warning">Pendiente</span>
                                     @elseif($request->status == 'approved')
                                         <span class="badge badge-success">Aprobada</span>
+                                    @elseif($request->status == 'in_process')
+                                        <span class="badge badge-success">Aprobada</span>
                                     @elseif($request->status == 'rejected')
                                         <span class="badge badge-danger">Rechazada</span>
                                     @elseif($request->status == 'En Cotización')

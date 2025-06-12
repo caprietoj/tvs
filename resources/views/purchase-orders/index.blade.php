@@ -157,7 +157,7 @@
                                 <a href="{{ route('purchase-orders.show', $order->id) }}" class="btn btn-sm btn-info">
                                     <i class="fas fa-eye"></i> Ver
                                 </a>
-                                @if($order->isPending())
+                                @if($order->isPending() && auth()->user()->hasRole('admin'))
                                 <a href="{{ route('purchase-orders.edit', $order->id) }}" class="btn btn-sm btn-primary">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
