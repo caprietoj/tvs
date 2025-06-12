@@ -419,14 +419,20 @@ class PurchaseRequest extends Model
         
         if ($this->copy_items && is_array($this->copy_items)) {
             foreach ($this->copy_items as $item) {
-                $copiesRequired = isset($item['copies_required']) ? intval($item['copies_required']) : 0;
-                $doubleLetterColor = isset($item['double_letter_color']) ? intval($item['double_letter_color']) : 0;
-                $blackWhite = isset($item['black_white']) ? intval($item['black_white']) : 0;
-                $color = isset($item['color']) ? intval($item['color']) : 0;
-                
-                // Sumar todas las copias solicitadas para este item
-                $itemTotal = $copiesRequired + $doubleLetterColor + $blackWhite + $color;
-                $total += $itemTotal;
+                // Priorizar el campo 'total' si existe (es el cálculo real: original * copias_requeridas)
+                if (isset($item['total']) && intval($item['total']) > 0) {
+                    $total += intval($item['total']);
+                } else {
+                    // Fallback para datos existentes que no tienen el campo 'total'
+                    $copiesRequired = isset($item['copies_required']) ? intval($item['copies_required']) : 0;
+                    $doubleLetterColor = isset($item['double_letter_color']) ? intval($item['double_letter_color']) : 0;
+                    $blackWhite = isset($item['black_white']) ? intval($item['black_white']) : 0;
+                    $color = isset($item['color']) ? intval($item['color']) : 0;
+                    
+                    // Sumar todas las copias solicitadas para este item (lógica anterior)
+                    $itemTotal = $copiesRequired + $doubleLetterColor + $blackWhite + $color;
+                    $total += $itemTotal;
+                }
             }
         }
         
