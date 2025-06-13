@@ -138,6 +138,9 @@
                                     @case('pending')
                                         <span class="badge badge-warning">Pendiente</span>
                                         @break
+                                    @case('approved')
+                                        <span class="badge badge-success">Aprobado</span>
+                                        @break
                                     @case('sent_to_accounting')
                                         <span class="badge badge-info">Enviado a Contabilidad</span>
                                         @break
@@ -157,10 +160,17 @@
                                 <a href="{{ route('purchase-orders.show', $order->id) }}" class="btn btn-sm btn-info">
                                     <i class="fas fa-eye"></i> Ver
                                 </a>
-                                @if($order->isPending() && auth()->user()->hasRole('admin'))
+                                @if(($order->isPending() || ($order->status == 'approved' && auth()->user()->hasRole('admin'))) && auth()->user()->hasRole('admin'))
                                 <a href="{{ route('purchase-orders.edit', $order->id) }}" class="btn btn-sm btn-primary">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
+                                <form action="{{ route('purchase-orders.destroy', $order->id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de que desea eliminar esta orden de compra?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </button>
+                                </form>
                                 @endif
                             </td>
                         </tr>

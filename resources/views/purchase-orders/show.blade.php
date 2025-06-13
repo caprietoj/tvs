@@ -57,6 +57,14 @@
                             <a href="{{ route('purchase-orders.view', $purchaseOrder->id) }}" class="btn btn-sm btn-outline-info" target="_blank">
                                 <i class="fas fa-eye"></i> Ver PDF
                             </a>
+                            @if(($purchaseOrder->isPending() || ($purchaseOrder->status == 'approved' && auth()->user()->hasRole('admin'))) && auth()->user()->hasRole('admin'))
+                                <a href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteOrderModal">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -101,6 +109,9 @@
                                         @case('pending')
                                             <span class="badge badge-warning">Pendiente</span>
                                             @break
+                                        @case('approved')
+                                            <span class="badge badge-success">Aprobado</span>
+                                            @break
                                         @case('sent_to_accounting')
                                             <span class="badge badge-info">Enviado a Contabilidad</span>
                                             @break
@@ -114,6 +125,14 @@
                                             <span class="badge badge-secondary">{{ $purchaseOrder->status }}</span>
                                     @endswitch
                                 </dd>
+                                
+                                @if($purchaseOrder->approved_at)
+                                <dt class="col-sm-5">Aprobado el:</dt>
+                                <dd class="col-sm-7">{{ $purchaseOrder->approved_at->format('d/m/Y H:i') }}</dd>
+                                
+                                <dt class="col-sm-5">Aprobado por:</dt>
+                                <dd class="col-sm-7">{{ $purchaseOrder->approver->name ?? 'N/A' }}</dd>
+                                @endif
                                 
                                 @if($purchaseOrder->sent_to_accounting_at)
                                 <dt class="col-sm-5">Enviado a Contabilidad:</dt>
@@ -162,6 +181,11 @@
                                     <a href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}" class="btn btn-primary">
                                         <i class="fas fa-edit"></i> Editar
                                     </a>
+                                    @if(auth()->user()->hasRole('admin'))
+                                    <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#approveOrderModal">
+                                        <i class="fas fa-check-circle"></i> Aprobar Orden
+                                    </button>
+                                    @endif
                                     <button type="button" class="btn btn-success" data-toggle="modal" data-target="#sendToAccountingModal">
                                         @if($purchaseOrder->purchaseRequest->isCopiesRequest() || $purchaseOrder->purchaseRequest->isMaterialsRequest())
                                             <i class="fas fa-check"></i> Autorizar Orden
@@ -356,6 +380,71 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
                     <button type="submit" class="btn btn-danger">Confirmar Cancelación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para eliminar orden de compra -->
+<div class="modal fade" id="deleteOrderModal" tabindex="-1" role="dialog" aria-labelledby="deleteOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form action="{{ route('purchase-orders.destroy', $purchaseOrder->id) }}" method="POST">
+                @csrf
+                @method('DELETE')
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteOrderModalLabel">Eliminar Orden de Compra</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>¡Advertencia!</strong> Esta acción eliminará permanentemente la orden de compra y no se puede deshacer.
+                    </div>
+                    <p>¿Está seguro de que desea eliminar la orden de compra <strong>{{ $purchaseOrder->order_number }}</strong>?</p>
+                    <p><strong>Solicitud asociada:</strong> {{ $purchaseOrder->purchaseRequest->request_number ?? 'N/A' }}</p>
+                    <p><strong>Proveedor:</strong> {{ $purchaseOrder->provider->nombre ?? 'N/A' }}</p>
+                    <p><strong>Monto:</strong> ${{ number_format($purchaseOrder->total_amount, 2, ',', '.') }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar Orden
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para aprobar orden de compra -->
+<div class="modal fade" id="approveOrderModal" tabindex="-1" role="dialog" aria-labelledby="approveOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form action="{{ route('purchase-orders.approve', $purchaseOrder->id) }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="approveOrderModalLabel">Aprobar Orden de Compra</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Al aprobar esta orden, pasará al estado "Aprobado" y podrá ser editada o eliminada solo por administradores.
+                    </div>
+                    <p>¿Está seguro de que desea aprobar la orden de compra <strong>{{ $purchaseOrder->order_number }}</strong>?</p>
+                    <p><strong>Solicitud asociada:</strong> {{ $purchaseOrder->purchaseRequest->request_number ?? 'N/A' }}</p>
+                    <p><strong>Proveedor:</strong> {{ $purchaseOrder->provider->nombre ?? 'N/A' }}</p>
+                    <p><strong>Monto:</strong> ${{ number_format($purchaseOrder->total_amount, 2, ',', '.') }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-check-circle"></i> Aprobar Orden
+                    </button>
                 </div>
             </form>
         </div>

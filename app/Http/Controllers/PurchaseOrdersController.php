@@ -200,10 +200,10 @@ class PurchaseOrdersController extends Controller
                 ->with('error', 'No tienes permisos para editar órdenes de compra.');
         }
 
-        // Solo se pueden editar órdenes pendientes
-        if ($purchaseOrder->status !== 'pending') {
+        // Se pueden editar órdenes pendientes o aprobadas (solo admin)
+        if (!in_array($purchaseOrder->status, ['pending', 'approved'])) {
             return redirect()->route('purchase-orders.show', $purchaseOrder->id)
-                ->with('error', 'No se puede editar una orden que ya ha sido procesada.');
+                ->with('error', 'No se puede editar una orden que ya ha sido procesada o enviada.');
         }
         
         return view('purchase-orders.edit', compact('purchaseOrder'));
@@ -220,10 +220,10 @@ class PurchaseOrdersController extends Controller
                 ->with('error', 'No tienes permisos para editar órdenes de compra.');
         }
 
-        // Solo se pueden actualizar órdenes pendientes
-        if ($purchaseOrder->status !== 'pending') {
+        // Se pueden actualizar órdenes pendientes o aprobadas (solo admin)
+        if (!in_array($purchaseOrder->status, ['pending', 'approved'])) {
             return redirect()->route('purchase-orders.show', $purchaseOrder->id)
-                ->with('error', 'No se puede editar una orden que ya ha sido procesada.');
+                ->with('error', 'No se puede editar una orden que ya ha sido procesada o enviada.');
         }
         
         // Validar datos
@@ -371,6 +371,42 @@ class PurchaseOrdersController extends Controller
             \Log::error('Error al visualizar el PDF para orden #' . $purchaseOrder->id . ': ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al procesar la visualización del PDF. Por favor contacte al administrador del sistema.');
         }
+    }
+
+    /**
+     * Aprobar una orden de compra.
+     */
+    public function approve(PurchaseOrder $purchaseOrder)
+    {
+        // Solo administradores pueden aprobar órdenes de compra
+        if (!auth()->user()->hasRole('admin')) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'No tienes permisos para aprobar órdenes de compra.');
+        }
+
+        // Solo se pueden aprobar órdenes pendientes
+        if ($purchaseOrder->status !== 'pending') {
+            return redirect()->route('purchase-orders.show', $purchaseOrder->id)
+                ->with('error', 'Solo se pueden aprobar órdenes pendientes.');
+        }
+        
+        // Actualizar estado de la orden
+        $purchaseOrder->update([
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => Auth::id(),
+        ]);
+        
+        // Registrar en historial
+        RequestHistory::create([
+            'purchase_request_id' => $purchaseOrder->purchaseRequest->id,
+            'user_id' => Auth::id(),
+            'action' => 'Orden de compra aprobada',
+            'notes' => 'Orden ' . $purchaseOrder->order_number . ' aprobada por administrador',
+        ]);
+        
+        return redirect()->route('purchase-orders.show', $purchaseOrder->id)
+            ->with('success', 'La orden de compra ha sido aprobada correctamente.');
     }
 
     /**
@@ -594,5 +630,37 @@ class PurchaseOrdersController extends Controller
         
         return redirect()->route('purchase-orders.show', $purchaseOrder->id)
             ->with('success', 'La orden de compra ha sido cancelada.');
+    }
+
+    /**
+     * Eliminar una orden de compra.
+     */
+    public function destroy(PurchaseOrder $purchaseOrder)
+    {
+        // Solo administradores pueden eliminar órdenes de compra
+        if (!auth()->user()->hasRole('admin')) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'No tienes permisos para eliminar órdenes de compra.');
+        }
+
+        // Se pueden eliminar órdenes pendientes o aprobadas (solo admin)
+        if (!in_array($purchaseOrder->status, ['pending', 'approved'])) {
+            return redirect()->route('purchase-orders.show', $purchaseOrder->id)
+                ->with('error', 'No se puede eliminar una orden que ya ha sido procesada o enviada.');
+        }
+        
+        // Registrar en historial antes de eliminar
+        RequestHistory::create([
+            'purchase_request_id' => $purchaseOrder->purchaseRequest->id,
+            'user_id' => Auth::id(),
+            'action' => 'Orden de compra eliminada',
+            'notes' => 'Orden ' . $purchaseOrder->order_number . ' eliminada por el administrador',
+        ]);
+        
+        // Eliminar la orden de compra
+        $purchaseOrder->delete();
+        
+        return redirect()->route('purchase-orders.index')
+            ->with('success', 'La orden de compra ha sido eliminada correctamente.');
     }
 }

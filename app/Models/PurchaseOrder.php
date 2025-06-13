@@ -37,6 +37,8 @@ class PurchaseOrder extends Model
         'cancelled_at',
         'cancelled_by',
         'cancellation_reason',
+        'approved_at',
+        'approved_by',
     ];
 
     /**
@@ -49,6 +51,7 @@ class PurchaseOrder extends Model
         'payment_date' => 'date',
         'sent_to_accounting_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'approved_at' => 'datetime',
         'includes_iva' => 'boolean',
         'additional_items' => 'array',
     ];
@@ -94,6 +97,14 @@ class PurchaseOrder extends Model
     }
 
     /**
+     * Obtener el usuario que aprobó la orden.
+     */
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
      * Comprobar si la orden está pendiente.
      */
     public function isPending()
@@ -123,6 +134,14 @@ class PurchaseOrder extends Model
     public function isCancelled()
     {
         return $this->status === 'cancelled';
+    }
+
+    /**
+     * Comprobar si la orden está aprobada.
+     */
+    public function isApproved()
+    {
+        return $this->status === 'approved';
     }
 
     /**
