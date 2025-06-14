@@ -50,14 +50,22 @@ window.initializeEquipmentRequest = function(elements) {
         const tomorrow = new Date(today);
         tomorrow.setDate(today.getDate() + 1);
         
-        // Calcular el fin de semana y activar la semana siguiente los viernes
+        // Calcular el fin de semana y activar la semana siguiente los viernes, sábados y domingos
         const endOfWeek = new Date(today);
         const dayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
         
-        if (dayOfWeek === 5) { // Si es viernes, permitir reservar para toda la próxima semana
-            endOfWeek.setDate(today.getDate() + 9); // Hoy (viernes) + 9 días = domingo de la próxima semana
-        } else if (dayOfWeek === 0) { // Si es domingo
-            endOfWeek.setDate(today.getDate() + 7); // Próximo domingo
+        if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) { 
+            // Si es viernes (5), sábado (6) o domingo (0), permitir reservar para toda la próxima semana
+            if (dayOfWeek === 5) {
+                // Viernes: +9 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 9);
+            } else if (dayOfWeek === 6) {
+                // Sábado: +8 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 8);
+            } else {
+                // Domingo: +7 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 7);
+            }
         } else {
             endOfWeek.setDate(today.getDate() + (7 - dayOfWeek)); // Domingo de esta semana
         }
@@ -408,14 +416,22 @@ window.initializeEquipmentRequest = function(elements) {
         tomorrow.setDate(today.getDate() + 1);
         tomorrow.setHours(0, 0, 0, 0); // Normalizar a inicio del día
         
-        // Calcular el fin de semana y activar la semana siguiente los viernes
+        // Calcular el fin de semana y activar la semana siguiente los viernes, sábados y domingos
         const endOfWeek = new Date(today);
         const dayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
         
-        if (dayOfWeek === 5) { // Si es viernes, permitir reservar para toda la próxima semana
-            endOfWeek.setDate(today.getDate() + 9); // Hoy (viernes) + 9 días = domingo de la próxima semana
-        } else if (dayOfWeek === 0) { // Si es domingo
-            endOfWeek.setDate(today.getDate() + 7); // Próximo domingo
+        if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) { 
+            // Si es viernes (5), sábado (6) o domingo (0), permitir reservar para toda la próxima semana
+            if (dayOfWeek === 5) {
+                // Viernes: +9 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 9);
+            } else if (dayOfWeek === 6) {
+                // Sábado: +8 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 8);
+            } else {
+                // Domingo: +7 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 7);
+            }
         } else {
             endOfWeek.setDate(today.getDate() + (7 - dayOfWeek)); // Domingo de esta semana
         }
@@ -482,14 +498,22 @@ window.initializeEquipmentRequest = function(elements) {
         tomorrow.setDate(today.getDate() + 1);
         tomorrow.setHours(0, 0, 0, 0); // Normalizar a inicio del día
         
-        // Calcular el fin de semana y activar la semana siguiente los viernes
+        // Calcular el fin de semana y activar la semana siguiente los viernes, sábados y domingos
         const endOfWeek = new Date(today);
         const dayOfWeek = today.getDay();
         
-        if (dayOfWeek === 5) { // Si es viernes, permitir reservar para toda la próxima semana
-            endOfWeek.setDate(today.getDate() + 9); // Hoy (viernes) + 9 días = domingo de la próxima semana
-        } else if (dayOfWeek === 0) { // Si es domingo
-            endOfWeek.setDate(today.getDate() + 7); // Próximo domingo
+        if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) { 
+            // Si es viernes (5), sábado (6) o domingo (0), permitir reservar para toda la próxima semana
+            if (dayOfWeek === 5) {
+                // Viernes: +9 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 9);
+            } else if (dayOfWeek === 6) {
+                // Sábado: +8 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 8);
+            } else {
+                // Domingo: +7 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 7);
+            }
         } else {
             endOfWeek.setDate(today.getDate() + (7 - dayOfWeek)); // Domingo de esta semana
         }
@@ -1136,10 +1160,18 @@ window.initializeEquipmentRequest = function(elements) {
         const endOfWeek = new Date(today);
         const dayOfWeek = today.getDay();
         
-        if (dayOfWeek === 5) { // Si es viernes, permitir reservar para toda la próxima semana
-            endOfWeek.setDate(today.getDate() + 9); // Hoy (viernes) + 9 días = domingo de la próxima semana
-        } else if (dayOfWeek === 0) { // Si es domingo
-            endOfWeek.setDate(today.getDate() + 7); // Próximo domingo
+        if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) { 
+            // Si es viernes (5), sábado (6) o domingo (0), permitir reservar para toda la próxima semana
+            if (dayOfWeek === 5) {
+                // Viernes: +9 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 9);
+            } else if (dayOfWeek === 6) {
+                // Sábado: +8 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 8);
+            } else {
+                // Domingo: +7 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 7);
+            }
         } else {
             endOfWeek.setDate(today.getDate() + (7 - dayOfWeek)); // Domingo de esta semana
         }

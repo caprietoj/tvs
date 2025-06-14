@@ -4,14 +4,14 @@
 
 @section('content_header')
     <h1 class="text-primary">Solicitud de Préstamo de Equipo</h1>
-    <p class="text-muted">Complete todos los campos para solicitar un préstamo de equipo. <strong>Las reservas solo pueden realizarse para días de mañana en adelante, y los viernes puede reservar para toda la próxima semana.</strong></p>
+    <p class="text-muted">Complete todos los campos para solicitar un préstamo de equipo. <strong>Las reservas solo pueden realizarse para días de mañana en adelante, y los viernes, sábados y domingos puede reservar para toda la próxima semana.</strong></p>
 @stop
 
 @section('content')
 <div class="alert alert-info alert-dismissible">
     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
     <h5><i class="icon fas fa-info"></i> Información importante</h5>
-    <p>Los días viernes puede reservar equipos para toda la semana siguiente. Los demás días solo hasta el domingo de la semana actual.</p>
+    <p>Los días viernes, sábados y domingos puede reservar equipos para toda la semana siguiente. Los demás días solo hasta el domingo de la semana actual.</p>
 </div>
 <div class="row">
     <div class="col-md-7">
@@ -103,13 +103,13 @@
                                 <label><i class="fas fa-calendar-alt"></i> Fecha del Préstamo</label>
                                 <input type="date" name="loan_date" class="form-control @error('loan_date') is-invalid @enderror" required 
                                        min="{{ date('Y-m-d', strtotime('+1 day')) }}" 
-                                       max="{{ date('Y-m-d', date('w') == 5 ? strtotime('+9 day') : (date('w') == 0 ? strtotime('+7 day') : strtotime('next sunday'))) }}"
+                                       max="{{ date('Y-m-d', (date('w') == 5 || date('w') == 6 || date('w') == 0) ? (date('w') == 5 ? strtotime('+9 day') : (date('w') == 6 ? strtotime('+8 day') : strtotime('+7 day'))) : strtotime('next sunday')) }}"
                                        value="{{ old('loan_date', date('Y-m-d', strtotime('+1 day'))) }}"
                                        id="loan-date-input">
                                 @error('loan_date')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <small class="form-text text-muted">Los viernes puede reservar para toda la próxima semana, otros días solo hasta el domingo actual</small>
+                                <small class="form-text text-muted">Los viernes, sábados y domingos puede reservar para toda la próxima semana, otros días solo hasta el domingo actual</small>
                             </div>
                         </div>
                         <div class="col-md-4">

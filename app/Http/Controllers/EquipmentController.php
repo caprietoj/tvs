@@ -147,11 +147,19 @@ class EquipmentController extends Controller
             
             // Determinar la fecha máxima permitida según el día de la semana
             $today = now();
-            if ($today->dayOfWeek === 5) { // Si hoy es viernes (5)
+            if ($today->dayOfWeek === 5 || $today->dayOfWeek === 6 || $today->dayOfWeek === 0) { 
+                // Si hoy es viernes (5), sábado (6) o domingo (0)
                 // Permitir reservar para toda la próxima semana (hasta el domingo siguiente)
-                $endOfWeek = $today->copy()->addDays(9)->format('Y-m-d');
-            } else if ($today->dayOfWeek === 0) { // Si hoy es domingo (0)
-                $endOfWeek = $today->copy()->addDays(7)->format('Y-m-d'); // Próximo domingo
+                if ($today->dayOfWeek === 5) {
+                    // Viernes: +9 días = domingo de la próxima semana
+                    $endOfWeek = $today->copy()->addDays(9)->format('Y-m-d');
+                } else if ($today->dayOfWeek === 6) {
+                    // Sábado: +8 días = domingo de la próxima semana
+                    $endOfWeek = $today->copy()->addDays(8)->format('Y-m-d');
+                } else {
+                    // Domingo: +7 días = domingo de la próxima semana
+                    $endOfWeek = $today->copy()->addDays(7)->format('Y-m-d');
+                }
             } else {
                 $endOfWeek = $today->copy()->endOfWeek()->format('Y-m-d'); // Domingo de esta semana
             }
@@ -557,11 +565,19 @@ class EquipmentController extends Controller
         
         // Determinar la fecha máxima permitida según el día de la semana
         $today = now();
-        if ($today->dayOfWeek === 5) { // Si hoy es viernes (5)
+        if ($today->dayOfWeek === 5 || $today->dayOfWeek === 6 || $today->dayOfWeek === 0) { 
+            // Si hoy es viernes (5), sábado (6) o domingo (0)
             // Permitir reservar para toda la próxima semana (hasta el domingo siguiente)
-            $endOfWeek = $today->copy()->addDays(9)->format('Y-m-d');
-        } else if ($today->dayOfWeek === 0) { // Si hoy es domingo (0)
-            $endOfWeek = $today->copy()->addDays(7)->format('Y-m-d'); // Próximo domingo
+            if ($today->dayOfWeek === 5) {
+                // Viernes: +9 días = domingo de la próxima semana
+                $endOfWeek = $today->copy()->addDays(9)->format('Y-m-d');
+            } else if ($today->dayOfWeek === 6) {
+                // Sábado: +8 días = domingo de la próxima semana
+                $endOfWeek = $today->copy()->addDays(8)->format('Y-m-d');
+            } else {
+                // Domingo: +7 días = domingo de la próxima semana
+                $endOfWeek = $today->copy()->addDays(7)->format('Y-m-d');
+            }
         } else {
             $endOfWeek = $today->copy()->endOfWeek()->format('Y-m-d'); // Domingo de esta semana
         }
