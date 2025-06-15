@@ -584,6 +584,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('purchase-orders.edit');
     Route::put('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'update'])
         ->name('purchase-orders.update');
+    Route::delete('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'destroy'])
+        ->name('purchase-orders.destroy');
     Route::get('purchase-orders/{purchaseOrder}/download', [PurchaseOrdersController::class, 'download'])
         ->name('purchase-orders.download');
     Route::get('purchase-orders/{purchaseOrder}/view', [PurchaseOrdersController::class, 'view'])
