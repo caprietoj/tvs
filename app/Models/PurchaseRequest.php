@@ -490,13 +490,14 @@ class PurchaseRequest extends Model
                 \Log::error("Error al enviar notificación de auto-aprobación para solicitud #{$this->id}: " . $e->getMessage());
             }
             
-            // Notificar a compras@tvs.edu.co sobre la aprobación automática
+            // Notificar al correo de compras sobre la aprobación automática (usando configuración dinámica)
             try {
-                \Notification::route('mail', 'compras@tvs.edu.co')
+                $comprasEmail = config(\App\Services\DynamicSectionEmailsService::getCurrentConfigSource() . '.default');
+                \Notification::route('mail', $comprasEmail)
                     ->notify(new \App\Notifications\PurchaseRequestAutoApproved($this));
-                \Log::info("Notificación de auto-aprobación enviada a compras@tvs.edu.co para solicitud #{$this->id}");
+                \Log::info("Notificación de auto-aprobación enviada a {$comprasEmail} para solicitud #{$this->id}");
             } catch (\Exception $e) {
-                \Log::error("Error al enviar notificación de auto-aprobación a compras@tvs.edu.co para solicitud #{$this->id}: " . $e->getMessage());
+                \Log::error("Error al enviar notificación de auto-aprobación a compras para solicitud #{$this->id}: " . $e->getMessage());
             }
             
             return true;

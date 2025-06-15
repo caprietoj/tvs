@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nueva Solicitud de Compra</title>
+    <title>
+        @if($purchaseRequest->type == 'purchase')
+            Nueva Solicitud de Compra
+        @elseif($purchaseRequest->isCopiesRequest())
+            Nueva Solicitud de Fotocopias
+        @else
+            Nueva Solicitud de Materiales
+        @endif
+    </title>
     <style>
         /* Estilos base */
         body {
@@ -206,7 +214,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <h2>Nueva Solicitud de Compra</h2>
+            <h2>
+                @if($purchaseRequest->type == 'purchase')
+                    Nueva Solicitud de Compra
+                @elseif($purchaseRequest->isCopiesRequest())
+                    Nueva Solicitud de Fotocopias
+                @else
+                    Nueva Solicitud de Materiales
+                @endif
+            </h2>
             <div class="header-subtitle">Departamento de Compras - TVS</div>
             <div class="badge">
                 @if($purchaseRequest->type == 'purchase')
@@ -229,7 +245,11 @@
                 @else
                     materiales
                 @endif
-                </strong> que requiere su atención para el proceso de cotización y gestión.
+                </strong> que requiere su atención
+                @if($purchaseRequest->type == 'purchase')
+                    para el proceso de cotización y gestión
+                @endif
+                .
             </p>
             
             <div class="section">

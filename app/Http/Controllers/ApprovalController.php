@@ -124,36 +124,36 @@ class ApprovalController extends Controller
             'notes' => $validated['comments'] ?? 'Solicitud aprobada definitivamente'
         ]);
 
-        // Enviar notificación personalizada al usuario que realizó la solicitud
+        // CORREGIDO: Enviar notificación solo al usuario que realizó la solicitud
         if ($purchaseRequest->user) {
             $purchaseRequest->user->notify(new PurchaseRequestApproved($purchaseRequest, 'user'));
+            \Log::info('Notificación de aprobación enviada al usuario: ' . $purchaseRequest->user->email);
         }
         
-        // Enviar notificación a compras@tvs.edu.co y contabilidad@tvs.edu.co
+        // CORREGIDO: Enviar notificación SOLO a compras (no a directores ni coordinadores)
         try {
+            // Obtener email de compras desde configuración dinámica
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            
             // Verificar si es una solicitud de fotocopias para enviar emails diferenciados
             if ($purchaseRequest->isCopiesRequest()) {
                 // Para fotocopias: solo enviar a compras con plantilla específica
-                Notification::route('mail', 'compras@tvs.edu.co')
+                Notification::route('mail', $comprasEmail)
                     ->notify(new PurchaseRequestApproved($purchaseRequest, 'compras_fotocopias'));
                 
-                // Notificar a auxiliaralmacen@tvs.edu.co
-                Notification::route('mail', 'auxiliaralmacen@tvs.edu.co')
+                // Notificar a auxiliaralmacen solo para fotocopias
+                $auxiliaralmacenEmail = config($configSource . '.sections.Auxiliar Almacén', 'auxiliaralmacen@test.com');
+                Notification::route('mail', $auxiliaralmacenEmail)
                     ->notify(new PurchaseRequestApproved($purchaseRequest, 'auxiliaralmacen'));
                 
-                \Log::info('Notificaciones de fotocopias enviadas - compras y auxiliaralmacen para solicitud #' . $purchaseRequest->id);
+                \Log::info("Notificaciones de fotocopias enviadas - compras ({$comprasEmail}) y auxiliaralmacen ({$auxiliaralmacenEmail}) para solicitud #" . $purchaseRequest->id);
             } else {
-                // Para órdenes de compra normales: enviar a compras, contabilidad y tesorería
-                Notification::route('mail', 'compras@tvs.edu.co')
+                // CORREGIDO: Para órdenes de compra normales: enviar SOLO a compras (no a contabilidad ni tesorería)
+                Notification::route('mail', $comprasEmail)
                     ->notify(new PurchaseRequestApproved($purchaseRequest, 'compras'));
                 
-                Notification::route('mail', 'contabilidad@tvs.edu.co')
-                    ->notify(new PurchaseRequestApproved($purchaseRequest, 'contabilidad'));
-                
-                Notification::route('mail', 'tesoreria@tvs.edu.co')
-                    ->notify(new PurchaseRequestApproved($purchaseRequest, 'contabilidad'));
-                
-                \Log::info('Notificaciones de orden de compra enviadas - compras, contabilidad y tesorería para solicitud #' . $purchaseRequest->id);
+                \Log::info("Notificación de orden de compra enviada SOLO a compras ({$comprasEmail}) para solicitud #" . $purchaseRequest->id);
             }
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificaciones de aprobación: ' . $e->getMessage(), [
@@ -285,7 +285,7 @@ class ApprovalController extends Controller
             if (!$provider) {
                 $provider = \App\Models\Proveedor::create([
                     'name' => 'Proveedor Por Asignar',
-                    'email' => 'porAsignar@tvs.edu.co',
+                    'email' => 'porAsignar@test.com',
                     'phone' => '000-000-0000',
                     'address' => 'Por definir',
                     'contact_person' => 'Por asignar'

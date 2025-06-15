@@ -1,0 +1,263 @@
+# 🔄 GUÍA: CAMBIOS EN .ENV PARA PASAR DE PRUEBAS A PRODUCCIÓN
+
+## 🎯 OBJETIVO
+Esta guía explica **EXACTAMENTE** qué cambios hacer en el archivo `.env` para migrar desde correos de prueba (desarrollo/local) a correos reales (producción).
+
+---
+
+## 📧 DIFERENCIAS ENTRE ENTORNOS
+
+### 🧪 **DESARROLLO/LOCAL (ACTUAL)**
+- Correos de prueba: `@test.com`
+- Compras: `compras@test.com`
+- Configuración: `section-mail-test`
+
+### 🏭 **PRODUCCIÓN**
+- Correos reales: `@tvs.edu.co`
+- Compras: `compras@tvs.edu.co`
+- Configuración: `section_emails`
+
+---
+
+## 🔧 CAMBIOS REQUERIDOS EN .ENV
+
+### 1. **CAMBIAR ENTORNO DE APLICACIÓN**
+
+```bash
+# ANTES (Desarrollo)
+APP_ENV=local
+APP_DEBUG=false
+
+# DESPUÉS (Producción)
+APP_ENV=production
+APP_DEBUG=false
+```
+
+### 2. **DESACTIVAR MODO DE PRUEBAS**
+
+```bash
+# ANTES (Correos de prueba activos)
+EMAIL_TEST_MODE=true
+PURCHASE_REQUEST_TEST_MODE=true
+SECTION_EMAILS_CONFIG=section-mail-test
+
+# DESPUÉS (Correos reales activos)
+EMAIL_TEST_MODE=false
+PURCHASE_REQUEST_TEST_MODE=false
+SECTION_EMAILS_CONFIG=section_emails
+```
+
+### 3. **VERIFICAR URL DE APLICACIÓN**
+
+```bash
+# DESARROLLO
+APP_URL=http://intranet.tvs.edu.co
+
+# PRODUCCIÓN (verificar que sea correcta)
+APP_URL=https://intranet.tvs.edu.co
+```
+
+### 4. **MANTENER CONFIGURACIÓN DE CORREOS**
+
+```bash
+# ESTAS CONFIGURACIONES SE MANTIENEN IGUAL
+QUEUE_CONNECTION=sync                    # Para envío inmediato
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=intranet@tvs.edu.co
+MAIL_PASSWORD=voavfucimbpjnqsw
+MAIL_FROM_ADDRESS="intranet@tvs.edu.co"
+MAIL_FROM_NAME="Intranet The Victoria School"
+```
+
+---
+
+## 📝 ARCHIVO .ENV COMPLETO PARA PRODUCCIÓN
+
+```bash
+APP_NAME="Intranet The Victoria School"
+APP_ENV=production
+APP_KEY=base64:P9jb8Y1JBAVUTfzF6TF/Gdm7oDa7X/m9gqfr0t5tW3U=
+APP_DEBUG=false
+APP_TIMEZONE=America/Bogota
+APP_URL=https://intranet.tvs.edu.co
+
+APP_LOCALE=es
+APP_FALLBACK_LOCALE=en
+APP_FAKER_LOCALE=en_US
+
+APP_MAINTENANCE_DRIVER=file
+
+PHP_CLI_SERVER_WORKERS=4
+BCRYPT_ROUNDS=12
+
+LOG_CHANNEL=stack
+LOG_STACK=single
+LOG_DEPRECATIONS_CHANNEL=null
+LOG_LEVEL=debug
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=caprietoj-intranet
+DB_USERNAME=root
+DB_PASSWORD=
+
+SESSION_DRIVER=database
+SESSION_LIFETIME=120
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=null
+
+BROADCAST_CONNECTION=log
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=sync
+
+CACHE_STORE=database
+CACHE_PREFIX=
+
+MEMCACHED_HOST=127.0.0.1
+
+REDIS_CLIENT=phpredis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+MAIL_MAILER=smtp
+MAIL_SCHEME=null
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=intranet@tvs.edu.co
+MAIL_PASSWORD=voavfucimbpjnqsw
+MAIL_FROM_ADDRESS="intranet@tvs.edu.co"
+MAIL_FROM_NAME="${APP_NAME}"
+
+# Configuracion para la creacion del usuario del Sistema
+ADMIN_NAME="Cristian Andres Prieto J."
+ADMIN_EMAIL="jefesistemas@tvs.edu.co"
+ADMIN_PASSWORD="Cr1st1an2024*"
+
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_USE_PATH_STYLE_ENDPOINT=false
+
+VITE_APP_NAME="${APP_NAME}"
+
+# CONFIGURACIÓN DE PRODUCCIÓN
+EMAIL_TEST_MODE=false
+PURCHASE_REQUEST_TEST_MODE=false
+PURCHASE_REQUEST_DISABLE_EMAILS=false
+SECTION_EMAILS_CONFIG=section_emails
+```
+
+---
+
+## ⚡ PASOS PARA APLICAR LOS CAMBIOS
+
+### 1. **Hacer backup del .env actual**
+```bash
+cp .env .env.backup
+```
+
+### 2. **Editar las líneas específicas**
+```bash
+# Cambiar estas líneas exactas:
+APP_ENV=production
+EMAIL_TEST_MODE=false
+PURCHASE_REQUEST_TEST_MODE=false
+SECTION_EMAILS_CONFIG=section_emails
+```
+
+### 3. **Limpiar cachés después del cambio**
+```bash
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+```
+
+### 4. **Verificar configuración aplicada**
+```bash
+php artisan config:show app.env
+php artisan config:show mail
+```
+
+---
+
+## 🔍 VERIFICACIÓN POST-CAMBIO
+
+### ✅ **Lo que DEBE cambiar automáticamente:**
+
+| Aspecto | Desarrollo | Producción |
+|---------|------------|------------|
+| **Compras** | `compras@test.com` | `compras@tvs.edu.co` |
+| **Sistemas** | `jefesistemas@test.com` | `jefesistemas@tvs.edu.co` |
+| **Preescolar** | `preschool@test.com` | `preschool@tvs.edu.co` |
+| **Director General** | `generaldirector@test.com` | `generaldirector@tvs.edu.co` |
+| **Todos los demás** | `@test.com` | `@tvs.edu.co` |
+
+### 🧪 **Script de verificación:**
+```bash
+php verificacion_final_compras.php
+```
+
+**Salida esperada en producción:**
+```
+Entorno actual: production
+Correos de always_notify: compras@tvs.edu.co
+Config source: section_emails
+```
+
+---
+
+## ⚠️ CONSIDERACIONES IMPORTANTES
+
+### 🔒 **SEGURIDAD:**
+- Verificar que `APP_DEBUG=false` en producción
+- Cambiar `APP_ENV=production`
+- Usar HTTPS en `APP_URL` si está disponible
+
+### 📧 **CORREOS:**
+- Los correos de prueba (`@test.com`) **NO existen realmente**
+- Los correos de producción (`@tvs.edu.co`) **SÍ deben existir**
+- Verificar que las cuentas de correo estén activas
+
+### 🔄 **REVERSIÓN:**
+Para volver a desarrollo:
+```bash
+cp .env.backup .env
+php artisan config:clear
+```
+
+---
+
+## 🎯 RESUMEN DE CAMBIOS CRÍTICOS
+
+### ✅ **CAMBIOS OBLIGATORIOS:**
+1. `APP_ENV=production`
+2. `EMAIL_TEST_MODE=false`
+3. `SECTION_EMAILS_CONFIG=section_emails`
+
+### ✅ **RESULTADO ESPERADO:**
+- **Compras SIEMPRE recibe correos**: `compras@tvs.edu.co`
+- **Correos reales a personal real**: `@tvs.edu.co`
+- **Envío inmediato**: No se quedan en cola
+- **Sistema completamente funcional** en producción
+
+---
+
+## 🚀 CONFIRMACIÓN FINAL
+
+Después de aplicar los cambios:
+
+**✅ ANTES**: Correos de prueba (`@test.com`)
+**✅ DESPUÉS**: Correos reales (`@tvs.edu.co`)
+
+**🎯 COMPRAS SIEMPRE INCLUIDO**: `compras@tvs.edu.co`
+
+---
+
+*Guía creada: 14 de junio de 2025*
+*Sistema: Intranet The Victoria School*

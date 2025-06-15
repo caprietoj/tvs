@@ -14,8 +14,8 @@ class SectionClassifierService
      */
     public function classifySection(string $sectionName): string
     {
-        $academicSections = Config::get('section_emails.section_types.academic', []);
-        $administrativeSections = Config::get('section_emails.section_types.administrative', []);
+        $academicSections = DynamicSectionEmailsService::getConfig('section_types.academic', []);
+        $administrativeSections = DynamicSectionEmailsService::getConfig('section_types.administrative', []);
 
         // Verificar coincidencia exacta primero
         if (in_array($sectionName, $academicSections)) {
@@ -54,15 +54,15 @@ class SectionClassifierService
         $classification = $this->classifySection($sectionName);
         
         if ($classification == 'academic') {
-            return Config::get('section_emails.directors.academic');
+            return DynamicSectionEmailsService::getConfig('directors.academic');
         }
         
         if ($classification == 'administrative') {
-            return Config::get('section_emails.directors.administrative');
+            return DynamicSectionEmailsService::getConfig('directors.administrative');
         }
         
         // Si no se pudo clasificar, usar el correo administrativo por defecto
-        return Config::get('section_emails.directors.administrative');
+        return DynamicSectionEmailsService::getConfig('directors.administrative');
     }
 
     /**
@@ -73,22 +73,36 @@ class SectionClassifierService
      */
     public function getMaterialsApprovalEmails(string $sectionName): array
     {
-        $materialsEmails = Config::get('section_emails.materials_approval_emails', []);
+        $materialsEmails = DynamicSectionEmailsService::getConfig('materials_approval_emails', []);
+        $result = [];
         
         // Buscar coincidencia exacta primero
         if (isset($materialsEmails[$sectionName])) {
-            return (array) $materialsEmails[$sectionName];
-        }
-        
-        // Buscar coincidencias parciales
-        foreach ($materialsEmails as $section => $emails) {
-            if (stripos($sectionName, $section) !== false || stripos($section, $sectionName) !== false) {
-                return (array) $emails;
+            $result = (array) $materialsEmails[$sectionName];
+        } else {
+            // Buscar coincidencias parciales
+            foreach ($materialsEmails as $section => $emails) {
+                if (stripos($sectionName, $section) !== false || stripos($section, $sectionName) !== false) {
+                    $result = (array) $emails;
+                    break;
+                }
             }
         }
         
-        // Si no se encuentra configuración específica, devolver array vacío
-        return [];
+        // Si no se encuentra configuración específica, intentar con sección normal
+        if (empty($result)) {
+            $result = $this->getSectionEmails($sectionName);
+        }
+        
+        // Asegurarse que el correo de compras esté siempre incluido según la configuración activa
+        $alwaysNotify = DynamicSectionEmailsService::getConfig('always_notify', []);
+        foreach ($alwaysNotify as $email) {
+            if (!in_array($email, $result)) {
+                $result[] = $email;
+            }
+        }
+        
+        return $result;
     }
 
     /**
@@ -99,7 +113,7 @@ class SectionClassifierService
      */
     public function getSectionEmails(string $sectionName): array
     {
-        $sections = Config::get('section_emails.sections', []);
+        $sections = DynamicSectionEmailsService::getConfig('sections', []);
         $result = [];
         
         // Buscar coincidencia exacta primero
@@ -132,15 +146,18 @@ class SectionClassifierService
         
         // Si no se encuentra configuración específica, usar el valor por defecto
         if (empty($result)) {
-            $default = Config::get('section_emails.default');
+            $default = DynamicSectionEmailsService::getConfig('default');
             if ($default) {
                 $result = is_array($default) ? $default : [$default];
             }
         }
         
-        // Asegurarse que compras@tvs.edu.co esté siempre incluido
-        if (!in_array('compras@tvs.edu.co', $result)) {
-            $result[] = 'compras@tvs.edu.co';
+        // Asegurarse que el correo de compras esté siempre incluido según la configuración activa
+        $alwaysNotify = DynamicSectionEmailsService::getConfig('always_notify', []);
+        foreach ($alwaysNotify as $email) {
+            if (!in_array($email, $result)) {
+                $result[] = $email;
+            }
         }
         
         return $result;

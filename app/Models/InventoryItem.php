@@ -68,7 +68,11 @@ class InventoryItem extends Model
                 "Cantidad a comprar: {$this->cantidad_comprar}\n\n" .
                 "Este correo es generado automáticamente por el sistema de Inventario.",
                 function ($message) {
-                    $message->to('compras@tvs.edu.co')
+                    // Usar configuración dinámica para el correo de compras
+                    $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+                    $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+                    
+                    $message->to($comprasEmail)
                         ->subject('Alerta de Stock: ' . $this->producto);
                 }
             );

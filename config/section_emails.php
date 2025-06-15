@@ -38,6 +38,7 @@ return [
         // Otras áreas comunes
         'Contabilidad' => 'contabilidad@tvs.edu.co',
         'Compras' => 'compras@tvs.edu.co',
+        'Tesorería' => 'tesoreria@tvs.edu.co',
         'Recursos Humanos' => 'rrhh@tvs.edu.co',
         'Enfermería' => 'enfermeria@tvs.edu.co',
         'Psicología' => 'psicologia@tvs.edu.co',

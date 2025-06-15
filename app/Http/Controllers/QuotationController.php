@@ -7,6 +7,7 @@ use App\Models\Quotation;
 use App\Models\RequestHistory;
 use App\Models\User;
 use App\Notifications\QuotationsUploaded;
+use App\Notifications\QuotationsCompletedCompras;
 use App\Notifications\PurchaseRequestStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -99,53 +100,59 @@ class QuotationController extends Controller
                 ]);
             }
             
-            // Si ya hay 3 cotizaciones, notificar a la sección correspondiente
+            // Si ya hay 3 cotizaciones, notificar según el flujo corregido
             if ($quotationCount >= 3) {
-                // Obtener correos de la sección correspondiente (ya incluye compras@tvs.edu.co según la nueva implementación)
+                // Obtener correos de la sección correspondiente usando configuración dinámica
                 $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
                 
-                // Añadir correos adicionales que siempre deben ser notificados
-                $additionalEmails = config('section_emails.always_notify', []);
+                // Obtener configuración dinámica
+                $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+                $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
                 
-                // Asegurar que compras@tvs.edu.co esté incluido
-                if (!in_array('compras@tvs.edu.co', $additionalEmails)) {
-                    $additionalEmails[] = 'compras@tvs.edu.co';
-                }
-                
-                $allEmails = array_unique(array_merge($sectionEmails, $additionalEmails));
-                
-                \Log::info('Preparando envío de notificación de cotizaciones completas', [
+                \Log::info('Preparando envío de notificaciones diferenciadas', [
                     'purchase_request' => $purchaseRequest->request_number,
                     'section_area' => $purchaseRequest->section_area,
                     'section_emails' => $sectionEmails,
-                    'additional_emails' => $additionalEmails,
-                    'all_emails' => $allEmails
+                    'compras_email' => $comprasEmail
                 ]);
                 
-                // Crear y enviar la notificación
-                $notification = new QuotationsUploaded($purchaseRequest->fresh());
+                // 1. ENVIAR NOTIFICACIÓN CON BOTÓN A DIRECTORES/COORDINADORES
+                $notificationWithButton = new QuotationsUploaded($purchaseRequest->fresh());
                 
                 try {
-                    foreach ($allEmails as $email) {
-                        // Usar un pequeño retraso para evitar problemas de throttling
-                        \Log::info('Enviando notificación a: ' . $email);
+                    foreach ($sectionEmails as $email) {
+                        \Log::info('Enviando notificación CON BOTÓN (director/coordinador) a: ' . $email);
                         Notification::route('mail', $email)
-                            ->notify($notification);
+                            ->notify($notificationWithButton);
                     }
-                    
-                    // Registrar en logs
-                    \Log::info('Notificación de cotizaciones completas enviada', [
-                        'purchase_request' => $purchaseRequest->request_number,
-                        'emails' => $allEmails
-                    ]);
                 } catch (\Exception $e) {
-                    \Log::error('Error al enviar notificación de cotizaciones: ' . $e->getMessage(), [
+                    \Log::error('Error al enviar notificación con botón: ' . $e->getMessage(), [
                         'purchase_request' => $purchaseRequest->request_number,
-                        'emails' => $allEmails,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
+                        'section_emails' => $sectionEmails,
+                        'error' => $e->getMessage()
                     ]);
                 }
+                
+                // 2. ENVIAR NOTIFICACIÓN INFORMATIVA A COMPRAS (SIN BOTÓN)
+                try {
+                    \Log::info('Enviando notificación INFORMATIVA (sin botón) a compras: ' . $comprasEmail);
+                    $informativeNotification = new \App\Notifications\QuotationsCompletedCompras($purchaseRequest->fresh());
+                    Notification::route('mail', $comprasEmail)
+                        ->notify($informativeNotification);
+                } catch (\Exception $e) {
+                    \Log::error('Error al enviar notificación informativa a compras: ' . $e->getMessage(), [
+                        'purchase_request' => $purchaseRequest->request_number,
+                        'compras_email' => $comprasEmail,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+                
+                // Registrar resumen final
+                \Log::info('Notificaciones diferenciadas enviadas exitosamente', [
+                    'purchase_request' => $purchaseRequest->request_number,
+                    'directores_con_boton' => $sectionEmails,
+                    'compras_informativo' => $comprasEmail
+                ]);
             }
             
             // Registrar en historial
@@ -369,25 +376,29 @@ class QuotationController extends Controller
     {
         if (empty($section_area)) {
             \Log::warning('Sección/Área vacía en getSectionEmails');
-            return [config('section_emails.default')];
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            return [config($configSource . '.default')];
         }
         
         \Log::info("Buscando email para la sección: '$section_area'");
         
-        // Obtener todas las secciones configuradas
-        $configuredSections = config('section_emails.sections');
+        // Obtener todas las secciones configuradas usando configuración dinámica
+        $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+        $configuredSections = config($configSource . '.sections');
         
         // Verificar si la sección existe exactamente como está escrita
         if (isset($configuredSections[$section_area])) {
             $email = $configuredSections[$section_area];
-            \Log::info("✓ Email encontrado para la sección '$section_area': " . $email);
+            $emailLog = is_array($email) ? '[' . implode(', ', $email) . ']' : $email;
+            \Log::info("✓ Email encontrado para la sección '$section_area': " . $emailLog);
             return is_array($email) ? $email : [$email];
         }
         
         // Si no se encuentra exactamente, buscar por coincidencia sin distinguir mayúsculas/minúsculas
         foreach ($configuredSections as $sectionName => $sectionEmail) {
             if (strcasecmp($sectionName, $section_area) === 0) {
-                \Log::info("✓ Email encontrado para la sección '$section_area' (case insensitive): " . $sectionEmail);
+                $emailLog = is_array($sectionEmail) ? '[' . implode(', ', $sectionEmail) . ']' : $sectionEmail;
+                \Log::info("✓ Email encontrado para la sección '$section_area' (case insensitive): " . $emailLog);
                 return is_array($sectionEmail) ? $sectionEmail : [$sectionEmail];
             }
         }
@@ -395,13 +406,14 @@ class QuotationController extends Controller
         // Último intento - buscar si la sección es parte del nombre configurado o viceversa
         foreach ($configuredSections as $sectionName => $sectionEmail) {
             if (stripos($sectionName, $section_area) !== false || stripos($section_area, $sectionName) !== false) {
-                \Log::info("✓ Email encontrado por coincidencia parcial '$sectionName' para la sección '$section_area': " . $sectionEmail);
+                $emailLog = is_array($sectionEmail) ? '[' . implode(', ', $sectionEmail) . ']' : $sectionEmail;
+                \Log::info("✓ Email encontrado por coincidencia parcial '$sectionName' para la sección '$section_area': " . $emailLog);
                 return is_array($sectionEmail) ? $sectionEmail : [$sectionEmail];
             }
         }
         
         // Si aún no se encuentra, usar el email predeterminado
-        $defaultEmail = config('section_emails.default');
+        $defaultEmail = config($configSource . '.default');
         \Log::warning("✗ No se encontró email configurado para la sección: '$section_area'. Usando predeterminado: $defaultEmail");
         
         return [$defaultEmail];
@@ -415,8 +427,9 @@ class QuotationController extends Controller
         // Creamos la notificación
         $notification = new \App\Notifications\IncompleteQuotations($purchaseRequest);
         
-        // Añadimos correos adicionales que siempre deben ser notificados
-        $additionalEmails = config('section_emails.always_notify', []);
+        // Añadimos correos adicionales que siempre deben ser notificados usando configuración dinámica
+        $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+        $additionalEmails = config($configSource . '.always_notify', []);
         
         // Combinamos los correos sin duplicados
         $allEmails = array_unique(array_merge($emails, $additionalEmails));
@@ -468,25 +481,34 @@ class QuotationController extends Controller
             // Obtener emails de la sección correspondiente
             $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
             
-            // Añadir correos adicionales que siempre deben ser notificados
-            $additionalEmails = config('section_emails.always_notify', []);
-            $allEmails = array_unique(array_merge($sectionEmails, $additionalEmails));
+            // Obtener configuración dinámica
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
             
-            \Log::info('Enviando email de pre-aprobación manual', [
+            \Log::info('Enviando email de pre-aprobación manual con flujo diferenciado', [
                 'purchase_request' => $purchaseRequest->request_number,
                 'section_area' => $purchaseRequest->section_area,
-                'emails' => $allEmails,
+                'section_emails' => $sectionEmails,
+                'compras_email' => $comprasEmail,
                 'quotations_count' => $purchaseRequest->quotations()->count()
             ]);
             
-            // Crear y enviar la notificación QuotationsUploaded
-            $notification = new QuotationsUploaded($purchaseRequest->fresh());
+            // 1. ENVIAR NOTIFICACIÓN CON BOTÓN A DIRECTORES/COORDINADORES
+            $notificationWithButton = new QuotationsUploaded($purchaseRequest->fresh());
             
-            foreach ($allEmails as $email) {
-                \Log::info('Enviando notificación de pre-aprobación a: ' . $email);
+            foreach ($sectionEmails as $email) {
+                \Log::info('Enviando notificación CON BOTÓN (manual) a director/coordinador: ' . $email);
                 Notification::route('mail', $email)
-                    ->notify($notification);
+                    ->notify($notificationWithButton);
             }
+            
+            // 2. ENVIAR NOTIFICACIÓN INFORMATIVA A COMPRAS (SIN BOTÓN)
+            \Log::info('Enviando notificación INFORMATIVA (manual) a compras: ' . $comprasEmail);
+            $informativeNotification = new \App\Notifications\QuotationsCompletedCompras($purchaseRequest->fresh());
+            Notification::route('mail', $comprasEmail)
+                ->notify($informativeNotification);
+            
+            $allEmails = array_merge($sectionEmails, [$comprasEmail]);
             
             // Registrar en el historial
             RequestHistory::create([
@@ -511,6 +533,136 @@ class QuotationController extends Controller
             ]);
             
             return redirect()->back()->with('error', 'Error al enviar emails de pre-aprobación: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Anular una solicitud de compra por falta de descripción adecuada
+     */
+    public function cancelForDescription(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        // Verificar autorización
+        $this->authorize('addQuotation', $purchaseRequest);
+        
+        // Validar los datos del formulario
+        $request->validate([
+            'reason' => 'required|string|max:500|min:10',
+        ], [
+            'reason.required' => 'El motivo de anulación es obligatorio.',
+            'reason.max' => 'El motivo no puede exceder 500 caracteres.',
+            'reason.min' => 'El motivo debe tener al menos 10 caracteres.',
+        ]);
+        
+        try {
+            // Verificar que la solicitud esté en un estado que permita anulación
+            if (!in_array($purchaseRequest->status, ['pending', 'in_process', 'waiting_quotations'])) {
+                return redirect()->back()->with('error', 'Esta solicitud no puede ser anulada en su estado actual.');
+            }
+            
+            // Log para auditoría
+            \Log::info('Iniciando anulación por falta de descripción', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'request_number' => $purchaseRequest->request_number,
+                'current_status' => $purchaseRequest->status,
+                'cancelled_by' => Auth::id(),
+                'reason' => $request->reason
+            ]);
+            
+            // Actualizar el estado y guardar el motivo de anulación
+            $purchaseRequest->status = 'cancelled_for_description';
+            $purchaseRequest->rejection_reason = $request->reason;
+            $purchaseRequest->save();
+            
+            // Crear registro en el historial
+            RequestHistory::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'user_id' => Auth::id(),
+                'action' => 'Solicitud anulada por falta de descripción',
+                'notes' => 'Motivo: ' . $request->reason
+            ]);
+            
+            // Crear notificación personalizada para anulación por descripción
+            $notificationData = [
+                'subject' => 'Solicitud Anulada - Se Requiere Más Información',
+                'greeting' => '¡Hola ' . $purchaseRequest->requester . '!',
+                'line1' => 'Su solicitud de compra ha sido **anulada** porque necesita información adicional en la descripción.',
+                'line2' => '**Motivo específico:** ' . $request->reason,
+                'line3' => '**¿Qué debe hacer ahora?**',
+                'line4' => '• Revise el motivo indicado arriba',
+                'line5' => '• Proporcione una descripción más detallada y específica',
+                'line6' => '• Cree una nueva solicitud con la información completa',
+                'action_text' => 'Crear Nueva Solicitud',
+                'action_url' => route('purchase-requests.create'),
+                'closing' => 'Esto nos ayuda a obtener mejores cotizaciones para su solicitud.',
+                'salutation' => 'Equipo de Compras - The Victoria School'
+            ];
+            
+            // Enviar notificación al usuario
+            if ($purchaseRequest->user) {
+                $purchaseRequest->user->notify(new class($purchaseRequest, $notificationData) extends \Illuminate\Notifications\Notification {
+                    use \Illuminate\Bus\Queueable;
+                    
+                    protected $purchaseRequest;
+                    protected $data;
+                    
+                    public function __construct($purchaseRequest, $data)
+                    {
+                        $this->purchaseRequest = $purchaseRequest;
+                        $this->data = $data;
+                    }
+                    
+                    public function via($notifiable)
+                    {
+                        return ['mail', 'database'];
+                    }
+                    
+                    public function toMail($notifiable)
+                    {
+                        return (new \Illuminate\Notifications\Messages\MailMessage)
+                            ->subject($this->data['subject'])
+                            ->greeting($this->data['greeting'])
+                            ->line($this->data['line1'])
+                            ->line($this->data['line2'])
+                            ->line('')
+                            ->line($this->data['line3'])
+                            ->line($this->data['line4'])
+                            ->line($this->data['line5'])
+                            ->line($this->data['line6'])
+                            ->line('')
+                            ->action($this->data['action_text'], $this->data['action_url'])
+                            ->line($this->data['closing'])
+                            ->salutation($this->data['salutation']);
+                    }
+                    
+                    public function toDatabase($notifiable)
+                    {
+                        return [
+                            'id' => $this->purchaseRequest->id,
+                            'title' => $this->purchaseRequest->title,
+                            'message' => 'Solicitud anulada - Se requiere más información en la descripción',
+                            'url' => route('purchase-requests.show', $this->purchaseRequest->id)
+                        ];
+                    }
+                });
+            }
+            
+            \Log::info('Solicitud anulada por falta de descripción exitosamente', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'request_number' => $purchaseRequest->request_number,
+                'cancelled_by' => Auth::id()
+            ]);
+            
+            return redirect()->route('quotations.index')
+                ->with('success', 'La solicitud ha sido anulada exitosamente. Se ha notificado al usuario que debe proporcionar una descripción más detallada.');
+                
+        } catch (\Exception $e) {
+            \Log::error('Error al anular solicitud por falta de descripción: ' . $e->getMessage(), [
+                'purchase_request_id' => $purchaseRequest->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->with('error', 'Error al anular la solicitud: ' . $e->getMessage());
         }
     }
 }

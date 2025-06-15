@@ -114,14 +114,24 @@ class QuotationApprovalController extends Controller
                 $allEmails[] = $directorEmail;
             }
             
-            // Agregar emails específicos de la sección (ya incluye compras@tvs.edu.co según la nueva implementación)
+            // Agregar emails específicos de la sección usando configuración dinámica
             if (!empty($sectionEmails)) {
                 $allEmails = array_merge($allEmails, $sectionEmails);
             }
             
-            // Agregar compras@tvs.edu.co siempre (doble verificación)
-            if (!in_array('compras@tvs.edu.co', $allEmails)) {
-                $allEmails[] = 'compras@tvs.edu.co';
+            // Agregar correos que SIEMPRE deben ser notificados (incluye compras)
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $alwaysNotifyEmails = config($configSource . '.always_notify', []);
+            foreach ($alwaysNotifyEmails as $email) {
+                if (!in_array($email, $allEmails)) {
+                    $allEmails[] = $email;
+                }
+            }
+            
+            // Doble verificación: agregar compras específicamente si no está incluido
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            if (!in_array($comprasEmail, $allEmails)) {
+                $allEmails[] = $comprasEmail;
             }
             
             // Eliminar duplicados
@@ -139,22 +149,31 @@ class QuotationApprovalController extends Controller
                 'provider' => $quotation->provider_name
             ]);
             
-            // Enviar notificaciones a todos los emails relevantes
-            foreach ($allEmails as $email) {
-                Notification::route('mail', $email)
-                    ->notify(new \App\Notifications\QuotationPreApproved($purchaseRequest, $email, $quotation));
-                \Log::info("Notificación de pre-aprobación enviada a: $email");
+            // CORREGIDO: Enviar notificación SOLO al director de sección (no a coordinadores ni usuario)
+            // Solo obtener el email del director específico para la sección
+            $directorEmail = $sectionClassifier->getDirectorEmail($purchaseRequest->section_area);
+            
+            if ($directorEmail) {
+                Notification::route('mail', $directorEmail)
+                    ->notify(new \App\Notifications\QuotationPreApproved($purchaseRequest, $directorEmail, $quotation));
+                \Log::info("Notificación de pre-aprobación enviada SOLO al director: $directorEmail");
             }
             
-            // Notificar al solicitante por separado
-            if ($purchaseRequest->user) {
-                $purchaseRequest->user->notify(new \App\Notifications\QuotationPreApproved($purchaseRequest, $purchaseRequest->user->email, $quotation));
-                \Log::info('Notificación de pre-aprobación enviada al solicitante: ' . $purchaseRequest->user->email);
+            // NUEVO: Enviar notificación informativa a compras (sin botón de aprobar)
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            
+            if ($comprasEmail) {
+                Notification::route('mail', $comprasEmail)
+                    ->notify(new \App\Notifications\QuotationPreApprovedCompras($purchaseRequest, $quotation));
+                \Log::info("Notificación informativa de pre-aprobación enviada a compras: $comprasEmail");
             }
             
             \Log::info('Notificaciones de pre-aprobación enviadas correctamente', [
-                'emails_sent' => count($allEmails) + ($purchaseRequest->user ? 1 : 0),
-                'recipients' => array_merge($allEmails, $purchaseRequest->user ? [$purchaseRequest->user->email] : [])
+                'director_email' => $directorEmail,
+                'compras_email' => $comprasEmail,
+                'purchase_request' => $purchaseRequest->request_number,
+                'quotation_id' => $quotation->id
             ]);
             
         } catch (\Exception $e) {

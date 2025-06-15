@@ -241,6 +241,13 @@ test_admin_auth.php
 test_browser.html
 test_complete_dashboard.php
 test_complete_final_system.php
+prueba_envio_inmediato.php
+simular_flujo_correos.php
+verificar_compras_siempre_incluido.php
+verificar_correos_dinamicos.php
+verificar_flujo_cotizaciones.php
+verificar_sistema_correos.php
+prueba_pai_3_cotizaciones.php
 
 # Documentation files generated during development
 *.md

@@ -435,17 +435,22 @@ class PurchaseOrdersController extends Controller
         
         // Enviar notificación según el tipo de solicitud
         try {
+            // Obtener correos desde configuración dinámica
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            $contabilidadEmail = config($configSource . '.sections.Contabilidad');
+            
             if ($isPhotocopiesOrMaterials) {
                 // Para fotocopias y materiales, solo enviar a compras
-                Notification::route('mail', 'compras@tvs.edu.co')
+                Notification::route('mail', $comprasEmail)
                     ->notify(new OrderCreated($purchaseOrder));
                     
                 \Log::info('Orden de ' . ($purchaseRequest->isCopiesRequest() ? 'fotocopias' : 'materiales') . 
-                          ' enviada solo a compras (no a contabilidad) - Orden #' . $purchaseOrder->order_number);
+                          ' enviada solo a compras (' . $comprasEmail . ') (no a contabilidad) - Orden #' . $purchaseOrder->order_number);
             } else {
                 // Para órdenes de compra normales, enviar a contabilidad y compras
-                Notification::route('mail', 'contabilidad@tvs.edu.co')
-                    ->route('mail', 'compras@tvs.edu.co')
+                Notification::route('mail', $contabilidadEmail)
+                    ->route('mail', $comprasEmail)
                     ->notify(new OrderCreated($purchaseOrder));
                     
                 \Log::info('Orden de compra normal enviada a contabilidad y compras - Orden #' . $purchaseOrder->order_number);
@@ -482,7 +487,10 @@ class PurchaseOrdersController extends Controller
             ]);
             
             // Enviar notificación
-            Notification::route('mail', 'compras@tvs.edu.co')
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            
+            Notification::route('mail', $comprasEmail)
                 ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'compras'));
             
             return redirect()->back()->with('success', 'Orden de compra enviada a Compras exitosamente.');
@@ -515,11 +523,15 @@ class PurchaseOrdersController extends Controller
             ]);
             
             // Enviar notificación
-            Notification::route('mail', 'contabilidad@tvs.edu.co')
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $contabilidadEmail = config($configSource . '.sections.Contabilidad');
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            
+            Notification::route('mail', $contabilidadEmail)
                 ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'contabilidad'));
             
-            // Notificar también a compras@tvs.edu.co para que esté al tanto
-            Notification::route('mail', 'compras@tvs.edu.co')
+            // Notificar también a compras para que esté al tanto
+            Notification::route('mail', $comprasEmail)
                 ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'compras_copy'));
             
             return redirect()->back()->with('success', 'Orden de compra enviada a Contabilidad exitosamente.');
@@ -551,11 +563,15 @@ class PurchaseOrdersController extends Controller
             ]);
             
             // Enviar notificación
-            Notification::route('mail', 'tesoreria@tvs.edu.co')
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $tesoreriaEmail = config($configSource . '.sections.Tesorería', 'tesoreria@test.com');
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            
+            Notification::route('mail', $tesoreriaEmail)
                 ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'tesoreria'));
             
-            // Notificar también a compras@tvs.edu.co para que esté al tanto
-            Notification::route('mail', 'compras@tvs.edu.co')
+            // Notificar también a compras para que esté al tanto
+            Notification::route('mail', $comprasEmail)
                 ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'compras_copy'));
             
             return redirect()->back()->with('success', 'Orden de compra enviada a Tesorería exitosamente.');

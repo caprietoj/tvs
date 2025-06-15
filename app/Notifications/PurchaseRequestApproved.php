@@ -65,9 +65,14 @@ class PurchaseRequestApproved extends Notification
                    ->line('¡Gracias por utilizar nuestro sistema!')
                    ->salutation('Saludos cordiales,<br>Equipo de Compras<br>The Victoria School');
                      } elseif ($this->recipient === 'compras') {
+            // Obtener correos desde configuración dinámica
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $contabilidadEmail = config($configSource . '.sections.Contabilidad');
+            $tesoreriaEmail = config($configSource . '.sections.Tesorería');
+            
             $message->subject('Nueva Orden de Compra Generada - #' . $this->purchaseRequest->request_number)
                    ->greeting('Estimado Equipo de Compras')
-                   ->line('Se ha generado una nueva **orden de compra** que requiere su procesamiento.')
+                   ->line('Se ha aprobado la solicitud de compra (' . ($this->purchaseRequest->request_number ?? 'N/A') . ') por favor realizar la orden de compra y proceder a enviarla a ' . $contabilidadEmail . ' y ' . $tesoreriaEmail . '.')
                    ->line('**Detalles de la solicitud autorizada:**')
                    ->line('• **Número de solicitud:** ' . ($this->purchaseRequest->request_number ?? 'N/A'))
                    ->line('• **Solicitante:** ' . $this->purchaseRequest->requester)

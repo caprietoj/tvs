@@ -29,8 +29,18 @@ class PurchaseRequestCreatedCompras extends Mailable
      */
     public function envelope(): Envelope
     {
+        // Determinar el tipo de solicitud para el asunto
+        $requestType = '';
+        if ($this->purchaseRequest->type == 'purchase') {
+            $requestType = 'Compra';
+        } elseif ($this->purchaseRequest->isCopiesRequest()) {
+            $requestType = 'Fotocopias';
+        } else {
+            $requestType = 'Materiales';
+        }
+        
         return new Envelope(
-            subject: 'Nueva Solicitud de Compra - Acción Requerida #' . $this->purchaseRequest->id,
+            subject: 'Nueva Solicitud de ' . $requestType . ' - Acción Requerida #' . $this->purchaseRequest->id,
         );
     }
 

@@ -41,11 +41,12 @@ class PurchaseRequestController extends Controller
 
         try {
             // Email para el área de compras (con botón de acción)
-            // Siempre enviar a compras@tvs.edu.co como está especificado en los requisitos
-            Mail::to('compras@tvs.edu.co')
+            // Usar configuración dinámica para el correo de compras
+            $comprasEmail = config(\App\Services\DynamicSectionEmailsService::getCurrentConfigSource() . '.default');
+            Mail::to($comprasEmail)
                 ->send(new PurchaseRequestCreatedCompras($purchaseRequest));
             
-            \Log::info('Email de acción enviado al área de compras para solicitud #' . $purchaseRequest->id);
+            \Log::info('Email de acción enviado al área de compras para solicitud #' . $purchaseRequest->id . ' a: ' . $comprasEmail);
         } catch (\Exception $e) {
             \Log::error('Error al enviar email al área de compras para solicitud #' . $purchaseRequest->id . ': ' . $e->getMessage());
         }
@@ -59,10 +60,12 @@ class PurchaseRequestController extends Controller
         $sectionClassifier = new SectionClassifierService();
         $approvalEmails = $sectionClassifier->getMaterialsApprovalEmails($purchaseRequest->section);
         
-        // Si es una solicitud de fotocopias, agregar auxiliaralmacen@tvs.edu.co
+        // Si es una solicitud de fotocopias, agregar auxiliar almacén según configuración dinámica
         if ($purchaseRequest->isCopiesRequest()) {
-            $approvalEmails[] = 'auxiliaralmacen@tvs.edu.co';
-            \Log::info('Email auxiliaralmacen@tvs.edu.co agregado para solicitud de fotocopias #' . $purchaseRequest->id);
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $auxiliarEmail = config($configSource . '.sections.Auxiliar Almacén', 'auxiliaralmacen@test.com');
+            $approvalEmails[] = $auxiliarEmail;
+            \Log::info("Email auxiliar almacén ({$auxiliarEmail}) agregado para solicitud de fotocopias #" . $purchaseRequest->id);
         }
         
         if (!empty($approvalEmails)) {

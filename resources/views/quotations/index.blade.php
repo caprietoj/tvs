@@ -6,6 +6,67 @@
     <h1>Gestión de Cotizaciones</h1>
 @stop
 
+@section('css')
+    <style>
+        /* Mejoras para la tabla responsive */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .table th,
+        .table td {
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        
+        /* Botones más compactos en móvil */
+        @media (max-width: 768px) {
+            .btn-group-vertical .btn {
+                font-size: 0.8rem;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            .table th,
+            .table td {
+                font-size: 0.875rem;
+                padding: 0.5rem 0.25rem;
+            }
+        }
+        
+        /* Mejorar visualización de la paginación */
+        .pagination {
+            margin-bottom: 0;
+        }
+        
+        .pagination .page-link {
+            padding: 0.375rem 0.75rem;
+        }
+        
+        /* Mejorar el filtro de DataTables */
+        .dataTables_filter {
+            margin-bottom: 1rem;
+        }
+        
+        .dataTables_filter input {
+            margin-left: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+        }
+        
+        /* Evitar que los badges se rompan */
+        .badge {
+            white-space: nowrap;
+        }
+        
+        /* Asegurar que los tooltips funcionen */
+        [title] {
+            cursor: help;
+        }
+    </style>
+@stop
+
 @section('content')
     <div class="card">
         <div class="card-header">
@@ -27,43 +88,68 @@
             @endif
 
             <div class="table-responsive">
-                <table class="table table-bordered table-hover datatable">
+                <table class="table table-bordered table-hover" id="quotationsTable">
                     <thead>
                         <tr>
-                            <th>Solicitud</th>
-                            <th>Solicitante</th>
-                            <th>Sección/Área</th>
-                            <th>Fecha</th>
-                            <th>Estado</th>
-                            <th>Cotizaciones</th>
-                            <th>Acciones</th>
+                            <th style="min-width: 120px;">Solicitud</th>
+                            <th style="min-width: 150px;">Solicitante</th>
+                            <th style="min-width: 130px;">Sección/Área</th>
+                            <th style="min-width: 100px;">Fecha</th>
+                            <th style="min-width: 100px;">Estado</th>
+                            <th style="min-width: 120px;">Cotizaciones</th>
+                            <th style="min-width: 200px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($purchaseRequests as $request)
                             <tr>
-                                <td>{{ $request->request_number }}</td>
-                                <td>{{ $request->requester }}</td>
-                                <td>{{ $request->section_area }}</td>
-                                <td>{{ $request->request_date->format('d/m/Y') }}</td>
-                                <td>{{ $request->status }}</td>
+                                <td><span class="text-nowrap">{{ $request->request_number }}</span></td>
+                                <td><span title="{{ $request->requester }}">{{ Str::limit($request->requester, 20) }}</span></td>
+                                <td><span title="{{ $request->section_area }}">{{ Str::limit($request->section_area, 15) }}</span></td>
+                                <td><span class="text-nowrap">{{ $request->request_date->format('d/m/Y') }}</span></td>
+                                <td><span class="badge badge-secondary">{{ $request->status }}</span></td>
                                 <td>
                                     <span class="badge badge-{{ $request->hasRequiredQuotations() ? 'success' : 'warning' }}">
                                         {{ $request->getQuotationProgress() }}
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="btn-group">
+                                    <div class="btn-group-vertical btn-group-sm d-block d-md-none">
+                                        <a href="{{ route('purchase-requests.show', $request->id) }}" class="btn btn-info btn-sm mb-1">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                        @if (!$request->hasRequiredQuotations())
+                                            <a href="{{ route('quotations.create', $request->id) }}" class="btn btn-primary btn-sm mb-1">
+                                                <i class="fas fa-plus"></i> Agregar
+                                            </a>
+                                            @if ($request->quotations->count() > 0)
+                                                <a href="{{ route('quotations.ask-for-more', $request->id) }}" class="btn btn-warning btn-sm mb-1">
+                                                    <i class="fas fa-question-circle"></i> Más
+                                                </a>
+                                            @endif
+                                        @endif
+                                        @if(in_array($request->status, ['pending', 'En Cotización']))
+                                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                    data-toggle="modal" 
+                                                    data-target="#cancelDescriptionModal"
+                                                    data-request-id="{{ $request->id }}"
+                                                    data-request-number="{{ $request->request_number }}"
+                                                    title="Anular por falta de descripción">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <div class="btn-group d-none d-md-flex">
                                         <a href="{{ route('purchase-requests.show', $request->id) }}" class="btn btn-sm btn-info">
                                             <i class="fas fa-eye"></i> Ver
                                         </a>
                                         @if (!$request->hasRequiredQuotations())
                                             <a href="{{ route('quotations.create', $request->id) }}" class="btn btn-sm btn-primary">
-                                                <i class="fas fa-plus"></i> Agregar Cotización
+                                                <i class="fas fa-plus"></i> Agregar
                                             </a>
                                             @if ($request->quotations->count() > 0)
                                                 <a href="{{ route('quotations.ask-for-more', $request->id) }}" class="btn btn-sm btn-warning">
-                                                    <i class="fas fa-question-circle"></i> ¿Más Cotizaciones?
+                                                    <i class="fas fa-question-circle"></i> Más
                                                 </a>
                                             @endif
                                         @endif
@@ -89,9 +175,14 @@
                 </table>
             </div>
             
-            <div class="mt-3">
-                {{ $purchaseRequests->links() }}
-            </div>
+            <!-- Paginación de Laravel -->
+            @if($purchaseRequests->hasPages())
+                <div class="d-flex justify-content-center mt-3">
+                    <nav aria-label="Paginación de cotizaciones">
+                        {{ $purchaseRequests->links('pagination::bootstrap-4') }}
+                    </nav>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -157,7 +248,8 @@
 @section('js')
     <script>
         $(function() {
-            $('.datatable').DataTable({
+            // Usar DataTables solo para búsqueda y ordenamiento, no para paginación
+            $('#quotationsTable').DataTable({
                 "paging": false,
                 "lengthChange": false,
                 "searching": true,
@@ -165,9 +257,19 @@
                 "info": false,
                 "autoWidth": false,
                 "responsive": true,
+                "dom": 'ft', // Solo mostrar filtro y tabla
                 "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json"
-                }
+                    "url": "//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json",
+                    "search": "Buscar:",
+                    "searchPlaceholder": "Filtrar registros..."
+                },
+                "columnDefs": [
+                    {
+                        "targets": [6], // Columna de acciones
+                        "orderable": false,
+                        "searchable": false
+                    }
+                ]
             });
 
             // Manejo del modal de anulación por descripción
