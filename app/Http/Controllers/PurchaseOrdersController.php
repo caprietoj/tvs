@@ -83,8 +83,6 @@ class PurchaseOrdersController extends Controller
             'payment_terms' => 'required|string|max:255',
             'delivery_date' => 'required|date',
             'observations' => 'nullable|string',
-            'total_amount' => 'required|numeric|min:0',
-            'additional_items' => 'nullable|array',
         ]);
         
         // Obtener la solicitud de compra
@@ -99,39 +97,19 @@ class PurchaseOrdersController extends Controller
         if (PurchaseOrder::where('purchase_request_id', $purchaseRequestId)->exists()) {
             return redirect()->route('purchase-orders.index')->with('error', 'Ya existe una orden de compra para esta solicitud.');
         }
-        
-        // Procesar items adicionales
-        $additionalItems = [];
-        if ($request->has('additional_items') && is_array($request->additional_items)) {
-            foreach ($request->additional_items as $key => $item) {
-                if (!empty($item['description']) && !empty($item['quantity']) && isset($item['price'])) {
-                    $quantity = floatval($item['quantity']);
-                    $price = floatval($item['price']);
-                    $total = $quantity * $price;
-                    
-                    $additionalItems[] = [
-                        'description' => $item['description'],
-                        'quantity' => $quantity,
-                        'unit' => $item['unit'] ?? 'Unidad',
-                        'price' => $price,
-                        'total' => $total
-                    ];
-                }
-            }
+
+        // Verificar que tenga una cotización seleccionada
+        if (!$purchaseRequest->selected_quotation_id || !$purchaseRequest->selectedQuotation) {
+            return redirect()->route('purchase-orders.index')->with('error', 'La solicitud no tiene una cotización seleccionada válida.');
         }
-        
-        // Calcular subtotal, IVA y total
-        $quotationAmount = $purchaseRequest->selectedQuotation ? $purchaseRequest->selectedQuotation->total_amount : 0;
-        
-        $additionalItemsTotal = 0;
-        foreach ($additionalItems as $item) {
-            $additionalItemsTotal += $item['total'];
-        }
-        
-        $subtotal = $quotationAmount + $additionalItemsTotal;
-        $includesIva = $request->has('apply_iva');
-        $ivaAmount = $includesIva ? $subtotal * 0.19 : 0;
-        $total = $subtotal + $ivaAmount;
+
+        // Obtener los datos de precio directamente de la cotización seleccionada
+        $selectedQuotation = $purchaseRequest->selectedQuotation;
+        $total = $selectedQuotation->total_amount;
+        $subtotal = $selectedQuotation->subtotal ?? $selectedQuotation->total_amount;
+        $ivaAmount = $selectedQuotation->iva_amount ?? 0;
+        $includesIva = $selectedQuotation->includes_iva ?? false;
+        $additionalItems = $selectedQuotation->additional_items ?? [];
         
         try {
             DB::beginTransaction();
@@ -144,7 +122,7 @@ class PurchaseOrdersController extends Controller
                 'purchase_request_id' => $purchaseRequestId,
                 'provider_id' => $request->provider_id,
                 'user_id' => auth()->id(),
-                'created_by' => auth()->id(), // Agregamos el campo created_by
+                'created_by' => auth()->id(),
                 'payment_terms' => $request->payment_terms,
                 'delivery_date' => $request->delivery_date,
                 'observations' => $request->observations,

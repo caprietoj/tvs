@@ -98,10 +98,88 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text">$</span>
                         </div>
-                        <input type="number" name="total_amount" id="total_amount" class="form-control {{ $errors->has('total_amount') ? 'is-invalid' : '' }}" value="{{ old('total_amount') }}" step="0.01" min="0" required>
+                        <input type="number" name="total_amount" id="total_amount" class="form-control {{ $errors->has('total_amount') ? 'is-invalid' : '' }}" value="{{ old('total_amount') }}" step="0.01" min="0" required readonly>
                         @if ($errors->has('total_amount'))
                             <div class="invalid-feedback">{{ $errors->first('total_amount') }}</div>
                         @endif
+                    </div>
+                    <small class="form-text text-muted">El monto total se calculará automáticamente basado en el subtotal y el IVA</small>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="subtotal">Subtotal *</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">$</span>
+                                </div>
+                                <input type="number" name="subtotal" id="subtotal" class="form-control {{ $errors->has('subtotal') ? 'is-invalid' : '' }}" value="{{ old('subtotal') }}" step="0.01" min="0" required>
+                                @if ($errors->has('subtotal'))
+                                    <div class="invalid-feedback">{{ $errors->first('subtotal') }}</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" name="includes_iva" id="includes_iva" class="form-check-input" value="1" {{ old('includes_iva') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="includes_iva">
+                                    Aplicar IVA (19%)
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">Marque esta opción si el precio debe incluir IVA.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="iva_amount">IVA</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">$</span>
+                        </div>
+                        <input type="number" name="iva_amount" id="iva_amount" class="form-control" value="{{ old('iva_amount', '0') }}" step="0.01" min="0" readonly>
+                    </div>
+                    <small class="form-text text-muted">Se calculará automáticamente al marcar la opción de IVA</small>
+                </div>
+
+                <!-- Items adicionales para la cotización -->
+                <div class="card mt-4 mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Items Adicionales</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Agregue items adicionales si la cotización incluye productos o servicios que no estaban en la solicitud original.
+                        </div>
+                        
+                        <div id="additional-items-container">
+                            <!-- Los items adicionales se agregarán aquí dinámicamente -->
+                        </div>
+                        
+                        <button type="button" class="btn btn-sm btn-success" id="add-item-btn">
+                            <i class="fas fa-plus"></i> Agregar Item
+                        </button>
+                        
+                        <!-- Resumen de totales -->
+                        <div class="card mt-3">
+                            <div class="card-body p-3">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <table class="table table-sm mb-0">
+                                            <tbody>
+                                                <tr>
+                                                    <th>Subtotal Items Adicionales:</th>
+                                                    <td>$<span id="additional-items-total">0.00</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -367,6 +445,104 @@
                 this.submit();
             }
         });
+
+        // ============ Funciones para cálculos de precios e IVA ============
+        
+        // Función para calcular totales
+        function calculateTotals() {
+            const subtotal = parseFloat($('#subtotal').val()) || 0;
+            const includesIva = $('#includes_iva').prop('checked');
+            const additionalItemsTotal = calculateAdditionalItemsTotal();
+            
+            // Calcular IVA
+            const totalSubtotal = subtotal + additionalItemsTotal;
+            const ivaAmount = includesIva ? totalSubtotal * 0.19 : 0;
+            const total = totalSubtotal + ivaAmount;
+            
+            // Actualizar campos
+            $('#iva_amount').val(ivaAmount.toFixed(2));
+            $('#total_amount').val(total.toFixed(2));
+            $('#additional-items-total').text(additionalItemsTotal.toFixed(2));
+        }
+        
+        // Función para calcular total de items adicionales
+        function calculateAdditionalItemsTotal() {
+            let total = 0;
+            $('.additional-item-row').each(function() {
+                const quantity = parseFloat($(this).find('.item-quantity').val()) || 0;
+                const price = parseFloat($(this).find('.item-price').val()) || 0;
+                const itemTotal = quantity * price;
+                $(this).find('.item-total-display').text(itemTotal.toFixed(2));
+                total += itemTotal;
+            });
+            return total;
+        }
+        
+        // Event listeners para cálculos automáticos
+        $('#subtotal, #includes_iva').on('change input', calculateTotals);
+        
+        // Agregar item adicional
+        let itemCounter = 0;
+        $('#add-item-btn').on('click', function() {
+            itemCounter++;
+            const itemHtml = `
+                <div class="additional-item-row border p-3 mb-3 rounded">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Descripción</label>
+                                <input type="text" name="additional_items[${itemCounter}][description]" class="form-control" placeholder="Descripción del item">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Cantidad</label>
+                                <input type="number" name="additional_items[${itemCounter}][quantity]" class="form-control item-quantity" step="0.01" min="0" placeholder="1">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Unidad</label>
+                                <input type="text" name="additional_items[${itemCounter}][unit]" class="form-control" placeholder="Ej: Unidad">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>Precio Unit.</label>
+                                <input type="number" name="additional_items[${itemCounter}][price]" class="form-control item-price" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label>Total</label>
+                                <div class="form-control-plaintext">$<span class="item-total-display">0.00</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button type="button" class="btn btn-danger btn-sm remove-item d-block">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#additional-items-container').append(itemHtml);
+        });
+        
+        // Remover item adicional
+        $(document).on('click', '.remove-item', function() {
+            $(this).closest('.additional-item-row').remove();
+            calculateTotals();
+        });
+        
+        // Calcular cuando cambian los valores de items adicionales
+        $(document).on('input change', '.item-quantity, .item-price', calculateTotals);
+        
+        // Calcular totales al cargar la página
+        calculateTotals();
     });
 </script>
 @stop

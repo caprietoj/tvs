@@ -51,13 +51,56 @@ class QuotationController extends Controller
         
         $validator = Validator::make($request->all(), [
             'provider_name' => 'required|string|max:255',
+            'subtotal' => 'required|numeric|min:0',
             'total_amount' => 'required|numeric|min:0',
+            'includes_iva' => 'nullable|boolean',
+            'iva_amount' => 'nullable|numeric|min:0',
             'quotation_file' => 'required|file|mimes:pdf|max:5120',
+            'additional_items' => 'nullable|array',
+            'additional_items.*.description' => 'required_with:additional_items|string|max:255',
+            'additional_items.*.quantity' => 'required_with:additional_items|numeric|min:0',
+            'additional_items.*.unit' => 'nullable|string|max:50',
+            'additional_items.*.price' => 'required_with:additional_items|numeric|min:0',
         ]);
         
         if ($validator->fails()) {
             return redirect()->back()
                 ->withErrors($validator)
+                ->withInput();
+        }
+        
+        // Procesar items adicionales
+        $additionalItems = [];
+        if ($request->has('additional_items') && is_array($request->additional_items)) {
+            foreach ($request->additional_items as $key => $item) {
+                if (!empty($item['description']) && !empty($item['quantity']) && isset($item['price'])) {
+                    $quantity = floatval($item['quantity']);
+                    $price = floatval($item['price']);
+                    $total = $quantity * $price;
+                    
+                    $additionalItems[] = [
+                        'description' => $item['description'],
+                        'quantity' => $quantity,
+                        'unit' => $item['unit'] ?? 'Unidad',
+                        'price' => $price,
+                        'total' => $total
+                    ];
+                }
+            }
+        }
+        
+        // Validar cálculos (verificar que los totales sean consistentes)
+        $subtotal = floatval($request->subtotal);
+        $additionalItemsTotal = array_sum(array_column($additionalItems, 'total'));
+        $totalSubtotal = $subtotal + $additionalItemsTotal;
+        $includesIva = $request->has('includes_iva');
+        $expectedIvaAmount = $includesIva ? $totalSubtotal * 0.19 : 0;
+        $expectedTotal = $totalSubtotal + $expectedIvaAmount;
+        
+        // Verificar que el total calculado coincida con el enviado (con tolerancia de 0.01)
+        if (abs($expectedTotal - floatval($request->total_amount)) > 0.01) {
+            return redirect()->back()
+                ->with('error', 'Error en el cálculo de totales. Por favor, verifique los montos.')
                 ->withInput();
         }
         
@@ -72,6 +115,10 @@ class QuotationController extends Controller
                 'provider_name' => $request->provider_name,
                 'file_path' => $filePath,
                 'total_amount' => $request->total_amount,
+                'subtotal' => $request->subtotal,
+                'includes_iva' => $includesIva,
+                'iva_amount' => $expectedIvaAmount,
+                'additional_items' => $additionalItems,
                 'delivery_time' => $request->delivery_time,
                 'payment_method' => $request->payment_method,
                 'validity' => $request->validity,
