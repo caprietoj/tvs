@@ -37,6 +37,7 @@ return [
         'TI' => 'jefesistemas@tvs.edu.co',
         // Otras áreas comunes
         'Contabilidad' => 'contabilidad@tvs.edu.co',
+        'Asistente Contabilidad' => 'asistentecontabilidad@tvs.edu.co',
         'Compras' => 'compras@tvs.edu.co',
         'Tesorería' => 'tesoreria@tvs.edu.co',
         'Recursos Humanos' => 'rrhh@tvs.edu.co',

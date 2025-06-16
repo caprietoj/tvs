@@ -37,6 +37,7 @@ return [
         'TI' => 'jefesistemas@test.com',
         // Otras áreas comunes
         'Contabilidad' => 'contabilidad@test.com',
+        'Asistente Contabilidad' => 'asistentecontabilidad@test.com',
         'Compras' => 'compras@test.com',
         'Tesorería' => 'tesoreria@test.com',
         'Recursos Humanos' => 'rrhh@test.com',

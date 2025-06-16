@@ -248,6 +248,8 @@ verificar_correos_dinamicos.php
 verificar_flujo_cotizaciones.php
 verificar_sistema_correos.php
 prueba_pai_3_cotizaciones.php
+complete_rrhh_permissions.php
+update_rrhh_permissions.php
 
 # Documentation files generated during development
 *.md

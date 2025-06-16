@@ -417,6 +417,7 @@ class PurchaseOrdersController extends Controller
             $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
             $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
             $contabilidadEmail = config($configSource . '.sections.Contabilidad');
+            $asistenteContabilidadEmail = config($configSource . '.sections.Asistente Contabilidad');
             
             if ($isPhotocopiesOrMaterials) {
                 // Para fotocopias y materiales, solo enviar a compras
@@ -426,12 +427,17 @@ class PurchaseOrdersController extends Controller
                 \Log::info('Orden de ' . ($purchaseRequest->isCopiesRequest() ? 'fotocopias' : 'materiales') . 
                           ' enviada solo a compras (' . $comprasEmail . ') (no a contabilidad) - Orden #' . $purchaseOrder->order_number);
             } else {
-                // Para órdenes de compra normales, enviar a contabilidad y compras
-                Notification::route('mail', $contabilidadEmail)
-                    ->route('mail', $comprasEmail)
-                    ->notify(new OrderCreated($purchaseOrder));
+                // Para órdenes de compra normales, enviar a contabilidad, asistente de contabilidad y compras
+                $notification = Notification::route('mail', $contabilidadEmail)
+                    ->route('mail', $comprasEmail);
                     
-                \Log::info('Orden de compra normal enviada a contabilidad y compras - Orden #' . $purchaseOrder->order_number);
+                if ($asistenteContabilidadEmail) {
+                    $notification = $notification->route('mail', $asistenteContabilidadEmail);
+                }
+                
+                $notification->notify(new OrderCreated($purchaseOrder));
+                    
+                \Log::info('Orden de compra normal enviada a contabilidad (' . $contabilidadEmail . '), asistente contabilidad (' . $asistenteContabilidadEmail . ') y compras (' . $comprasEmail . ') - Orden #' . $purchaseOrder->order_number);
             }
                 
             return redirect()->route('purchase-orders.show', $purchaseOrder->id)
@@ -467,9 +473,15 @@ class PurchaseOrdersController extends Controller
             // Enviar notificación
             $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
             $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            $asistenteContabilidadEmail = config($configSource . '.sections.Asistente Contabilidad');
             
-            Notification::route('mail', $comprasEmail)
-                ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'compras'));
+            $notification = Notification::route('mail', $comprasEmail);
+            
+            if ($asistenteContabilidadEmail) {
+                $notification = $notification->route('mail', $asistenteContabilidadEmail);
+            }
+            
+            $notification->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'compras'));
             
             return redirect()->back()->with('success', 'Orden de compra enviada a Compras exitosamente.');
             
@@ -504,9 +516,15 @@ class PurchaseOrdersController extends Controller
             $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
             $contabilidadEmail = config($configSource . '.sections.Contabilidad');
             $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            $asistenteContabilidadEmail = config($configSource . '.sections.Asistente Contabilidad');
             
-            Notification::route('mail', $contabilidadEmail)
-                ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'contabilidad'));
+            $notification = Notification::route('mail', $contabilidadEmail);
+            
+            if ($asistenteContabilidadEmail) {
+                $notification = $notification->route('mail', $asistenteContabilidadEmail);
+            }
+            
+            $notification->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'contabilidad'));
             
             // Notificar también a compras para que esté al tanto
             Notification::route('mail', $comprasEmail)
