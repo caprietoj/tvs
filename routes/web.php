@@ -777,9 +777,53 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 
 // Rutas de depuración temporal
 Route::get('/debug-photocopies', [DebugPhotocopiesController::class, 'index'])->name('debug.photocopies');
-Route::post('/debug-photocopies/process', [DebugPhotocopiesController::class, 'process'])->name('debug.photocopies.process');
 
-// Rutas para Videos de Ayuda
-Route::middleware('auth')->group(function () {
-    Route::resource('help-videos', HelpVideoController::class);
+// Rutas para el sistema de evaluaciones de desempeño
+Route::middleware(['auth'])->prefix('performance-evaluations')->name('performance-evaluations.')->group(function () {
+    Route::get('/', [App\Http\Controllers\PerformanceEvaluationController::class, 'index'])->name('index');
+    Route::get('/export', [App\Http\Controllers\PerformanceEvaluationController::class, 'export'])->name('export');
+    Route::get('/create', [App\Http\Controllers\PerformanceEvaluationController::class, 'create'])->name('create');
+    Route::post('/', [App\Http\Controllers\PerformanceEvaluationController::class, 'store'])->name('store');
+    Route::get('/{performanceEvaluation}', [App\Http\Controllers\PerformanceEvaluationController::class, 'show'])->name('show');
+    
+    // Rutas para autoevaluación
+    Route::get('/{performanceEvaluation}/self-evaluate', [App\Http\Controllers\PerformanceEvaluationController::class, 'selfEvaluate'])->name('self-evaluate');
+    Route::post('/{performanceEvaluation}/self-evaluate', [App\Http\Controllers\PerformanceEvaluationController::class, 'storeSelfEvaluation'])->name('store-self-evaluation');
+    
+    // Rutas para evaluación del supervisor
+    Route::get('/{performanceEvaluation}/supervisor-evaluate', [App\Http\Controllers\PerformanceEvaluationController::class, 'supervisorEvaluate'])->name('supervisor-evaluate');
+    Route::post('/{performanceEvaluation}/supervisor-evaluate', [App\Http\Controllers\PerformanceEvaluationController::class, 'storeSupervisorEvaluation'])->name('store-supervisor-evaluation');
 });
+
+// Ruta temporal de debugging para verificar permisos
+Route::get('/debug-permissions', function () {
+    $user = auth()->user();
+    
+    if (!$user) {
+        return response()->json(['error' => 'Usuario no autenticado']);
+    }
+    
+    $data = [
+        'user_info' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+        ],
+        'roles' => $user->roles->pluck('name')->toArray(),
+        'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+        'performance_evaluation_permissions' => [
+            'hasRole_admin' => $user->hasRole('admin'),
+            'hasRole_rrhh' => $user->hasRole('rrhh'),
+            'can_create_performance_evaluations' => $user->can('create-performance-evaluations'),
+            'can_view_all_performance_evaluations' => $user->can('view-all-performance-evaluations'),
+            'can_self_evaluate' => $user->can('self-evaluate'),
+            'can_evaluate_as_supervisor' => $user->can('evaluate-as-supervisor'),
+        ],
+        'button_visibility' => [
+            'create_button_condition' => $user->hasRole('admin') || $user->can('create-performance-evaluations'),
+            'should_see_create_button' => $user->hasRole('admin') || $user->can('create-performance-evaluations') ? 'YES' : 'NO',
+        ],
+    ];
+    
+    return response()->json($data, 200, [], JSON_PRETTY_PRINT);
+})->middleware('auth');

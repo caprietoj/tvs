@@ -356,6 +356,13 @@ return [
             ],
         ],
         [
+            'text' => 'Evaluaciones de Desempeño',
+            'url'  => 'performance-evaluations',
+            'icon' => 'fas fa-user-check',
+            'active' => ['performance-evaluations*'],
+            'classes' => 'menu-item'
+        ],
+        [
             'text' => 'Reserva de Equipos',
             'icon' => 'fas fa-laptop',
             'classes' => 'menu-item',
