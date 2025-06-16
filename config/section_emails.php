@@ -45,6 +45,7 @@ return [
         'Coordinación Académica' => 'coordinacion.academica@tvs.edu.co',
         'Coordinación Disciplinaria' => 'coordinacion.disciplinaria@tvs.edu.co',
         'Rectoría' => 'rectoria@tvs.edu.co',
+        'Auxiliar Almacén' => 'auxiliaralmacen@tvs.edu.co',
     ],
 
     // Configuración específica para solicitudes de materiales - emails de aprobación por sección

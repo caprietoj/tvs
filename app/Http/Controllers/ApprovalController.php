@@ -143,7 +143,7 @@ class ApprovalController extends Controller
                     ->notify(new PurchaseRequestApproved($purchaseRequest, 'compras_fotocopias'));
                 
                 // Notificar a auxiliaralmacen solo para fotocopias
-                $auxiliaralmacenEmail = config($configSource . '.sections.Auxiliar Almacén', 'auxiliaralmacen@test.com');
+                $auxiliaralmacenEmail = config($configSource . '.sections.Auxiliar Almacén', 'auxiliaralmacen@tvs.edu.co');
                 Notification::route('mail', $auxiliaralmacenEmail)
                     ->notify(new PurchaseRequestApproved($purchaseRequest, 'auxiliaralmacen'));
                 

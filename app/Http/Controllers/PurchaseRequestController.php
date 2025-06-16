@@ -63,7 +63,7 @@ class PurchaseRequestController extends Controller
         // Si es una solicitud de fotocopias, agregar auxiliar almacén según configuración dinámica
         if ($purchaseRequest->isCopiesRequest()) {
             $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
-            $auxiliarEmail = config($configSource . '.sections.Auxiliar Almacén', 'auxiliaralmacen@test.com');
+            $auxiliarEmail = config($configSource . '.sections.Auxiliar Almacén', 'auxiliaralmacen@tvs.edu.co');
             $approvalEmails[] = $auxiliarEmail;
             \Log::info("Email auxiliar almacén ({$auxiliarEmail}) agregado para solicitud de fotocopias #" . $purchaseRequest->id);
         }
