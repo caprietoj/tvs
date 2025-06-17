@@ -135,11 +135,6 @@ class EventController extends Controller
                 'aldimark_time' => 'required_if:aldimark_required,1|nullable',
                 'aldimark_details' => 'nullable|string',
 
-                // Compras
-                'purchases_required' => 'boolean',
-                'purchases_requirement' => 'required_if:purchases_required,1|nullable|string',
-                'purchases_observations' => 'nullable|string',
-
                 // Comunicaciones
                 'communications_required' => 'boolean',
                 'communications_coverage' => 'required_if:communications_required,1|nullable|string',

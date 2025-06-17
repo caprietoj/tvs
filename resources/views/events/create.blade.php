@@ -357,21 +357,11 @@
                     <div class="service-group">
                         <h4 class="text-primary"><i class="fas fa-cogs mr-2"></i>Otros Servicios</h4>
                         
-                        <!-- Compras -->
+                        <!-- Información sobre Compras -->
                         <div class="service-section">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="purchases_required" name="purchases_required" value="1">
-                                <label class="custom-control-label" for="purchases_required">Compras</label>
-                            </div>
-                            <div id="purchases_fields" class="service-fields" style="display: none;">
-                                <div class="form-group">
-                                    <label>Requerimiento</label>
-                                    <input type="text" name="purchases_requirement" class="form-control">
-                                </div>
-                                <div class="form-group">
-                                    <label>Observaciones</label>
-                                    <textarea name="purchases_observations" class="form-control"></textarea>
-                                </div>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <strong>En caso de requerir alguna compra por favor tramitarla en ítem órdenes de compra.</strong>
                             </div>
                         </div>
 
@@ -837,7 +827,6 @@ document.addEventListener('DOMContentLoaded', function() {
         'maintenance_required',
         'systems_required',
         'aldimark_required',
-        'purchases_required',
         'communications_required'
     ];
 
