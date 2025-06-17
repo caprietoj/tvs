@@ -748,6 +748,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('copies-requests/export', [CopiesRequestController::class, 'export'])->name('copies-requests.export');
 });
 
+// Rutas para Videos de Ayuda
+Route::middleware(['auth'])->group(function () {
+    Route::resource('help-videos', HelpVideoController::class);
+});
+
 // Rutas para dashboard de fotocopias
 Route::middleware(['auth'])->group(function () {
     Route::get('photocopies/dashboard', [PhotocopiesDashboardController::class, 'index'])->name('photocopies.dashboard');
