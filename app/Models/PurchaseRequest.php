@@ -27,6 +27,7 @@ class PurchaseRequest extends Model
         'service_items',
         'service_budget',
         'service_budget_text',
+        'service_justification',
         'code',
         'grade',
         'section',

@@ -191,26 +191,59 @@ class PurchaseRequestController extends Controller
     */
     private function storePurchaseRequest(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        // Verificar si se están enviando items de compra o de servicio
+        $hasPurchaseItems = $request->has('purchase_items') && is_array($request->purchase_items) && 
+                           count(array_filter($request->purchase_items, function($item) {
+                               return !empty($item['description']);
+                           })) > 0;
+        
+        $hasServiceItems = $request->has('service_items') && is_array($request->service_items) && 
+                          count(array_filter($request->service_items, function($item) {
+                              return !empty($item['description']);
+                          })) > 0;
+        
+        // Definir reglas de validación dinámicas
+        $rules = [
             'requester' => 'required|string|max:255',
             'section_area' => 'required|string|max:255',
-            'purchase_justification' => 'required|string',
-            'purchase_items' => 'required|array',
-            'purchase_items.*.item' => 'required|integer',
-            'purchase_items.*.quantity' => 'required|integer|min:1',
-            'purchase_items.*.description' => 'required|string',
-            'purchase_items.*.unit' => 'required|string',
-            'purchase_items.*.observations' => 'nullable|string',
-            // Opcional: campos de servicio
+            // Campos de servicio
             'service_budget' => 'nullable|numeric|min:0',
             'service_budget_text' => 'nullable|string|max:255',
+            'service_justification' => 'nullable|string',
             'service_items' => 'nullable|array',
-            // Cambiamos el required_with por nullable para hacerlo realmente opcional
             'service_items.*.item' => 'nullable|integer',
             'service_items.*.quantity' => 'nullable|integer|min:0',
             'service_items.*.description' => 'nullable|string',
             'service_items.*.observations' => 'nullable|string',
-        ]);
+        ];
+        
+        // Solo requerir purchase_justification y purchase_items si hay items de compra
+        if ($hasPurchaseItems) {
+            $rules['purchase_justification'] = 'required|string';
+            $rules['purchase_items'] = 'required|array';
+            $rules['purchase_items.*.item'] = 'required|integer';
+            $rules['purchase_items.*.quantity'] = 'required|integer|min:1';
+            $rules['purchase_items.*.description'] = 'required|string';
+            $rules['purchase_items.*.unit'] = 'required|string';
+            $rules['purchase_items.*.observations'] = 'nullable|string';
+        } else {
+            $rules['purchase_justification'] = 'nullable|string';
+            $rules['purchase_items'] = 'nullable|array';
+            $rules['purchase_items.*.item'] = 'nullable|integer';
+            $rules['purchase_items.*.quantity'] = 'nullable|integer|min:1';
+            $rules['purchase_items.*.description'] = 'nullable|string';
+            $rules['purchase_items.*.unit'] = 'nullable|string';
+            $rules['purchase_items.*.observations'] = 'nullable|string';
+        }
+        
+        // Validar que al menos haya items de compra o de servicio
+        if (!$hasPurchaseItems && !$hasServiceItems) {
+            return redirect()->route('purchase-requests.create-purchase')
+                ->with('error', 'Debe agregar al menos un item de compra o un servicio.')
+                ->withInput();
+        }
+        
+        $validator = Validator::make($request->all(), $rules);
     
         if ($validator->fails()) {
             return redirect()->route('purchase-requests.create-purchase')
@@ -228,6 +261,7 @@ class PurchaseRequestController extends Controller
             'purchase_items' => $request->purchase_items,
             'service_budget' => $request->service_budget,
             'service_budget_text' => $request->service_budget_text,
+            'service_justification' => $request->service_justification,
             'service_items' => $request->service_items,
             'status' => 'pending',
         ]);

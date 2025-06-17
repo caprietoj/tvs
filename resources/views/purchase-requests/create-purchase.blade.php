@@ -80,11 +80,16 @@
                     </div>
                     <div class="card-body">
                         <div class="form-group">
-                            <label for="purchase_justification">JUSTIFICACIÓN DE LA COMPRA (Diligenciar este espacio en todos los casos):</label>
-                            <textarea class="form-control @error('purchase_justification') is-invalid @enderror" id="purchase_justification" name="purchase_justification" rows="3">{{ old('purchase_justification') }}</textarea>
+                            <label for="purchase_justification">JUSTIFICACIÓN DE LA COMPRA (Solo requerido si agrega artículos de compra):</label>
+                            <textarea class="form-control @error('purchase_justification') is-invalid @enderror" id="purchase_justification" name="purchase_justification" rows="3" placeholder="Complete este campo solo si está agregando artículos en la sección de compras">{{ old('purchase_justification') }}</textarea>
                             @error('purchase_justification')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> 
+                                Este campo es obligatorio únicamente cuando agrega artículos en la tabla de compras. 
+                                Para solicitudes solo de servicios, puede dejarlo vacío.
+                            </small>
                         </div>
 
                         <div class="table-responsive">
@@ -495,26 +500,35 @@
         
         // Validación del formulario
         $('#purchaseForm').submit(function(e) {
-            let valid = false;
-            
-            // Verificar si hay al menos un ítem de compra con cantidad
-            $('input[name$="[quantity]"]').each(function() {
-                if ($(this).val() && parseInt($(this).val()) > 0) {
-                    valid = true;
+            // Verificar si hay items de compra
+            let hasPurchaseItems = false;
+            $('#purchaseItemsBody input[name$="[description]"]').each(function() {
+                if ($(this).val().trim()) {
+                    hasPurchaseItems = true;
                     return false; // Romper el ciclo
                 }
             });
             
-            if (!valid) {
+            // Verificar si hay items de servicio
+            let hasServiceItems = false;
+            $('#serviceItemsBody input[name$="[description]"]').each(function() {
+                if ($(this).val().trim()) {
+                    hasServiceItems = true;
+                    return false; // Romper el ciclo
+                }
+            });
+            
+            // Validar que al menos hay uno de los dos tipos de items
+            if (!hasPurchaseItems && !hasServiceItems) {
                 e.preventDefault();
-                alert('Debe ingresar al menos un artículo con cantidad para la solicitud.');
+                alert('Debe ingresar al menos un artículo de compra o un servicio para la solicitud.');
                 return false;
             }
             
-            // Verificar si se llenó la justificación
-            if (!$('#purchase_justification').val().trim()) {
+            // Solo requerir justificación de compra si hay items de compra
+            if (hasPurchaseItems && !$('#purchase_justification').val().trim()) {
                 e.preventDefault();
-                alert('Debe ingresar una justificación para la compra.');
+                alert('Debe ingresar una justificación para la compra cuando agrega artículos de compra.');
                 $('#purchase_justification').focus();
                 return false;
             }
