@@ -718,8 +718,8 @@ class PurchaseRequestController extends Controller
     {
         $permissionService = new PurchaseRequestPermissionService();
         
-        // Verificar si el usuario puede editar (y por lo tanto eliminar) esta solicitud
-        if (!$permissionService->canEditRequest($purchaseRequest)) {
+        // Verificar si el usuario puede eliminar esta solicitud
+        if (!$permissionService->canDeleteRequest($purchaseRequest)) {
             abort(403, 'No tienes permisos para eliminar esta solicitud.');
         }
         

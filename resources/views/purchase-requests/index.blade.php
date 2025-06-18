@@ -137,7 +137,7 @@
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                         @endif
-                                        @if($permissionService->canEditRequest($request))
+                                        @if($permissionService->canDeleteRequest($request))
                                             <button type="button" class="btn btn-sm btn-danger" 
                                                 data-toggle="modal" 
                                                 data-target="#deleteModal" 

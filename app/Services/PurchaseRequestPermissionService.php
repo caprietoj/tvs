@@ -157,6 +157,11 @@ class PurchaseRequestPermissionService
             return false;
         }
         
+        // Rol almacén puede editar solicitudes de fotocopias
+        if ($user->hasRole('almacen') && $purchaseRequest->isCopiesRequest()) {
+            return true;
+        }
+        
         // El propietario siempre puede editar sus propias solicitudes (si están en estado pendiente)
         if ($purchaseRequest->user_id === $user->id && $purchaseRequest->status === 'pending') {
             return true;
@@ -190,5 +195,46 @@ class PurchaseRequestPermissionService
         
         // Solo roles almacén y admin pueden editar solicitudes de fotocopias aprobadas
         return $user->hasAnyRole(['admin', 'almacen']);
+    }
+
+    /**
+     * Verificar si un usuario puede eliminar una solicitud específica
+     */
+    public function canDeleteRequest($purchaseRequest, User $user = null)
+    {
+        $user = $user ?: Auth::user();
+        
+        // Admin siempre puede eliminar
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+        
+        // Restricción específica: rol profesor no puede eliminar solicitudes de fotocopias
+        if ($user->hasRole('profesor') && $purchaseRequest->isCopiesRequest()) {
+            return false;
+        }
+        
+        // Rol almacén puede eliminar solicitudes de fotocopias
+        if ($user->hasRole('almacen') && $purchaseRequest->isCopiesRequest()) {
+            return true;
+        }
+        
+        // El propietario puede eliminar sus propias solicitudes (si están en estado pendiente)
+        if ($purchaseRequest->user_id === $user->id && $purchaseRequest->status === 'pending') {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Verificar si un usuario puede anular una solicitud específica
+     */
+    public function canCancelRequest($purchaseRequest, User $user = null)
+    {
+        $user = $user ?: Auth::user();
+        
+        // Solo el propietario puede anular su solicitud
+        return $purchaseRequest->user_id === $user->id;
     }
 }

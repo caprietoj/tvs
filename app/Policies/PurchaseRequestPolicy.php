@@ -43,6 +43,11 @@ class PurchaseRequestPolicy
             return false;
         }
         
+        // Rol almacén puede editar solicitudes de fotocopias
+        if ($user->hasRole('almacen') && $purchaseRequest->isCopiesRequest()) {
+            return true;
+        }
+        
         // Solo el creador o usuarios con roles específicos pueden editar
         return $user->id === $purchaseRequest->user_id || 
                $user->hasAnyRole(['admin', 'compras']);
@@ -56,6 +61,11 @@ class PurchaseRequestPolicy
         // Restricción específica: rol profesor no puede eliminar solicitudes de fotocopias
         if ($user->hasRole('profesor') && $purchaseRequest->isCopiesRequest()) {
             return false;
+        }
+        
+        // Rol almacén puede eliminar solicitudes de fotocopias
+        if ($user->hasRole('almacen') && $purchaseRequest->isCopiesRequest()) {
+            return true;
         }
         
         // Solo el creador (si está en estado pendiente) o admin pueden eliminar
