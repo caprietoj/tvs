@@ -95,7 +95,10 @@
                                        class="btn btn-sm btn-info" title="Ver detalles">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    @if($request->status === 'approved' && Auth::user()->hasAnyRole(['admin', 'almacen']))
+                                    @php
+                                        $permissionService = new \App\Services\PurchaseRequestPermissionService();
+                                    @endphp
+                                    @if($permissionService->canEditRequest($request) || $permissionService->canEditApprovedCopiesRequest($request))
                                         <a href="{{ route('purchase-requests.edit', $request->id) }}" 
                                            class="btn btn-sm btn-warning" title="Editar">
                                             <i class="fas fa-edit"></i>

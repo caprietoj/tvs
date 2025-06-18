@@ -20,16 +20,16 @@
             </p>
         </div>
         <div class="d-flex">
-            @if($purchaseRequest->status == 'pending')
+            @php
+                $permissionService = new \App\Services\PurchaseRequestPermissionService();
+            @endphp
+            @if($permissionService->canEditRequest($purchaseRequest))
                 <a href="{{ route('purchase-requests.edit', $purchaseRequest) }}" class="btn btn-outline-primary btn-sm mr-2">
                     <i class="fas fa-edit"></i> Editar
                 </a>
             @endif
             
             {{-- Botón especial para editar solicitudes de fotocopias aprobadas (solo almacén y admin) --}}
-            @php
-                $permissionService = new \App\Services\PurchaseRequestPermissionService();
-            @endphp
             @if($permissionService->canEditApprovedCopiesRequest($purchaseRequest))
                 <a href="{{ route('purchase-requests.edit', $purchaseRequest) }}" class="btn btn-outline-warning btn-sm mr-2" 
                    title="Editar fotocopias antes de entregar">

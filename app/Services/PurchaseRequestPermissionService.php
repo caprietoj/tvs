@@ -152,6 +152,11 @@ class PurchaseRequestPermissionService
             return true;
         }
         
+        // Restricción específica: rol profesor no puede editar solicitudes de fotocopias
+        if ($user->hasRole('profesor') && $purchaseRequest->isCopiesRequest()) {
+            return false;
+        }
+        
         // El propietario siempre puede editar sus propias solicitudes (si están en estado pendiente)
         if ($purchaseRequest->user_id === $user->id && $purchaseRequest->status === 'pending') {
             return true;

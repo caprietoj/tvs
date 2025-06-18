@@ -129,10 +129,15 @@
                                         <a href="{{ route('purchase-requests.show', $request) }}" class="btn btn-sm btn-info" title="Ver detalle">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        @if($request->status == 'pending')
+                                        @php
+                                            $permissionService = new \App\Services\PurchaseRequestPermissionService();
+                                        @endphp
+                                        @if($permissionService->canEditRequest($request))
                                             <a href="{{ route('purchase-requests.edit', $request) }}" class="btn btn-sm btn-primary" title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
+                                        @endif
+                                        @if($permissionService->canEditRequest($request))
                                             <button type="button" class="btn btn-sm btn-danger" 
                                                 data-toggle="modal" 
                                                 data-target="#deleteModal" 

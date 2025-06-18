@@ -38,6 +38,11 @@ class PurchaseRequestPolicy
      */
     public function update(User $user, PurchaseRequest $purchaseRequest)
     {
+        // Restricción específica: rol profesor no puede editar solicitudes de fotocopias
+        if ($user->hasRole('profesor') && $purchaseRequest->isCopiesRequest()) {
+            return false;
+        }
+        
         // Solo el creador o usuarios con roles específicos pueden editar
         return $user->id === $purchaseRequest->user_id || 
                $user->hasAnyRole(['admin', 'compras']);
@@ -48,6 +53,11 @@ class PurchaseRequestPolicy
      */
     public function delete(User $user, PurchaseRequest $purchaseRequest)
     {
+        // Restricción específica: rol profesor no puede eliminar solicitudes de fotocopias
+        if ($user->hasRole('profesor') && $purchaseRequest->isCopiesRequest()) {
+            return false;
+        }
+        
         // Solo el creador (si está en estado pendiente) o admin pueden eliminar
         if ($user->id === $purchaseRequest->user_id && $purchaseRequest->status === 'pending') {
             return true;
