@@ -80,15 +80,15 @@
                     </div>
                     <div class="card-body">
                         <div class="form-group">
-                            <label for="purchase_justification">JUSTIFICACIÓN DE LA COMPRA (Solo requerido si agrega artículos de compra):</label>
-                            <textarea class="form-control @error('purchase_justification') is-invalid @enderror" id="purchase_justification" name="purchase_justification" rows="3" placeholder="Complete este campo solo si está agregando artículos en la sección de compras">{{ old('purchase_justification') }}</textarea>
+                            <label for="purchase_justification">JUSTIFICACIÓN DE LA COMPRA <span class="text-danger">*</span>:</label>
+                            <textarea class="form-control @error('purchase_justification') is-invalid @enderror" id="purchase_justification" name="purchase_justification" rows="3" placeholder="Describa la justificación para la compra de los artículos solicitados" required>{{ old('purchase_justification') }}</textarea>
                             @error('purchase_justification')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                             <small class="form-text text-muted">
                                 <i class="fas fa-info-circle"></i> 
-                                Este campo es obligatorio únicamente cuando agrega artículos en la tabla de compras. 
-                                Para solicitudes solo de servicios, puede dejarlo vacío.
+                                Este campo es obligatorio para solicitudes de compra de materiales.
+                                Para solicitudes de servicios, utilice el formulario específico de servicios.
                             </small>
                         </div>
 
@@ -108,17 +108,17 @@
                                     <tr id="purchaseItem-1">
                                         <td>1</td>
                                         <td>
-                                            <input type="number" class="form-control form-control-sm" name="purchase_items[0][quantity]" min="0">
+                                            <input type="number" class="form-control form-control-sm" name="purchase_items[0][quantity]" min="1" placeholder="Ej: 5" required>
                                             <input type="hidden" name="purchase_items[0][item]" value="1">
                                         </td>
                                         <td>
-                                            <input type="text" class="form-control form-control-sm" name="purchase_items[0][description]">
+                                            <input type="text" class="form-control form-control-sm" name="purchase_items[0][description]" placeholder="Descripción detallada del artículo" required>
                                         </td>
                                         <td>
-                                            <input type="text" class="form-control form-control-sm" name="purchase_items[0][unit]">
+                                            <input type="text" class="form-control form-control-sm" name="purchase_items[0][unit]" placeholder="Ej: Unidad, caja, metro">
                                         </td>
                                         <td>
-                                            <input type="text" class="form-control form-control-sm" name="purchase_items[0][observations]">
+                                            <input type="text" class="form-control form-control-sm" name="purchase_items[0][observations]" placeholder="Observaciones adicionales">
                                         </td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-sm btn-danger delete-row" disabled>
@@ -140,78 +140,12 @@
                         </div>
 
                         <div class="alert alert-info mt-3">
-                            <small>PARA EQUIPOS TECNOLÓGICOS SOLICITAMOS CONSULTAR LAS ESPECIFICACIONES TÉCNICAS DEFINIDAS POR EL EMC DEL COLEGIO VICTORIA.</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Servicios -->
-                <div class="card my-4 card-outline" style="border-top-color: #364E76;">
-                    <div class="card-header" style="background-color: #364E76; color: white;">
-                        <h5 class="mb-0">SERVICIOS</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label for="service_justification">JUSTIFICACIÓN DEL SERVICIO:</label>
-                            <textarea class="form-control" id="service_justification" name="service_justification" rows="2">{{ old('service_justification') }}</textarea>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group col-md-4">
-                                <label for="service_budget">VALOR PRESUPUESTADO PARA ESTE SERVICIO $:</label>
-                                <input type="number" step="0.01" class="form-control" id="service_budget" name="service_budget" value="{{ old('service_budget') }}">
-                            </div>
-                            <div class="form-group col-md-8">
-                                <label for="service_budget_text">EN LETRAS:</label>
-                                <input type="text" class="form-control" id="service_budget_text" name="service_budget_text" value="{{ old('service_budget_text') }}">
-                            </div>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table table-bordered" id="serviceItemsTable">
-                                <thead style="background-color: #f8f9fa;">
-                                    <tr>
-                                        <th style="width: 5%;">ITEM</th>
-                                        <th style="width: 10%;">CANT.</th>
-                                        <th style="width: 55%;">DESCRIPCIÓN DEL SERVICIO</th>
-                                        <th style="width: 25%;">OBSERVACIONES</th>
-                                        <th style="width: 5%;">ACCIÓN</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="serviceItemsBody">
-                                    <tr id="serviceItem-1">
-                                        <td>1</td>
-                                        <td>
-                                            <input type="number" class="form-control form-control-sm" name="service_items[0][quantity]" min="0">
-                                            <input type="hidden" name="service_items[0][item]" value="1">
-                                        </td>
-                                        <td>
-                                            <input type="text" class="form-control form-control-sm" name="service_items[0][description]">
-                                        </td>
-                                        <td>
-                                            <input type="text" class="form-control form-control-sm" name="service_items[0][observations]">
-                                        </td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-sm btn-danger delete-row" disabled>
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="5" class="text-center">
-                                            <button type="button" class="btn btn-sm" id="addServiceItem" style="background-color: #364E76; color: white;">
-                                                <i class="fas fa-plus"></i> Agregar Servicio
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
-                        <div class="alert alert-info mt-3">
-                            <small>NOTA: EN CASO DE REQUERIR VARIOS SERVICIOS PUEDE AÑADIR TANTAS FILAS COMO NECESITE USANDO EL BOTÓN "AGREGAR SERVICIO"</small>
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Información importante:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Para equipos tecnológicos solicitamos consultar las especificaciones técnicas definidas por el EMC del Colegio Victoria.</li>
+                                <li><strong>Para solicitudes de servicios</strong>, utilice el <a href="{{ route('purchase-requests.create-services') }}" class="alert-link">formulario específico de servicios</a>.</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -294,128 +228,8 @@
 @section('js')
 <script>
     $(function() {
-        // Variables para contadores de filas
+        // Variable para contador de filas
         let purchaseItemCounter = 1;
-        let serviceItemCounter = 1;
-        
-        // Función para convertir números a letras en español
-        function numeroALetras(numero) {
-            if (numero === 0) return 'cero';
-            if (numero < 0) return 'menos ' + numeroALetras(-numero);
-            
-            const unidades = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve'];
-            const especiales = ['diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve'];
-            const decenas = ['', '', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
-            const centenas = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
-            
-            function convertirGrupo(n) {
-                let resultado = '';
-                
-                if (n >= 100) {
-                    if (n === 100) {
-                        resultado += 'cien';
-                    } else {
-                        resultado += centenas[Math.floor(n / 100)];
-                    }
-                    n %= 100;
-                    if (n > 0) resultado += ' ';
-                }
-                
-                if (n >= 20) {
-                    resultado += decenas[Math.floor(n / 10)];
-                    n %= 10;
-                    if (n > 0) resultado += ' y ' + unidades[n];
-                } else if (n >= 10) {
-                    resultado += especiales[n - 10];
-                } else if (n > 0) {
-                    resultado += unidades[n];
-                }
-                
-                return resultado;
-            }
-            
-            if (numero < 1000) {
-                return convertirGrupo(numero);
-            } else if (numero < 1000000) {
-                const miles = Math.floor(numero / 1000);
-                const resto = numero % 1000;
-                let resultado = '';
-                
-                if (miles === 1) {
-                    resultado = 'mil';
-                } else {
-                    resultado = convertirGrupo(miles) + ' mil';
-                }
-                
-                if (resto > 0) {
-                    resultado += ' ' + convertirGrupo(resto);
-                }
-                
-                return resultado;
-            } else {
-                const millones = Math.floor(numero / 1000000);
-                const resto = numero % 1000000;
-                let resultado = '';
-                
-                if (millones === 1) {
-                    resultado = 'un millón';
-                } else {
-                    resultado = convertirGrupo(millones) + ' millones';
-                }
-                
-                if (resto > 0) {
-                    if (resto < 1000) {
-                        resultado += ' ' + convertirGrupo(resto);
-                    } else {
-                        const miles = Math.floor(resto / 1000);
-                        const restoMiles = resto % 1000;
-                        
-                        if (miles > 0) {
-                            if (miles === 1) {
-                                resultado += ' mil';
-                            } else {
-                                resultado += ' ' + convertirGrupo(miles) + ' mil';
-                            }
-                        }
-                        
-                        if (restoMiles > 0) {
-                            resultado += ' ' + convertirGrupo(restoMiles);
-                        }
-                    }
-                }
-                
-                return resultado;
-            }
-        }
-        
-        function convertirMonedaALetras(valor) {
-            if (!valor || isNaN(valor)) return '';
-            
-            const partes = valor.toString().split('.');
-            const entero = parseInt(partes[0]);
-            const decimales = partes[1] ? parseInt(partes[1].padEnd(2, '0').substring(0, 2)) : 0;
-            
-            let resultado = numeroALetras(entero) + ' peso';
-            if (entero !== 1) resultado += 's';
-            
-            if (decimales > 0) {
-                resultado += ' con ' + numeroALetras(decimales) + ' centavo';
-                if (decimales !== 1) resultado += 's';
-            }
-            
-            return resultado.charAt(0).toUpperCase() + resultado.slice(1);
-        }
-        
-        // Event listener para conversión automática de números a letras
-        $('#service_budget').on('input change', function() {
-            const valor = parseFloat($(this).val());
-            if (!isNaN(valor) && valor >= 0) {
-                const valorEnLetras = convertirMonedaALetras(valor);
-                $('#service_budget_text').val(valorEnLetras);
-            } else {
-                $('#service_budget_text').val('');
-            }
-        });
         
         // Función para agregar nuevo artículo de compra
         $('#addPurchaseItem').click(function() {
@@ -425,17 +239,17 @@
                 <tr id="purchaseItem-${purchaseItemCounter}">
                     <td>${purchaseItemCounter}</td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" name="purchase_items[${newIndex}][quantity]" min="0">
+                        <input type="number" class="form-control form-control-sm" name="purchase_items[${newIndex}][quantity]" min="1" required>
                         <input type="hidden" name="purchase_items[${newIndex}][item]" value="${purchaseItemCounter}">
                     </td>
                     <td>
-                        <input type="text" class="form-control form-control-sm" name="purchase_items[${newIndex}][description]">
+                        <input type="text" class="form-control form-control-sm" name="purchase_items[${newIndex}][description]" placeholder="Descripción del artículo" required>
                     </td>
                     <td>
-                        <input type="text" class="form-control form-control-sm" name="purchase_items[${newIndex}][unit]">
+                        <input type="text" class="form-control form-control-sm" name="purchase_items[${newIndex}][unit]" placeholder="Ej: Unidad, caja, metro">
                     </td>
                     <td>
-                        <input type="text" class="form-control form-control-sm" name="purchase_items[${newIndex}][observations]">
+                        <input type="text" class="form-control form-control-sm" name="purchase_items[${newIndex}][observations]" placeholder="Observaciones adicionales">
                     </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-sm btn-danger delete-row">
@@ -445,96 +259,91 @@
                 </tr>
             `;
             $('#purchaseItemsBody').append(newRow);
-        });
-        
-        // Función para agregar nuevo servicio
-        $('#addServiceItem').click(function() {
-            serviceItemCounter++;
-            const newIndex = $('#serviceItemsBody tr').length;
-            const newRow = `
-                <tr id="serviceItem-${serviceItemCounter}">
-                    <td>${serviceItemCounter}</td>
-                    <td>
-                        <input type="number" class="form-control form-control-sm" name="service_items[${newIndex}][quantity]" min="0">
-                        <input type="hidden" name="service_items[${newIndex}][item]" value="${serviceItemCounter}">
-                    </td>
-                    <td>
-                        <input type="text" class="form-control form-control-sm" name="service_items[${newIndex}][description]">
-                    </td>
-                    <td>
-                        <input type="text" class="form-control form-control-sm" name="service_items[${newIndex}][observations]">
-                    </td>
-                    <td class="text-center">
-                        <button type="button" class="btn btn-sm btn-danger delete-row">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-            $('#serviceItemsBody').append(newRow);
+            updateDeleteButtons();
         });
         
         // Evento para eliminar fila (delegación de eventos)
         $(document).on('click', '.delete-row', function() {
-            // No permitir eliminar si solo queda una fila
-            const tableId = $(this).closest('table').attr('id');
-            const rowCount = $(this).closest('tbody').find('tr').length;
+            const rowCount = $('#purchaseItemsBody tr').length;
             
             if (rowCount > 1) {
                 $(this).closest('tr').remove();
-                
-                // Renumerar las filas visibles
-                if (tableId === 'purchaseItemsTable') {
-                    $('#purchaseItemsBody tr').each(function(index) {
-                        $(this).find('td:first').text(index + 1);
-                    });
-                } else if (tableId === 'serviceItemsTable') {
-                    $('#serviceItemsBody tr').each(function(index) {
-                        $(this).find('td:first').text(index + 1);
-                    });
-                }
+                updateDeleteButtons();
+                updateItemNumbers();
             } else {
-                alert('Debe mantener al menos un ítem en la tabla.');
+                alert('Debe mantener al menos un artículo en la solicitud.');
             }
         });
+
+        // Función para actualizar los botones de eliminar
+        function updateDeleteButtons() {
+            const rows = $('#purchaseItemsBody tr');
+            rows.each(function(index) {
+                const deleteBtn = $(this).find('.delete-row');
+                if (rows.length === 1) {
+                    deleteBtn.prop('disabled', true);
+                } else {
+                    deleteBtn.prop('disabled', false);
+                }
+            });
+        }
+
+        // Función para actualizar numeración de items
+        function updateItemNumbers() {
+            $('#purchaseItemsBody tr').each(function(index) {
+                $(this).find('td:first').text(index + 1);
+                $(this).attr('id', 'purchaseItem-' + (index + 1));
+                
+                // Actualizar nombres de los inputs
+                $(this).find('input[name*="[quantity]"]').attr('name', `purchase_items[${index}][quantity]`);
+                $(this).find('input[name*="[item]"]').attr('name', `purchase_items[${index}][item]`).val(index + 1);
+                $(this).find('input[name*="[description]"]').attr('name', `purchase_items[${index}][description]`);
+                $(this).find('input[name*="[unit]"]').attr('name', `purchase_items[${index}][unit]`);
+                $(this).find('input[name*="[observations]"]').attr('name', `purchase_items[${index}][observations]`);
+            });
+            
+            purchaseItemCounter = $('#purchaseItemsBody tr').length;
+        }
         
         // Validación del formulario
         $('#purchaseForm').submit(function(e) {
-            // Verificar si hay items de compra
             let hasPurchaseItems = false;
-            $('#purchaseItemsBody input[name$="[description]"]').each(function() {
+            
+            // Verificar si hay items de compra con descripción
+            $('#purchaseItemsBody input[name*="[description]"]').each(function() {
                 if ($(this).val().trim()) {
                     hasPurchaseItems = true;
-                    return false; // Romper el ciclo
+                    return false;
                 }
             });
             
-            // Verificar si hay items de servicio
-            let hasServiceItems = false;
-            $('#serviceItemsBody input[name$="[description]"]').each(function() {
-                if ($(this).val().trim()) {
-                    hasServiceItems = true;
-                    return false; // Romper el ciclo
-                }
-            });
-            
-            // Validar que al menos hay uno de los dos tipos de items
-            if (!hasPurchaseItems && !hasServiceItems) {
+            if (!hasPurchaseItems) {
                 e.preventDefault();
-                alert('Debe ingresar al menos un artículo de compra o un servicio para la solicitud.');
+                alert('Debe ingresar al menos un artículo de compra para la solicitud.');
                 return false;
             }
             
-            // Solo requerir justificación de compra si hay items de compra
-            if (hasPurchaseItems && !$('#purchase_justification').val().trim()) {
+            // Validar justificación (ahora siempre requerida)
+            if (!$('#purchase_justification').val().trim()) {
                 e.preventDefault();
-                alert('Debe ingresar una justificación para la compra cuando agrega artículos de compra.');
+                alert('Debe ingresar una justificación para la compra.');
                 $('#purchase_justification').focus();
+                return false;
+            }
+
+            // Validar sección/área
+            if (!$('#section_area').val()) {
+                e.preventDefault();
+                alert('Debe seleccionar una sección y/o área.');
+                $('#section_area').focus();
                 return false;
             }
             
             return true;
         });
+
+        // Inicializar botones
+        updateDeleteButtons();
     });
 </script>
 @stop

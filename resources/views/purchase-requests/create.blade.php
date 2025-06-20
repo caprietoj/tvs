@@ -16,7 +16,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="card card-type-selector mb-4" id="purchaseCard">
                                 <div class="ribbon-wrapper ribbon-lg">
                                     <div class="ribbon" style="background-color: #364E76; color: white;">
@@ -25,17 +25,17 @@
                                 </div>
                                 <div class="card-body text-center">
                                     <div class="icon-container mb-3">
-                                        <i class="fas fa-shopping-cart fa-4x" style="color: #364E76;"></i>
+                                        <i class="fas fa-shopping-cart fa-3x" style="color: #364E76;"></i>
                                     </div>
-                                    <h4 class="card-title">Solicitud de Compra</h4>
+                                    <h5 class="card-title">Solicitud de Compra</h5>
                                     <p class="card-text">
-                                        Utilice este formulario para solicitar la compra de insumos, 
-                                        equipos y materiales para su departamento o área de trabajo.
+                                        Utilice este formulario para solicitar la compra de productos específicos, 
+                                        equipos e insumos para su departamento.
                                     </p>
                                     <ul class="list-group list-group-flush text-left mb-4">
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Solicitudes de productos específicos</li>
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Cotizaciones y presupuestos</li>
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Servicios externos</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Productos específicos</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Equipos</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Insumos especializados</li>
                                     </ul>
                                     <button type="button" id="purchaseButton" class="btn btn-lg btn-block" style="background-color: #364E76; color: white;">
                                         <i class="fas fa-shopping-cart mr-2"></i> Crear Solicitud de Compra
@@ -43,18 +43,45 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <div class="card card-type-selector" id="servicesCard">
+                                <div class="ribbon-wrapper ribbon-lg">
+                                    <div class="ribbon" style="background-color: #364E76; color: white;">
+                                        Servicios
+                                    </div>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="icon-container mb-3">
+                                        <i class="fas fa-tools fa-3x" style="color: #364E76;"></i>
+                                    </div>
+                                    <h5 class="card-title">Solicitud de Servicios</h5>
+                                    <p class="card-text">
+                                        Utilice este formulario para solicitar servicios externos, 
+                                        mantenimientos y servicios profesionales.
+                                    </p>
+                                    <ul class="list-group list-group-flush text-left mb-4">
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Servicios externos</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Mantenimientos</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Servicios profesionales</li>
+                                    </ul>
+                                    <button type="button" id="servicesButton" class="btn btn-lg btn-block" style="background-color: #364E76; color: white;">
+                                        <i class="fas fa-tools mr-2"></i> Crear Solicitud de Servicios
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <div class="card card-type-selector" id="materialsCard">
                                 <div class="ribbon-wrapper ribbon-lg">
-                                    <div class="ribbon bg-success">
+                                    <div class="ribbon" style="background-color: #364E76; color: white;">
                                         Materiales
                                     </div>
                                 </div>
                                 <div class="card-body text-center">
                                     <div class="icon-container mb-3">
-                                        <i class="fas fa-box fa-4x text-success"></i>
+                                        <i class="fas fa-box fa-3x" style="color: #364E76;"></i>
                                     </div>
-                                    <h4 class="card-title">Solicitud de Materiales</h4>
+                                    <h5 class="card-title">Solicitud de Materiales</h5>
                                     <p class="card-text">
                                         Utilice este formulario para solicitar materiales de oficina 
                                         y papelería para su departamento.
@@ -64,34 +91,34 @@
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Materiales didácticos</li>
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Papelería</li>
                                     </ul>
-                                    <button type="button" id="materialsButton" class="btn btn-lg btn-success btn-block">
+                                    <button type="button" id="materialsButton" class="btn btn-lg btn-block" style="background-color: #364E76; color: white;">
                                         <i class="fas fa-box mr-2"></i> Crear Solicitud de Materiales
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="card card-type-selector" id="copiesCard">
                                 <div class="ribbon-wrapper ribbon-lg">
-                                    <div class="ribbon bg-info">
+                                    <div class="ribbon" style="background-color: #364E76; color: white;">
                                         Fotocopias
                                     </div>
                                 </div>
                                 <div class="card-body text-center">
                                     <div class="icon-container mb-3">
-                                        <i class="fas fa-copy fa-4x text-info"></i>
+                                        <i class="fas fa-copy fa-3x" style="color: #364E76;"></i>
                                     </div>
-                                    <h4 class="card-title">Solicitud de Fotocopias</h4>
+                                    <h5 class="card-title">Solicitud de Fotocopias</h5>
                                     <p class="card-text">
                                         Utilice este formulario para solicitar servicios de fotocopiado
                                         para su departamento.
                                     </p>
                                     <ul class="list-group list-group-flush text-left mb-4">
-                                        <li class="list-group-item"><i class="fas fa-check text-info mr-2"></i>Servicio de fotocopiado</li>
-                                        <li class="list-group-item"><i class="fas fa-check text-info mr-2"></i>Copias en blanco y negro</li>
-                                        <li class="list-group-item"><i class="fas fa-check text-info mr-2"></i>Copias a color</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Servicio de fotocopiado</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Copias en blanco y negro</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Copias a color</li>
                                     </ul>
-                                    <button type="button" id="copiesButton" class="btn btn-lg btn-info btn-block">
+                                    <button type="button" id="copiesButton" class="btn btn-lg btn-block" style="background-color: #364E76; color: white;">
                                         <i class="fas fa-copy mr-2"></i> Crear Solicitud de Fotocopias
                                     </button>
                                 </div>
@@ -135,13 +162,18 @@
     }
     
     .card-type-selector.selected#materialsCard {
-        border-color: #28a745;
-        box-shadow: 0 10px 20px rgba(40, 167, 69, 0.2);
+        border-color: var(--institutional-blue);
+        box-shadow: 0 10px 20px rgba(54, 78, 118, 0.2);
     }
     
     .card-type-selector.selected#copiesCard {
-        border-color: #17a2b8;
-        box-shadow: 0 10px 20px rgba(23, 162, 184, 0.2);
+        border-color: var(--institutional-blue);
+        box-shadow: 0 10px 20px rgba(54, 78, 118, 0.2);
+    }
+    
+    .card-type-selector.selected#servicesCard {
+        border-color: var(--institutional-blue);
+        box-shadow: 0 10px 20px rgba(54, 78, 118, 0.2);
     }
     
     .icon-container {
@@ -205,11 +237,21 @@
     .btn-institutional {
         background-color: var(--institutional-blue);
         color: white;
+        border-color: var(--institutional-blue);
     }
     
     .btn-institutional:hover {
         background-color: #2a3d5d;
         color: white;
+        border-color: #2a3d5d;
+    }
+    
+    /* Estilos hover para botones con color institucional inline */
+    button[style*="#364E76"]:hover {
+        background-color: #2a3d5d !important;
+        border-color: #2a3d5d !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(54, 78, 118, 0.3);
     }
     
     .text-institutional {
@@ -226,23 +268,37 @@
             $(this).addClass('selected');
             $('#materialsCard').removeClass('selected');
             $('#copiesCard').removeClass('selected');
+            $('#servicesCard').removeClass('selected');
+        });
+        
+        $('#servicesCard').click(function() {
+            $(this).addClass('selected');
+            $('#purchaseCard').removeClass('selected');
+            $('#materialsCard').removeClass('selected');
+            $('#copiesCard').removeClass('selected');
         });
         
         $('#materialsCard').click(function() {
             $(this).addClass('selected');
             $('#purchaseCard').removeClass('selected');
             $('#copiesCard').removeClass('selected');
+            $('#servicesCard').removeClass('selected');
         });
         
         $('#copiesCard').click(function() {
             $(this).addClass('selected');
             $('#purchaseCard').removeClass('selected');
             $('#materialsCard').removeClass('selected');
+            $('#servicesCard').removeClass('selected');
         });
         
         // Redirigir a los formularios correspondientes
         $('#purchaseButton').click(function() {
             window.location.href = '{{ route("purchase-requests.create-purchase") }}';
+        });
+        
+        $('#servicesButton').click(function() {
+            window.location.href = '{{ route("purchase-requests.create-services") }}';
         });
         
         $('#materialsButton').click(function() {

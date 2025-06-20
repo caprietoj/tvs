@@ -43,12 +43,131 @@
                             </div>
                             <div class="row mt-2">
                                 <div class="col-md-12">
-                                    <strong>Descripción:</strong> {{ $request->description ?? 'No hay descripción disponible' }}
+                                    @php
+                                        $hasJustification = false;
+                                    @endphp
+                                    
+                                    @if($request->type === 'purchase' && $request->purchase_justification)
+                                        <strong>Justificación de la Compra:</strong> {{ $request->purchase_justification }}
+                                        @php $hasJustification = true; @endphp
+                                    @endif
+                                    
+                                    @if($request->type === 'purchase' && $request->service_justification)
+                                        @if($hasJustification)<br>@endif
+                                        <strong>Justificación del Servicio:</strong> {{ $request->service_justification }}
+                                        @php $hasJustification = true; @endphp
+                                    @endif
+                                    
+                                    @if($request->description)
+                                        @if($hasJustification)<br>@endif
+                                        <strong>Descripción Adicional:</strong> {{ $request->description }}
+                                    @elseif(!$hasJustification)
+                                        <strong>Descripción:</strong> No hay descripción ni justificación disponible
+                                    @endif
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Productos/Servicios solicitados -->
+                @if($request->type === 'purchase')
+                    <!-- Productos (si hay) -->
+                    @if(is_array($request->purchase_items) && count(array_filter($request->purchase_items, function($item) { return !empty($item['quantity']); })))
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card card-primary card-outline">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-boxes mr-1"></i>
+                                            Productos Solicitados
+                                        </h3>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped mb-0">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th style="width: 5%">#</th>
+                                                        <th style="width: 10%">Cant.</th>
+                                                        <th style="width: 35%">Descripción</th>
+                                                        <th style="width: 25%">Unidad/Presentación</th>
+                                                        <th style="width: 25%">Observaciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($request->purchase_items as $item)
+                                                        @if(!empty($item['quantity']))
+                                                            <tr>
+                                                                <td>{{ $item['item'] ?? '' }}</td>
+                                                                <td>{{ $item['quantity'] ?? '' }}</td>
+                                                                <td>{{ $item['description'] ?? '' }}</td>
+                                                                <td>{{ $item['unit'] ?? '' }}</td>
+                                                                <td>{{ $item['observations'] ?? '' }}</td>
+                                                            </tr>
+                                                        @endif
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Servicios (si hay) -->
+                    @if(is_array($request->service_items) && count(array_filter($request->service_items, function($item) { return !empty($item['quantity']); })))
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card card-primary card-outline">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-concierge-bell mr-1"></i>
+                                            Servicios Solicitados
+                                        </h3>
+                                    </div>
+                                    <div class="card-body">
+                                        @if($request->service_budget)
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-money-bill-wave mr-1"></i>
+                                                <strong>Presupuesto:</strong> ${{ number_format($request->service_budget, 2) }} 
+                                                @if($request->service_budget_text)
+                                                    ({{ $request->service_budget_text }})
+                                                @endif
+                                            </div>
+                                        @endif
+
+                                        <div class="table-responsive">
+                                            <table class="table table-striped mb-0">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th style="width: 5%">#</th>
+                                                        <th style="width: 10%">Cant.</th>
+                                                        <th style="width: 60%">Descripción</th>
+                                                        <th style="width: 25%">Observaciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($request->service_items as $service)
+                                                        @if(!empty($service['quantity']))
+                                                        <tr>
+                                                            <td>{{ $service['item'] ?? '' }}</td>
+                                                            <td>{{ $service['quantity'] ?? '' }}</td>
+                                                            <td>{{ $service['description'] ?? '' }}</td>
+                                                            <td>{{ $service['observations'] ?? '' }}</td>
+                                                        </tr>
+                                                        @endif
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @endif
 
                 @if($request->quotations->count() > 0)
                     <!-- Gráfico comparativo -->
@@ -211,10 +330,36 @@
                     
                     <div class="form-group">
                         <label for="budget">Presupuesto al que se cargará esta compra *:</label>
-                        <input type="text" class="form-control" id="budget" name="budget" required 
-                               placeholder="Ej: Presupuesto 2025 - Equipos de cómputo" 
-                               maxlength="255">
-                        <small class="form-text text-muted">Especifique el presupuesto o partida presupuestal donde se cargará esta compra.</small>
+                        <select class="form-control" id="budget" name="budget" required>
+                            <option value="">Seleccione un rubro presupuestal...</option>
+                            <option value="Tecnología Institucional">Tecnología Institucional</option>
+                            <option value="Tecnología (secciones)">Tecnología (secciones)</option>
+                            <option value="Internet/Arrendamientos Tecnológicos">Internet/Arrendamientos Tecnológicos</option>
+                            <option value="Capacitación EMC/Docentes">Capacitación EMC/Docentes</option>
+                            <option value="Capacitación Administración">Capacitación Administración</option>
+                            <option value="Capacitación General">Capacitación General</option>
+                            <option value="Capacitación COPASST">Capacitación COPASST</option>
+                            <option value="Equipos y Dotación Salones/Oficinas">Equipos y Dotación Salones/Oficinas</option>
+                            <option value="Mercadeo">Mercadeo</option>
+                            <option value="Eventos">Eventos</option>
+                            <option value="Reparaciones Mayores">Reparaciones Mayores</option>
+                            <option value="Útiles de Oficina y Papelería">Útiles de Oficina y Papelería</option>
+                            <option value="Bachillerato Internacional">Bachillerato Internacional</option>
+                            <option value="Textos y Útiles de Consumo">Textos y Útiles de Consumo</option>
+                            <option value="Deportes">Deportes</option>
+                            <option value="Biblioteca Institucional">Biblioteca Institucional</option>
+                            <option value="Materiales">Materiales</option>
+                            <option value="Servicios Públicos">Servicios Públicos</option>
+                            <option value="Vigilancia">Vigilancia</option>
+                            <option value="Honorarios">Honorarios</option>
+                            <option value="Comisiones Bancarias">Comisiones Bancarias</option>
+                            <option value="Arrendamientos">Arrendamientos</option>
+                            <option value="Cafetería">Cafetería</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Salarios Academia">Salarios Academia</option>
+                            <option value="Salarios Administrativos">Salarios Administrativos</option>
+                        </select>
+                        <small class="form-text text-muted">Seleccione el rubro presupuestal donde se cargará esta compra.</small>
                     </div>
                 </div>
                 <div class="modal-footer">

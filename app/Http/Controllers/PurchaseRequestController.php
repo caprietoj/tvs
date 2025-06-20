@@ -98,9 +98,11 @@ class PurchaseRequestController extends Controller
         
         // Filtro por tipo si se especifica
         $typeFilter = $request->get('type');
-        if ($typeFilter && in_array($typeFilter, ['purchase', 'materials', 'copies'])) {
+        if ($typeFilter && in_array($typeFilter, ['purchase', 'materials', 'copies', 'services'])) {
             if ($typeFilter === 'purchase') {
                 $query->where('type', 'purchase');
+            } elseif ($typeFilter === 'services') {
+                $query->where('type', 'services');
             } elseif ($typeFilter === 'materials') {
                 $query->where('type', 'materials')
                       ->where(function($q) {
@@ -144,6 +146,14 @@ class PurchaseRequestController extends Controller
     }
 
     /**
+    * Show form for services request
+    */
+    public function createServicesForm()
+    {
+    return view('purchase-requests.create-services');
+    }
+
+    /**
     * Show form for materials request
     */
     public function createMaterialsForm()
@@ -170,11 +180,13 @@ class PurchaseRequestController extends Controller
     {
     // Validar tipo de solicitud
     $validatedType = $request->validate([
-    'type' => 'required|in:purchase,materials',
+    'type' => 'required|in:purchase,materials,services',
     ]);
 
     if ($validatedType['type'] === 'purchase') {
         return $this->storePurchaseRequest($request);
+    } elseif ($validatedType['type'] === 'services') {
+        return $this->storeServicesRequest($request);
     } elseif ($validatedType['type'] === 'materials') {
         // Verificar si es una solicitud de fotocopias o de materiales
         // Si hay copy_items pero no hay material_items, es una solicitud de fotocopias
@@ -191,57 +203,31 @@ class PurchaseRequestController extends Controller
     */
     private function storePurchaseRequest(Request $request)
     {
-        // Verificar si se están enviando items de compra o de servicio
+        // Verificar que se están enviando items de compra
         $hasPurchaseItems = $request->has('purchase_items') && is_array($request->purchase_items) && 
                            count(array_filter($request->purchase_items, function($item) {
                                return !empty($item['description']);
                            })) > 0;
         
-        $hasServiceItems = $request->has('service_items') && is_array($request->service_items) && 
-                          count(array_filter($request->service_items, function($item) {
-                              return !empty($item['description']);
-                          })) > 0;
+        if (!$hasPurchaseItems) {
+            return redirect()->route('purchase-requests.create-purchase')
+                ->with('error', 'Debe agregar al menos un artículo de compra. Para servicios, utilice el formulario específico de servicios.')
+                ->withInput();
+        }
         
-        // Definir reglas de validación dinámicas
+        // Definir reglas de validación para compras únicamente
         $rules = [
             'requester' => 'required|string|max:255',
             'section_area' => 'required|string|max:255',
-            // Campos de servicio
-            'service_budget' => 'nullable|numeric|min:0',
-            'service_budget_text' => 'nullable|string|max:255',
-            'service_justification' => 'nullable|string',
-            'service_items' => 'nullable|array',
-            'service_items.*.item' => 'nullable|integer',
-            'service_items.*.quantity' => 'nullable|integer|min:0',
-            'service_items.*.description' => 'nullable|string',
-            'service_items.*.observations' => 'nullable|string',
+            'coordinator' => 'nullable|string|max:255',
+            'purchase_justification' => 'required|string',
+            'purchase_items' => 'required|array',
+            'purchase_items.*.item' => 'required|integer',
+            'purchase_items.*.quantity' => 'required|integer|min:1',
+            'purchase_items.*.description' => 'required|string',
+            'purchase_items.*.unit' => 'required|string',
+            'purchase_items.*.observations' => 'nullable|string',
         ];
-        
-        // Solo requerir purchase_justification y purchase_items si hay items de compra
-        if ($hasPurchaseItems) {
-            $rules['purchase_justification'] = 'required|string';
-            $rules['purchase_items'] = 'required|array';
-            $rules['purchase_items.*.item'] = 'required|integer';
-            $rules['purchase_items.*.quantity'] = 'required|integer|min:1';
-            $rules['purchase_items.*.description'] = 'required|string';
-            $rules['purchase_items.*.unit'] = 'required|string';
-            $rules['purchase_items.*.observations'] = 'nullable|string';
-        } else {
-            $rules['purchase_justification'] = 'nullable|string';
-            $rules['purchase_items'] = 'nullable|array';
-            $rules['purchase_items.*.item'] = 'nullable|integer';
-            $rules['purchase_items.*.quantity'] = 'nullable|integer|min:1';
-            $rules['purchase_items.*.description'] = 'nullable|string';
-            $rules['purchase_items.*.unit'] = 'nullable|string';
-            $rules['purchase_items.*.observations'] = 'nullable|string';
-        }
-        
-        // Validar que al menos haya items de compra o de servicio
-        if (!$hasPurchaseItems && !$hasServiceItems) {
-            return redirect()->route('purchase-requests.create-purchase')
-                ->with('error', 'Debe agregar al menos un item de compra o un servicio.')
-                ->withInput();
-        }
         
         $validator = Validator::make($request->all(), $rules);
     
@@ -257,12 +243,9 @@ class PurchaseRequestController extends Controller
             'user_id' => Auth::id(),
             'requester' => $request->requester,
             'section_area' => $request->section_area,
+            'coordinator' => $request->coordinator,
             'purchase_justification' => $request->purchase_justification,
             'purchase_items' => $request->purchase_items,
-            'service_budget' => $request->service_budget,
-            'service_budget_text' => $request->service_budget_text,
-            'service_justification' => $request->service_justification,
-            'service_items' => $request->service_items,
             'status' => 'pending',
         ]);
 
@@ -271,6 +254,69 @@ class PurchaseRequestController extends Controller
 
         return redirect()->route('purchase-requests.index')
             ->with('success', 'Solicitud de compra creada exitosamente');
+    }
+
+    /**
+    * Store a services request
+    */
+    private function storeServicesRequest(Request $request)
+    {
+        // Validar que haya al menos un servicio con descripción
+        $hasServiceItems = $request->has('service_items') && is_array($request->service_items) && 
+                          count(array_filter($request->service_items, function($item) {
+                              return !empty($item['description']);
+                          })) > 0;
+        
+        if (!$hasServiceItems) {
+            return redirect()->route('purchase-requests.create-services')
+                ->with('error', 'Debe agregar al menos un servicio con descripción.')
+                ->withInput();
+        }
+        
+        // Definir reglas de validación
+        $rules = [
+            'requester' => 'required|string|max:255',
+            'section_area' => 'required|string|max:255',
+            'coordinator' => 'nullable|string|max:255',
+            'service_justification' => 'required|string',
+            'service_budget' => 'nullable|numeric|min:0',
+            'service_budget_text' => 'nullable|string|max:255',
+            'general_observations' => 'nullable|string',
+            'service_items' => 'required|array',
+            'service_items.*.item' => 'required|integer',
+            'service_items.*.quantity' => 'required|integer|min:1',
+            'service_items.*.description' => 'required|string',
+            'service_items.*.observations' => 'nullable|string',
+        ];
+        
+        $validator = Validator::make($request->all(), $rules);
+    
+        if ($validator->fails()) {
+            return redirect()->route('purchase-requests.create-services')
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Crear la solicitud de servicios
+        $purchaseRequest = PurchaseRequest::create([
+            'type' => 'services',
+            'user_id' => Auth::id(),
+            'requester' => $request->requester,
+            'section_area' => $request->section_area,
+            'coordinator' => $request->coordinator,
+            'service_justification' => $request->service_justification,
+            'service_budget' => $request->service_budget,
+            'service_budget_text' => $request->service_budget_text,
+            'service_items' => $request->service_items,
+            'general_observations' => $request->general_observations,
+            'status' => 'pending',
+        ]);
+
+        // Enviar emails diferenciados
+        $this->sendDifferentiatedEmails($purchaseRequest);
+
+        return redirect()->route('purchase-requests.index')
+            ->with('success', 'Solicitud de servicios creada exitosamente');
     }
 
     /**

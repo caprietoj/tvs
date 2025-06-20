@@ -34,6 +34,7 @@ class PurchaseOrder extends Model
         'sent_by',
         'payment_date',
         'payment_reference',
+        'payment_receipt_path',
         'cancelled_at',
         'cancelled_by',
         'cancellation_reason',

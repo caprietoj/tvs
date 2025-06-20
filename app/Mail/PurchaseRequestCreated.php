@@ -29,6 +29,8 @@ class PurchaseRequestCreated extends Mailable
         // Determinar el tipo de solicitud para el asunto del correo
         if ($this->purchaseRequest->type == 'purchase') {
             $requestType = 'compra';
+        } elseif ($this->purchaseRequest->type == 'services') {
+            $requestType = 'servicio';
         } elseif ($this->purchaseRequest->isCopiesRequest()) {
             $requestType = 'fotocopias';
         } else {

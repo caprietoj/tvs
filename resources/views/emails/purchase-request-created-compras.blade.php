@@ -6,6 +6,8 @@
     <title>
         @if($purchaseRequest->type == 'purchase')
             Nueva Solicitud de Compra
+        @elseif($purchaseRequest->type == 'services')
+            Nueva Solicitud de Servicio
         @elseif($purchaseRequest->isCopiesRequest())
             Nueva Solicitud de Fotocopias
         @else
@@ -217,6 +219,8 @@
             <h2>
                 @if($purchaseRequest->type == 'purchase')
                     Nueva Solicitud de Compra
+                @elseif($purchaseRequest->type == 'services')
+                    Nueva Solicitud de Servicio
                 @elseif($purchaseRequest->isCopiesRequest())
                     Nueva Solicitud de Fotocopias
                 @else
@@ -227,6 +231,8 @@
             <div class="badge">
                 @if($purchaseRequest->type == 'purchase')
                     COMPRA
+                @elseif($purchaseRequest->type == 'services')
+                    SERVICIO
                 @elseif($purchaseRequest->isCopiesRequest())
                     FOTOCOPIAS
                 @else
@@ -240,6 +246,8 @@
                 <span class="icon">📋</span> Se ha recibido una nueva solicitud de <strong>
                 @if($purchaseRequest->type == 'purchase')
                     compra
+                @elseif($purchaseRequest->type == 'services')
+                    servicio
                 @elseif($purchaseRequest->isCopiesRequest())
                     fotocopias
                 @else
@@ -248,6 +256,8 @@
                 </strong> que requiere su atención
                 @if($purchaseRequest->type == 'purchase')
                     para el proceso de cotización y gestión
+                @elseif($purchaseRequest->type == 'services')
+                    para la evaluación y aprobación del servicio solicitado
                 @endif
                 .
             </p>
@@ -360,6 +370,8 @@
                 <span class="icon">ℹ️</span> Esta notificación ha sido enviada automáticamente al departamento de compras para gestionar la solicitud de 
                 @if($purchaseRequest->type == 'purchase')
                     compra
+                @elseif($purchaseRequest->type == 'services')
+                    servicio
                 @elseif($purchaseRequest->isCopiesRequest())
                     fotocopias
                 @else

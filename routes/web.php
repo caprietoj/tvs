@@ -501,6 +501,8 @@ Route::middleware(['auth'])->group(function () {
     // Rutas específicas para formularios de solicitud de compra
     Route::get('purchase-requests/create/purchase', [PurchaseRequestController::class, 'createPurchaseForm'])
         ->name('purchase-requests.create-purchase');
+    Route::get('purchase-requests/create/services', [PurchaseRequestController::class, 'createServicesForm'])
+        ->name('purchase-requests.create-services');
     Route::get('purchase-requests/create/materials', [PurchaseRequestController::class, 'createMaterialsForm'])
         ->name('purchase-requests.create-materials');
     Route::get('purchase-requests/create/copies', [PurchaseRequestController::class, 'createCopiesForm'])
@@ -606,6 +608,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('purchase-orders.send-to-tesoreria');
     Route::post('purchase-orders/{purchaseOrder}/mark-as-paid', [PurchaseOrdersController::class, 'markAsPaid'])
         ->name('purchase-orders.mark-as-paid');
+    Route::get('purchase-orders/{purchaseOrder}/payment-receipt', [PurchaseOrdersController::class, 'downloadPaymentReceipt'])
+        ->name('purchase-orders.download-payment-receipt');
     Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrdersController::class, 'cancel'])
         ->name('purchase-orders.cancel');
 });

@@ -586,26 +586,50 @@ class PurchaseOrdersController extends Controller
         // Validar datos
         $validated = $request->validate([
             'payment_date' => 'required|date',
-            'payment_reference' => 'required|string|max:255',
+            'payment_reference' => 'nullable|string|max:255',
+            'payment_receipt' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240', // 10MB max
         ]);
         
-        // Actualizar estado de la orden
-        $purchaseOrder->update([
-            'status' => 'paid',
-            'payment_date' => $validated['payment_date'],
-            'payment_reference' => $validated['payment_reference'],
-        ]);
-        
-        // Registrar en historial
-        RequestHistory::create([
-            'purchase_request_id' => $purchaseOrder->purchaseRequest->id,
-            'user_id' => Auth::id(),
-            'action' => 'Orden pagada',
-            'notes' => 'Referencia de pago: ' . $validated['payment_reference'],
-        ]);
-        
-        return redirect()->route('purchase-orders.show', $purchaseOrder->id)
-            ->with('success', 'La orden de compra ha sido marcada como pagada.');
+        try {
+            // Procesar la subida del archivo
+            $receiptPath = null;
+            if ($request->hasFile('payment_receipt') && $request->file('payment_receipt')->isValid()) {
+                $file = $request->file('payment_receipt');
+                $filename = 'comprobante_pago_' . $purchaseOrder->order_number . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $receiptPath = $file->storeAs('purchase-orders/payment-receipts', $filename, 'public');
+            }
+            
+            // Actualizar estado de la orden
+            $purchaseOrder->update([
+                'status' => 'paid',
+                'payment_date' => $validated['payment_date'],
+                'payment_reference' => $validated['payment_reference'],
+                'payment_receipt_path' => $receiptPath,
+            ]);
+            
+            // Registrar en historial
+            $historyNotes = 'Fecha de pago: ' . $validated['payment_date'];
+            if ($validated['payment_reference']) {
+                $historyNotes .= ' - Referencia: ' . $validated['payment_reference'];
+            }
+            if ($receiptPath) {
+                $historyNotes .= ' - Comprobante adjuntado';
+            }
+            
+            RequestHistory::create([
+                'purchase_request_id' => $purchaseOrder->purchaseRequest->id,
+                'user_id' => Auth::id(),
+                'action' => 'Orden pagada',
+                'notes' => $historyNotes,
+            ]);
+            
+            return redirect()->route('purchase-orders.show', $purchaseOrder->id)
+                ->with('success', 'La orden de compra ha sido marcada como pagada y el comprobante ha sido guardado.');
+                
+        } catch (\Exception $e) {
+            return redirect()->route('purchase-orders.show', $purchaseOrder->id)
+                ->with('error', 'Ha ocurrido un error al procesar el pago: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -674,5 +698,30 @@ class PurchaseOrdersController extends Controller
         
         return redirect()->route('purchase-orders.index')
             ->with('success', 'La orden de compra ha sido eliminada correctamente.');
+    }
+
+    /**
+     * Descargar el comprobante de pago de una orden.
+     */
+    public function downloadPaymentReceipt(PurchaseOrder $purchaseOrder)
+    {
+        // Verificar que la orden esté pagada y tenga comprobante
+        if ($purchaseOrder->status !== 'paid' || !$purchaseOrder->payment_receipt_path) {
+            return redirect()->route('purchase-orders.show', $purchaseOrder->id)
+                ->with('error', 'Esta orden no tiene un comprobante de pago disponible.');
+        }
+
+        // Verificar que el archivo existe
+        if (!Storage::disk('public')->exists($purchaseOrder->payment_receipt_path)) {
+            return redirect()->route('purchase-orders.show', $purchaseOrder->id)
+                ->with('error', 'El archivo del comprobante de pago no se encuentra disponible.');
+        }
+
+        // Generar nombre del archivo para descarga
+        $fileExtension = pathinfo($purchaseOrder->payment_receipt_path, PATHINFO_EXTENSION);
+        $downloadName = 'Comprobante_Pago_Orden_' . $purchaseOrder->order_number . '.' . $fileExtension;
+
+        // Descargar el archivo
+        return Storage::disk('public')->download($purchaseOrder->payment_receipt_path, $downloadName);
     }
 }

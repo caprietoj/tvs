@@ -29,8 +29,20 @@ class PurchaseRequestCreatedUsuario extends Mailable
      */
     public function envelope(): Envelope
     {
+        // Determinar el tipo de solicitud para el asunto
+        $requestType = '';
+        if ($this->purchaseRequest->type == 'purchase') {
+            $requestType = 'compra';
+        } elseif ($this->purchaseRequest->type == 'services') {
+            $requestType = 'servicio';
+        } elseif ($this->purchaseRequest->isCopiesRequest()) {
+            $requestType = 'fotocopias';
+        } else {
+            $requestType = 'materiales';
+        }
+        
         return new Envelope(
-            subject: 'Confirmación: Tu solicitud de compra #' . $this->purchaseRequest->id . ' ha sido recibida',
+            subject: 'Confirmación: Tu solicitud de ' . $requestType . ' #' . $this->purchaseRequest->id . ' ha sido recibida',
         );
     }
 

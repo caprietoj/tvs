@@ -47,6 +47,9 @@
                                 <option value="purchase" {{ $typeFilter === 'purchase' ? 'selected' : '' }}>
                                     Compra
                                 </option>
+                                <option value="services" {{ $typeFilter === 'services' ? 'selected' : '' }}>
+                                    Servicios
+                                </option>
                                 <option value="materials" {{ $typeFilter === 'materials' ? 'selected' : '' }}>
                                     Materiales
                                 </option>
@@ -70,6 +73,7 @@
                         <span class="badge badge-info">
                             Mostrando: 
                             @if($typeFilter === 'purchase') Compras
+                            @elseif($typeFilter === 'services') Servicios
                             @elseif($typeFilter === 'materials') Materiales
                             @elseif($typeFilter === 'copies') Fotocopias
                             @endif
@@ -98,6 +102,8 @@
                                 <td>
                                     @if($request->type == 'purchase')
                                         <span class="badge badge-primary">Compra</span>
+                                    @elseif($request->type == 'services')
+                                        <span class="badge badge-warning">Servicios</span>
                                     @elseif($request->isCopiesRequest())
                                         <span class="badge badge-info">Fotocopias</span>
                                     @else

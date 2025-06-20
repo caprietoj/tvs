@@ -60,6 +60,9 @@ class PurchaseRequest extends Model
         'requires_lamination',
         'requires_cutting',
         'special_details',
+        // Campos adicionales para servicios
+        'coordinator',
+        'general_observations',
     ];
 
     /**
@@ -164,6 +167,14 @@ class PurchaseRequest extends Model
     }
 
     /**
+     * Verificar si es una solicitud de servicios.
+     */
+    public function isServicesRequest()
+    {
+        return $this->type === 'services';
+    }
+
+    /**
      * Marcar el estado de entrega de fotocopias.
      */
     public function markDeliveryStatus($status, $userId, $notes = null)
@@ -227,7 +238,11 @@ class PurchaseRequest extends Model
     {
         static::creating(function ($request) {
             if (!$request->request_number) {
-                $prefix = $request->type === 'purchase' ? 'SC-' : 'SM-';
+                $prefix = match($request->type) {
+                    'purchase' => 'SC-',
+                    'services' => 'SS-',
+                    default => 'SM-',
+                };
                 
                 // Obtener el número más alto existente que siga el patrón correcto
                 $maxNumber = self::withTrashed()

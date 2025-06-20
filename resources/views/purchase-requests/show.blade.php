@@ -526,11 +526,14 @@
                                     <thead class="thead-light">
                                         <tr>
                                             <th style="width: 5%">#</th>
-                                            <th style="width: 30%">Original</th>
-                                            <th style="width: 15%">Copias Req.</th>
-                                            <th style="width: 15%">Doble Carta Color</th>
-                                            <th style="width: 15%">B/N</th>
-                                            <th style="width: 15%">Color</th>
+                                            <th style="width: 25%">Original</th>
+                                            <th style="width: 10%">Copias Req.</th>
+                                            <th style="width: 10%">Doble Carta Color</th>
+                                            <th style="width: 10%">B/N</th>
+                                            <th style="width: 10%">Color</th>
+                                            <th style="width: 10%">Doble Cara</th>
+                                            <th style="width: 10%">Fotocopia</th>
+                                            <th style="width: 10%">Impresión</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -540,9 +543,48 @@
                                                 <td>{{ $copy['item'] ?? '' }}</td>
                                                 <td>{{ $copy['original'] ?? '' }}</td>
                                                 <td>{{ $copy['copies_required'] ?? '' }}</td>
-                                                <td>{{ $copy['double_letter_color'] ?? '0' }}</td>
-                                                <td>{{ $copy['black_white'] ?? '0' }}</td>
-                                                <td>{{ $copy['color'] ?? '0' }}</td>
+                                                <td class="text-center">
+                                                    @if(isset($copy['double_letter_color']) && $copy['double_letter_color'])
+                                                        <i class="fas fa-check text-success"></i>
+                                                    @else
+                                                        <i class="fas fa-times text-danger"></i>
+                                                    @endif
+                                                </td>
+                                                <td class="text-center">
+                                                    @if(isset($copy['black_white']) && $copy['black_white'])
+                                                        <i class="fas fa-check text-success"></i>
+                                                    @else
+                                                        <i class="fas fa-times text-danger"></i>
+                                                    @endif
+                                                </td>
+                                                <td class="text-center">
+                                                    @if(isset($copy['color']) && $copy['color'])
+                                                        <i class="fas fa-check text-success"></i>
+                                                    @else
+                                                        <i class="fas fa-times text-danger"></i>
+                                                    @endif
+                                                </td>
+                                                <td class="text-center">
+                                                    @if(isset($copy['doble_cara']) && $copy['doble_cara'])
+                                                        <i class="fas fa-check text-success"></i>
+                                                    @else
+                                                        <i class="fas fa-times text-danger"></i>
+                                                    @endif
+                                                </td>
+                                                <td class="text-center">
+                                                    @if(isset($copy['fotocopia']) && $copy['fotocopia'])
+                                                        <i class="fas fa-check text-success"></i>
+                                                    @else
+                                                        <i class="fas fa-times text-danger"></i>
+                                                    @endif
+                                                </td>
+                                                <td class="text-center">
+                                                    @if(isset($copy['impresion']) && $copy['impresion'])
+                                                        <i class="fas fa-check text-success"></i>
+                                                    @else
+                                                        <i class="fas fa-times text-danger"></i>
+                                                    @endif
+                                                </td>
                                             </tr>
                                             @endif
                                         @endforeach

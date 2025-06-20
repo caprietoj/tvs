@@ -146,8 +146,19 @@
                                 <dt class="col-sm-5">Fecha de Pago:</dt>
                                 <dd class="col-sm-7">{{ $purchaseOrder->payment_date->format('d/m/Y') }}</dd>
                                 
+                                @if($purchaseOrder->payment_reference)
                                 <dt class="col-sm-5">Referencia de Pago:</dt>
                                 <dd class="col-sm-7">{{ $purchaseOrder->payment_reference }}</dd>
+                                @endif
+                                
+                                @if($purchaseOrder->payment_receipt_path)
+                                <dt class="col-sm-5">Comprobante de Pago:</dt>
+                                <dd class="col-sm-7">
+                                    <a href="{{ route('purchase-orders.download-payment-receipt', $purchaseOrder->id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download"></i> Descargar Comprobante
+                                    </a>
+                                </dd>
+                                @endif
                                 @endif
                                 
                                 @if($purchaseOrder->cancelled_at)
@@ -327,7 +338,7 @@
 <div class="modal fade" id="markAsPaidModal" tabindex="-1" role="dialog" aria-labelledby="markAsPaidModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <form action="{{ route('purchase-orders.mark-as-paid', $purchaseOrder->id) }}" method="POST">
+            <form action="{{ route('purchase-orders.mark-as-paid', $purchaseOrder->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title" id="markAsPaidModalLabel">Marcar como Pagado</h5>
@@ -338,12 +349,20 @@
                 <div class="modal-body">
                     <p>Ingrese los detalles del pago:</p>
                     <div class="form-group">
-                        <label for="payment_date">Fecha de Pago</label>
+                        <label for="payment_date">Fecha de Pago <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="payment_date" name="payment_date" required>
                     </div>
                     <div class="form-group">
                         <label for="payment_reference">Referencia de Pago</label>
-                        <input type="text" class="form-control" id="payment_reference" name="payment_reference" placeholder="Ej. Transferencia #12345" required>
+                        <input type="text" class="form-control" id="payment_reference" name="payment_reference" placeholder="Ej. Transferencia #12345 (opcional)">
+                        <small class="form-text text-muted">Este campo es opcional</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_receipt">Comprobante de Pago <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control-file" id="payment_receipt" name="payment_receipt" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small class="form-text text-muted">
+                            Formatos permitidos: PDF, JPG, JPEG, PNG. Tamaño máximo: 10MB
+                        </small>
                     </div>
                 </div>
                 <div class="modal-footer">

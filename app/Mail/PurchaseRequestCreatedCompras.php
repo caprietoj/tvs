@@ -33,6 +33,8 @@ class PurchaseRequestCreatedCompras extends Mailable
         $requestType = '';
         if ($this->purchaseRequest->type == 'purchase') {
             $requestType = 'Compra';
+        } elseif ($this->purchaseRequest->type == 'services') {
+            $requestType = 'Servicio';
         } elseif ($this->purchaseRequest->isCopiesRequest()) {
             $requestType = 'Fotocopias';
         } else {

@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmación de Solicitud de Compra</title>
+    <title>
+        @if($purchaseRequest->type == 'purchase')
+            Confirmación de Solicitud de Compra
+        @elseif($purchaseRequest->type == 'services')
+            Confirmación de Solicitud de Servicio
+        @elseif($purchaseRequest->isCopiesRequest())
+            Confirmación de Solicitud de Fotocopias
+        @else
+            Confirmación de Solicitud de Materiales
+        @endif
+    </title>
     <style>
         * {
             margin: 0;
@@ -159,7 +169,17 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>Solicitud de Compra Recibida</h1>
+            <h1>
+                @if($purchaseRequest->type == 'purchase')
+                    Solicitud de Compra Recibida
+                @elseif($purchaseRequest->type == 'services')
+                    Solicitud de Servicio Recibida
+                @elseif($purchaseRequest->isCopiesRequest())
+                    Solicitud de Fotocopias Recibida
+                @else
+                    Solicitud de Materiales Recibida
+                @endif
+            </h1>
             <p>Tu solicitud ha sido registrada exitosamente</p>
         </div>
 
@@ -172,7 +192,17 @@
             </p>
             
             <p style="margin-bottom: 20px; color: #495057;">
-                Te confirmamos que hemos recibido tu solicitud de compra. A continuación puedes ver los detalles de tu solicitud:
+                Te confirmamos que hemos recibido tu solicitud de 
+                @if($purchaseRequest->type == 'purchase')
+                    compra
+                @elseif($purchaseRequest->type == 'services')
+                    servicio
+                @elseif($purchaseRequest->isCopiesRequest())
+                    fotocopias
+                @else
+                    materiales
+                @endif
+                . A continuación puedes ver los detalles de tu solicitud:
             </p>
 
             <!-- Información de la Solicitud -->
@@ -188,13 +218,13 @@
                     <span class="info-label">Tipo de Solicitud:</span>
                     <span class="info-value">
                         @if($purchaseRequest->type === 'purchase')
-                            Compra de Productos/Servicios
-                        @elseif($purchaseRequest->type === 'materials')
-                            Materiales
-                        @elseif($purchaseRequest->type === 'copies')
+                            Compra de Productos
+                        @elseif($purchaseRequest->type === 'services')
+                            Servicios
+                        @elseif($purchaseRequest->isCopiesRequest())
                             Fotocopias
                         @else
-                            {{ ucfirst($purchaseRequest->type) }}
+                            Materiales
                         @endif
                     </span>
                 </div>

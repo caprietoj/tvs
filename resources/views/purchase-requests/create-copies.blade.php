@@ -86,17 +86,20 @@
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-bordered" id="copyItemsTable">                                <thead style="background-color: #f8f9fa;">
+                            <table class="table table-bordered" id="copyItemsTable">
+                                <thead style="background-color: #f8f9fa;">
                                     <tr>
-                                        <th style="width: 8%;">N</th>
-                                        <th style="width: 15%;">ORIGINAL</th>
-                                        <th style="width: 12%;">COPIAS REQUERIDAS</th>
-                                        <th style="width: 12%;">DOBLE CARTA COLOR</th>
-                                        <th style="width: 12%;">BLANCO Y NEGRO</th>
-                                        <th style="width: 10%;">COLOR</th>
-                                        <th style="width: 10%;">IMPRESIÓN</th>
-                                        <th style="width: 10%;">TOTAL</th>
-                                        <th style="width: 11%;">ACCIÓN</th>
+                                        <th style="width: 6%;">N</th>
+                                        <th style="width: 12%;">ORIGINAL</th>
+                                        <th style="width: 10%;">COPIAS REQUERIDAS</th>
+                                        <th style="width: 10%;">DOBLE CARTA COLOR</th>
+                                        <th style="width: 10%;">BLANCO Y NEGRO</th>
+                                        <th style="width: 8%;">COLOR</th>
+                                        <th style="width: 8%;">DOBLE CARA</th>
+                                        <th style="width: 8%;">FOTOCOPIA</th>
+                                        <th style="width: 8%;">IMPRESIÓN</th>
+                                        <th style="width: 8%;">TOTAL</th>
+                                        <th style="width: 8%;">ACCIÓN</th>
                                     </tr>
                                 </thead>
                                 <tbody id="copyItemsBody">
@@ -119,6 +122,12 @@
                                             <input type="checkbox" class="form-check-input" name="copy_items[0][color]" value="1">
                                         </td>
                                         <td class="text-center">
+                                            <input type="checkbox" class="form-check-input" name="copy_items[0][doble_cara]" value="1">
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" class="form-check-input" name="copy_items[0][fotocopia]" value="1">
+                                        </td>
+                                        <td class="text-center">
                                             <input type="checkbox" class="form-check-input" name="copy_items[0][impresion]" value="1">
                                         </td>
                                         <td>
@@ -133,7 +142,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="9" class="text-center">
+                                        <td colspan="11" class="text-center">
                                             <button type="button" class="btn btn-sm" id="addCopyItem" style="background-color: #364E76; color: white;">
                                                 <i class="fas fa-plus"></i> Agregar
                                             </button>
@@ -484,6 +493,12 @@
                     </td>
                     <td class="text-center">
                         <input type="checkbox" class="form-check-input" name="copy_items[${newIndex}][color]" value="1">
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input" name="copy_items[${newIndex}][doble_cara]" value="1">
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input" name="copy_items[${newIndex}][fotocopia]" value="1">
                     </td>
                     <td class="text-center">
                         <input type="checkbox" class="form-check-input" name="copy_items[${newIndex}][impresion]" value="1">

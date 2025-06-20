@@ -8,6 +8,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ProveedorNotificationService;
 
 class ProveedorController extends Controller
 {
@@ -96,6 +97,10 @@ class ProveedorController extends Controller
             }
 
             $proveedor->save();
+            
+            // Enviar notificación por email
+            $notificationService = new ProveedorNotificationService();
+            $notificationService->sendProveedorCreatedNotification($proveedor);
             
             return redirect()->route('proveedores.index')->with('success', 'Proveedor creado exitosamente.');
         } catch (\Exception $e) {
