@@ -192,11 +192,6 @@
                                     <a href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}" class="btn btn-primary">
                                         <i class="fas fa-edit"></i> Editar
                                     </a>
-                                    @if(auth()->user()->hasRole('admin'))
-                                    <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#approveOrderModal">
-                                        <i class="fas fa-check-circle"></i> Aprobar Orden
-                                    </button>
-                                    @endif
                                     <button type="button" class="btn btn-success" data-toggle="modal" data-target="#sendToAccountingModal">
                                         @if($purchaseOrder->purchaseRequest->isCopiesRequest() || $purchaseOrder->purchaseRequest->isMaterialsRequest())
                                             <i class="fas fa-check"></i> Autorizar Orden
@@ -204,33 +199,6 @@
                                             <i class="fas fa-paper-plane"></i> Enviar a Contabilidad
                                         @endif
                                     </button>
-                                    
-                                    <!-- Botones para envío a departamentos específicos -->
-                                    <div class="btn-group" role="group">
-                                        <button id="sendToBtn" type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            <i class="fas fa-share"></i> Enviar a Departamento
-                                        </button>
-                                        <div class="dropdown-menu" aria-labelledby="sendToBtn">
-                                            <form action="{{ route('purchase-orders.send-to-compras', $purchaseOrder->id) }}" method="POST" style="display: inline;">
-                                                @csrf
-                                                <button type="submit" class="dropdown-item" onclick="return confirm('¿Enviar orden a Compras?')">
-                                                    <i class="fas fa-shopping-cart text-primary"></i> Compras
-                                                </button>
-                                            </form>
-                                            <form action="{{ route('purchase-orders.send-to-contabilidad', $purchaseOrder->id) }}" method="POST" style="display: inline;">
-                                                @csrf
-                                                <button type="submit" class="dropdown-item" onclick="return confirm('¿Enviar orden a Contabilidad?')">
-                                                    <i class="fas fa-calculator text-success"></i> Contabilidad
-                                                </button>
-                                            </form>
-                                            <form action="{{ route('purchase-orders.send-to-tesoreria', $purchaseOrder->id) }}" method="POST" style="display: inline;">
-                                                @csrf
-                                                <button type="submit" class="dropdown-item" onclick="return confirm('¿Enviar orden a Tesorería?')">
-                                                    <i class="fas fa-coins text-warning"></i> Tesorería
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
                                     
                                     <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#cancelOrderModal">
                                         <i class="fas fa-times"></i> Cancelar
@@ -304,19 +272,34 @@
                 <div class="modal-body">
                     @if($purchaseOrder->purchaseRequest->isCopiesRequest())
                         <p>¿Está seguro de que desea autorizar esta orden de fotocopias?</p>
-                        <p>Se enviará una notificación por correo electrónico a <strong>compras@tvs.edu.co</strong> con los detalles de la orden.</p>
+                        <p>Se enviará una notificación por correo electrónico a:</p>
+                        <ul>
+                            <li><strong>compras@tvs.edu.co</strong></li>
+                        </ul>
                         <div class="alert alert-info">
                             <small><i class="fas fa-info-circle"></i> Las órdenes de fotocopias no requieren aprobación de contabilidad para pago.</small>
                         </div>
                     @elseif($purchaseOrder->purchaseRequest->isMaterialsRequest())
                         <p>¿Está seguro de que desea autorizar esta orden de materiales?</p>
-                        <p>Se enviará una notificación por correo electrónico a <strong>compras@tvs.edu.co</strong> con los detalles de la orden.</p>
+                        <p>Se enviará una notificación por correo electrónico a:</p>
+                        <ul>
+                            <li><strong>compras@tvs.edu.co</strong></li>
+                        </ul>
                         <div class="alert alert-info">
                             <small><i class="fas fa-info-circle"></i> Las órdenes de materiales no requieren aprobación de contabilidad para pago.</small>
                         </div>
                     @else
                         <p>¿Está seguro de que desea enviar esta orden de compra a contabilidad para su pago?</p>
-                        <p>Se enviará una notificación por correo electrónico a <strong>contabilidad@tvs.edu.co</strong> con copia a <strong>compras@tvs.edu.co</strong> con los detalles de la orden.</p>
+                        <p>Se enviará una notificación por correo electrónico a:</p>
+                        <ul>
+                            <li><strong>contabilidad@tvs.edu.co</strong></li>
+                            <li><strong>asistentecontabilidad@tvs.edu.co</strong></li>
+                            <li><strong>tesoreria@tvs.edu.co</strong></li>
+                            <li><strong>compras@tvs.edu.co</strong></li>
+                        </ul>
+                        <div class="alert alert-info">
+                            <small><i class="fas fa-info-circle"></i> La orden será aprobada automáticamente al enviarla a contabilidad.</small>
+                        </div>
                     @endif
                 </div>
                 <div class="modal-footer">
@@ -431,38 +414,6 @@
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-trash"></i> Eliminar Orden
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal para aprobar orden de compra -->
-<div class="modal fade" id="approveOrderModal" tabindex="-1" role="dialog" aria-labelledby="approveOrderModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <form action="{{ route('purchase-orders.approve', $purchaseOrder->id) }}" method="POST">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title" id="approveOrderModalLabel">Aprobar Orden de Compra</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> Al aprobar esta orden, pasará al estado "Aprobado" y podrá ser editada o eliminada solo por administradores.
-                    </div>
-                    <p>¿Está seguro de que desea aprobar la orden de compra <strong>{{ $purchaseOrder->order_number }}</strong>?</p>
-                    <p><strong>Solicitud asociada:</strong> {{ $purchaseOrder->purchaseRequest->request_number ?? 'N/A' }}</p>
-                    <p><strong>Proveedor:</strong> {{ $purchaseOrder->provider->nombre ?? 'N/A' }}</p>
-                    <p><strong>Monto:</strong> ${{ number_format($purchaseOrder->total_amount, 2, ',', '.') }}</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-check-circle"></i> Aprobar Orden
                     </button>
                 </div>
             </form>

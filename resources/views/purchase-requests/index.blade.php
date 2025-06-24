@@ -91,6 +91,9 @@
                             <th>Solicitante</th>
                             <th>Área/Sección</th>
                             <th>Fecha</th>
+                            @if($typeFilter === 'copies')
+                                <th>Observaciones</th>
+                            @endif
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
@@ -113,6 +116,22 @@
                                 <td>{{ $request->requester }}</td>
                                 <td>{{ $request->section_area }}</td>
                                 <td>{{ $request->request_date->format('d/m/Y') }}</td>
+                                @if($typeFilter === 'copies')
+                                    <td class="text-center">
+                                        @if($request->general_observations)
+                                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                                    data-toggle="popover" 
+                                                    data-trigger="hover" 
+                                                    data-placement="left"
+                                                    data-content="{{ $request->general_observations }}" 
+                                                    title="Observaciones">
+                                                <i class="fas fa-comment-alt"></i>
+                                            </button>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                @endif
                                 <td>
                                     @if($request->status == 'pending')
                                         <span class="badge badge-warning">Pendiente</span>
@@ -157,7 +176,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">No hay solicitudes registradas</td>
+                                <td colspan="{{ $typeFilter === 'copies' ? '8' : '7' }}" class="text-center">No hay solicitudes registradas</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -315,6 +334,12 @@
             const requestId = button.data('request-id');
             const form = document.getElementById('deleteForm');
             form.action = `/purchase-requests/${requestId}`;
+        });
+        
+        // Inicializar popovers para observaciones
+        $('[data-toggle="popover"]').popover({
+            html: true,
+            container: 'body'
         });
     });
 </script>

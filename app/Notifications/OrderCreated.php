@@ -41,7 +41,7 @@ class OrderCreated extends Notification implements ShouldQueue
         $order = $this->purchaseOrder->load(['purchaseRequest', 'provider', 'creator']);
         
         $formattedAmount = number_format($order->total_amount, 2, ',', '.');
-        $url = url('/storage/' . $order->file_path);
+        $url = route('purchase-orders.view', $order->id);
         
         return (new MailMessage)
                     ->subject('Nueva orden de compra para procesar - ' . $order->order_number)

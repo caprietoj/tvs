@@ -37,7 +37,7 @@
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Equipos</li>
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Insumos especializados</li>
                                     </ul>
-                                    <button type="button" id="purchaseButton" class="btn btn-lg btn-block" style="background-color: #364E76; color: white;">
+                                    <button type="button" id="purchaseButton" class="btn btn-lg btn-block" style="background-color: #364E76; color: white; border: none;">
                                         <i class="fas fa-shopping-cart mr-2"></i> Crear Solicitud de Compra
                                     </button>
                                 </div>
@@ -64,7 +64,7 @@
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Mantenimientos</li>
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Servicios profesionales</li>
                                     </ul>
-                                    <button type="button" id="servicesButton" class="btn btn-lg btn-block" style="background-color: #364E76; color: white;">
+                                    <button type="button" id="servicesButton" class="btn btn-lg btn-block" style="background-color: #4A5F8A; color: white; border: none;">
                                         <i class="fas fa-tools mr-2"></i> Crear Solicitud de Servicios
                                     </button>
                                 </div>
@@ -91,7 +91,7 @@
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Materiales didácticos</li>
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Papelería</li>
                                     </ul>
-                                    <button type="button" id="materialsButton" class="btn btn-lg btn-block" style="background-color: #364E76; color: white;">
+                                    <button type="button" id="materialsButton" class="btn btn-lg btn-block" style="background-color: #5A6B95; color: white; border: none;">
                                         <i class="fas fa-box mr-2"></i> Crear Solicitud de Materiales
                                     </button>
                                 </div>
@@ -118,7 +118,7 @@
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Copias en blanco y negro</li>
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Copias a color</li>
                                     </ul>
-                                    <button type="button" id="copiesButton" class="btn btn-lg btn-block" style="background-color: #364E76; color: white;">
+                                    <button type="button" id="copiesButton" class="btn btn-lg btn-block" style="background-color: #6F7FA0; color: white; border: none;">
                                         <i class="fas fa-copy mr-2"></i> Crear Solicitud de Fotocopias
                                     </button>
                                 </div>
@@ -246,8 +246,54 @@
         border-color: #2a3d5d;
     }
     
-    /* Estilos hover para botones con color institucional inline */
-    button[style*="#364E76"]:hover {
+    /* Estilos hover para botones de cada tipo de solicitud */
+    #purchaseButton {
+        transition: all 0.3s ease;
+    }
+    
+    #purchaseButton:hover {
+        background-color: #2a3d5d !important;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(54, 78, 118, 0.3);
+    }
+    
+    #servicesButton {
+        transition: all 0.3s ease;
+    }
+    
+    #servicesButton:hover {
+        background-color: #3d4f73 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(74, 95, 138, 0.3);
+    }
+    
+    #materialsButton {
+        transition: all 0.3s ease;
+    }
+    
+    #materialsButton:hover {
+        background-color: #4d5b7e !important;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(90, 107, 149, 0.3);
+    }
+    
+    #copiesButton {
+        transition: all 0.3s ease;
+    }
+    
+    #copiesButton:hover {
+        background-color: #5e6f89 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(111, 127, 160, 0.3);
+    }
+    
+    /* Efectos adicionales para la interactividad */
+    .btn-lg:active {
+        transform: translateY(0px) !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+    }
+    
+    .btn-institutional:hover {
         background-color: #2a3d5d !important;
         border-color: #2a3d5d !important;
         transform: translateY(-2px);

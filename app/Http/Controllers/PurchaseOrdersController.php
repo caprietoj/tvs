@@ -392,9 +392,11 @@ class PurchaseOrdersController extends Controller
      */
     public function sendToAccounting(PurchaseOrder $purchaseOrder)
     {
-        // Actualizar estado de la orden
+        // Aprobar automáticamente la orden y enviarla a contabilidad
         $purchaseOrder->update([
             'status' => 'sent_to_accounting',
+            'approved_at' => now(),
+            'approved_by' => Auth::id(),
             'sent_to_accounting_at' => now(),
             'sent_by' => Auth::id(),
         ]);
@@ -403,50 +405,52 @@ class PurchaseOrdersController extends Controller
         RequestHistory::create([
             'purchase_request_id' => $purchaseOrder->purchaseRequest->id,
             'user_id' => Auth::id(),
-            'action' => 'Orden enviada a contabilidad',
-            'notes' => 'Enviada para pago',
+            'action' => 'Orden aprobada y enviada a contabilidad',
+            'notes' => 'Aprobada automáticamente y enviada para pago',
         ]);
         
-        // Verificar si es una solicitud de fotocopias o materiales
-        $purchaseRequest = $purchaseOrder->purchaseRequest;
-        $isPhotocopiesOrMaterials = $purchaseRequest->isCopiesRequest() || $purchaseRequest->isMaterialsRequest();
+        // Configurar correos según el entorno
+        $isProduction = app()->environment('production');
         
-        // Enviar notificación según el tipo de solicitud
+        if ($isProduction) {
+            $contabilidadEmail = 'contabilidad@tvs.edu.co';
+            $asistenteContabilidadEmail = 'asistentecontabilidad@tvs.edu.co';
+            $tesoreriaEmail = 'tesoreria@tvs.edu.co';
+            $comprasEmail = 'compras@tvs.edu.co';
+        } else {
+            $contabilidadEmail = 'contabilidad@test.com';
+            $asistenteContabilidadEmail = 'asistentecontabilidad@test.com';
+            $tesoreriaEmail = 'tesoreria@test.com';
+            $comprasEmail = 'compras@test.com';
+        }
+        
+        // Enviar notificación a los cuatro departamentos
         try {
-            // Obtener correos desde configuración dinámica
-            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
-            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
-            $contabilidadEmail = config($configSource . '.sections.Contabilidad');
-            $asistenteContabilidadEmail = config($configSource . '.sections.Asistente Contabilidad');
-            
-            if ($isPhotocopiesOrMaterials) {
-                // Para fotocopias y materiales, solo enviar a compras
-                Notification::route('mail', $comprasEmail)
-                    ->notify(new OrderCreated($purchaseOrder));
-                    
-                \Log::info('Orden de ' . ($purchaseRequest->isCopiesRequest() ? 'fotocopias' : 'materiales') . 
-                          ' enviada solo a compras (' . $comprasEmail . ') (no a contabilidad) - Orden #' . $purchaseOrder->order_number);
-            } else {
-                // Para órdenes de compra normales, enviar a contabilidad, asistente de contabilidad y compras
-                $notification = Notification::route('mail', $contabilidadEmail)
-                    ->route('mail', $comprasEmail);
-                    
-                if ($asistenteContabilidadEmail) {
-                    $notification = $notification->route('mail', $asistenteContabilidadEmail);
-                }
+            // Enviar a contabilidad
+            Notification::route('mail', $contabilidadEmail)
+                ->notify(new OrderCreated($purchaseOrder));
                 
-                $notification->notify(new OrderCreated($purchaseOrder));
-                    
-                \Log::info('Orden de compra normal enviada a contabilidad (' . $contabilidadEmail . '), asistente contabilidad (' . $asistenteContabilidadEmail . ') y compras (' . $comprasEmail . ') - Orden #' . $purchaseOrder->order_number);
-            }
+            // Enviar a asistente de contabilidad
+            Notification::route('mail', $asistenteContabilidadEmail)
+                ->notify(new OrderCreated($purchaseOrder));
+                
+            // Enviar a tesorería
+            Notification::route('mail', $tesoreriaEmail)
+                ->notify(new OrderCreated($purchaseOrder));
+                
+            // Enviar a compras
+            Notification::route('mail', $comprasEmail)
+                ->notify(new OrderCreated($purchaseOrder));
+                
+            \Log::info('Orden de compra aprobada y enviada a contabilidad (' . $contabilidadEmail . '), asistente contabilidad (' . $asistenteContabilidadEmail . '), tesorería (' . $tesoreriaEmail . ') y compras (' . $comprasEmail . ') - Orden #' . $purchaseOrder->order_number);
                 
             return redirect()->route('purchase-orders.show', $purchaseOrder->id)
-                ->with('success', 'La orden de compra ha sido enviada para su procesamiento.');
+                ->with('success', 'La orden de compra ha sido aprobada y enviada a contabilidad, asistente de contabilidad, tesorería y compras para su procesamiento.');
         } catch (\Exception $e) {
             \Log::error('Error al enviar la orden: ' . $e->getMessage());
             
             return redirect()->route('purchase-orders.show', $purchaseOrder->id)
-                ->with('warning', 'La orden ha sido procesada pero hubo un error al enviar la notificación. Por favor contacte al departamento correspondiente.');
+                ->with('warning', 'La orden ha sido aprobada pero hubo un error al enviar la notificación. Por favor contacte a los departamentos correspondientes.');
         }
     }
 

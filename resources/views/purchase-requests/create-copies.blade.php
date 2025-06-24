@@ -372,6 +372,36 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Observaciones -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid #364E76;">
+                                <h5 class="mb-0" style="color: #364E76;">
+                                    <i class="fas fa-comments mr-2"></i>Observaciones
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="general_observations">Observaciones adicionales:</label>
+                                    <textarea class="form-control @error('general_observations') is-invalid @enderror" 
+                                              name="general_observations" 
+                                              id="general_observations" 
+                                              rows="4" 
+                                              placeholder="Ingrese aquí cualquier observación o detalle adicional sobre la solicitud de fotocopias...">{{ old('general_observations') }}</textarea>
+                                    @error('general_observations')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <strong>Opcional:</strong> Puede incluir detalles adicionales, instrucciones especiales o cualquier información relevante para el procesamiento de su solicitud.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="card-footer">

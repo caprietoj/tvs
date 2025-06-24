@@ -16,6 +16,14 @@ class Quotation extends Model
         'subtotal',
         'includes_iva',
         'iva_amount',
+        'includes_iva_19',
+        'iva_19_amount',
+        'includes_iva_5',
+        'iva_5_amount',
+        'includes_ipoconsumo_8',
+        'ipoconsumo_8_amount',
+        'includes_ipoconsumo_4',
+        'ipoconsumo_4_amount',
         'delivery_time',
         'payment_method',
         'validity',
@@ -32,9 +40,17 @@ class Quotation extends Model
     protected $casts = [
         'additional_items' => 'array',
         'includes_iva' => 'boolean',
+        'includes_iva_19' => 'boolean',
+        'includes_iva_5' => 'boolean',
+        'includes_ipoconsumo_8' => 'boolean',
+        'includes_ipoconsumo_4' => 'boolean',
         'total_amount' => 'decimal:2',
         'subtotal' => 'decimal:2',
         'iva_amount' => 'decimal:2',
+        'iva_19_amount' => 'decimal:2',
+        'iva_5_amount' => 'decimal:2',
+        'ipoconsumo_8_amount' => 'decimal:2',
+        'ipoconsumo_4_amount' => 'decimal:2',
     ];
 
     public function purchaseRequest()

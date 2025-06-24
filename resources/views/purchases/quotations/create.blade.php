@@ -123,27 +123,90 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <div class="form-check mt-4">
-                                <input type="checkbox" name="includes_iva" id="includes_iva" class="form-check-input" value="1" {{ old('includes_iva') ? 'checked' : '' }}>
-                                <label class="form-check-label" for="includes_iva">
+                            <label>Impuestos Aplicables</label>
+                            <div class="form-check">
+                                <input type="checkbox" name="includes_iva_19" id="includes_iva_19" class="form-check-input" value="1" {{ old('includes_iva_19') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="includes_iva_19">
                                     Aplicar IVA (19%)
                                 </label>
                             </div>
-                            <small class="form-text text-muted">Marque esta opción si el precio debe incluir IVA.</small>
+                            <div class="form-check">
+                                <input type="checkbox" name="includes_iva_5" id="includes_iva_5" class="form-check-input" value="1" {{ old('includes_iva_5') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="includes_iva_5">
+                                    Aplicar IVA (5%)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" name="includes_ipoconsumo_8" id="includes_ipoconsumo_8" class="form-check-input" value="1" {{ old('includes_ipoconsumo_8') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="includes_ipoconsumo_8">
+                                    Aplicar Ipoconsumo (8%)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" name="includes_ipoconsumo_4" id="includes_ipoconsumo_4" class="form-check-input" value="1" {{ old('includes_ipoconsumo_4') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="includes_ipoconsumo_4">
+                                    Aplicar Ipoconsumo (4%)
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">Seleccione los impuestos que aplican a esta cotización.</small>
                         </div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="iva_amount">IVA</label>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">$</span>
+                <!-- Campos de impuestos calculados -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="iva_19_amount">IVA (19%)</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">$</span>
+                                </div>
+                                <input type="number" name="iva_19_amount" id="iva_19_amount" class="form-control" value="{{ old('iva_19_amount', '0') }}" step="0.01" min="0" readonly>
+                            </div>
                         </div>
-                        <input type="number" name="iva_amount" id="iva_amount" class="form-control" value="{{ old('iva_amount', '0') }}" step="0.01" min="0" readonly>
                     </div>
-                    <small class="form-text text-muted">Se calculará automáticamente al marcar la opción de IVA</small>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="iva_5_amount">IVA (5%)</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">$</span>
+                                </div>
+                                <input type="number" name="iva_5_amount" id="iva_5_amount" class="form-control" value="{{ old('iva_5_amount', '0') }}" step="0.01" min="0" readonly>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="ipoconsumo_8_amount">Ipoconsumo (8%)</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">$</span>
+                                </div>
+                                <input type="number" name="ipoconsumo_8_amount" id="ipoconsumo_8_amount" class="form-control" value="{{ old('ipoconsumo_8_amount', '0') }}" step="0.01" min="0" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="ipoconsumo_4_amount">Ipoconsumo (4%)</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">$</span>
+                                </div>
+                                <input type="number" name="ipoconsumo_4_amount" id="ipoconsumo_4_amount" class="form-control" value="{{ old('ipoconsumo_4_amount', '0') }}" step="0.01" min="0" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campo para mantener compatibilidad con IVA antiguo -->
+                <input type="hidden" name="includes_iva" id="includes_iva_hidden" value="0">
+                <input type="hidden" name="iva_amount" id="iva_amount_hidden" value="0">
 
                 <!-- Items adicionales para la cotización -->
                 <div class="card mt-4 mb-4">
@@ -178,6 +241,51 @@
                                         </table>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Resumen general de totales -->
+                        <div class="card mt-3 bg-light">
+                            <div class="card-header">
+                                <h6 class="mb-0">Resumen de Totales</h6>
+                            </div>
+                            <div class="card-body p-3">
+                                <table class="table table-sm mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <td>Subtotal Principal:</td>
+                                            <td class="text-right">$<span id="subtotal-display">0.00</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Subtotal Items Adicionales:</td>
+                                            <td class="text-right">$<span id="additional-items-total-display">0.00</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Subtotal Total:</strong></td>
+                                            <td class="text-right"><strong>$<span id="total-subtotal-display">0.00</span></strong></td>
+                                        </tr>
+                                        <tr id="iva-19-row" style="display: none;">
+                                            <td>IVA (19%):</td>
+                                            <td class="text-right">$<span id="iva-19-display">0.00</span></td>
+                                        </tr>
+                                        <tr id="iva-5-row" style="display: none;">
+                                            <td>IVA (5%):</td>
+                                            <td class="text-right">$<span id="iva-5-display">0.00</span></td>
+                                        </tr>
+                                        <tr id="ipoconsumo-8-row" style="display: none;">
+                                            <td>Ipoconsumo (8%):</td>
+                                            <td class="text-right">$<span id="ipoconsumo-8-display">0.00</span></td>
+                                        </tr>
+                                        <tr id="ipoconsumo-4-row" style="display: none;">
+                                            <td>Ipoconsumo (4%):</td>
+                                            <td class="text-right">$<span id="ipoconsumo-4-display">0.00</span></td>
+                                        </tr>
+                                        <tr class="table-active">
+                                            <td><strong>Total General:</strong></td>
+                                            <td class="text-right"><strong>$<span id="total-general-display">0.00</span></strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -446,23 +554,57 @@
             }
         });
 
-        // ============ Funciones para cálculos de precios e IVA ============
+        // ============ Funciones para cálculos de precios e impuestos ============
         
         // Función para calcular totales
         function calculateTotals() {
             const subtotal = parseFloat($('#subtotal').val()) || 0;
-            const includesIva = $('#includes_iva').prop('checked');
             const additionalItemsTotal = calculateAdditionalItemsTotal();
-            
-            // Calcular IVA
             const totalSubtotal = subtotal + additionalItemsTotal;
-            const ivaAmount = includesIva ? totalSubtotal * 0.19 : 0;
-            const total = totalSubtotal + ivaAmount;
             
-            // Actualizar campos
-            $('#iva_amount').val(ivaAmount.toFixed(2));
-            $('#total_amount').val(total.toFixed(2));
+            // Verificar qué impuestos están seleccionados
+            const includesIva19 = $('#includes_iva_19').prop('checked');
+            const includesIva5 = $('#includes_iva_5').prop('checked');
+            const includesIpoconsumo8 = $('#includes_ipoconsumo_8').prop('checked');
+            const includesIpoconsumo4 = $('#includes_ipoconsumo_4').prop('checked');
+            
+            // Calcular impuestos
+            const iva19Amount = includesIva19 ? totalSubtotal * 0.19 : 0;
+            const iva5Amount = includesIva5 ? totalSubtotal * 0.05 : 0;
+            const ipoconsumo8Amount = includesIpoconsumo8 ? totalSubtotal * 0.08 : 0;
+            const ipoconsumo4Amount = includesIpoconsumo4 ? totalSubtotal * 0.04 : 0;
+            
+            // Calcular total general
+            const totalImpuestos = iva19Amount + iva5Amount + ipoconsumo8Amount + ipoconsumo4Amount;
+            const totalGeneral = totalSubtotal + totalImpuestos;
+            
+            // Actualizar campos de impuestos
+            $('#iva_19_amount').val(iva19Amount.toFixed(2));
+            $('#iva_5_amount').val(iva5Amount.toFixed(2));
+            $('#ipoconsumo_8_amount').val(ipoconsumo8Amount.toFixed(2));
+            $('#ipoconsumo_4_amount').val(ipoconsumo4Amount.toFixed(2));
+            $('#total_amount').val(totalGeneral.toFixed(2));
+            
+            // Actualizar campos ocultos para compatibilidad
+            $('#includes_iva_hidden').val(includesIva19 ? '1' : '0');
+            $('#iva_amount_hidden').val(iva19Amount.toFixed(2));
+            
+            // Actualizar displays del resumen
+            $('#subtotal-display').text(subtotal.toFixed(2));
             $('#additional-items-total').text(additionalItemsTotal.toFixed(2));
+            $('#additional-items-total-display').text(additionalItemsTotal.toFixed(2));
+            $('#total-subtotal-display').text(totalSubtotal.toFixed(2));
+            $('#iva-19-display').text(iva19Amount.toFixed(2));
+            $('#iva-5-display').text(iva5Amount.toFixed(2));
+            $('#ipoconsumo-8-display').text(ipoconsumo8Amount.toFixed(2));
+            $('#ipoconsumo-4-display').text(ipoconsumo4Amount.toFixed(2));
+            $('#total-general-display').text(totalGeneral.toFixed(2));
+            
+            // Mostrar/ocultar filas de impuestos según estén seleccionados
+            $('#iva-19-row').toggle(includesIva19);
+            $('#iva-5-row').toggle(includesIva5);
+            $('#ipoconsumo-8-row').toggle(includesIpoconsumo8);
+            $('#ipoconsumo-4-row').toggle(includesIpoconsumo4);
         }
         
         // Función para calcular total de items adicionales
@@ -479,7 +621,7 @@
         }
         
         // Event listeners para cálculos automáticos
-        $('#subtotal, #includes_iva').on('change input', calculateTotals);
+        $('#subtotal, #includes_iva_19, #includes_iva_5, #includes_ipoconsumo_8, #includes_ipoconsumo_4').on('change input', calculateTotals);
         
         // Agregar item adicional
         let itemCounter = 0;

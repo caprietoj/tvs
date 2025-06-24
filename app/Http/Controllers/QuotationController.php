@@ -55,6 +55,14 @@ class QuotationController extends Controller
             'total_amount' => 'required|numeric|min:0',
             'includes_iva' => 'nullable|boolean',
             'iva_amount' => 'nullable|numeric|min:0',
+            'includes_iva_19' => 'nullable|boolean',
+            'iva_19_amount' => 'nullable|numeric|min:0',
+            'includes_iva_5' => 'nullable|boolean',
+            'iva_5_amount' => 'nullable|numeric|min:0',
+            'includes_ipoconsumo_8' => 'nullable|boolean',
+            'ipoconsumo_8_amount' => 'nullable|numeric|min:0',
+            'includes_ipoconsumo_4' => 'nullable|boolean',
+            'ipoconsumo_4_amount' => 'nullable|numeric|min:0',
             'quotation_file' => 'required|file|mimes:pdf|max:5120',
             'additional_items' => 'nullable|array',
             'additional_items.*.description' => 'required_with:additional_items|string|max:255',
@@ -93,9 +101,24 @@ class QuotationController extends Controller
         $subtotal = floatval($request->subtotal);
         $additionalItemsTotal = array_sum(array_column($additionalItems, 'total'));
         $totalSubtotal = $subtotal + $additionalItemsTotal;
+        
+        // Calcular todos los impuestos
         $includesIva = $request->has('includes_iva');
-        $expectedIvaAmount = $includesIva ? $totalSubtotal * 0.19 : 0;
-        $expectedTotal = $totalSubtotal + $expectedIvaAmount;
+        $includesIva19 = $request->has('includes_iva_19');
+        $includesIva5 = $request->has('includes_iva_5');
+        $includesIpoconsumo8 = $request->has('includes_ipoconsumo_8');
+        $includesIpoconsumo4 = $request->has('includes_ipoconsumo_4');
+        
+        $iva19Amount = $includesIva19 ? $totalSubtotal * 0.19 : 0;
+        $iva5Amount = $includesIva5 ? $totalSubtotal * 0.05 : 0;
+        $ipoconsumo8Amount = $includesIpoconsumo8 ? $totalSubtotal * 0.08 : 0;
+        $ipoconsumo4Amount = $includesIpoconsumo4 ? $totalSubtotal * 0.04 : 0;
+        
+        // Para compatibilidad con el IVA original
+        $expectedIvaAmount = $includesIva ? $totalSubtotal * 0.19 : $iva19Amount;
+        
+        $totalImpuestos = $iva19Amount + $iva5Amount + $ipoconsumo8Amount + $ipoconsumo4Amount;
+        $expectedTotal = $totalSubtotal + $totalImpuestos;
         
         // Verificar que el total calculado coincida con el enviado (con tolerancia de 0.01)
         if (abs($expectedTotal - floatval($request->total_amount)) > 0.01) {
@@ -116,8 +139,16 @@ class QuotationController extends Controller
                 'file_path' => $filePath,
                 'total_amount' => $request->total_amount,
                 'subtotal' => $request->subtotal,
-                'includes_iva' => $includesIva,
+                'includes_iva' => $includesIva || $includesIva19,
                 'iva_amount' => $expectedIvaAmount,
+                'includes_iva_19' => $includesIva19,
+                'iva_19_amount' => $iva19Amount,
+                'includes_iva_5' => $includesIva5,
+                'iva_5_amount' => $iva5Amount,
+                'includes_ipoconsumo_8' => $includesIpoconsumo8,
+                'ipoconsumo_8_amount' => $ipoconsumo8Amount,
+                'includes_ipoconsumo_4' => $includesIpoconsumo4,
+                'ipoconsumo_4_amount' => $ipoconsumo4Amount,
                 'additional_items' => $additionalItems,
                 'delivery_time' => $request->delivery_time,
                 'payment_method' => $request->payment_method,

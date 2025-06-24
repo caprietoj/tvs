@@ -188,31 +188,57 @@
                 <td class="bold">APROBACIÓN</td>
                 <td>{{ $order->purchaseRequest->approver->name ?? '' }}</td>
                 <td class="bold">SUB TOTAL</td>
-                <td class="right">${{ number_format($order->subtotal ?? 0, 0, ',', '.') }}</td>
+                <td class="right">${{ number_format($quotation->subtotal ?? $order->subtotal ?? 0, 0, ',', '.') }}</td>
             </tr>
             <tr>
                 <td class="bold">FECHA:</td>
                 <td>{{ $order->purchaseRequest->approval_date ? $order->purchaseRequest->approval_date->format('d/m/Y') : '' }}</td>
-                <td class="bold">IMPTO AL CONSUMO</td>
-                <td class="right">0</td>
+                @if($quotation && ($quotation->includes_iva_19 || $quotation->includes_iva_5))
+                    <td class="bold">
+                        @if($quotation->includes_iva_19 && $quotation->includes_iva_5)
+                            IVA (19% + 5%)
+                        @elseif($quotation->includes_iva_19)
+                            IVA (19%)
+                        @else
+                            IVA (5%)
+                        @endif
+                    </td>
+                    <td class="right">${{ number_format(($quotation->iva_19_amount ?? 0) + ($quotation->iva_5_amount ?? 0), 0, ',', '.') }}</td>
+                @else
+                    <td class="bold">IVA</td>
+                    <td class="right">${{ number_format($order->iva_amount ?? 0, 0, ',', '.') }}</td>
+                @endif
             </tr>
             <tr>
                 <td class="bold">PRESUPUESTO:</td>
                 <td>{{ $order->purchaseRequest->budget ?? '' }}</td>
-                <td class="bold">IVA</td>
-                <td class="right">${{ number_format($order->iva_amount ?? 0, 0, ',', '.') }}</td>
+                @if($quotation && ($quotation->includes_ipoconsumo_8 || $quotation->includes_ipoconsumo_4))
+                    <td class="bold">
+                        @if($quotation->includes_ipoconsumo_8 && $quotation->includes_ipoconsumo_4)
+                            IMPTO AL CONSUMO (8% + 4%)
+                        @elseif($quotation->includes_ipoconsumo_8)
+                            IMPTO AL CONSUMO (8%)
+                        @else
+                            IMPTO AL CONSUMO (4%)
+                        @endif
+                    </td>
+                    <td class="right">${{ number_format(($quotation->ipoconsumo_8_amount ?? 0) + ($quotation->ipoconsumo_4_amount ?? 0), 0, ',', '.') }}</td>
+                @else
+                    <td class="bold">IMPTO AL CONSUMO</td>
+                    <td class="right">$0</td>
+                @endif
             </tr>
             <tr>
                 <td class="bold">SECCIÓN / DPTO:</td>
                 <td>{{ $order->purchaseRequest->section_area ?? '' }}</td>
                 <td class="bold">DESCUENTO</td>
-                <td class="right">0</td>
+                <td class="right">$0</td>
             </tr>
             <tr>
                 <td class="bold">NOMBRE:</td>
                 <td>{{ $order->purchaseRequest->requester ?? '' }}</td>
                 <td class="bold">TOTAL</td>
-                <td class="right bold">${{ number_format($order->total_amount ?? 0, 0, ',', '.') }}</td>
+                <td class="right bold">${{ number_format($quotation->total_amount ?? $order->total_amount ?? 0, 0, ',', '.') }}</td>
             </tr>
             <tr>
                 <td class="bold">FIRMA:</td>
@@ -221,6 +247,55 @@
                 <td></td>
             </tr>
         </table>
+
+        <!-- Desglose detallado de impuestos (solo si aplican) -->
+        @if($quotation && ($quotation->includes_iva_19 || $quotation->includes_iva_5 || $quotation->includes_ipoconsumo_8 || $quotation->includes_ipoconsumo_4))
+        <table style="margin-top: 10px;">
+            <tr>
+                <td colspan="4" class="center bold header-section" style="font-size: 12px; padding: 8px;">
+                    DESGLOSE DE IMPUESTOS APLICABLES
+                </td>
+            </tr>
+            @if($quotation->includes_iva_19)
+            <tr>
+                <td class="bold" style="width: 40%;">IVA 19%:</td>
+                <td style="width: 25%;">Base: ${{ number_format($quotation->subtotal ?? 0, 0, ',', '.') }}</td>
+                <td style="width: 15%;">Tasa: 19%</td>
+                <td class="right" style="width: 20%;">Valor: ${{ number_format($quotation->iva_19_amount ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            @if($quotation->includes_iva_5)
+            <tr>
+                <td class="bold">IVA 5%:</td>
+                <td>Base: ${{ number_format($quotation->subtotal ?? 0, 0, ',', '.') }}</td>
+                <td>Tasa: 5%</td>
+                <td class="right">Valor: ${{ number_format($quotation->iva_5_amount ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            @if($quotation->includes_ipoconsumo_8)
+            <tr>
+                <td class="bold">Impuesto al Consumo 8%:</td>
+                <td>Base: ${{ number_format($quotation->subtotal ?? 0, 0, ',', '.') }}</td>
+                <td>Tasa: 8%</td>
+                <td class="right">Valor: ${{ number_format($quotation->ipoconsumo_8_amount ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            @if($quotation->includes_ipoconsumo_4)
+            <tr>
+                <td class="bold">Impuesto al Consumo 4%:</td>
+                <td>Base: ${{ number_format($quotation->subtotal ?? 0, 0, ',', '.') }}</td>
+                <td>Tasa: 4%</td>
+                <td class="right">Valor: ${{ number_format($quotation->ipoconsumo_4_amount ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            <tr style="background-color: #f0f0f0;">
+                <td class="bold">TOTAL IMPUESTOS:</td>
+                <td></td>
+                <td></td>
+                <td class="right bold">${{ number_format(($quotation->iva_19_amount ?? 0) + ($quotation->iva_5_amount ?? 0) + ($quotation->ipoconsumo_8_amount ?? 0) + ($quotation->ipoconsumo_4_amount ?? 0), 0, ',', '.') }}</td>
+            </tr>
+        </table>
+        @endif
 
         <!-- Información del colegio -->
         <div class="footer-info">

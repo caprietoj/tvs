@@ -29,6 +29,7 @@
                             <th>IMPRESIÓN</th>
                             <th>TOTAL</th>
                             <th>FECHA ENTREGA</th>
+                            <th>OBSERVACIONES</th>
                             <th>ESTADO</th>
                             <th>ACCIONES</th>
                         </tr>
@@ -80,6 +81,20 @@
                                 <span class="badge badge-warning">{{ $item['total'] ?? '0' }}</span>
                             </td>
                             <td>{{ $request->delivery_date ? $request->delivery_date->format('d/m/Y') : 'N/A' }}</td>
+                            <td class="text-center">
+                                @if($request->general_observations)
+                                    <button type="button" class="btn btn-sm btn-outline-info" 
+                                            data-toggle="popover" 
+                                            data-trigger="hover" 
+                                            data-placement="left"
+                                            data-content="{{ $request->general_observations }}" 
+                                            title="Observaciones">
+                                        <i class="fas fa-comment-alt"></i>
+                                    </button>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
                             <td class="text-center">
                                 @if($request->status === 'pending')
                                     <span class="badge badge-warning">Pendiente</span>
@@ -225,9 +240,10 @@
                     { "width": "15%", "targets": 5 }, // Original
                     { "width": "6%", "targets": [6, 11, 12] }, // Copias Req., Total, Fecha Entrega
                     { "width": "5%", "targets": [7, 8, 9, 10] }, // Checkboxes
-                    { "width": "8%", "targets": 13 }, // Estado
-                    { "width": "10%", "targets": 14 }, // Acciones
-                    { "orderable": false, "targets": [7, 8, 9, 10, 14] } // Desactivar orden en checkboxes y acciones
+                    { "width": "8%", "targets": 13 }, // Observaciones
+                    { "width": "8%", "targets": 14 }, // Estado
+                    { "width": "10%", "targets": 15 }, // Acciones
+                    { "orderable": false, "targets": [7, 8, 9, 10, 13, 15] } // Desactivar orden en checkboxes, observaciones y acciones
                 ],
                 "dom": 'Bfrtip',
                 "buttons": [
@@ -247,6 +263,12 @@
                         className: 'btn btn-info btn-sm'
                     }
                 ]
+            });
+            
+            // Inicializar popovers para observaciones
+            $('[data-toggle="popover"]').popover({
+                html: true,
+                container: 'body'
             });
         });
     </script>

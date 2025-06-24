@@ -22,7 +22,7 @@ class PurchaseOrderPdfService
     {
         try {
             // Cargar la solicitud y sus relaciones
-            $order->load(['purchaseRequest', 'purchaseRequest.user', 'provider']);
+            $order->load(['purchaseRequest', 'purchaseRequest.user', 'purchaseRequest.selectedQuotation', 'provider']);
             
             // Obtener datos de la cotización seleccionada
             $quotation = $order->purchaseRequest->selectedQuotation;
@@ -75,7 +75,7 @@ class PurchaseOrderPdfService
     {
         try {
             // Cargar la solicitud y sus relaciones
-            $order->load(['purchaseRequest', 'purchaseRequest.user', 'provider']);
+            $order->load(['purchaseRequest', 'purchaseRequest.user', 'purchaseRequest.selectedQuotation', 'provider']);
             
             // Obtener datos de la cotización seleccionada
             $quotation = $order->purchaseRequest->selectedQuotation;
