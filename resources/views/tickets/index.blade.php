@@ -111,19 +111,75 @@
     .table th { border-top: none; }
 
     .badge {
-        padding: 0.5em 1em;
-        font-size: 0.85em;
+        padding: 0.6em 1.2em;
+        font-size: 0.8em;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 2px solid transparent;
     }
 
-    /* Estado colors */
-    .badge-abierto { background-color: #28a745; }
-    .badge-enproceso { background-color: #ffc107; color: #000; }
-    .badge-cerrado { background-color: #dc3545; }
+    /* Estado colors - Modernos y accesibles */
+    .badge-abierto { 
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border-color: #1e7e34;
+    }
+    
+    .badge-enproceso { 
+        background: linear-gradient(135deg, #fd7e14, #ffc107);
+        color: #212529;
+        border-color: #e0a800;
+        font-weight: 700;
+    }
+    
+    .badge-cerrado { 
+        background: linear-gradient(135deg, #6c757d, #495057);
+        color: white;
+        border-color: #495057;
+    }
 
-    /* Prioridad colors */
-    .badge-alta { background-color: #dc3545; }
-    .badge-media { background-color: #ffc107; color: #000; }
-    .badge-baja { background-color: #28a745; }
+    /* Prioridad colors - Más distintivos */
+    .badge-alta { 
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        border-color: #bd2130;
+        animation: pulse-alta 2s infinite;
+    }
+    
+    .badge-media { 
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+        border-color: #117a8b;
+    }
+    
+    .badge-baja { 
+        background: linear-gradient(135deg, #6f42c1, #5a32a3);
+        color: white;
+        border-color: #4e2a87;
+    }
+
+    /* Animación para prioridad alta */
+    @keyframes pulse-alta {
+        0% {
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+        }
+        50% {
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6);
+        }
+        100% {
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+        }
+    }
+
+    /* Efectos hover para badges */
+    .badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
 
     /* Button styles */
     .btn-group .btn {
