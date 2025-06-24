@@ -33,9 +33,15 @@
                                         equipos e insumos para su departamento.
                                     </p>
                                     <ul class="list-group list-group-flush text-left mb-4">
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Productos específicos</li>
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Equipos</li>
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Insumos especializados</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Tecnología</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Insumos de laboratorio</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Material deportivo</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Aseo y cafetería</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Compras administrativas</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Material educativo</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Útiles y papelería</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Dotación oficina</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Insumos enfermería</li>
                                     </ul>
                                     <button type="button" id="purchaseButton" class="btn btn-primary btn-block">
                                         <i class="fas fa-shopping-cart mr-2"></i> Crear Solicitud de Compra
@@ -60,9 +66,16 @@
                                         mantenimientos y servicios profesionales.
                                     </p>
                                     <ul class="list-group list-group-flush text-left mb-4">
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Servicios externos</li>
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Mantenimientos</li>
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Servicios profesionales</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Honorarios</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Capacitaciones</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Talleres IB</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Servicios extracurriculares</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Servicios de mantenimiento</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Convivencias</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Salidas pedagógicas</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Pagos a terceros por eventos</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Alquileres</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Renovación Licencias</li>
                                     </ul>
                                     <button type="button" id="servicesButton" class="btn btn-success btn-block">
                                         <i class="fas fa-tools mr-2"></i> Crear Solicitud de Servicios
@@ -87,9 +100,16 @@
                                         y papelería para su departamento.
                                     </p>
                                     <ul class="list-group list-group-flush text-left mb-4">
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Material de oficina</li>
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Materiales didácticos</li>
-                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Papelería</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Papelería básica</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Útiles escolares</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Material didáctico</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Suministros de oficina</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Material de arte y manualidades</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Carteleras y decoración</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Archivadores y folders</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Material de escritura</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Elementos de organización</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Materiales pedagógicos</li>
                                     </ul>
                                     <button type="button" id="materialsButton" class="btn btn-info btn-block">
                                         <i class="fas fa-box mr-2"></i> Crear Solicitud de Materiales
@@ -202,7 +222,17 @@
         border-left: none;
         border-right: none;
         border-bottom: 1px solid rgba(0,0,0,.125);
-        padding: 0.75rem 0;
+        padding: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+    
+    .list-group-flush {
+        max-height: 280px;
+        overflow-y: auto;
+    }
+    
+    .card-type-selector .card-body {
+        padding: 1rem 0.75rem;
     }
     
     .list-group-flush:last-child .list-group-item:last-child {

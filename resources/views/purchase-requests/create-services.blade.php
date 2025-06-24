@@ -82,32 +82,59 @@
                             <textarea class="form-control @error('service_justification') is-invalid @enderror" id="service_justification" name="service_justification" rows="3" placeholder="Describa la justificación para la contratación del servicio solicitado" required>{{ old('service_justification') }}</textarea>
                             @error('service_justification')
                                 <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>                        <div class="form-row">
-                            <div class="form-group col-md-4">
-                                <label for="service_budget">VALOR PRESUPUESTADO PARA ESTE SERVICIO $ <span class="text-danger">*</span>:</label>
-                                <input type="number" step="0.01" class="form-control @error('service_budget') is-invalid @enderror" id="service_budget" name="service_budget" value="{{ old('service_budget') }}" placeholder="Ej: 500000" required>
-                                @error('service_budget')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="form-text text-muted">
-                                    <i class="fas fa-dollar-sign"></i> 
-                                    Ingrese el valor numérico del presupuesto estimado
-                                </small>
-                            </div>                            <div class="form-group col-md-8">
-                                <label for="service_budget_text">EN LETRAS:</label>
-                                <input type="text" class="form-control @error('service_budget_text') is-invalid @enderror" id="service_budget_text" name="service_budget_text" value="{{ old('service_budget_text') }}" placeholder="Ej: Quinientos mil pesos">
-                                @error('service_budget_text')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="form-text text-muted">
-                                    <i class="fas fa-info-circle"></i> 
-                                    Este campo se completa automáticamente al escribir el valor numérico, pero puede editarlo manualmente si es necesario.
-                                </small>
+                            @enderror                        </div>
+                        
+                        <!-- Sección de Presupuesto -->
+                        <div class="card mt-4">
+                            <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid #364E76;">
+                                <h5 class="mb-0" style="color: #364E76;">
+                                    <i class="fas fa-dollar-sign mr-2"></i>Información Presupuestaria
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="service_budget" class="font-weight-bold">VALOR PRESUPUESTADO PARA ESTE SERVICIO $ <span class="text-danger">*</span>:</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text" style="background-color: #364E76; color: white;">
+                                                    <i class="fas fa-dollar-sign"></i>
+                                                </span>
+                                            </div>
+                                            <input type="number" step="0.01" class="form-control @error('service_budget') is-invalid @enderror" id="service_budget" name="service_budget" value="{{ old('service_budget') }}" placeholder="Ej: 500000" required>
+                                            @error('service_budget')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Ingrese el valor numérico del presupuesto estimado
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="form-group col-md-6">
+                                        <label for="service_budget_text" class="font-weight-bold">EN LETRAS:</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text" style="background-color: #364E76; color: white;">
+                                                    <i class="fas fa-spell-check"></i>
+                                                </span>
+                                            </div>
+                                            <input type="text" class="form-control @error('service_budget_text') is-invalid @enderror" id="service_budget_text" name="service_budget_text" value="{{ old('service_budget_text') }}" placeholder="Ej: Quinientos mil pesos">
+                                            @error('service_budget_text')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-magic mr-1"></i>
+                                            Se completa automáticamente, pero puede editarlo manualmente
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="table-responsive">
+                        <div class="table-responsive mt-4">
                             <table class="table table-bordered" id="serviceItemsTable">
                                 <thead style="background-color: #f8f9fa;">
                                     <tr>
