@@ -388,13 +388,14 @@
                                     </div>
                                 @endif
                                 
-                                <!-- Cuadro comparativo si hay más de una cotización -->
+                                <!-- Botón para selección mixta si hay más de una cotización -->
                                 @if($purchaseRequest->quotations->count() > 1)
-                                    <div class="p-3">
-                                        <h5><i class="fas fa-chart-bar mr-2"></i>Cuadro Comparativo</h5>
-                                        <div class="chart-container" style="position: relative; height:200px;">
-                                            <canvas id="quotationChart"></canvas>
-                                        </div>
+                                    <div class="p-3 text-center">
+                                        <h5 class="mb-3"><i class="fas fa-balance-scale mr-2"></i>Opciones de Selección</h5>
+                                        <a href="{{ route('quotation-selections.show', $purchaseRequest->id) }}" 
+                                           class="btn btn-info btn-sm">
+                                            <i class="fas fa-balance-scale mr-2"></i>Selección Mixta de Proveedores
+                                        </a>
                                     </div>
                                 @endif
                             @else
@@ -1130,61 +1131,7 @@
             });
         });
         
-        // Gráfico comparativo de cotizaciones
-        @if(isset($purchaseRequest) && $purchaseRequest->quotations && $purchaseRequest->quotations->count() > 1)
-            var ctx = document.getElementById('quotationChart').getContext('2d');
-            var quotationChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: [
-                        @foreach($purchaseRequest->quotations as $q)
-                            '{{ $q->provider_name }}',
-                        @endforeach
-                    ],
-                    datasets: [{
-                        label: 'Monto ($)',
-                        data: [
-                            @foreach($purchaseRequest->quotations as $q)
-                                {{ $q->total_amount }},
-                            @endforeach
-                        ],
-                        backgroundColor: [
-                            @foreach($purchaseRequest->quotations as $q)
-                                '{{ $q->is_selected ? "rgba(40, 167, 69, 0.7)" : "rgba(0, 123, 255, 0.7)" }}',
-                            @endforeach
-                        ],
-                        borderColor: [
-                            @foreach($purchaseRequest->quotations as $q)
-                                '{{ $q->is_selected ? "rgb(40, 167, 69)" : "rgb(0, 123, 255)" }}',
-                            @endforeach
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return '$' + value.toLocaleString();
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return '$' + context.parsed.y.toLocaleString();
-                                }
-                            }
-                        }
-                    }
-                });
-        @endif
+        // Código JavaScript para gráfico removido - ya no se necesita
     });
     
     // Animación para las cards

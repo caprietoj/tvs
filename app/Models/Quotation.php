@@ -62,4 +62,42 @@ class Quotation extends Model
     {
         return $this->belongsTo(User::class, 'pre_approved_by');
     }
+    
+    /**
+     * Obtener los datos del proveedor basándose en el nombre
+     */
+    public function getProviderData()
+    {
+        $provider = \App\Models\Proveedor::where('nombre', $this->provider_name)->first();
+        
+        if ($provider) {
+            return [
+                'nit' => $provider->nit,
+                'email' => $provider->email,
+                'telefono' => $provider->telefono,
+                'contacto' => $provider->persona_contacto,
+                'direccion' => $provider->direccion,
+                'ciudad' => $provider->ciudad,
+                'servicio_producto' => $provider->servicio_producto,
+            ];
+        }
+        
+        return [
+            'nit' => 'N/A',
+            'email' => 'N/A',
+            'telefono' => 'N/A',
+            'contacto' => 'N/A',
+            'direccion' => 'N/A',
+            'ciudad' => 'N/A',
+            'servicio_producto' => 'N/A',
+        ];
+    }
+    
+    /**
+     * Atributo para acceder directamente a los datos del proveedor
+     */
+    public function getProviderDataAttribute()
+    {
+        return $this->getProviderData();
+    }
 }

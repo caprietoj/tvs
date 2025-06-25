@@ -80,6 +80,9 @@ check_dates.php
 check_events_structure.php
 check_permissions.php
 check_skills.php
+delete_order.php
+complete_rrhh_permissions.php
+update_rrhh_permissions.php
 
 
 # Documentation files generated during development

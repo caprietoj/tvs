@@ -39,14 +39,19 @@ class PurchaseOrdersController extends Controller
             ->paginate(10);
             
         // Obtener las solicitudes aprobadas pendientes de generar órdenes de compra
-        $approvedRequests = PurchaseRequest::with(['selectedQuotation', 'user', 'approver'])
+        $approvedRequests = PurchaseRequest::with(['selectedQuotation', 'user', 'approver', 'quotationItemSelections'])
             ->whereIn('status', ['approved', 'in_process'])
             ->whereNotIn('id', function($query) {
                 $query->select('purchase_request_id')
                     ->from('purchase_orders')
                     ->whereNull('deleted_at');
             })
-            ->where('selected_quotation_id', '!=', null)
+            ->where(function($query) {
+                // Solicitudes con cotización seleccionada tradicional
+                $query->where('selected_quotation_id', '!=', null)
+                      // O solicitudes con selección mixta completa
+                      ->orWhereHas('quotationItemSelections');
+            })
             ->orderBy('approval_date', 'desc')
             ->get();
             
@@ -58,19 +63,36 @@ class PurchaseOrdersController extends Controller
      */
     public function create(PurchaseRequest $purchaseRequest)
     {
+        Log::info('=== CREATE METHOD CALLED ===', [
+            'purchase_request_id' => $purchaseRequest->id,
+            'user_id' => auth()->id()
+        ]);
+        
         // Verificar que la solicitud esté aprobada
         if (!in_array($purchaseRequest->status, ['approved', 'in_process'])) {
             return redirect()->route('purchase-requests.show', $purchaseRequest->id)
                 ->with('error', 'Solo se pueden generar órdenes de compra para solicitudes aprobadas.');
         }
         
-        // Verificar que tenga una cotización seleccionada
-        if (!$purchaseRequest->selected_quotation_id) {
+        // Verificar que tenga una cotización seleccionada o selección mixta
+        $hasSelectedQuotation = $purchaseRequest->selected_quotation_id !== null;
+        $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
+        
+        if (!$hasSelectedQuotation && !$hasMixedSelection) {
             return redirect()->route('purchase-requests.show', $purchaseRequest->id)
-                ->with('error', 'La solicitud no tiene una cotización seleccionada.');
+                ->with('error', 'La solicitud no tiene una cotización seleccionada ni una selección mixta.');
         }
         
-        return view('purchase-orders.create', compact('purchaseRequest'));
+        // Cargar las selecciones mixtas si existen
+        $mixedSelections = $hasMixedSelection ? $purchaseRequest->quotationItemSelections()->with('quotation')->get() : collect();
+        
+        Log::info('Datos para la vista create', [
+            'has_selected_quotation' => $hasSelectedQuotation,
+            'has_mixed_selection' => $hasMixedSelection,
+            'mixed_selections_count' => $mixedSelections->count()
+        ]);
+        
+        return view('purchase-orders.create', compact('purchaseRequest', 'hasSelectedQuotation', 'hasMixedSelection', 'mixedSelections'));
     }
 
     /**
@@ -78,15 +100,47 @@ class PurchaseOrdersController extends Controller
      */
     public function store(Request $request, $purchaseRequestId)
     {
-        $request->validate([
-            'provider_id' => 'required|exists:proveedors,id',
+        Log::info('=== STORE METHOD CALLED ===', [
+            'purchase_request_id' => $purchaseRequestId,
+            'user_id' => auth()->id(),
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'all_data' => $request->all()
+        ]);
+        
+        Log::info('Iniciando creación de orden de compra', [
+            'purchase_request_id' => $purchaseRequestId,
+            'user_id' => auth()->id()
+        ]);
+        
+        // Obtener la solicitud de compra primero para determinar el tipo de validación
+        $purchaseRequest = PurchaseRequest::findOrFail($purchaseRequestId);
+        $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
+        
+        Log::info('Tipo de selección identificado', [
+            'purchase_request_id' => $purchaseRequestId,
+            'has_mixed_selection' => $hasMixedSelection,
+            'has_selected_quotation' => $purchaseRequest->selected_quotation_id !== null
+        ]);
+        
+        // Validación condicional
+        $validationRules = [
             'payment_terms' => 'required|string|max:255',
             'delivery_date' => 'required|date',
             'observations' => 'nullable|string',
+        ];
+        
+        // Solo requerir provider_id para cotizaciones tradicionales
+        if (!$hasMixedSelection) {
+            $validationRules['provider_id'] = 'required|exists:proveedors,id';
+        }
+        
+        Log::info('Validando request', [
+            'validation_rules' => $validationRules,
+            'request_data' => $request->all()
         ]);
         
-        // Obtener la solicitud de compra
-        $purchaseRequest = PurchaseRequest::findOrFail($purchaseRequestId);
+        $request->validate($validationRules);
         
         // Verificar que la solicitud esté aprobada
         if (!in_array($purchaseRequest->status, ['approved', 'in_process'])) {
@@ -98,18 +152,31 @@ class PurchaseOrdersController extends Controller
             return redirect()->route('purchase-orders.index')->with('error', 'Ya existe una orden de compra para esta solicitud.');
         }
 
-        // Verificar que tenga una cotización seleccionada
-        if (!$purchaseRequest->selected_quotation_id || !$purchaseRequest->selectedQuotation) {
-            return redirect()->route('purchase-orders.index')->with('error', 'La solicitud no tiene una cotización seleccionada válida.');
+        // Verificar que tenga una cotización seleccionada o selección mixta
+        $hasSelectedQuotation = $purchaseRequest->selected_quotation_id && $purchaseRequest->selectedQuotation;
+        $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
+        
+        if (!$hasSelectedQuotation && !$hasMixedSelection) {
+            return redirect()->route('purchase-orders.index')->with('error', 'La solicitud no tiene una cotización seleccionada válida ni una selección mixta.');
         }
 
-        // Obtener los datos de precio directamente de la cotización seleccionada
-        $selectedQuotation = $purchaseRequest->selectedQuotation;
-        $total = $selectedQuotation->total_amount;
-        $subtotal = $selectedQuotation->subtotal ?? $selectedQuotation->total_amount;
-        $ivaAmount = $selectedQuotation->iva_amount ?? 0;
-        $includesIva = $selectedQuotation->includes_iva ?? false;
-        $additionalItems = $selectedQuotation->additional_items ?? [];
+        // Obtener los datos de precio
+        if ($hasMixedSelection) {
+            // Para selección mixta, calcular totales
+            $total = $purchaseRequest->quotationItemSelections()->sum('total_price');
+            $subtotal = $total / 1.19; // Asumir IVA incluido
+            $ivaAmount = $total - $subtotal;
+            $includesIva = true;
+            $additionalItems = [];
+        } else {
+            // Para cotización única tradicional
+            $selectedQuotation = $purchaseRequest->selectedQuotation;
+            $total = $selectedQuotation->total_amount;
+            $subtotal = $selectedQuotation->subtotal ?? $selectedQuotation->total_amount;
+            $ivaAmount = $selectedQuotation->iva_amount ?? 0;
+            $includesIva = $selectedQuotation->includes_iva ?? false;
+            $additionalItems = $selectedQuotation->additional_items ?? [];
+        }
         
         try {
             DB::beginTransaction();
@@ -117,10 +184,28 @@ class PurchaseOrdersController extends Controller
             // Crear la orden de compra
             $orderNumber = 'OC-' . date('Ym') . '-' . str_pad(PurchaseOrder::count() + 1, 3, '0', STR_PAD_LEFT);
             
+            // Para selecciones mixtas, usar un proveedor por defecto o crear uno especial
+            $providerId = $request->provider_id;
+            if ($hasMixedSelection && !$providerId) {
+                // Crear o usar proveedor especial para selecciones mixtas
+                $mixedProvider = \App\Models\Proveedor::firstOrCreate([
+                    'nombre' => 'Selección Mixta de Proveedores',
+                    'nit' => 'MIXTA-000'
+                ], [
+                    'email' => 'mixta@proveedores.com',
+                    'direccion' => 'Múltiples proveedores',
+                    'ciudad' => 'Múltiple',
+                    'telefono' => '000-000-0000',
+                    'persona_contacto' => 'Ver detalles de la orden',
+                    'servicio_producto' => 'Selección mixta de proveedores'
+                ]);
+                $providerId = $mixedProvider->id;
+            }
+            
             $order = PurchaseOrder::create([
                 'order_number' => $orderNumber,
                 'purchase_request_id' => $purchaseRequestId,
-                'provider_id' => $request->provider_id,
+                'provider_id' => $providerId,
                 'user_id' => auth()->id(),
                 'created_by' => auth()->id(),
                 'payment_terms' => $request->payment_terms,
@@ -151,7 +236,11 @@ class PurchaseOrdersController extends Controller
             
         } catch (\Exception $e) {
             DB::rollback();
-            Log::error('Error al crear orden de compra: ' . $e->getMessage());
+            Log::error('Error al crear orden de compra: ' . $e->getMessage(), [
+                'purchase_request_id' => $purchaseRequestId,
+                'user_id' => auth()->id(),
+                'exception' => $e->getTraceAsString()
+            ]);
             
             return redirect()->back()->with('error', 'Error al crear la orden de compra: ' . $e->getMessage())->withInput();
         }

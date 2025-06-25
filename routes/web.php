@@ -50,6 +50,7 @@ use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\QuotationApprovalController;
+use App\Http\Controllers\QuotationItemSelectionController;
 use App\Http\Controllers\PurchaseOrdersController;
 use App\Http\Controllers\InventoryController; // Añadido para resolver el error Target Class
 use App\Http\Controllers\SpaceBlockExceptionController; // Añadido para resolver el error con SpaceBlockExceptionController
@@ -802,6 +803,18 @@ Route::middleware(['auth'])->prefix('performance-evaluations')->name('performanc
     // Rutas para evaluación del supervisor
     Route::get('/{performanceEvaluation}/supervisor-evaluate', [App\Http\Controllers\PerformanceEvaluationController::class, 'supervisorEvaluate'])->name('supervisor-evaluate');
     Route::post('/{performanceEvaluation}/supervisor-evaluate', [App\Http\Controllers\PerformanceEvaluationController::class, 'storeSupervisorEvaluation'])->name('store-supervisor-evaluation');
+});
+
+// Rutas para selección mixta de proveedores
+Route::middleware('auth')->group(function () {
+    Route::get('/purchase-requests/{purchaseRequest}/quotation-selections', [QuotationItemSelectionController::class, 'show'])
+        ->name('quotation-selections.show');
+    Route::post('/quotation-selections/select-item', [QuotationItemSelectionController::class, 'selectItem'])
+        ->name('quotation-selections.select-item');
+    Route::post('/quotation-selections/remove', [QuotationItemSelectionController::class, 'removeSelection'])
+        ->name('quotation-selections.remove');
+    Route::post('/purchase-requests/{purchaseRequest}/finalize-selection', [QuotationItemSelectionController::class, 'finalize'])
+        ->name('quotation-selections.finalize');
 });
 
 // Ruta temporal de debugging para verificar permisos

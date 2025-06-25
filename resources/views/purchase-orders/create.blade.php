@@ -99,10 +99,57 @@
                                 
                                 <div class="form-group">
                                     <label for="provider_id">Proveedor</label>
-                                    @if($purchaseRequest->selectedQuotation && isset($purchaseRequest->selectedQuotation->provider_id))
+                                    @if(isset($hasMixedSelection) && $hasMixedSelection)
+                                        <!-- Caso de selección mixta -->
+                                        <div class="card">
+                                            <div class="card-header bg-info">
+                                                <h6 class="m-0 text-white">
+                                                    <i class="fas fa-balance-scale mr-2"></i>
+                                                    Selección Mixta de Proveedores
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Item</th>
+                                                                <th>Proveedor</th>
+                                                                <th>Cantidad</th>
+                                                                <th>Precio Unit.</th>
+                                                                <th>Total</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($mixedSelections as $selection)
+                                                                <tr>
+                                                                    <td>{{ $selection->item_description }}</td>
+                                                                    <td>{{ $selection->quotation->provider_name }}</td>
+                                                                    <td>{{ $selection->quantity }}</td>
+                                                                    <td>${{ number_format($selection->unit_price, 2) }}</td>
+                                                                    <td>${{ number_format($selection->total_price, 2) }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr class="bg-light">
+                                                                <th colspan="4">Total:</th>
+                                                                <th>${{ number_format($mixedSelections->sum('total_price'), 2) }}</th>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                                <small class="text-muted">
+                                                    Esta orden incluye productos de múltiples proveedores según la selección mixta realizada.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    @elseif($purchaseRequest->selectedQuotation && isset($purchaseRequest->selectedQuotation->provider_id))
+                                        <!-- Caso de cotización tradicional con proveedor conocido -->
                                         <input type="text" class="form-control" value="{{ \App\Models\Proveedor::find($purchaseRequest->selectedQuotation->provider_id)->nombre ?? $purchaseRequest->selectedQuotation->provider_name }}" disabled>
                                         <input type="hidden" name="provider_id" value="{{ $purchaseRequest->selectedQuotation->provider_id }}">
                                     @else
+                                        <!-- Caso de cotización sin proveedor asignado -->
                                         <select class="form-control select2 @error('provider_id') is-invalid @enderror" id="provider_id" name="provider_id" required>
                                             <option value="">Seleccione un proveedor...</option>
                                             @foreach(\App\Models\Proveedor::orderBy('nombre')->get() as $provider)
@@ -112,7 +159,11 @@
                                             @endforeach
                                         </select>
                                     @endif
-                                    <small class="text-muted">El proveedor se toma automáticamente de la cotización seleccionada.</small>
+                                    
+                                    @if(!isset($hasMixedSelection) || !$hasMixedSelection)
+                                        <small class="text-muted">El proveedor se toma automáticamente de la cotización seleccionada.</small>
+                                    @endif
+                                    
                                     @error('provider_id')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -120,13 +171,22 @@
                                 
                                 <div class="form-group">
                                     <label for="payment_terms">Términos de Pago</label>
-                                    @if($purchaseRequest->selectedQuotation && $purchaseRequest->selectedQuotation->payment_method)
+                                    @if(isset($hasMixedSelection) && $hasMixedSelection)
+                                        <!-- Para selección mixta, permitir entrada manual -->
+                                        <input type="text" class="form-control @error('payment_terms') is-invalid @enderror" 
+                                               id="payment_terms" name="payment_terms" 
+                                               value="{{ old('payment_terms', 'Según condiciones por proveedor') }}" required>
+                                        <small class="text-muted">Para selección mixta, especifique los términos generales de pago.</small>
+                                    @elseif($purchaseRequest->selectedQuotation && $purchaseRequest->selectedQuotation->payment_method)
+                                        <!-- Para cotización tradicional -->
                                         <input type="text" class="form-control" value="{{ $purchaseRequest->selectedQuotation->payment_method }}" disabled>
                                         <input type="hidden" name="payment_terms" value="{{ $purchaseRequest->selectedQuotation->payment_method }}">
+                                        <small class="text-muted">Los términos de pago se toman automáticamente de la cotización seleccionada.</small>
                                     @else
+                                        <!-- Para otros casos -->
                                         <input type="text" class="form-control @error('payment_terms') is-invalid @enderror" id="payment_terms" name="payment_terms" value="{{ old('payment_terms') }}" required>
+                                        <small class="text-muted">Especifique los términos de pago para esta orden.</small>
                                     @endif
-                                    <small class="text-muted">Los términos de pago se toman automáticamente de la cotización seleccionada.</small>
                                     @error('payment_terms')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -323,6 +383,39 @@
         var yyyy = today.getFullYear();
         today = yyyy + '-' + mm + '-' + dd;
         document.getElementById("delivery_date").min = today;
+        
+        // Debugging del formulario
+        $('form').on('submit', function(e) {
+            console.log('Form submit intercepted');
+            console.log('Form action:', $(this).attr('action'));
+            console.log('Form method:', $(this).attr('method'));
+            console.log('Form data:', $(this).serialize());
+            
+            // Verificar campos requeridos
+            var paymentTerms = $('input[name="payment_terms"]').val();
+            var deliveryDate = $('input[name="delivery_date"]').val();
+            
+            console.log('Payment terms:', paymentTerms);
+            console.log('Delivery date:', deliveryDate);
+            
+            if (!paymentTerms || !deliveryDate) {
+                alert('Por favor complete todos los campos requeridos');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Mostrar loading
+            $(this).find('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generando...');
+            
+            console.log('Form validation passed, submitting...');
+        });
+        
+        // Debug del botón
+        $('button[type="submit"]').on('click', function(e) {
+            console.log('Submit button clicked');
+            console.log('Button type:', $(this).attr('type'));
+            console.log('Form:', $(this).closest('form').length);
+        });
     });
 </script>
 @stop

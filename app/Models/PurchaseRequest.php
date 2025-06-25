@@ -143,6 +143,14 @@ class PurchaseRequest extends Model
     }
 
     /**
+     * Obtener las selecciones mixtas de productos para esta solicitud.
+     */
+    public function quotationItemSelections()
+    {
+        return $this->hasMany(QuotationItemSelection::class);
+    }
+
+    /**
      * Verificar si es una solicitud de compra.
      */
     public function isPurchaseRequest()

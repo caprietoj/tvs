@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PurchaseRequest;
 use App\Models\RequestHistory;
+use App\Models\QuotationItemSelection;
 use App\Notifications\RequestApproved;
 use App\Notifications\PurchaseRequestApproved;
 use Illuminate\Http\Request;
@@ -80,13 +81,21 @@ class ApprovalController extends Controller
         // Verificar que la solicitud esté en un estado válido para aprobación
         $validForApproval = false;
         
-        // Para solicitudes de compra: deben estar pre-aprobadas y tener cotización
+        // Para solicitudes de compra: deben estar pre-aprobadas y tener cotización o selección mixta
         if ($purchaseRequest->type === 'purchase') {
-            if (in_array($purchaseRequest->status, ['pre-approved', 'Pre-aprobada']) && $purchaseRequest->preApprovedQuotation) {
-                $validForApproval = true;
-            } else if (in_array($purchaseRequest->status, ['pre-approved', 'Pre-aprobada']) && !$purchaseRequest->preApprovedQuotation) {
-                return redirect()->back()
-                    ->with('error', 'La solicitud de compra no tiene una cotización pre-aprobada seleccionada.');
+            if (in_array($purchaseRequest->status, ['pre-approved', 'Pre-aprobada'])) {
+                // Verificar si tiene cotización pre-aprobada tradicional
+                $hasPreApprovedQuotation = $purchaseRequest->preApprovedQuotation !== null;
+                
+                // Verificar si tiene selección mixta completa
+                $hasMixedSelection = $this->hasMixedSelectionComplete($purchaseRequest);
+                
+                if ($hasPreApprovedQuotation || $hasMixedSelection) {
+                    $validForApproval = true;
+                } else {
+                    return redirect()->back()
+                        ->with('error', 'La solicitud de compra no tiene una cotización pre-aprobada seleccionada ni una selección mixta completa.');
+                }
             }
         }
         
@@ -292,9 +301,20 @@ class ApprovalController extends Controller
                 ]);
             }
 
-            // Obtener datos de la cotización seleccionada
+            // Obtener datos de la cotización o selección mixta
             $quotation = $purchaseRequest->selectedQuotation ?? $purchaseRequest->preApprovedQuotation;
-            $totalAmount = $quotation ? $quotation->total_amount : 0;
+            $hasMixedSelection = $this->hasMixedSelectionComplete($purchaseRequest);
+            
+            // Calcular monto total
+            if ($hasMixedSelection) {
+                // Para selección mixta, sumar todos los totales de las selecciones
+                $totalAmount = $purchaseRequest->quotationItemSelections()->sum('total_price');
+                $paymentTerms = 'Mixto - Ver selecciones individuales';
+            } else {
+                // Para cotización única
+                $totalAmount = $quotation ? $quotation->total_amount : 0;
+                $paymentTerms = $quotation ? ($quotation->payment_terms ?? 'Contado') : 'Contado';
+            }
             
             // Calcular IVA si es necesario
             $includesIva = true;
@@ -310,10 +330,12 @@ class ApprovalController extends Controller
                 'subtotal' => $subtotal,
                 'iva_amount' => $ivaAmount,
                 'includes_iva' => $includesIva,
-                'payment_terms' => $quotation ? ($quotation->payment_terms ?? 'Contado') : 'Contado',
+                'payment_terms' => $paymentTerms,
                 'delivery_date' => now()->addDays(15), // 15 días por defecto
                 'file_path' => 'pending_generation',
-                'observations' => 'Orden creada automáticamente al aprobar solicitud',
+                'observations' => $hasMixedSelection 
+                    ? 'Orden creada automáticamente - Selección mixta de proveedores'
+                    : 'Orden creada automáticamente al aprobar solicitud',
                 'created_by' => Auth::id(),
                 'status' => 'pending'
             ]);
@@ -352,5 +374,26 @@ class ApprovalController extends Controller
             ]);
             // No lanzar excepción para no interrumpir el flujo de aprobación
         }
+    }
+
+    /**
+     * Verificar si la solicitud tiene una selección mixta completa
+     */
+    private function hasMixedSelectionComplete(PurchaseRequest $purchaseRequest)
+    {
+        // Obtener items de la solicitud
+        $purchaseItems = is_array($purchaseRequest->purchase_items) 
+            ? $purchaseRequest->purchase_items 
+            : json_decode($purchaseRequest->purchase_items, true);
+            
+        if (empty($purchaseItems)) {
+            return false;
+        }
+        
+        // Contar selecciones existentes
+        $selectionsCount = $purchaseRequest->quotationItemSelections()->count();
+        
+        // Verificar que hay selección para cada item
+        return $selectionsCount === count($purchaseItems);
     }
 }

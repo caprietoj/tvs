@@ -65,10 +65,21 @@
                             <td>{{ $request->request_number }}</td>
                             <td>{{ $request->requester }}</td>
                             <td>{{ $request->section_area }}</td>
-                            <td>{{ $request->selectedQuotation->provider_name ?? 'N/A' }}</td>
+                            <td>
+                                @if($request->selectedQuotation)
+                                    {{ $request->selectedQuotation->provider_name }}
+                                @elseif($request->quotationItemSelections->count() > 0)
+                                    <span class="badge badge-info">Selección Mixta</span>
+                                    <small class="d-block">{{ $request->quotationItemSelections->count() }} proveedores</small>
+                                @else
+                                    N/A
+                                @endif
+                            </td>
                             <td>
                                 @if($request->selectedQuotation)
                                     ${{ number_format($request->selectedQuotation->total_amount, 2, ',', '.') }}
+                                @elseif($request->quotationItemSelections->count() > 0)
+                                    ${{ number_format($request->quotationItemSelections->sum('total_price'), 2, ',', '.') }}
                                 @else
                                     N/A
                                 @endif

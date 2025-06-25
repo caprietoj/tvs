@@ -19,6 +19,11 @@
                     <a href="{{ route('quotation-approvals.compare', $request->id) }}" class="btn btn-sm btn-info">
                         <i class="fas fa-balance-scale"></i> Comparar Cotizaciones
                     </a>
+                    @if($request->quotations->count() >= 2 && $request->status !== 'Pre-aprobada')
+                        <a href="{{ route('quotation-selections.show', $request->id) }}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-tasks"></i> Selección Mixta
+                        </a>
+                    @endif
                 </div>
             </div>
             <div class="card-body">
@@ -192,6 +197,36 @@
 
                 <!-- Lista de cotizaciones -->
                 <h4 class="mt-4 mb-3"><i class="fas fa-file-invoice-dollar mr-2"></i> Cotizaciones Disponibles</h4>
+                
+                @php
+                    $hasItemSelections = $request->quotationItemSelections()->exists();
+                    $selectionCount = $request->quotationItemSelections()->count();
+                    $totalItems = count(is_array($request->purchase_items) ? $request->purchase_items : json_decode($request->purchase_items, true) ?? []);
+                @endphp
+                
+                @if($hasItemSelections)
+                    <div class="alert alert-info mb-4">
+                        <h5><i class="fas fa-info-circle mr-2"></i>Selección Mixta en Progreso</h5>
+                        <p class="mb-2">
+                            Se ha iniciado una selección mixta de proveedores para esta solicitud.
+                            <strong>{{ $selectionCount }} de {{ $totalItems }}</strong> productos han sido seleccionados.
+                        </p>
+                        <div class="mt-2">
+                            <a href="{{ route('quotation-selections.show', $request->id) }}" class="btn btn-info btn-sm">
+                                <i class="fas fa-tasks"></i> Ver/Continuar Selección Mixta
+                            </a>
+                            @if($selectionCount == $totalItems)
+                                <span class="badge badge-success ml-2">
+                                    <i class="fas fa-check"></i> Selección Completa - Lista para Finalizar
+                                </span>
+                            @else
+                                <span class="badge badge-warning ml-2">
+                                    <i class="fas fa-clock"></i> Selección Incompleta
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                @endif
                 
                 <div class="row">
                     @forelse($request->quotations as $quotation)
