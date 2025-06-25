@@ -392,10 +392,17 @@
                                 @if($purchaseRequest->quotations->count() > 1)
                                     <div class="p-3 text-center">
                                         <h5 class="mb-3"><i class="fas fa-balance-scale mr-2"></i>Opciones de Selección</h5>
-                                        <a href="{{ route('quotation-selections.show', $purchaseRequest->id) }}" 
-                                           class="btn btn-info btn-sm">
-                                            <i class="fas fa-balance-scale mr-2"></i>Selección Mixta de Proveedores
-                                        </a>
+                                        @if($purchaseRequest->status === 'approved')
+                                            <button type="button" class="btn btn-secondary btn-sm" disabled>
+                                                <i class="fas fa-balance-scale mr-2"></i>Selección Mixta de Proveedores
+                                                <small class="d-block">(Solicitud ya aprobada)</small>
+                                            </button>
+                                        @else
+                                            <a href="{{ route('quotation-selections.show', $purchaseRequest->id) }}" 
+                                               class="btn btn-info btn-sm">
+                                                <i class="fas fa-balance-scale mr-2"></i>Selección Mixta de Proveedores
+                                            </a>
+                                        @endif
                                     </div>
                                 @endif
                             @else

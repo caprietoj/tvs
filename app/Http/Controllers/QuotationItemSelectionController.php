@@ -16,6 +16,12 @@ class QuotationItemSelectionController extends Controller
      */
     public function show(PurchaseRequest $purchaseRequest)
     {
+        // Verificar que la solicitud no esté ya aprobada
+        if ($purchaseRequest->status === 'approved') {
+            return redirect()->route('purchase-requests.show', $purchaseRequest)
+                ->with('error', 'No se puede realizar la selección mixta porque la solicitud ya está aprobada.');
+        }
+        
         // Verificar que la solicitud tenga cotizaciones
         $quotations = $purchaseRequest->quotations()->get();
         
@@ -84,6 +90,15 @@ class QuotationItemSelectionController extends Controller
         ]);
 
         $purchaseRequest = PurchaseRequest::findOrFail($request->purchase_request_id);
+        
+        // Verificar que la solicitud no esté ya aprobada
+        if ($purchaseRequest->status === 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede realizar la selección porque la solicitud ya está aprobada.'
+            ], 403);
+        }
+        
         $quotation = Quotation::findOrFail($request->quotation_id);
         
         // Obtener items de la solicitud
@@ -198,6 +213,16 @@ class QuotationItemSelectionController extends Controller
             'purchase_request_id' => 'required|exists:purchase_requests,id',
             'item_index' => 'required|integer|min:0'
         ]);
+
+        $purchaseRequest = PurchaseRequest::findOrFail($request->purchase_request_id);
+        
+        // Verificar que la solicitud no esté ya aprobada
+        if ($purchaseRequest->status === 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede eliminar la selección porque la solicitud ya está aprobada.'
+            ], 403);
+        }
 
         $deleted = QuotationItemSelection::where('purchase_request_id', $request->purchase_request_id)
                                         ->where('item_index', $request->item_index)

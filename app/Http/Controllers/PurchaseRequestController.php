@@ -574,15 +574,6 @@ class PurchaseRequestController extends Controller
             'purchase_items.*.description' => 'required|string',
             'purchase_items.*.unit' => 'required|string',
             'purchase_items.*.observations' => 'nullable|string',
-            // Opcional: campos de servicio
-            'service_budget' => 'nullable|numeric|min:0',
-            'service_budget_text' => 'nullable|string|max:255',
-            'service_items' => 'nullable|array',
-            // Cambiamos el required_with por nullable para hacerlo realmente opcional
-            'service_items.*.item' => 'nullable|integer',
-            'service_items.*.quantity' => 'nullable|integer|min:0',
-            'service_items.*.description' => 'nullable|string',
-            'service_items.*.observations' => 'nullable|string',
         ]);
         
         if ($validator->fails()) {
@@ -597,9 +588,6 @@ class PurchaseRequestController extends Controller
             'section_area' => $request->section_area,
             'purchase_justification' => $request->purchase_justification,
             'purchase_items' => $request->purchase_items,
-            'service_budget' => $request->service_budget,
-            'service_budget_text' => $request->service_budget_text,
-            'service_items' => $request->service_items,
         ]);
         
         return redirect()->route('purchase-requests.show', $purchaseRequest)
@@ -675,7 +663,7 @@ class PurchaseRequestController extends Controller
             'copy_items.*.impresion' => 'nullable|boolean',
             'copy_items.*.total' => 'nullable|integer|min:0',
             'attached_files' => 'nullable|array|max:5', // Máximo 5 archivos
-            'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB máximo cada archivo
+            'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:20480', // 20MB máximo cada archivo
             // Validaciones para especificaciones
             'paper_size' => 'nullable|string|in:Carta,Oficio,A4,A3,Tabloid',
             'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina',
@@ -844,7 +832,7 @@ class PurchaseRequestController extends Controller
             'copy_items.*.impresion' => 'nullable|boolean',
             'copy_items.*.total' => 'nullable|integer|min:0',
             'attached_files' => 'nullable|array|max:5', // Máximo 5 archivos
-            'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB máximo cada archivo
+            'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:20480', // 20MB máximo cada archivo
             // Validaciones para especificaciones
             'paper_size' => 'nullable|string|in:Carta,Oficio,A4,A3,Tabloid',
             'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina',

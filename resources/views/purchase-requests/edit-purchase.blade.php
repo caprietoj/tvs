@@ -172,100 +172,6 @@
                     </div>
                 </div>
 
-                <!-- Servicios -->
-                <div class="card my-4 card-outline" style="border-top-color: #364E76;">
-                    <div class="card-header" style="background-color: #364E76; color: white;">
-                        <h5 class="mb-0">SERVICIOS</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label for="service_justification">JUSTIFICACIÓN DEL SERVICIO:</label>
-                            <textarea class="form-control" id="service_justification" name="service_justification" rows="2">{{ old('service_justification', $purchaseRequest->service_justification ?? '') }}</textarea>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group col-md-4">
-                                <label for="service_budget">VALOR PRESUPUESTADO PARA ESTE SERVICIO $:</label>
-                                <input type="number" step="0.01" class="form-control" id="service_budget" name="service_budget" value="{{ old('service_budget', $purchaseRequest->service_budget ?? '') }}">
-                            </div>
-                            <div class="form-group col-md-8">
-                                <label for="service_budget_text">EN LETRAS:</label>
-                                <input type="text" class="form-control" id="service_budget_text" name="service_budget_text" value="{{ old('service_budget_text', $purchaseRequest->service_budget_text ?? '') }}">
-                            </div>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table table-bordered" id="serviceItemsTable">
-                                <thead style="background-color: #f8f9fa;">
-                                    <tr>
-                                        <th style="width: 5%;">ITEM</th>
-                                        <th style="width: 10%;">CANT.</th>
-                                        <th style="width: 55%;">DESCRIPCIÓN DEL SERVICIO</th>
-                                        <th style="width: 25%;">OBSERVACIONES</th>
-                                        <th style="width: 5%;">ACCIÓN</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="serviceItemsBody">
-                                    @if(old('service_items', $purchaseRequest->service_items))
-                                        @foreach(old('service_items', $purchaseRequest->service_items) as $index => $item)
-                                            <tr id="serviceItem-{{ $item['item'] }}">
-                                                <td>{{ $item['item'] }}</td>
-                                                <td>
-                                                    <input type="number" class="form-control form-control-sm" name="service_items[{{ $index }}][quantity]" value="{{ $item['quantity'] }}" min="0">
-                                                    <input type="hidden" name="service_items[{{ $index }}][item]" value="{{ $item['item'] }}">
-                                                </td>
-                                                <td>
-                                                    <input type="text" class="form-control form-control-sm" name="service_items[{{ $index }}][description]" value="{{ $item['description'] }}">
-                                                </td>
-                                                <td>
-                                                    <input type="text" class="form-control form-control-sm" name="service_items[{{ $index }}][observations]" value="{{ $item['observations'] ?? '' }}">
-                                                </td>
-                                                <td class="text-center">
-                                                    <button type="button" class="btn btn-sm btn-danger delete-row" {{ $loop->first ? 'disabled' : '' }}>
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        <tr id="serviceItem-1">
-                                            <td>1</td>
-                                            <td>
-                                                <input type="number" class="form-control form-control-sm" name="service_items[0][quantity]" min="0">
-                                                <input type="hidden" name="service_items[0][item]" value="1">
-                                            </td>
-                                            <td>
-                                                <input type="text" class="form-control form-control-sm" name="service_items[0][description]">
-                                            </td>
-                                            <td>
-                                                <input type="text" class="form-control form-control-sm" name="service_items[0][observations]">
-                                            </td>
-                                            <td class="text-center">
-                                                <button type="button" class="btn btn-sm btn-danger delete-row" disabled>
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @endif
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="5" class="text-center">
-                                            <button type="button" class="btn btn-sm" id="addServiceItem" style="background-color: #364E76; color: white;">
-                                                <i class="fas fa-plus"></i> Agregar Servicio
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
-                        <div class="alert alert-info mt-3">
-                            <small>NOTA: EN CASO DE REQUERIR VARIOS SERVICIOS PUEDE AÑADIR TANTAS FILAS COMO NECESITE USANDO EL BOTÓN "AGREGAR SERVICIO"</small>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Firmas -->
                 <div class="form-row mt-4">
                     <div class="form-group col-md-6">
@@ -325,7 +231,6 @@
     $(document).ready(function() {
         // Variables para controlar el número de elementos
         let purchaseItemCount = {{ old('purchase_items', $purchaseRequest->purchase_items) ? count(old('purchase_items', $purchaseRequest->purchase_items)) : 1 }};
-        let serviceItemCount = {{ old('service_items', $purchaseRequest->service_items) ? count(old('service_items', $purchaseRequest->service_items)) : 1 }};
 
         // Función para convertir números a letras en español
         function numeroALetras(numero) {
@@ -417,35 +322,6 @@
             }
         }
         
-        function convertirMonedaALetras(valor) {
-            if (!valor || isNaN(valor)) return '';
-            
-            const partes = valor.toString().split('.');
-            const entero = parseInt(partes[0]);
-            const decimales = partes[1] ? parseInt(partes[1].padEnd(2, '0').substring(0, 2)) : 0;
-            
-            let resultado = numeroALetras(entero) + ' peso';
-            if (entero !== 1) resultado += 's';
-            
-            if (decimales > 0) {
-                resultado += ' con ' + numeroALetras(decimales) + ' centavo';
-                if (decimales !== 1) resultado += 's';
-            }
-            
-            return resultado.charAt(0).toUpperCase() + resultado.slice(1);
-        }
-        
-        // Event listener para conversión automática de números a letras
-        $('#service_budget').on('input change', function() {
-            const valor = parseFloat($(this).val());
-            if (!isNaN(valor) && valor >= 0) {
-                const valorEnLetras = convertirMonedaALetras(valor);
-                $('#service_budget_text').val(valorEnLetras);
-            } else {
-                $('#service_budget_text').val('');
-            }
-        });
-
         // Agregar elemento de compra
         $('#addPurchaseItem').click(function() {
             purchaseItemCount++;
@@ -473,32 +349,6 @@
                 </tr>
             `;
             $('#purchaseItemsBody').append(newRow);
-        });
-
-        // Agregar elemento de servicio
-        $('#addServiceItem').click(function() {
-            serviceItemCount++;
-            const newRow = `
-                <tr id="serviceItem-${serviceItemCount}">
-                    <td>${serviceItemCount}</td>
-                    <td>
-                        <input type="number" class="form-control form-control-sm" name="service_items[${serviceItemCount - 1}][quantity]" min="0">
-                        <input type="hidden" name="service_items[${serviceItemCount - 1}][item]" value="${serviceItemCount}">
-                    </td>
-                    <td>
-                        <input type="text" class="form-control form-control-sm" name="service_items[${serviceItemCount - 1}][description]">
-                    </td>
-                    <td>
-                        <input type="text" class="form-control form-control-sm" name="service_items[${serviceItemCount - 1}][observations]">
-                    </td>
-                    <td class="text-center">
-                        <button type="button" class="btn btn-sm btn-danger delete-row">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-            $('#serviceItemsBody').append(newRow);
         });
 
         // Eliminar fila (delegación de eventos)

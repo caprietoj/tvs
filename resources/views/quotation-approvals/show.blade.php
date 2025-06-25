@@ -19,10 +19,15 @@
                     <a href="{{ route('quotation-approvals.compare', $request->id) }}" class="btn btn-sm btn-info">
                         <i class="fas fa-balance-scale"></i> Comparar Cotizaciones
                     </a>
-                    @if($request->quotations->count() >= 2 && $request->status !== 'Pre-aprobada')
+                    @if($request->quotations->count() >= 2 && $request->status !== 'Pre-aprobada' && $request->status !== 'approved')
                         <a href="{{ route('quotation-selections.show', $request->id) }}" class="btn btn-sm btn-warning">
                             <i class="fas fa-tasks"></i> Selección Mixta
                         </a>
+                    @elseif($request->quotations->count() >= 2 && $request->status === 'approved')
+                        <button type="button" class="btn btn-sm btn-secondary" disabled>
+                            <i class="fas fa-tasks"></i> Selección Mixta
+                            <small class="d-block">(Aprobada)</small>
+                        </button>
                     @endif
                 </div>
             </div>
@@ -212,9 +217,16 @@
                             <strong>{{ $selectionCount }} de {{ $totalItems }}</strong> productos han sido seleccionados.
                         </p>
                         <div class="mt-2">
-                            <a href="{{ route('quotation-selections.show', $request->id) }}" class="btn btn-info btn-sm">
-                                <i class="fas fa-tasks"></i> Ver/Continuar Selección Mixta
-                            </a>
+                            @if($request->status === 'approved')
+                                <button type="button" class="btn btn-secondary btn-sm" disabled>
+                                    <i class="fas fa-tasks"></i> Ver/Continuar Selección Mixta
+                                    <small class="d-block">(Solicitud aprobada)</small>
+                                </button>
+                            @else
+                                <a href="{{ route('quotation-selections.show', $request->id) }}" class="btn btn-info btn-sm">
+                                    <i class="fas fa-tasks"></i> Ver/Continuar Selección Mixta
+                                </a>
+                            @endif
                             @if($selectionCount == $totalItems)
                                 <span class="badge badge-success ml-2">
                                     <i class="fas fa-check"></i> Selección Completa - Lista para Finalizar

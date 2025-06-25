@@ -118,12 +118,12 @@
                                 <td>{{ $request->request_date->format('d/m/Y') }}</td>
                                 @if($typeFilter === 'copies')
                                     <td class="text-center">
-                                        @if($request->general_observations)
+                                        @if($request->special_details)
                                             <button type="button" class="btn btn-sm btn-outline-info" 
                                                     data-toggle="popover" 
                                                     data-trigger="hover" 
                                                     data-placement="left"
-                                                    data-content="{{ $request->general_observations }}" 
+                                                    data-content="{{ $request->special_details }}" 
                                                     title="Observaciones">
                                                 <i class="fas fa-comment-alt"></i>
                                             </button>

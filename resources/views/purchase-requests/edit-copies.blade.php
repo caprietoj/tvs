@@ -373,9 +373,9 @@
                                             <label class="font-weight-bold">
                                                 <i class="fas fa-paperclip mr-2"></i>
                                                 @if($purchaseRequest->attached_files && count($purchaseRequest->attached_files) > 0)
-                                                    Reemplazar Archivos - Archivo #1 (PDF, DOC, DOCX, JPG, PNG - Máx. 10MB)
+                                                    Reemplazar Archivos - Archivo #1 (PDF, DOC, DOCX, JPG, PNG - Máx. 20MB)
                                                 @else
-                                                    Archivo Original #1 (PDF, DOC, DOCX, JPG, PNG - Máx. 10MB)
+                                                    Archivo Original #1 (PDF, DOC, DOCX, JPG, PNG - Máx. 20MB)
                                                 @endif
                                             </label>
                                             <div class="input-group">
@@ -629,7 +629,7 @@
                 <div class="attached-file-row" data-index="${newIndex}">
                     <div class="form-group">
                         <label class="font-weight-bold">
-                            <i class="fas fa-paperclip mr-2"></i>Archivo Original #${currentFiles + 1} (PDF, DOC, DOCX, JPG, PNG - Máx. 10MB)
+                            <i class="fas fa-paperclip mr-2"></i>Archivo Original #${currentFiles + 1} (PDF, DOC, DOCX, JPG, PNG - Máx. 20MB)
                         </label>
                         <div class="input-group">
                             <div class="custom-file">
@@ -665,7 +665,7 @@
         function updateFileLabels() {
             $('.attached-file-row').each(function(index) {
                 $(this).find('label').html(`
-                    <i class="fas fa-paperclip mr-2"></i>Archivo Original #${index + 1} (PDF, DOC, DOCX, JPG, PNG - Máx. 10MB)
+                    <i class="fas fa-paperclip mr-2"></i>Archivo Original #${index + 1} (PDF, DOC, DOCX, JPG, PNG - Máx. 20MB)
                 `);
             });
         }
