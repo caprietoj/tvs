@@ -21,14 +21,18 @@ class EventController extends Controller
         $config = Configuration::where('key', "events_{$event->department}_emails")->first();
         $notificationEmails = $config ? explode(',', $config->value) : [];
         
+        $emailTestService = new \App\Services\EmailTestModeService();
+
         // Enviar notificaciones a todos los correos configurados
         foreach ($notificationEmails as $email) {
-            Mail::to(trim($email))->send(new $mailableClass($event));
+            $interceptedEmail = $emailTestService->interceptEmail(trim($email), ucfirst($event->department));
+            Mail::to($interceptedEmail)->send(new $mailableClass($event));
         }
 
         // Enviar notificación al creador del evento
         if ($event->user && $event->user->email) {
-            Mail::to($event->user->email)->send(new $mailableClass($event));
+            $interceptedUserEmail = $emailTestService->interceptEmail($event->user->email, 'General');
+            Mail::to($interceptedUserEmail)->send(new $mailableClass($event));
         }
     }
 

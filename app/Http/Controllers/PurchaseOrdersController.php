@@ -50,7 +50,12 @@ class PurchaseOrdersController extends Controller
                 // Solicitudes con cotización seleccionada tradicional
                 $query->where('selected_quotation_id', '!=', null)
                       // O solicitudes con selección mixta completa
-                      ->orWhereHas('quotationItemSelections');
+                      ->orWhereHas('quotationItemSelections')
+                      // O servicios sin cotización aprobados
+                      ->orWhere(function($subQuery) {
+                          $subQuery->where('type', 'services')
+                                   ->where('service_type', 'no_quotation');
+                      });
             })
             ->orderBy('approval_date', 'desc')
             ->get();
@@ -65,7 +70,8 @@ class PurchaseOrdersController extends Controller
     {
         Log::info('=== CREATE METHOD CALLED ===', [
             'purchase_request_id' => $purchaseRequest->id,
-            'user_id' => auth()->id()
+            'user_id' => auth()->id(),
+            'timestamp' => now()->toDateTimeString()
         ]);
         
         // Verificar que la solicitud esté aprobada
@@ -74,13 +80,14 @@ class PurchaseOrdersController extends Controller
                 ->with('error', 'Solo se pueden generar órdenes de compra para solicitudes aprobadas.');
         }
         
-        // Verificar que tenga una cotización seleccionada o selección mixta
+        // Verificar que tenga una cotización seleccionada, selección mixta, o sea un servicio sin cotización
         $hasSelectedQuotation = $purchaseRequest->selected_quotation_id !== null;
         $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
+        $isNoQuotationService = $purchaseRequest->isNoQuotationService();
         
-        if (!$hasSelectedQuotation && !$hasMixedSelection) {
+        if (!$hasSelectedQuotation && !$hasMixedSelection && !$isNoQuotationService) {
             return redirect()->route('purchase-requests.show', $purchaseRequest->id)
-                ->with('error', 'La solicitud no tiene una cotización seleccionada ni una selección mixta.');
+                ->with('error', 'La solicitud no tiene una cotización seleccionada, selección mixta, ni es un servicio sin cotización.');
         }
         
         // Cargar las selecciones mixtas si existen
@@ -89,104 +96,159 @@ class PurchaseOrdersController extends Controller
         Log::info('Datos para la vista create', [
             'has_selected_quotation' => $hasSelectedQuotation,
             'has_mixed_selection' => $hasMixedSelection,
-            'mixed_selections_count' => $mixedSelections->count()
+            'mixed_selections_count' => $mixedSelections->count(),
+            'is_no_quotation_service' => $isNoQuotationService
         ]);
         
-        return view('purchase-orders.create', compact('purchaseRequest', 'hasSelectedQuotation', 'hasMixedSelection', 'mixedSelections'));
+        return view('purchase-orders.create', compact('purchaseRequest', 'hasSelectedQuotation', 'hasMixedSelection', 'mixedSelections', 'isNoQuotationService'));
     }
 
     /**
      * Guardar una nueva orden de compra.
      */
-    public function store(Request $request, $purchaseRequestId)
+    public function store(Request $request, PurchaseRequest $purchaseRequest)
     {
         Log::info('=== STORE METHOD CALLED ===', [
-            'purchase_request_id' => $purchaseRequestId,
+            'purchase_request_id' => $purchaseRequest->id,
             'user_id' => auth()->id(),
-            'method' => $request->method(),
-            'url' => $request->fullUrl(),
-            'all_data' => $request->all()
+            'timestamp' => now()->toDateTimeString()
         ]);
-        
-        Log::info('Iniciando creación de orden de compra', [
-            'purchase_request_id' => $purchaseRequestId,
-            'user_id' => auth()->id()
-        ]);
-        
-        // Obtener la solicitud de compra primero para determinar el tipo de validación
-        $purchaseRequest = PurchaseRequest::findOrFail($purchaseRequestId);
-        $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
-        
-        Log::info('Tipo de selección identificado', [
-            'purchase_request_id' => $purchaseRequestId,
-            'has_mixed_selection' => $hasMixedSelection,
-            'has_selected_quotation' => $purchaseRequest->selected_quotation_id !== null
-        ]);
-        
-        // Validación condicional
-        $validationRules = [
-            'payment_terms' => 'required|string|max:255',
-            'delivery_date' => 'required|date',
-            'observations' => 'nullable|string',
-        ];
-        
-        // Solo requerir provider_id para cotizaciones tradicionales
-        if (!$hasMixedSelection) {
-            $validationRules['provider_id'] = 'required|exists:proveedors,id';
-        }
-        
-        Log::info('Validando request', [
-            'validation_rules' => $validationRules,
-            'request_data' => $request->all()
-        ]);
-        
-        $request->validate($validationRules);
-        
-        // Verificar que la solicitud esté aprobada
-        if (!in_array($purchaseRequest->status, ['approved', 'in_process'])) {
-            return redirect()->route('purchase-orders.index')->with('error', 'Solo se pueden crear órdenes de compra para solicitudes aprobadas.');
-        }
-        
-        // Verificar que no exista una orden para esta solicitud
-        if (PurchaseOrder::where('purchase_request_id', $purchaseRequestId)->exists()) {
-            return redirect()->route('purchase-orders.index')->with('error', 'Ya existe una orden de compra para esta solicitud.');
-        }
-
-        // Verificar que tenga una cotización seleccionada o selección mixta
-        $hasSelectedQuotation = $purchaseRequest->selected_quotation_id && $purchaseRequest->selectedQuotation;
-        $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
-        
-        if (!$hasSelectedQuotation && !$hasMixedSelection) {
-            return redirect()->route('purchase-orders.index')->with('error', 'La solicitud no tiene una cotización seleccionada válida ni una selección mixta.');
-        }
-
-        // Obtener los datos de precio
-        if ($hasMixedSelection) {
-            // Para selección mixta, calcular totales
-            $total = $purchaseRequest->quotationItemSelections()->sum('total_price');
-            $subtotal = $total / 1.19; // Asumir IVA incluido
-            $ivaAmount = $total - $subtotal;
-            $includesIva = true;
-            $additionalItems = [];
-        } else {
-            // Para cotización única tradicional
-            $selectedQuotation = $purchaseRequest->selectedQuotation;
-            $total = $selectedQuotation->total_amount;
-            $subtotal = $selectedQuotation->subtotal ?? $selectedQuotation->total_amount;
-            $ivaAmount = $selectedQuotation->iva_amount ?? 0;
-            $includesIva = $selectedQuotation->includes_iva ?? false;
-            $additionalItems = $selectedQuotation->additional_items ?? [];
-        }
         
         try {
+            Log::info('Iniciando creación de orden de compra', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'user_id' => auth()->id()
+            ]);
+            
+            // Obtener la solicitud de compra - ya tenemos el modelo inyectado
+            $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
+            $isNoQuotationService = $purchaseRequest->isNoQuotationService();
+            
+            Log::info('Solicitud encontrada y analizada', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'request_type' => $purchaseRequest->type,
+                'service_type' => $purchaseRequest->service_type,
+                'has_mixed_selection' => $hasMixedSelection,
+                'has_selected_quotation' => $purchaseRequest->selected_quotation_id !== null,
+                'is_no_quotation_service' => $isNoQuotationService,
+                'request_status' => $purchaseRequest->status
+            ]);
+            
+            // Validación condicional
+            $validationRules = [
+                'payment_terms' => 'required|string|max:255',
+                'delivery_date' => 'required|date',
+                'observations' => 'nullable|string',
+            ];
+            
+            // Solo requerir provider_id para cotizaciones tradicionales (NO para servicios sin cotización ni selección mixta)
+            if (!$hasMixedSelection && !$isNoQuotationService) {
+                $validationRules['provider_id'] = 'required|exists:proveedors,id';
+            }
+            
+            $request->validate($validationRules);
+            
+            Log::info('Validación completada exitosamente');
+            
+            // Verificar que la solicitud esté aprobada
+            if (!in_array($purchaseRequest->status, ['approved', 'in_process'])) {
+                Log::warning('Solicitud no está aprobada', [
+                    'status' => $purchaseRequest->status,
+                    'expected' => ['approved', 'in_process']
+                ]);
+                return redirect()->route('purchase-orders.index')->with('error', 'Solo se pueden crear órdenes de compra para solicitudes aprobadas.');
+            }
+            
+            // Verificar que no exista una orden para esta solicitud
+            $existingOrder = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->exists();
+            if ($existingOrder) {
+                Log::warning('Ya existe una orden para esta solicitud', [
+                    'purchase_request_id' => $purchaseRequest->id
+                ]);
+                return redirect()->route('purchase-orders.index')->with('error', 'Ya existe una orden de compra para esta solicitud.');
+            }
+
+            Log::info('Verificaciones previas completadas, continuando con creación...');
+            
+            // Verificar que tenga una cotización seleccionada, selección mixta, o sea un servicio sin cotización
+            $hasSelectedQuotation = $purchaseRequest->selected_quotation_id && $purchaseRequest->selectedQuotation;
+            $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
+            $isNoQuotationService = $purchaseRequest->isNoQuotationService();
+            
+            if (!$hasSelectedQuotation && !$hasMixedSelection && !$isNoQuotationService) {
+                Log::warning('Solicitud no cumple con los requisitos', [
+                    'has_selected_quotation' => $hasSelectedQuotation,
+                    'has_mixed_selection' => $hasMixedSelection,
+                    'is_no_quotation_service' => $isNoQuotationService
+                ]);
+                return redirect()->route('purchase-orders.index')->with('error', 'La solicitud no tiene una cotización seleccionada válida, selección mixta, ni es un servicio sin cotización.');
+            }
+
+            Log::info('Calculando precios y totales...');
+
+            // Obtener los datos de precio
+            if ($isNoQuotationService) {
+                // Para servicios sin cotización, usar los datos del presupuesto
+                $total = $purchaseRequest->service_budget ?? 0;
+                $subtotal = $total / 1.19; // Asumir IVA incluido
+                $ivaAmount = $total - $subtotal;
+                $includesIva = true;
+                $additionalItems = [];
+                
+                Log::info('Calculando precios para servicio sin cotización', [
+                    'service_budget' => $purchaseRequest->service_budget,
+                    'total' => $total,
+                    'subtotal' => $subtotal,
+                    'iva_amount' => $ivaAmount
+                ]);
+            } elseif ($hasMixedSelection) {
+                // Para selección mixta, calcular totales
+                $total = $purchaseRequest->quotationItemSelections()->sum('total_price');
+                $subtotal = $total / 1.19; // Asumir IVA incluido
+                $ivaAmount = $total - $subtotal;
+                $includesIva = true;
+                $additionalItems = [];
+            } else {
+                // Para cotización única tradicional
+                $selectedQuotation = $purchaseRequest->selectedQuotation;
+                $total = $selectedQuotation->total_amount;
+                $subtotal = $selectedQuotation->subtotal ?? $selectedQuotation->total_amount;
+                $ivaAmount = $selectedQuotation->iva_amount ?? 0;
+                $includesIva = $selectedQuotation->includes_iva ?? false;
+                $additionalItems = $selectedQuotation->additional_items ?? [];
+            }
+            
             DB::beginTransaction();
             
-            // Crear la orden de compra
-            $orderNumber = 'OC-' . date('Ym') . '-' . str_pad(PurchaseOrder::count() + 1, 3, '0', STR_PAD_LEFT);
-            
-            // Para selecciones mixtas, usar un proveedor por defecto o crear uno especial
+            // Determinar el proveedor según el tipo de solicitud
             $providerId = $request->provider_id;
-            if ($hasMixedSelection && !$providerId) {
+            
+            if ($isNoQuotationService) {
+                // Para servicios sin cotización, crear o buscar el proveedor ingresado manualmente
+                $provider = \App\Models\Proveedor::where('nombre', $purchaseRequest->provider_name)->first();
+                
+                if (!$provider) {
+                    $provider = \App\Models\Proveedor::create([
+                        'nombre' => $purchaseRequest->provider_name,
+                        'nit' => $purchaseRequest->provider_nit ?? 'Sin NIT',
+                        'email' => $purchaseRequest->provider_email ?? 'sin-email@proveedor.com',
+                        'telefono' => $purchaseRequest->provider_contact ?? 'Sin teléfono',
+                        'direccion' => 'Por definir',
+                        'persona_contacto' => $purchaseRequest->provider_contact ?? 'Sin contacto',
+                        'ciudad' => 'Por definir',
+                        'servicio_producto' => $purchaseRequest->service_type ?? 'Servicio'
+                    ]);
+                }
+                $providerId = $provider->id;
+                
+                Log::info('Proveedor para servicio sin cotización', [
+                    'provider_id' => $providerId,
+                    'provider_name' => $provider->nombre
+                ]);
+                
+                // Usar prefijo especial para servicios
+                $orderNumber = 'ORD-SV-' . str_pad($purchaseRequest->id, 4, '0', STR_PAD_LEFT);
+            } elseif ($hasMixedSelection && !$providerId) {
                 // Crear o usar proveedor especial para selecciones mixtas
                 $mixedProvider = \App\Models\Proveedor::firstOrCreate([
                     'nombre' => 'Selección Mixta de Proveedores',
@@ -194,23 +256,43 @@ class PurchaseOrdersController extends Controller
                 ], [
                     'email' => 'mixta@proveedores.com',
                     'direccion' => 'Múltiples proveedores',
-                    'ciudad' => 'Múltiple',
                     'telefono' => '000-000-0000',
                     'persona_contacto' => 'Ver detalles de la orden',
-                    'servicio_producto' => 'Selección mixta de proveedores'
+                    'ciudad' => 'Múltiples ciudades',
+                    'servicio_producto' => 'Selección Mixta'
                 ]);
                 $providerId = $mixedProvider->id;
+                $orderNumber = 'OC-' . date('Ym') . '-' . str_pad(PurchaseOrder::count() + 1, 3, '0', STR_PAD_LEFT);
+            } else {
+                // Para cotizaciones normales
+                $orderNumber = 'OC-' . date('Ym') . '-' . str_pad(PurchaseOrder::count() + 1, 3, '0', STR_PAD_LEFT);
             }
+            
+            // Preparar observaciones
+            $observations = $request->observations;
+            if ($isNoQuotationService) {
+                $observations = 'Servicio sin cotización - ' . $purchaseRequest->no_quotation_reason;
+                if ($request->observations) {
+                    $observations .= ' | ' . $request->observations;
+                }
+            }
+            
+            Log::info('Creando orden de compra', [
+                'order_number' => $orderNumber,
+                'provider_id' => $providerId,
+                'total_amount' => $total,
+                'observations' => $observations
+            ]);
             
             $order = PurchaseOrder::create([
                 'order_number' => $orderNumber,
-                'purchase_request_id' => $purchaseRequestId,
+                'purchase_request_id' => $purchaseRequest->id,
                 'provider_id' => $providerId,
                 'user_id' => auth()->id(),
                 'created_by' => auth()->id(),
-                'payment_terms' => $request->payment_terms,
-                'delivery_date' => $request->delivery_date,
-                'observations' => $request->observations,
+                'payment_terms' => $request->payment_terms ?? ($isNoQuotationService ? 'Contado' : 'A definir'),
+                'delivery_date' => $request->delivery_date ?? now()->addDays($isNoQuotationService ? 30 : 15),
+                'observations' => $observations,
                 'total_amount' => $total,
                 'file_path' => 'pending_generation',
                 'status' => 'pending',
@@ -218,6 +300,11 @@ class PurchaseOrdersController extends Controller
                 'includes_iva' => $includesIva,
                 'subtotal' => $subtotal,
                 'iva_amount' => $ivaAmount,
+            ]);
+            
+            Log::info('Orden de compra creada exitosamente', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number
             ]);
             
             // Generar PDF
@@ -232,14 +319,18 @@ class PurchaseOrdersController extends Controller
             
             DB::commit();
             
+            Log::info('Proceso completado exitosamente, redirigiendo a la orden creada');
+            
             return redirect()->route('purchase-orders.show', $order->id)->with('success', 'Orden de compra generada correctamente.');
             
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Error al crear orden de compra: ' . $e->getMessage(), [
-                'purchase_request_id' => $purchaseRequestId,
+                'purchase_request_id' => $purchaseRequest->id,
                 'user_id' => auth()->id(),
-                'exception' => $e->getTraceAsString()
+                'exception' => $e->getTraceAsString(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
             ]);
             
             return redirect()->back()->with('error', 'Error al crear la orden de compra: ' . $e->getMessage())->withInput();
@@ -515,23 +606,29 @@ class PurchaseOrdersController extends Controller
         
         // Enviar notificación a los cuatro departamentos
         try {
+            $emailTestService = new \App\Services\EmailTestModeService();
+            
             // Enviar a contabilidad
-            Notification::route('mail', $contabilidadEmail)
+            $interceptedContabilidad = $emailTestService->interceptEmail($contabilidadEmail, 'Contabilidad');
+            Notification::route('mail', $interceptedContabilidad)
                 ->notify(new OrderCreated($purchaseOrder));
                 
             // Enviar a asistente de contabilidad
-            Notification::route('mail', $asistenteContabilidadEmail)
+            $interceptedAsistente = $emailTestService->interceptEmail($asistenteContabilidadEmail, 'Contabilidad');
+            Notification::route('mail', $interceptedAsistente)
                 ->notify(new OrderCreated($purchaseOrder));
                 
             // Enviar a tesorería
-            Notification::route('mail', $tesoreriaEmail)
+            $interceptedTesoreria = $emailTestService->interceptEmail($tesoreriaEmail, 'Tesorería');
+            Notification::route('mail', $interceptedTesoreria)
                 ->notify(new OrderCreated($purchaseOrder));
                 
             // Enviar a compras
-            Notification::route('mail', $comprasEmail)
+            $interceptedCompras = $emailTestService->interceptEmail($comprasEmail, 'Compras');
+            Notification::route('mail', $interceptedCompras)
                 ->notify(new OrderCreated($purchaseOrder));
                 
-            \Log::info('Orden de compra aprobada y enviada a contabilidad (' . $contabilidadEmail . '), asistente contabilidad (' . $asistenteContabilidadEmail . '), tesorería (' . $tesoreriaEmail . ') y compras (' . $comprasEmail . ') - Orden #' . $purchaseOrder->order_number);
+            \Log::info('Orden de compra aprobada y enviada (interceptado por EmailTestModeService) a contabilidad (' . $interceptedContabilidad . '), asistente contabilidad (' . $interceptedAsistente . '), tesorería (' . $interceptedTesoreria . ') y compras (' . $interceptedCompras . ') - Orden #' . $purchaseOrder->order_number);
                 
             return redirect()->route('purchase-orders.show', $purchaseOrder->id)
                 ->with('success', 'La orden de compra ha sido aprobada y enviada a contabilidad, asistente de contabilidad, tesorería y compras para su procesamiento.');
@@ -568,10 +665,14 @@ class PurchaseOrdersController extends Controller
             $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
             $asistenteContabilidadEmail = config($configSource . '.sections.Asistente Contabilidad');
             
-            $notification = Notification::route('mail', $comprasEmail);
+            $emailTestService = new \App\Services\EmailTestModeService();
+            $interceptedCompras = $emailTestService->interceptEmail($comprasEmail, 'Compras');
+            
+            $notification = Notification::route('mail', $interceptedCompras);
             
             if ($asistenteContabilidadEmail) {
-                $notification = $notification->route('mail', $asistenteContabilidadEmail);
+                $interceptedAsistente = $emailTestService->interceptEmail($asistenteContabilidadEmail, 'Contabilidad');
+                $notification = $notification->route('mail', $interceptedAsistente);
             }
             
             $notification->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'compras'));
@@ -611,16 +712,21 @@ class PurchaseOrdersController extends Controller
             $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
             $asistenteContabilidadEmail = config($configSource . '.sections.Asistente Contabilidad');
             
-            $notification = Notification::route('mail', $contabilidadEmail);
+            $emailTestService = new \App\Services\EmailTestModeService();
+            $interceptedContabilidad = $emailTestService->interceptEmail($contabilidadEmail, 'Contabilidad');
+            
+            $notification = Notification::route('mail', $interceptedContabilidad);
             
             if ($asistenteContabilidadEmail) {
-                $notification = $notification->route('mail', $asistenteContabilidadEmail);
+                $interceptedAsistente = $emailTestService->interceptEmail($asistenteContabilidadEmail, 'Contabilidad');
+                $notification = $notification->route('mail', $interceptedAsistente);
             }
             
             $notification->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'contabilidad'));
             
             // Notificar también a compras para que esté al tanto
-            Notification::route('mail', $comprasEmail)
+            $interceptedCompras = $emailTestService->interceptEmail($comprasEmail, 'Compras');
+            Notification::route('mail', $interceptedCompras)
                 ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'compras_copy'));
             
             return redirect()->back()->with('success', 'Orden de compra enviada a Contabilidad exitosamente.');
@@ -656,11 +762,15 @@ class PurchaseOrdersController extends Controller
             $tesoreriaEmail = config($configSource . '.sections.Tesorería', 'tesoreria@test.com');
             $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
             
-            Notification::route('mail', $tesoreriaEmail)
+            $emailTestService = new \App\Services\EmailTestModeService();
+            $interceptedTesoreria = $emailTestService->interceptEmail($tesoreriaEmail, 'Tesorería');
+            $interceptedCompras = $emailTestService->interceptEmail($comprasEmail, 'Compras');
+            
+            Notification::route('mail', $interceptedTesoreria)
                 ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'tesoreria'));
             
             // Notificar también a compras para que esté al tanto
-            Notification::route('mail', $comprasEmail)
+            Notification::route('mail', $interceptedCompras)
                 ->notify(new \App\Notifications\PurchaseOrderSent($purchaseOrder, 'compras_copy'));
             
             return redirect()->back()->with('success', 'Orden de compra enviada a Tesorería exitosamente.');

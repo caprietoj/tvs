@@ -55,6 +55,7 @@ return [
         'Pre Escolar' => ['preschool@test.com', 'asistentepyp@test.com'],
         'Preescolar' => ['preschool@test.com', 'asistentepyp@test.com'],
         'Primaria' => ['preschool@test.com', 'asistentepyp@test.com'],
+        'PAI' => ['escuelamedia@test.com', 'coordpai@test.com'],
         'Bachillerato' => ['escuelamedia@test.com', 'dp@test.com', 'asistentebachillerato@test.com'],
         'Administracion' => ['administrativedirector@test.com'],
         'Administración' => ['administrativedirector@test.com'], // Con acento

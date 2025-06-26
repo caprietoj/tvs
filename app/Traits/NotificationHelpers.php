@@ -25,7 +25,8 @@ trait NotificationHelpers
         $emails = array_unique(array_filter($emails));
 
         foreach ($emails as $email) {
-            \Mail::to($email)->send($mailable);
+            $interceptedEmail = \App\Services\EmailTestModeService::interceptEmail($email);
+            \Mail::to($interceptedEmail)->send($mailable);
         }
     }
 }

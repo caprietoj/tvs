@@ -24,40 +24,52 @@ class PurchaseOrderPdfService
             // Cargar la solicitud y sus relaciones
             $order->load(['purchaseRequest', 'purchaseRequest.user', 'purchaseRequest.selectedQuotation', 'provider']);
             
-            // Verificar si es una orden con selección mixta
-            $hasMixedSelection = $order->purchaseRequest->quotationItemSelections()->exists();
-            
-            if ($hasMixedSelection) {
-                // Cargar selecciones mixtas
-                $mixedSelections = $order->purchaseRequest->quotationItemSelections()->with('quotation')->get();
-                
-                // Usar plantilla para selección mixta
-                $view = view('purchase-orders.pdf-template-mixed', [
+            // Verificar si es un servicio sin cotización
+            if ($order->purchaseRequest->isNoQuotationService()) {
+                // Usar plantilla para servicios sin cotización
+                $view = view('purchase-orders.pdf-template-service', [
                     'order' => $order,
                     'purchaseRequest' => $order->purchaseRequest,
-                    'mixedSelections' => $mixedSelections,
                     'includesIva' => $order->includes_iva,
                     'subtotal' => $order->subtotal,
                     'ivaAmount' => $order->iva_amount,
                 ]);
             } else {
-                // Obtener datos de la cotización seleccionada para orden tradicional
-                $quotation = $order->purchaseRequest->selectedQuotation;
+                // Verificar si es una orden con selección mixta
+                $hasMixedSelection = $order->purchaseRequest->quotationItemSelections()->exists();
                 
-                // Usar plantilla tradicional
-                $view = view('purchase-orders.pdf-template-new', [
-                    'order' => $order,
-                    'purchaseRequest' => $order->purchaseRequest,
-                    'quotation' => $quotation,
-                    'items' => $order->purchaseRequest->purchase_items ?? [],
-                    'additionalItems' => $order->additional_items ?? [],
-                    'includesIva' => $order->includes_iva,
-                    'subtotal' => $order->subtotal,
-                    'ivaAmount' => $order->iva_amount,
-                    'iva_amount' => $order->iva_amount,
-                    'tax_consumption' => 0, // Si no se usa impuesto al consumo
-                    'discount' => 0, // Si no se manejan descuentos
-                ]);
+                if ($hasMixedSelection) {
+                    // Cargar selecciones mixtas
+                    $mixedSelections = $order->purchaseRequest->quotationItemSelections()->with('quotation')->get();
+                    
+                    // Usar plantilla para selección mixta
+                    $view = view('purchase-orders.pdf-template-mixed', [
+                        'order' => $order,
+                        'purchaseRequest' => $order->purchaseRequest,
+                        'mixedSelections' => $mixedSelections,
+                        'includesIva' => $order->includes_iva,
+                        'subtotal' => $order->subtotal,
+                        'ivaAmount' => $order->iva_amount,
+                    ]);
+                } else {
+                    // Obtener datos de la cotización seleccionada para orden tradicional
+                    $quotation = $order->purchaseRequest->selectedQuotation;
+                    
+                    // Usar plantilla tradicional
+                    $view = view('purchase-orders.pdf-template-new', [
+                        'order' => $order,
+                        'purchaseRequest' => $order->purchaseRequest,
+                        'quotation' => $quotation,
+                        'items' => $order->purchaseRequest->purchase_items ?? [],
+                        'additionalItems' => $order->additional_items ?? [],
+                        'includesIva' => $order->includes_iva,
+                        'subtotal' => $order->subtotal,
+                        'ivaAmount' => $order->iva_amount,
+                        'iva_amount' => $order->iva_amount,
+                        'tax_consumption' => 0, // Si no se usa impuesto al consumo
+                        'discount' => 0, // Si no se manejan descuentos
+                    ]);
+                }
             }
             
             // Generar PDF
@@ -95,40 +107,52 @@ class PurchaseOrderPdfService
             // Cargar la solicitud y sus relaciones
             $order->load(['purchaseRequest', 'purchaseRequest.user', 'purchaseRequest.selectedQuotation', 'provider']);
             
-            // Verificar si es una orden con selección mixta
-            $hasMixedSelection = $order->purchaseRequest->quotationItemSelections()->exists();
-            
-            if ($hasMixedSelection) {
-                // Cargar selecciones mixtas
-                $mixedSelections = $order->purchaseRequest->quotationItemSelections()->with('quotation')->get();
-                
-                // Usar plantilla para selección mixta
-                $view = view('purchase-orders.pdf-template-mixed', [
+            // Verificar si es un servicio sin cotización
+            if ($order->purchaseRequest->isNoQuotationService()) {
+                // Usar plantilla para servicios sin cotización
+                $view = view('purchase-orders.pdf-template-service', [
                     'order' => $order,
                     'purchaseRequest' => $order->purchaseRequest,
-                    'mixedSelections' => $mixedSelections,
                     'includesIva' => $order->includes_iva,
                     'subtotal' => $order->subtotal,
                     'ivaAmount' => $order->iva_amount,
                 ]);
             } else {
-                // Obtener datos de la cotización seleccionada para orden tradicional
-                $quotation = $order->purchaseRequest->selectedQuotation;
+                // Verificar si es una orden con selección mixta
+                $hasMixedSelection = $order->purchaseRequest->quotationItemSelections()->exists();
                 
-                // Usar plantilla tradicional
-                $view = view('purchase-orders.pdf-template-new', [
-                    'order' => $order,
-                    'purchaseRequest' => $order->purchaseRequest,
-                    'quotation' => $quotation,
-                    'items' => $order->purchaseRequest->purchase_items ?? [],
-                    'additionalItems' => $order->additional_items ?? [],
-                    'includesIva' => $order->includes_iva,
-                    'subtotal' => $order->subtotal,
-                    'ivaAmount' => $order->iva_amount,
-                    'iva_amount' => $order->iva_amount,
-                    'tax_consumption' => 0,
-                    'discount' => 0,
-                ]);
+                if ($hasMixedSelection) {
+                    // Cargar selecciones mixtas
+                    $mixedSelections = $order->purchaseRequest->quotationItemSelections()->with('quotation')->get();
+                    
+                    // Usar plantilla para selección mixta
+                    $view = view('purchase-orders.pdf-template-mixed', [
+                        'order' => $order,
+                        'purchaseRequest' => $order->purchaseRequest,
+                        'mixedSelections' => $mixedSelections,
+                        'includesIva' => $order->includes_iva,
+                        'subtotal' => $order->subtotal,
+                        'ivaAmount' => $order->iva_amount,
+                    ]);
+                } else {
+                    // Obtener datos de la cotización seleccionada para orden tradicional
+                    $quotation = $order->purchaseRequest->selectedQuotation;
+                    
+                    // Usar plantilla tradicional
+                    $view = view('purchase-orders.pdf-template-new', [
+                        'order' => $order,
+                        'purchaseRequest' => $order->purchaseRequest,
+                        'quotation' => $quotation,
+                        'items' => $order->purchaseRequest->purchase_items ?? [],
+                        'additionalItems' => $order->additional_items ?? [],
+                        'includesIva' => $order->includes_iva,
+                        'subtotal' => $order->subtotal,
+                        'ivaAmount' => $order->iva_amount,
+                        'iva_amount' => $order->iva_amount,
+                        'tax_consumption' => 0,
+                        'discount' => 0,
+                    ]);
+                }
             }
             
             // Generar PDF

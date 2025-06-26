@@ -77,15 +77,19 @@ class MaintenanceRequestController extends Controller
             $config = Configuration::where('key', 'maintenance_emails')->first();
             $notificationEmails = $config ? explode(',', $config->value) : [];
             
+            $emailTestService = new \App\Services\EmailTestModeService();
+            
             // Enviar correos a todos los destinatarios configurados
             foreach ($notificationEmails as $email) {
-                Mail::to(trim($email))->send(
+                $interceptedEmail = $emailTestService->interceptEmail(trim($email), 'Mantenimiento');
+                Mail::to($interceptedEmail)->send(
                     new MaintenanceRequestCreated($maintenanceRequest)
                 );
             }
 
             // Enviar correo al usuario que creó la solicitud
-            Mail::to(auth()->user()->email)->send(
+            $interceptedUserEmail = $emailTestService->interceptEmail(auth()->user()->email, 'General');
+            Mail::to($interceptedUserEmail)->send(
                 new MaintenanceRequestCreated($maintenanceRequest)
             );
 

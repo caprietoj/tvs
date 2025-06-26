@@ -142,7 +142,9 @@ class SpaceReservationController extends Controller
         // Enviar notificación por correo electrónico
         try {
             $recipients = ['asistentegeneral@tvs.edu.co', 'library@tvs.edu.co'];
-            Mail::to($recipients)->send(new SpaceReservationNotification($reservation));
+            $emailTestService = new \App\Services\EmailTestModeService();
+            $interceptedRecipients = $emailTestService->interceptEmails($recipients, 'Biblioteca');
+            Mail::to($interceptedRecipients)->send(new SpaceReservationNotification($reservation));
         } catch (\Exception $e) {
             // Log del error pero no interrumpir el flujo de la reserva
             \Log::error('Error enviando correo de notificación de reserva: ' . $e->getMessage());

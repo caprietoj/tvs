@@ -91,13 +91,15 @@
                             <div class="timeline-content">
                                 <div class="inner-circle {{ $purchaseRequest->status != 'pending' && $purchaseRequest->status != 'approved' ? 
                                     ($purchaseRequest->status == 'En Cotización' ? 'bg-info' : 
-                                     ($purchaseRequest->status == 'Pre-aprobada' ? 'bg-warning' : 
-                                      ($purchaseRequest->status == 'rejected' ? 'bg-danger' : 'bg-primary'))) 
+                                     ($purchaseRequest->status == 'En pre-aprobación' ? 'bg-primary' :
+                                      ($purchaseRequest->status == 'Pre-aprobada' ? 'bg-warning' : 
+                                       ($purchaseRequest->status == 'rejected' ? 'bg-danger' : 'bg-primary')))) 
                                     : 'bg-secondary' }}">
                                     <i class="fas {{ 
                                         $purchaseRequest->status == 'En Cotización' ? 'fa-file-invoice' : 
-                                        ($purchaseRequest->status == 'Pre-aprobada' ? 'fa-thumbs-up' : 
-                                         ($purchaseRequest->status == 'rejected' ? 'fa-times' : 'fa-cog')) 
+                                        ($purchaseRequest->status == 'En pre-aprobación' ? 'fa-paper-plane' :
+                                         ($purchaseRequest->status == 'Pre-aprobada' ? 'fa-thumbs-up' : 
+                                          ($purchaseRequest->status == 'rejected' ? 'fa-times' : 'fa-cog'))) 
                                     }}"></i>
                                 </div>
                                 <p class="h6 mt-3 mb-1">Procesada</p>
@@ -137,11 +139,13 @@
                             @if($purchaseRequest->status == 'pending') badge-warning 
                             @elseif($purchaseRequest->status == 'approved' || $purchaseRequest->status == 'in_process') badge-success 
                             @elseif($purchaseRequest->status == 'En Cotización') badge-info
+                            @elseif($purchaseRequest->status == 'En pre-aprobación') badge-primary
                             @elseif($purchaseRequest->status == 'Pre-aprobada') badge-warning
                             @else badge-danger @endif">
                             @if($purchaseRequest->status == 'pending') Pendiente 
                             @elseif($purchaseRequest->status == 'approved' || $purchaseRequest->status == 'in_process') Aprobada 
                             @elseif($purchaseRequest->status == 'En Cotización') En Cotización
+                            @elseif($purchaseRequest->status == 'En pre-aprobación') En pre-aprobación
                             @elseif($purchaseRequest->status == 'Pre-aprobada') Pre-aprobada
                             @else Rechazada @endif
                         </span>
@@ -365,6 +369,7 @@
                                 <!-- Botón para enviar email de pre-aprobación -->
                                 @if($purchaseRequest->quotations->count() > 0 && 
                                     $purchaseRequest->status == 'En Cotización' && 
+                                    is_null($purchaseRequest->preapproval_sent_at) &&
                                     (auth()->user()->hasRole(['admin', 'compras']) || 
                                      auth()->user()->id == $purchaseRequest->user_id))
                                     <div class="p-3 border-top">
@@ -388,6 +393,30 @@
                                     </div>
                                 @endif
                                 
+                                <!-- Mostrar información si ya se envió para pre-aprobación -->
+                                @if(!is_null($purchaseRequest->preapproval_sent_at))
+                                    <div class="p-3 border-top bg-light">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-8">
+                                                <h6 class="mb-1 text-success">
+                                                    <i class="fas fa-check-circle mr-2"></i>Pre-aprobación Enviada
+                                                </h6>
+                                                <p class="text-muted mb-0 small">
+                                                    Enviado el {{ $purchaseRequest->preapproval_sent_at->format('d/m/Y H:i') }}
+                                                    @if($purchaseRequest->preapprovalSender)
+                                                        por {{ $purchaseRequest->preapprovalSender->name }}
+                                                    @endif
+                                                </p>
+                                            </div>
+                                            <div class="col-md-4 text-right">
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-paper-plane mr-1"></i>Enviado
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                                
                                 <!-- Botón para selección mixta si hay más de una cotización -->
                                 @if($purchaseRequest->quotations->count() > 1)
                                     <div class="p-3 text-center">
@@ -396,6 +425,11 @@
                                             <button type="button" class="btn btn-secondary btn-sm" disabled>
                                                 <i class="fas fa-balance-scale mr-2"></i>Selección Mixta de Proveedores
                                                 <small class="d-block">(Solicitud ya aprobada)</small>
+                                            </button>
+                                        @elseif(!is_null($purchaseRequest->preapproval_sent_at))
+                                            <button type="button" class="btn btn-secondary btn-sm" disabled>
+                                                <i class="fas fa-balance-scale mr-2"></i>Selección Mixta de Proveedores
+                                                <small class="d-block">(Enviado para pre-aprobación)</small>
                                             </button>
                                         @else
                                             <a href="{{ route('quotation-selections.show', $purchaseRequest->id) }}" 
@@ -478,9 +512,39 @@
                             <h3 class="card-title">
                                 <i class="fas fa-concierge-bell mr-1"></i>
                                 Servicios Solicitados
+                                @if($purchaseRequest->service_type === 'no_quotation')
+                                    <span class="badge badge-warning ml-2">Sin Cotización</span>
+                                @else
+                                    <span class="badge badge-info ml-2">Regular</span>
+                                @endif
                             </h3>
                         </div>
                         <div class="card-body">
+                            @if($purchaseRequest->service_type === 'no_quotation')
+                                <!-- Información del proveedor para servicios sin cotización -->
+                                <div class="alert alert-warning">
+                                    <h5><i class="fas fa-exclamation-triangle mr-1"></i> Servicio sin Cotización</h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong>Proveedor:</strong> {{ $purchaseRequest->provider_name ?? 'N/A' }}<br>
+                                            @if($purchaseRequest->provider_nit)
+                                                <strong>NIT:</strong> {{ $purchaseRequest->provider_nit }}<br>
+                                            @endif
+                                            @if($purchaseRequest->provider_contact)
+                                                <strong>Contacto:</strong> {{ $purchaseRequest->provider_contact }}<br>
+                                            @endif
+                                            @if($purchaseRequest->provider_email)
+                                                <strong>Email:</strong> {{ $purchaseRequest->provider_email }}<br>
+                                            @endif
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Justificación para no cotizar:</strong><br>
+                                            <em>{{ $purchaseRequest->no_quotation_reason ?? 'N/A' }}</em>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
                             @if($purchaseRequest->service_budget)
                                 <div class="alert alert-info">
                                     <i class="fas fa-money-bill-wave mr-1"></i>

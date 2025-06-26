@@ -41,9 +41,16 @@
                         <dl class="row">
                             <dt class="col-sm-5">Tipo:</dt>
                             <dd class="col-sm-7">
-                                <span class="badge {{ $request->type === 'purchase' ? 'badge-primary' : 'badge-info' }}">
-                                    {{ $request->type === 'purchase' ? 'Compra' : 'Materiales' }}
-                                </span>
+                                @if($request->type === 'purchase')
+                                    <span class="badge badge-primary">Compra</span>
+                                @elseif($request->type === 'services')
+                                    <span class="badge badge-success">Servicios</span>
+                                    @if($request->isNoQuotationService())
+                                        <span class="badge badge-warning ml-1">Sin Cotización</span>
+                                    @endif
+                                @else
+                                    <span class="badge badge-info">Materiales</span>
+                                @endif
                             </dd>
 
                             <dt class="col-sm-5">Solicitante:</dt>
@@ -61,56 +68,84 @@
                     </div>
 
                     <div class="col-md-6">
-                        <h5 class="text-muted">Información de Pre-aprobación</h5>
-                        <dl class="row">
-                            <dt class="col-sm-5">Pre-aprobada por:</dt>
-                            <dd class="col-sm-7">{{ $request->preApprover ? $request->preApprover->name : 'N/A' }}</dd>
+                        @if($request->isNoQuotationService())
+                            <h5 class="text-muted">Información del Proveedor</h5>
+                            <dl class="row">
+                                <dt class="col-sm-5">Proveedor:</dt>
+                                <dd class="col-sm-7">{{ $request->provider_name ?? 'N/A' }}</dd>
 
-                            <dt class="col-sm-5">Fecha de pre-aprobación:</dt>
-                            <dd class="col-sm-7">{{ $request->pre_approved_at ? $request->pre_approved_at->format('d/m/Y H:i') : 'N/A' }}</dd>
+                                <dt class="col-sm-5">NIT:</dt>
+                                <dd class="col-sm-7">{{ $request->provider_nit ?? 'N/A' }}</dd>
 
-                            <dt class="col-sm-5">Cotización seleccionada:</dt>
-                            <dd class="col-sm-7">{{ $request->preApprovedQuotation ? $request->preApprovedQuotation->provider_name : 'N/A' }}</dd>
+                                <dt class="col-sm-5">Contacto:</dt>
+                                <dd class="col-sm-7">{{ $request->provider_contact ?? 'N/A' }}</dd>
 
-                            <dt class="col-sm-5">Monto:</dt>
-                            <dd class="col-sm-7">
-                                @if($request->preApprovedQuotation)
-                                    ${{ number_format($request->preApprovedQuotation->total_amount, 2, ',', '.') }}
-                                @else
-                                    N/A
-                                @endif
-                            </dd>
+                                <dt class="col-sm-5">Email:</dt>
+                                <dd class="col-sm-7">{{ $request->provider_email ?? 'N/A' }}</dd>
 
-                            <dt class="col-sm-5">Comentarios:</dt>
-                            <dd class="col-sm-7">{{ $request->pre_approval_comments ?? 'Sin comentarios' }}</dd>
+                                <dt class="col-sm-5">Presupuesto:</dt>
+                                <dd class="col-sm-7">
+                                    @if($request->service_budget)
+                                        ${{ number_format($request->service_budget, 2, ',', '.') }}
+                                    @else
+                                        {{ $request->service_budget_text ?? 'N/A' }}
+                                    @endif
+                                </dd>
 
-                            <dt class="col-sm-5">Presupuesto asignado:</dt>
-                            <dd class="col-sm-7">
-                                <div class="d-flex align-items-center">
-                                    <div id="budget-display" class="mr-2">
-                                        @if($request->budget)
-                                            <span class="badge badge-info p-2">{{ $request->budget }}</span>
-                                        @else
-                                            <span class="text-muted">No especificado</span>
-                                        @endif
+                                <dt class="col-sm-5">Justificación:</dt>
+                                <dd class="col-sm-7">{{ $request->no_quotation_reason ?? 'N/A' }}</dd>
+                            </dl>
+                        @else
+                            <h5 class="text-muted">Información de Pre-aprobación</h5>
+                            <dl class="row">
+                                <dt class="col-sm-5">Pre-aprobada por:</dt>
+                                <dd class="col-sm-7">{{ $request->preApprover ? $request->preApprover->name : 'N/A' }}</dd>
+
+                                <dt class="col-sm-5">Fecha de pre-aprobación:</dt>
+                                <dd class="col-sm-7">{{ $request->pre_approved_at ? $request->pre_approved_at->format('d/m/Y H:i') : 'N/A' }}</dd>
+
+                                <dt class="col-sm-5">Cotización seleccionada:</dt>
+                                <dd class="col-sm-7">{{ $request->preApprovedQuotation ? $request->preApprovedQuotation->provider_name : 'N/A' }}</dd>
+
+                                <dt class="col-sm-5">Monto:</dt>
+                                <dd class="col-sm-7">
+                                    @if($request->preApprovedQuotation)
+                                        ${{ number_format($request->preApprovedQuotation->total_amount, 2, ',', '.') }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </dd>
+
+                                <dt class="col-sm-5">Comentarios:</dt>
+                                <dd class="col-sm-7">{{ $request->pre_approval_comments ?? 'Sin comentarios' }}</dd>
+
+                                <dt class="col-sm-5">Presupuesto asignado:</dt>
+                                <dd class="col-sm-7">
+                                    <div class="d-flex align-items-center">
+                                        <div id="budget-display" class="mr-2">
+                                            @if($request->budget)
+                                                <span class="badge badge-info p-2">{{ $request->budget }}</span>
+                                            @else
+                                                <span class="text-muted">No especificado</span>
+                                            @endif
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="editBudget()">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </button>
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="editBudget()">
-                                        <i class="fas fa-edit"></i> Editar
-                                    </button>
-                                </div>
-                                
-                                <!-- Formulario de edición oculto -->
-                                <div id="budget-edit-form" style="display: none;" class="mt-2">
-                                    <form action="{{ route('approvals.update-budget', $request->id) }}" method="POST" class="d-flex align-items-center">
-                                        @csrf
-                                        <input type="text" 
-                                               name="budget" 
-                                               value="{{ $request->budget ?? '' }}" 
-                                               class="form-control form-control-sm mr-2" 
-                                               placeholder="Especificar presupuesto"
-                                               required>
-                                        <button type="submit" class="btn btn-sm btn-success mr-1">
-                                            <i class="fas fa-check"></i>
+                                    
+                                    <!-- Formulario de edición oculto -->
+                                    <div id="budget-edit-form" style="display: none;" class="mt-2">
+                                        <form action="{{ route('approvals.update-budget', $request->id) }}" method="POST" class="d-flex align-items-center">
+                                            @csrf
+                                            <input type="text" 
+                                                   name="budget" 
+                                                   value="{{ $request->budget ?? '' }}" 
+                                                   class="form-control form-control-sm mr-2" 
+                                                   placeholder="Especificar presupuesto"
+                                                   required>
+                                            <button type="submit" class="btn btn-sm btn-success mr-1">
+                                                <i class="fas fa-check"></i>
                                         </button>
                                         <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEditBudget()">
                                             <i class="fas fa-times"></i>
@@ -119,6 +154,7 @@
                                 </div>
                             </dd>
                         </dl>
+                        @endif
                     </div>
                 </div>
 
@@ -190,7 +226,7 @@
                     @endif
                 @endif
 
-                @if($request->preApprovedQuotation)
+                @if($request->preApprovedQuotation && !$request->isNoQuotationService())
                     <h5 class="text-muted mt-4">Cotización Pre-aprobada</h5>
                     <div class="table-responsive">
                         <table class="table table-bordered">

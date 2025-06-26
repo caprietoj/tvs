@@ -12,6 +12,12 @@ class DynamicSectionEmailsService
      */
     public static function getCurrentConfigSource(): string
     {
+        // Usar config() primero, luego env() como fallback
+        $configValue = config('app.section_emails_config');
+        if ($configValue !== null) {
+            return $configValue;
+        }
+        
         return env('SECTION_EMAILS_CONFIG', 'section_emails');
     }
 

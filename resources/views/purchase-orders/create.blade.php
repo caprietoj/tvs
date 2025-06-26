@@ -31,9 +31,16 @@
                             <dl class="row">
                                 <dt class="col-sm-4">Tipo:</dt>
                                 <dd class="col-sm-8">
-                                    <span class="badge {{ $purchaseRequest->type === 'purchase' ? 'badge-primary' : 'badge-info' }}">
-                                        {{ $purchaseRequest->type === 'purchase' ? 'Compra' : 'Materiales' }}
-                                    </span>
+                                    @if($purchaseRequest->type === 'purchase')
+                                        <span class="badge badge-primary">Compra</span>
+                                    @elseif($purchaseRequest->type === 'services')
+                                        <span class="badge badge-success">Servicios</span>
+                                        @if(isset($isNoQuotationService) && $isNoQuotationService)
+                                            <span class="badge badge-warning ml-1">Sin Cotización</span>
+                                        @endif
+                                    @else
+                                        <span class="badge badge-info">Materiales</span>
+                                    @endif
                                 </dd>
 
                                 <dt class="col-sm-4">Solicitante:</dt>
@@ -86,7 +93,7 @@
                         <i class="fas fa-info-circle"></i> La orden de compra se generará automáticamente utilizando la plantilla del sistema una vez completado este formulario.
                     </div>
                     
-                    <form action="{{ route('purchase-orders.store', $purchaseRequest->id) }}" method="POST">
+                    <form action="{{ route('purchase-orders.store', $purchaseRequest->id) }}" method="POST" id="order-form">
                         @csrf
                         
                         <div class="row">
@@ -99,7 +106,44 @@
                                 
                                 <div class="form-group">
                                     <label for="provider_id">Proveedor</label>
-                                    @if(isset($hasMixedSelection) && $hasMixedSelection)
+                                    @if(isset($isNoQuotationService) && $isNoQuotationService)
+                                        <!-- Caso de servicio sin cotización -->
+                                        <div class="card">
+                                            <div class="card-header bg-warning">
+                                                <h6 class="m-0 text-dark">
+                                                    <i class="fas fa-hand-holding-usd mr-2"></i>
+                                                    Servicio sin Cotización
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <dl class="row mb-0">
+                                                    <dt class="col-sm-4">Proveedor:</dt>
+                                                    <dd class="col-sm-8">{{ $purchaseRequest->provider_name }}</dd>
+                                                    
+                                                    <dt class="col-sm-4">NIT:</dt>
+                                                    <dd class="col-sm-8">{{ $purchaseRequest->provider_nit ?? 'N/A' }}</dd>
+                                                    
+                                                    <dt class="col-sm-4">Contacto:</dt>
+                                                    <dd class="col-sm-8">{{ $purchaseRequest->provider_contact ?? 'N/A' }}</dd>
+                                                    
+                                                    <dt class="col-sm-4">Email:</dt>
+                                                    <dd class="col-sm-8">{{ $purchaseRequest->provider_email ?? 'N/A' }}</dd>
+                                                    
+                                                    <dt class="col-sm-4">Presupuesto:</dt>
+                                                    <dd class="col-sm-8">
+                                                        @if($purchaseRequest->service_budget)
+                                                            ${{ number_format($purchaseRequest->service_budget, 2) }}
+                                                        @else
+                                                            {{ $purchaseRequest->service_budget_text ?? 'N/A' }}
+                                                        @endif
+                                                    </dd>
+                                                </dl>
+                                                <small class="text-muted">
+                                                    Este servicio no requiere cotización. El proveedor y presupuesto fueron especificados en la solicitud.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    @elseif(isset($hasMixedSelection) && $hasMixedSelection)
                                         <!-- Caso de selección mixta -->
                                         <div class="card">
                                             <div class="card-header bg-info">
@@ -171,7 +215,13 @@
                                 
                                 <div class="form-group">
                                     <label for="payment_terms">Términos de Pago</label>
-                                    @if(isset($hasMixedSelection) && $hasMixedSelection)
+                                    @if(isset($isNoQuotationService) && $isNoQuotationService)
+                                        <!-- Para servicios sin cotización -->
+                                        <input type="text" class="form-control @error('payment_terms') is-invalid @enderror" 
+                                               id="payment_terms" name="payment_terms" 
+                                               value="{{ old('payment_terms', 'Contado') }}" required>
+                                        <small class="text-muted">Para servicios sin cotización, se sugiere pago de contado.</small>
+                                    @elseif(isset($hasMixedSelection) && $hasMixedSelection)
                                         <!-- Para selección mixta, permitir entrada manual -->
                                         <input type="text" class="form-control @error('payment_terms') is-invalid @enderror" 
                                                id="payment_terms" name="payment_terms" 
@@ -196,7 +246,17 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="delivery_date">Fecha de Entrega <span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control @error('delivery_date') is-invalid @enderror" id="delivery_date" name="delivery_date" value="{{ old('delivery_date', now()->format('Y-m-d')) }}" required>
+                                    @php
+                                        $defaultDate = isset($isNoQuotationService) && $isNoQuotationService 
+                                            ? now()->addDays(30)->format('Y-m-d') 
+                                            : now()->addDays(15)->format('Y-m-d');
+                                    @endphp
+                                    <input type="date" class="form-control @error('delivery_date') is-invalid @enderror" 
+                                           id="delivery_date" name="delivery_date" 
+                                           value="{{ old('delivery_date', $defaultDate) }}" required>
+                                    @if(isset($isNoQuotationService) && $isNoQuotationService)
+                                        <small class="text-muted">Para servicios sin cotización se sugieren 30 días.</small>
+                                    @endif
                                     @error('delivery_date')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -370,26 +430,24 @@
 @section('js')
 <script>
     $(document).ready(function() {
-        $('.select2').select2({
-            theme: 'bootstrap4',
-            placeholder: 'Seleccione una opción',
-            allowClear: true
-        });
+        console.log('=== PAGE LOADED ===');
         
-        // Fecha mínima de entrega (hoy)
+        // Configurar fecha mínima de entrega (hoy)
         var today = new Date();
         var dd = String(today.getDate()).padStart(2, '0');
         var mm = String(today.getMonth() + 1).padStart(2, '0');
         var yyyy = today.getFullYear();
         today = yyyy + '-' + mm + '-' + dd;
-        document.getElementById("delivery_date").min = today;
         
-        // Debugging del formulario
-        $('form').on('submit', function(e) {
-            console.log('Form submit intercepted');
-            console.log('Form action:', $(this).attr('action'));
-            console.log('Form method:', $(this).attr('method'));
-            console.log('Form data:', $(this).serialize());
+        var deliveryInput = document.getElementById("delivery_date");
+        if (deliveryInput) {
+            deliveryInput.min = today;
+            console.log('Set minimum delivery date to:', today);
+        }
+        
+        // Validación del formulario antes del envío
+        $('#order-form').on('submit', function(e) {
+            console.log('=== FORM SUBMITTED ===');
             
             // Verificar campos requeridos
             var paymentTerms = $('input[name="payment_terms"]').val();
@@ -398,24 +456,28 @@
             console.log('Payment terms:', paymentTerms);
             console.log('Delivery date:', deliveryDate);
             
-            if (!paymentTerms || !deliveryDate) {
-                alert('Por favor complete todos los campos requeridos');
+            if (!paymentTerms || paymentTerms.trim() === '') {
+                alert('Por favor complete el campo de términos de pago');
                 e.preventDefault();
                 return false;
             }
             
-            // Mostrar loading
-            $(this).find('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generando...');
+            if (!deliveryDate || deliveryDate.trim() === '') {
+                alert('Por favor complete la fecha de entrega');
+                e.preventDefault();
+                return false;
+            }
             
-            console.log('Form validation passed, submitting...');
+            console.log('=== VALIDATION PASSED - SUBMITTING FORM ===');
+            
+            // Mostrar loading en el botón
+            $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generando...');
+            
+            // Permitir el envío normal del formulario
+            return true;
         });
         
-        // Debug del botón
-        $('button[type="submit"]').on('click', function(e) {
-            console.log('Submit button clicked');
-            console.log('Button type:', $(this).attr('type'));
-            console.log('Form:', $(this).closest('form').length);
-        });
+        console.log('=== JAVASCRIPT SETUP COMPLETE ===');
     });
 </script>
 @stop

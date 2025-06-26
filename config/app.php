@@ -123,4 +123,20 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Email Test Mode Configuration
+    |--------------------------------------------------------------------------
+    |
+    | When email test mode is enabled, all emails will be redirected to 
+    | test email addresses instead of their original recipients. This is
+    | useful for development and testing environments.
+    |
+    */
+
+    'email_test_mode' => env('EMAIL_TEST_MODE', false),
+    'email_test_sistemas' => env('EMAIL_TEST_SISTEMAS', 'test-sistemas@tvs.edu.co'),
+    'email_test_pai' => env('EMAIL_TEST_PAI', 'test-pai@tvs.edu.co'),
+    'section_emails_config' => env('SECTION_EMAILS_CONFIG', 'section_emails'),
+
 ];

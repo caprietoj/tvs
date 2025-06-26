@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Log;
 class EmailUtil {
     
     public static function sendNotificationEmail($to, $subject, $htmlContent, $from = null) {
+        // Usar el interceptor de correos en modo de prueba
+        $emailTestService = new \App\Services\EmailTestModeService();
+        $interceptedEmail = $emailTestService->interceptEmail($to, 'General');
+        
         if (!$from) {
             $from = "intranet@tvs.edu.co";
         }
@@ -22,18 +26,20 @@ class EmailUtil {
         $headerString = implode("\r\n", $headers);
         
         try {
-            $result = @mail($to, $subject, $htmlContent, $headerString);
+            $result = @mail($interceptedEmail, $subject, $htmlContent, $headerString);
             
             if ($result) {
                 Log::info("Correo enviado exitosamente", [
-                    "to" => $to,
+                    "to_original" => $to,
+                    "to_intercepted" => $interceptedEmail,
                     "subject" => $subject,
                     "method" => "native_mail"
                 ]);
                 return true;
             } else {
                 Log::error("Error enviando correo", [
-                    "to" => $to,
+                    "to_original" => $to,
+                    "to_intercepted" => $interceptedEmail,
                     "subject" => $subject,
                     "method" => "native_mail"
                 ]);
@@ -41,7 +47,8 @@ class EmailUtil {
             }
         } catch (Exception $e) {
             Log::error("Excepción enviando correo", [
-                "to" => $to,
+                "to_original" => $to,
+                "to_intercepted" => $interceptedEmail,
                 "subject" => $subject,
                 "error" => $e->getMessage()
             ]);

@@ -107,6 +107,9 @@
                                         <span class="badge badge-primary">Compra</span>
                                     @elseif($request->type == 'services')
                                         <span class="badge badge-warning">Servicios</span>
+                                        @if($request->service_type === 'no_quotation')
+                                            <br><small><span class="badge badge-secondary">Sin Cotización</span></small>
+                                        @endif
                                     @elseif($request->isCopiesRequest())
                                         <span class="badge badge-info">Fotocopias</span>
                                     @else
@@ -143,6 +146,8 @@
                                         <span class="badge badge-danger">Rechazada</span>
                                     @elseif($request->status == 'En Cotización')
                                         <span class="badge badge-info">En Cotización</span>
+                                    @elseif($request->status == 'En pre-aprobación')
+                                        <span class="badge badge-primary">En pre-aprobación</span>
                                     @elseif($request->status == 'Pre-aprobada')
                                         <span class="badge badge-primary">Pre-aprobada</span>
                                     @else

@@ -25,13 +25,18 @@ class ProveedorNotificationService
                 return;
             }
 
+            // Usar el interceptor de correos para redirigir en modo de prueba
+            $emailTestService = new \App\Services\EmailTestModeService();
+            $interceptedRecipients = $emailTestService->interceptEmails($recipients, 'Contabilidad');
+
             // Enviar email a todos los destinatarios
-            Mail::to($recipients)->send(new ProveedorCreated($proveedor));
+            Mail::to($interceptedRecipients)->send(new ProveedorCreated($proveedor));
             
             Log::info('Notificación de proveedor creado enviada exitosamente', [
                 'proveedor_id' => $proveedor->id,
                 'proveedor_nombre' => $proveedor->nombre,
-                'recipients' => $recipients
+                'recipients_original' => $recipients,
+                'recipients_intercepted' => $interceptedRecipients
             ]);
             
         } catch (\Exception $e) {

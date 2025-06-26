@@ -48,6 +48,8 @@ class PurchaseRequest extends Model
         'delivery_marked_by',
         'delivery_notes',
         'rejection_reason',
+        'preapproval_sent_at',
+        'preapproval_sent_by',
         'required_quotations',
         'can_proceed_early',
         'original_file',
@@ -63,6 +65,13 @@ class PurchaseRequest extends Model
         // Campos adicionales para servicios
         'coordinator',
         'general_observations',
+        // Campos para servicios sin cotización
+        'service_type',
+        'provider_name',
+        'provider_nit',
+        'provider_contact',
+        'provider_email',
+        'no_quotation_reason',
     ];
 
     /**
@@ -76,6 +85,7 @@ class PurchaseRequest extends Model
         'approval_date' => 'datetime',
         'pre_approved_at' => 'datetime',
         'delivery_marked_at' => 'datetime',
+        'preapproval_sent_at' => 'datetime',
         'purchase_items' => 'array',
         'service_items' => 'array',
         'copy_items' => 'array',
@@ -116,6 +126,14 @@ class PurchaseRequest extends Model
     public function deliveryMarker()
     {
         return $this->belongsTo(User::class, 'delivery_marked_by');
+    }
+
+    /**
+     * Obtener el usuario que envió para pre-aprobación.
+     */
+    public function preapprovalSender()
+    {
+        return $this->belongsTo(User::class, 'preapproval_sent_by');
     }
 
     /**
@@ -528,5 +546,27 @@ class PurchaseRequest extends Model
         }
         
         return false;
+    }
+
+    /**
+     * Verificar si es un servicio sin cotización
+     */
+    public function isNoQuotationService()
+    {
+        return $this->type === 'services' && $this->service_type === 'no_quotation';
+    }
+
+    /**
+     * Verificar si requiere cotizaciones normales
+     */
+    public function requiresQuotations()
+    {
+        // Si es un servicio sin cotización, no requiere cotizaciones
+        if ($this->isNoQuotationService()) {
+            return false;
+        }
+        
+        // Para todos los demás casos, sí requiere cotizaciones
+        return true;
     }
 }

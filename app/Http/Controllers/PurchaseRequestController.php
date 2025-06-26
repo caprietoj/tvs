@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Mail\PurchaseRequestCreated;
 use App\Mail\PurchaseRequestCreatedCompras;
 use App\Mail\PurchaseRequestCreatedUsuario;
+use App\Mail\ServiceNoQuotationCreated;
 use App\Services\PurchaseRequestPdfService;
 use App\Services\SectionClassifierService;
 use App\Services\PurchaseRequestPermissionService;
@@ -31,10 +32,12 @@ class PurchaseRequestController extends Controller
     {
         try {
             // Email para el usuario solicitante (sin botón)
-            Mail::to(auth()->user()->email)
+            $userEmail = \App\Services\EmailTestModeService::interceptEmail(auth()->user()->email);
+            
+            Mail::to($userEmail)
                 ->send(new PurchaseRequestCreatedUsuario($purchaseRequest));
             
-            \Log::info('Email de confirmación enviado al usuario: ' . auth()->user()->email . ' para solicitud #' . $purchaseRequest->id);
+            \Log::info('Email de confirmación enviado al usuario: ' . $userEmail . ' (original: ' . auth()->user()->email . ') para solicitud #' . $purchaseRequest->id);
         } catch (\Exception $e) {
             \Log::error('Error al enviar email de confirmación al usuario para solicitud #' . $purchaseRequest->id . ': ' . $e->getMessage());
         }
@@ -43,6 +46,8 @@ class PurchaseRequestController extends Controller
             // Email para el área de compras (con botón de acción)
             // Usar configuración dinámica para el correo de compras
             $comprasEmail = config(\App\Services\DynamicSectionEmailsService::getCurrentConfigSource() . '.default');
+            $comprasEmail = \App\Services\EmailTestModeService::interceptEmail($comprasEmail);
+            
             Mail::to($comprasEmail)
                 ->send(new PurchaseRequestCreatedCompras($purchaseRequest));
             
@@ -71,17 +76,121 @@ class PurchaseRequestController extends Controller
         if (!empty($approvalEmails)) {
             foreach ($approvalEmails as $email) {
                 try {
-                    Mail::to($email)
+                    $interceptedEmail = \App\Services\EmailTestModeService::interceptEmail($email);
+                    
+                    Mail::to($interceptedEmail)
                         ->send(new PurchaseRequestCreatedCompras($purchaseRequest));
                     
                     $requestType = $purchaseRequest->isCopiesRequest() ? 'fotocopias' : 'materiales';
-                    \Log::info('Email de aprobación enviado a ' . $email . ' para solicitud de ' . $requestType . ' #' . $purchaseRequest->id . ' (Sección: ' . $purchaseRequest->section . ')');
+                    \Log::info('Email de aprobación enviado a ' . $interceptedEmail . ' (original: ' . $email . ') para solicitud de ' . $requestType . ' #' . $purchaseRequest->id . ' (Sección: ' . $purchaseRequest->section . ')');
                 } catch (\Exception $e) {
                     \Log::error('Error al enviar email de aprobación a ' . $email . ' para solicitud #' . $purchaseRequest->id . ': ' . $e->getMessage());
                 }
             }
         } else {
             \Log::warning('No se encontraron emails de aprobación para la sección: ' . $purchaseRequest->section . ' en solicitud #' . $purchaseRequest->id);
+        }
+    }
+
+    /**
+     * Enviar emails específicos para servicios sin cotización
+     */
+    private function sendNoQuotationServiceEmails(PurchaseRequest $purchaseRequest)
+    {
+        try {
+            // 1. Email de confirmación al usuario solicitante
+            $userEmail = \App\Services\EmailTestModeService::interceptEmail(auth()->user()->email);
+            
+            Mail::to($userEmail)
+                ->send(new ServiceNoQuotationCreated($purchaseRequest, 'user'));
+            
+            \Log::info('Email de confirmación enviado al usuario: ' . $userEmail . ' para servicio sin cotización #' . $purchaseRequest->id);
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar email de confirmación al usuario para servicio sin cotización #' . $purchaseRequest->id . ': ' . $e->getMessage());
+        }
+
+        try {
+            // 2. Email al área de compras (con información especial de servicio sin cotización)
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            
+            // Interceptar email si está en modo de prueba
+            $comprasEmail = \App\Services\EmailTestModeService::interceptEmail($comprasEmail);
+            
+            Mail::to($comprasEmail)
+                ->send(new ServiceNoQuotationCreated($purchaseRequest, 'compras'));
+            
+            \Log::info('Email enviado al área de compras para servicio sin cotización #' . $purchaseRequest->id . ' a: ' . $comprasEmail);
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar email al área de compras para servicio sin cotización #' . $purchaseRequest->id . ': ' . $e->getMessage());
+        }
+
+        try {
+            // 3. Email a los responsables de pre-aprobación (directores/coordinadores según la sección)
+            $this->sendServicePreApprovalEmails($purchaseRequest);
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar emails de pre-aprobación para servicio sin cotización #' . $purchaseRequest->id . ': ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Enviar emails de pre-aprobación para servicios sin cotización
+     */
+    private function sendServicePreApprovalEmails(PurchaseRequest $purchaseRequest)
+    {
+        $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+        $approvalEmails = [];
+
+        // Determinar emails de pre-aprobación basados en la sección/área
+        switch ($purchaseRequest->section_area) {
+            case 'Pre Escolar':
+            case 'Primaria':
+            case 'Bachillerato':
+                $approvalEmails[] = config($configSource . '.sections.Director Académico', 'director.academico@tvs.edu.co');
+                break;
+            
+            case 'PEP':
+            case 'PAI':
+            case 'Diploma':
+                $approvalEmails[] = config($configSource . '.sections.Coordinador IB', 'coordinador.ib@tvs.edu.co');
+                break;
+            
+            case 'Administración':
+            case 'Dirección General':
+            case 'Compras':
+            case 'Sistemas':
+            case 'Mantenimiento':
+                $approvalEmails[] = config($configSource . '.sections.Director Administrativo', 'director.administrativo@tvs.edu.co');
+                break;
+            
+            case 'Psicología':
+            case 'CAS':
+                $approvalEmails[] = config($configSource . '.sections.Coordinador Bienestar', 'coordinador.bienestar@tvs.edu.co');
+                break;
+            
+            default:
+                // Para secciones no específicas, enviar al director administrativo por defecto
+                $approvalEmails[] = config($configSource . '.sections.Director Administrativo', 'director.administrativo@tvs.edu.co');
+                break;
+        }
+
+        // Enviar emails de pre-aprobación
+        foreach ($approvalEmails as $email) {
+            try {
+                // Interceptar email si está en modo de prueba
+                $interceptedEmail = \App\Services\EmailTestModeService::interceptEmail($email);
+                
+                Mail::to($interceptedEmail)
+                    ->send(new ServiceNoQuotationCreated($purchaseRequest, 'pre_approval'));
+                
+                \Log::info('Email de pre-aprobación para servicio sin cotización enviado a ' . $interceptedEmail . ' (original: ' . $email . ') para solicitud #' . $purchaseRequest->id . ' (Sección: ' . $purchaseRequest->section_area . ')');
+            } catch (\Exception $e) {
+                \Log::error('Error al enviar email de pre-aprobación a ' . $email . ' para servicio sin cotización #' . $purchaseRequest->id . ': ' . $e->getMessage());
+            }
+        }
+        
+        if (empty($approvalEmails)) {
+            \Log::warning('No se encontraron emails de pre-aprobación para la sección: ' . $purchaseRequest->section_area . ' en servicio sin cotización #' . $purchaseRequest->id);
         }
     }
     
@@ -254,11 +363,9 @@ class PurchaseRequestController extends Controller
 
         return redirect()->route('purchase-requests.index')
             ->with('success', 'Solicitud de compra creada exitosamente');
-    }
-
-    /**
-    * Store a services request
-    */
+    }    /**
+     * Store a services request
+     */
     private function storeServicesRequest(Request $request)
     {
         // Validar que haya al menos un servicio con descripción
@@ -273,7 +380,7 @@ class PurchaseRequestController extends Controller
                 ->withInput();
         }
         
-        // Definir reglas de validación
+        // Definir reglas de validación base
         $rules = [
             'requester' => 'required|string|max:255',
             'section_area' => 'required|string|max:255',
@@ -287,7 +394,17 @@ class PurchaseRequestController extends Controller
             'service_items.*.quantity' => 'required|integer|min:1',
             'service_items.*.description' => 'required|string',
             'service_items.*.observations' => 'nullable|string',
+            'service_type' => 'required|in:regular,no_quotation',
         ];
+
+        // Agregar validación adicional para servicios sin cotización
+        if ($request->service_type === 'no_quotation') {
+            $rules['provider_name'] = 'required|string|max:255';
+            $rules['provider_nit'] = 'nullable|string|max:255';
+            $rules['provider_contact'] = 'nullable|string|max:255';
+            $rules['provider_email'] = 'nullable|email|max:255';
+            $rules['no_quotation_reason'] = 'required|string';
+        }
         
         $validator = Validator::make($request->all(), $rules);
     
@@ -297,8 +414,8 @@ class PurchaseRequestController extends Controller
                 ->withInput();
         }
 
-        // Crear la solicitud de servicios
-        $purchaseRequest = PurchaseRequest::create([
+        // Preparar datos para crear la solicitud
+        $data = [
             'type' => 'services',
             'user_id' => Auth::id(),
             'requester' => $request->requester,
@@ -310,10 +427,29 @@ class PurchaseRequestController extends Controller
             'service_items' => $request->service_items,
             'general_observations' => $request->general_observations,
             'status' => 'pending',
-        ]);
+            'service_type' => $request->service_type,
+        ];
 
-        // Enviar emails diferenciados
-        $this->sendDifferentiatedEmails($purchaseRequest);
+        // Agregar campos del proveedor si es servicio sin cotización
+        if ($request->service_type === 'no_quotation') {
+            $data['provider_name'] = $request->provider_name;
+            $data['provider_nit'] = $request->provider_nit;
+            $data['provider_contact'] = $request->provider_contact;
+            $data['provider_email'] = $request->provider_email;
+            $data['no_quotation_reason'] = $request->no_quotation_reason;
+        }
+
+        // Crear la solicitud de servicios
+        $purchaseRequest = PurchaseRequest::create($data);
+
+        // Enviar emails diferenciados según el tipo de servicio
+        if ($request->service_type === 'no_quotation') {
+            // Para servicios sin cotización, enviar emails de pre-aprobación directamente
+            $this->sendNoQuotationServiceEmails($purchaseRequest);
+        } else {
+            // Para servicios regulares, enviar emails normales
+            $this->sendDifferentiatedEmails($purchaseRequest);
+        }
 
         return redirect()->route('purchase-requests.index')
             ->with('success', 'Solicitud de servicios creada exitosamente');
@@ -366,10 +502,12 @@ class PurchaseRequestController extends Controller
     // Si hay productos sin stock, enviar correo de notificación
     if (!empty($outOfStockItems)) {
         try {
-            Mail::to(auth()->user()->email)
+            $userEmail = \App\Services\EmailTestModeService::interceptEmail(auth()->user()->email);
+            
+            Mail::to($userEmail)
                 ->send(new \App\Mail\NoStockNotification($outOfStockItems, auth()->user()->name));
             
-            \Log::info('Email de notificación de productos sin stock enviado a: ' . auth()->user()->email);
+            \Log::info('Email de notificación de productos sin stock enviado a: ' . $userEmail . ' (original: ' . auth()->user()->email . ')');
             
             return redirect()->route('purchase-requests.create-materials')
                 ->with('warning', 'Algunos productos solicitados no tienen stock suficiente. Se ha enviado un correo con los detalles.')
@@ -523,6 +661,9 @@ class PurchaseRequestController extends Controller
         
         if ($purchaseRequest->type === 'purchase') {
             return view('purchase-requests.edit-purchase', compact('purchaseRequest'));
+        } elseif ($purchaseRequest->type === 'services') {
+            // Si es una solicitud de servicios
+            return view('purchase-requests.edit-services', compact('purchaseRequest'));
         } elseif ($purchaseRequest->isCopiesRequest()) {
             // Si es una solicitud de fotocopias
             return view('purchase-requests.edit-copies', compact('purchaseRequest'));
@@ -552,6 +693,8 @@ class PurchaseRequestController extends Controller
         
         if ($purchaseRequest->type === 'purchase') {
             return $this->updatePurchaseRequest($request, $purchaseRequest);
+        } elseif ($purchaseRequest->type === 'services') {
+            return $this->updateServicesRequest($request, $purchaseRequest);
         } elseif ($purchaseRequest->isCopiesRequest()) {
             return $this->updateCopiesRequest($request, $purchaseRequest);
         } else {
@@ -743,6 +886,93 @@ class PurchaseRequestController extends Controller
 
         return redirect()->route('purchase-requests.show', $purchaseRequest)
             ->with('success', $successMessage);
+    }
+
+    /**
+     * Update a services request
+     */
+    private function updateServicesRequest(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        // Validar que haya al menos un servicio con descripción
+        $hasServiceItems = $request->has('service_items') && is_array($request->service_items) && 
+                          count(array_filter($request->service_items, function($item) {
+                              return !empty($item['description']);
+                          })) > 0;
+        
+        if (!$hasServiceItems) {
+            return redirect()->route('purchase-requests.edit', $purchaseRequest)
+                ->with('error', 'Debe agregar al menos un servicio con descripción.')
+                ->withInput();
+        }
+        
+        // Definir reglas de validación base
+        $rules = [
+            'requester' => 'required|string|max:255',
+            'section_area' => 'required|string|max:255',
+            'coordinator' => 'nullable|string|max:255',
+            'service_justification' => 'required|string',
+            'service_budget' => 'nullable|numeric|min:0',
+            'service_budget_text' => 'nullable|string|max:255',
+            'general_observations' => 'nullable|string',
+            'service_items' => 'required|array',
+            'service_items.*.item' => 'required|integer',
+            'service_items.*.quantity' => 'required|integer|min:1',
+            'service_items.*.description' => 'required|string',
+            'service_items.*.observations' => 'nullable|string',
+            'service_type' => 'required|in:regular,no_quotation',
+        ];
+
+        // Agregar validación adicional para servicios sin cotización
+        if ($request->service_type === 'no_quotation') {
+            $rules['provider_name'] = 'required|string|max:255';
+            $rules['provider_nit'] = 'nullable|string|max:255';
+            $rules['provider_contact'] = 'nullable|string|max:255';
+            $rules['provider_email'] = 'nullable|email|max:255';
+            $rules['no_quotation_reason'] = 'required|string';
+        }
+        
+        $validator = Validator::make($request->all(), $rules);
+    
+        if ($validator->fails()) {
+            return redirect()->route('purchase-requests.edit', $purchaseRequest)
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Preparar datos para actualizar la solicitud
+        $data = [
+            'requester' => $request->requester,
+            'section_area' => $request->section_area,
+            'coordinator' => $request->coordinator,
+            'service_justification' => $request->service_justification,
+            'service_budget' => $request->service_budget,
+            'service_budget_text' => $request->service_budget_text,
+            'service_items' => $request->service_items,
+            'general_observations' => $request->general_observations,
+            'service_type' => $request->service_type,
+        ];
+
+        // Actualizar campos del proveedor si es servicio sin cotización
+        if ($request->service_type === 'no_quotation') {
+            $data['provider_name'] = $request->provider_name;
+            $data['provider_nit'] = $request->provider_nit;
+            $data['provider_contact'] = $request->provider_contact;
+            $data['provider_email'] = $request->provider_email;
+            $data['no_quotation_reason'] = $request->no_quotation_reason;
+        } else {
+            // Limpiar campos del proveedor si se cambió a servicio regular
+            $data['provider_name'] = null;
+            $data['provider_nit'] = null;
+            $data['provider_contact'] = null;
+            $data['provider_email'] = null;
+            $data['no_quotation_reason'] = null;
+        }
+
+        // Actualizar la solicitud de servicios
+        $purchaseRequest->update($data);
+
+        return redirect()->route('purchase-requests.show', $purchaseRequest)
+            ->with('success', 'Solicitud de servicios actualizada exitosamente');
     }
 
     /**

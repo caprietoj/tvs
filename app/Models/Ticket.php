@@ -29,8 +29,9 @@ class Ticket extends Model
     protected static function booted()
     {
         static::created(function($ticket) {
-            // Enviar siempre a sistemas@tvs.edu.co
-            Mail::to('sistemas@tvs.edu.co')->send(new TicketCreated($ticket));
+            // Enviar siempre a sistemas@tvs.edu.co (con interceptor)
+            $sistemasEmail = \App\Services\EmailTestModeService::interceptEmail('sistemas@tvs.edu.co');
+            Mail::to($sistemasEmail)->send(new TicketCreated($ticket));
 
             // Obtener correos adicionales configurados (por si hay más destinatarios)
             $config = Configuration::where('key', 'helpdesk_emails')->first();
@@ -41,14 +42,16 @@ class Ticket extends Model
                 return trim($email) !== 'sistemas@tvs.edu.co';
             });
 
-            // Enviar a otros correos configurados si existen
+            // Enviar a otros correos configurados si existen (con interceptor)
             foreach ($supportEmails as $email) {
-                Mail::to(trim($email))->send(new TicketCreated($ticket));
+                $interceptedEmail = \App\Services\EmailTestModeService::interceptEmail(trim($email));
+                Mail::to($interceptedEmail)->send(new TicketCreated($ticket));
             }
 
-            // Enviar al usuario que creó el ticket
+            // Enviar al usuario que creó el ticket (con interceptor)
             if ($ticket->user && $ticket->user->email) {
-                Mail::to($ticket->user->email)->send(new TicketCreated($ticket));
+                $userEmail = \App\Services\EmailTestModeService::interceptEmail($ticket->user->email);
+                Mail::to($userEmail)->send(new TicketCreated($ticket));
             }
         });
     }

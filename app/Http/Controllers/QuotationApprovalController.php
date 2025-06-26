@@ -23,7 +23,18 @@ class QuotationApprovalController extends Controller
     public function index()
     {
         // Obtener todas las solicitudes de compra que estén en estado "En Cotización" o "Pre-aprobada"
+        // Excluir servicios sin cotización
         $requests = PurchaseRequest::whereIn('status', ['En Cotización', 'Pre-aprobada'])
+            ->where(function($query) {
+                $query->where('type', '!=', 'services')
+                      ->orWhere(function($subQuery) {
+                          $subQuery->where('type', 'services')
+                                   ->where(function($serviceQuery) {
+                                       $serviceQuery->whereNull('service_type')
+                                                   ->orWhere('service_type', 'regular');
+                                   });
+                      });
+            })
             ->with(['quotations'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
@@ -39,7 +50,13 @@ class QuotationApprovalController extends Controller
         // Obtener la solicitud específica con sus cotizaciones
         $request = PurchaseRequest::with(['quotations'])->findOrFail($id);
         
-        // Si no hay cotizaciones, redirigir con un mensaje
+        // Para servicios sin cotización, redirigir al flujo de aprobación directa
+        if ($request->type === 'services' && $request->isNoQuotationService()) {
+            return redirect()->route('approvals.show', $id)
+                ->with('info', 'Este servicio no requiere cotización. Redirigiendo al flujo de aprobación directa.');
+        }
+        
+        // Si no hay cotizaciones para otros tipos de solicitud, redirigir con un mensaje
         if ($request->quotations->isEmpty()) {
             return redirect()->route('quotation-approvals.index')
                 ->with('error', 'No hay cotizaciones disponibles para esta solicitud.');

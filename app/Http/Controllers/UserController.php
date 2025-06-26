@@ -198,7 +198,9 @@ class UserController extends Controller
     private function sendWelcomeEmail($user, $password)
     {
         try {
-            Mail::to($user->email)->send(new WelcomeNewUser($user, $password));
+            $emailTestService = new \App\Services\EmailTestModeService();
+            $interceptedEmail = $emailTestService->interceptEmail($user->email, 'General');
+            Mail::to($interceptedEmail)->send(new WelcomeNewUser($user, $password));
         } catch (\Exception $e) {
             \Log::error('Error sending welcome email: ' . $e->getMessage());
         }

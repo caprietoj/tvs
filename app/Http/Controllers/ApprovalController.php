@@ -26,8 +26,17 @@ class ApprovalController extends Controller
      */
     public function index()
     {
-        // Obtener todas las solicitudes de compra que estén en estado "Pre-aprobada" o "pre-approved"
-        $requests = PurchaseRequest::whereIn('status', ['pre-approved', 'Pre-aprobada'])
+        // Obtener todas las solicitudes que estén listas para aprobación final
+        $requests = PurchaseRequest::where(function($query) {
+                // Solicitudes pre-aprobadas tradicionales
+                $query->whereIn('status', ['pre-approved', 'Pre-aprobada'])
+                      // O servicios sin cotización en estado pending
+                      ->orWhere(function($subQuery) {
+                          $subQuery->where('type', 'services')
+                                   ->where('service_type', 'no_quotation')
+                                   ->where('status', 'pending');
+                      });
+            })
             ->with(['quotations', 'user', 'preApprover', 'preApprovedQuotation'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
@@ -53,6 +62,11 @@ class ApprovalController extends Controller
         
         // Para solicitudes de materiales: pueden estar pending o pre-aprobadas
         if (in_array($request->type, ['materials']) && in_array($request->status, ['pending', 'pre-approved', 'Pre-aprobada'])) {
+            $validForApproval = true;
+        }
+
+        // Para solicitudes de servicios: pueden estar pending o pre-aprobadas
+        if ($request->type === 'services' && in_array($request->status, ['pending', 'pre-approved', 'Pre-aprobada'])) {
             $validForApproval = true;
         }
         
@@ -105,6 +119,25 @@ class ApprovalController extends Controller
                 $validForApproval = true;
             }
         }
+
+        // Para solicitudes de servicios: pueden estar pending o pre-aprobadas
+        if ($purchaseRequest->type === 'services') {
+            if (in_array($purchaseRequest->status, ['pending', 'pre-approved', 'Pre-aprobada'])) {
+                // Los servicios sin cotización no requieren validación de cotizaciones
+                if ($purchaseRequest->isNoQuotationService()) {
+                    $validForApproval = true;
+                } else {
+                    // Para servicios regulares, validar que tengan cotizaciones disponibles
+                    $hasQuotations = $purchaseRequest->quotations()->count() > 0;
+                    if ($hasQuotations || in_array($purchaseRequest->status, ['pre-approved', 'Pre-aprobada'])) {
+                        $validForApproval = true;
+                    } else {
+                        return redirect()->back()
+                            ->with('error', 'La solicitud de servicio regular requiere al menos una cotización para ser aprobada.');
+                    }
+                }
+            }
+        }
         
         if (!$validForApproval) {
             return redirect()->back()
@@ -132,6 +165,11 @@ class ApprovalController extends Controller
             'action' => 'Aprobación final',
             'notes' => $validated['comments'] ?? 'Solicitud aprobada definitivamente'
         ]);
+
+        // Crear orden de compra automáticamente para solicitudes de compra y servicios
+        if (in_array($purchaseRequest->type, ['purchase', 'services'])) {
+            $this->createPurchaseOrder($purchaseRequest);
+        }
 
         // CORREGIDO: Enviar notificación solo al usuario que realizó la solicitud
         if ($purchaseRequest->user) {
@@ -288,6 +326,13 @@ class ApprovalController extends Controller
                 return;
             }
 
+            // Para servicios sin cotización, usar datos del proveedor ingresado manualmente
+            if ($purchaseRequest->isNoQuotationService()) {
+                $this->createPurchaseOrderForNoQuotationService($purchaseRequest);
+                return;
+            }
+
+            // Lógica original para solicitudes de compra con cotizaciones
             // Obtener o crear un proveedor por defecto si no existe
             $provider = \App\Models\Proveedor::first();
             
@@ -297,7 +342,8 @@ class ApprovalController extends Controller
                     'email' => 'porAsignar@test.com',
                     'phone' => '000-000-0000',
                     'address' => 'Por definir',
-                    'contact_person' => 'Por asignar'
+                    'contact_person' => 'Por asignar',
+                    'nit' => '000000000-0'
                 ]);
             }
 
@@ -341,31 +387,7 @@ class ApprovalController extends Controller
             ]);
 
             // Generar el PDF inmediatamente
-            try {
-                $pdfService = app(\App\Services\PurchaseOrderPdfService::class);
-                $pdfPath = $pdfService->generatePdf($purchaseOrder);
-                
-                if ($pdfPath) {
-                    $purchaseOrder->update(['file_path' => $pdfPath]);
-                    \Log::info('PDF generado automáticamente para orden de compra', [
-                        'purchase_request_id' => $purchaseRequest->id,
-                        'order_id' => $purchaseOrder->id,
-                        'pdf_path' => $pdfPath
-                    ]);
-                }
-            } catch (\Exception $e) {
-                \Log::error('Error al generar PDF automáticamente', [
-                    'purchase_request_id' => $purchaseRequest->id,
-                    'order_id' => $purchaseOrder->id,
-                    'error' => $e->getMessage()
-                ]);
-            }
-
-            \Log::info('Orden de compra creada automáticamente', [
-                'purchase_request_id' => $purchaseRequest->id,
-                'order_id' => $purchaseOrder->id,
-                'order_number' => $purchaseOrder->order_number
-            ]);
+            $this->generatePurchaseOrderPdf($purchaseOrder, $purchaseRequest);
 
         } catch (\Exception $e) {
             \Log::error('Error al crear orden de compra automáticamente', [
@@ -373,6 +395,95 @@ class ApprovalController extends Controller
                 'error' => $e->getMessage()
             ]);
             // No lanzar excepción para no interrumpir el flujo de aprobación
+        }
+    }
+
+    /**
+     * Crear orden de compra para servicio sin cotización
+     */
+    private function createPurchaseOrderForNoQuotationService(PurchaseRequest $purchaseRequest): void
+    {
+        try {
+            // Buscar o crear proveedor basado en la información ingresada
+            $provider = \App\Models\Proveedor::where('name', $purchaseRequest->provider_name)->first();
+            
+            if (!$provider) {
+                $provider = \App\Models\Proveedor::create([
+                    'name' => $purchaseRequest->provider_name,
+                    'nit' => $purchaseRequest->provider_nit ?? 'Sin NIT',
+                    'email' => $purchaseRequest->provider_email ?? 'sin-email@proveedor.com',
+                    'phone' => $purchaseRequest->provider_contact ?? 'Sin teléfono',
+                    'address' => 'Por definir',
+                    'contact_person' => $purchaseRequest->provider_contact ?? 'Sin contacto'
+                ]);
+            }
+
+            // Usar el presupuesto de la solicitud como monto total
+            $totalAmount = $purchaseRequest->service_budget ?? 0;
+            
+            // Calcular IVA si es necesario
+            $includesIva = true;
+            $subtotal = $totalAmount / 1.19;
+            $ivaAmount = $totalAmount - $subtotal;
+            
+            // Crear la orden de compra
+            $purchaseOrder = \App\Models\PurchaseOrder::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'provider_id' => $provider->id,
+                'order_number' => 'ORD-SV-' . str_pad($purchaseRequest->id, 4, '0', STR_PAD_LEFT),
+                'total_amount' => $totalAmount,
+                'subtotal' => $subtotal,
+                'iva_amount' => $ivaAmount,
+                'includes_iva' => $includesIva,
+                'payment_terms' => 'Contado',
+                'delivery_date' => now()->addDays(30), // 30 días para servicios
+                'file_path' => 'pending_generation',
+                'observations' => 'Orden de servicio sin cotización - ' . $purchaseRequest->no_quotation_reason,
+                'created_by' => Auth::id(),
+                'status' => 'pending'
+            ]);
+
+            // Generar el PDF inmediatamente
+            $this->generatePurchaseOrderPdf($purchaseOrder, $purchaseRequest);
+
+            \Log::info('Orden de compra para servicio sin cotización creada automáticamente', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'order_id' => $purchaseOrder->id,
+                'order_number' => $purchaseOrder->order_number,
+                'provider' => $purchaseRequest->provider_name
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al crear orden de compra para servicio sin cotización', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Generar PDF para la orden de compra
+     */
+    private function generatePurchaseOrderPdf(\App\Models\PurchaseOrder $purchaseOrder, PurchaseRequest $purchaseRequest): void
+    {
+        try {
+            $pdfService = app(\App\Services\PurchaseOrderPdfService::class);
+            $pdfPath = $pdfService->generatePdf($purchaseOrder);
+            
+            if ($pdfPath) {
+                $purchaseOrder->update(['file_path' => $pdfPath]);
+                \Log::info('PDF generado automáticamente para orden de compra', [
+                    'purchase_request_id' => $purchaseRequest->id,
+                    'order_id' => $purchaseOrder->id,
+                    'pdf_path' => $pdfPath
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al generar PDF automáticamente', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'order_id' => $purchaseOrder->id,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 

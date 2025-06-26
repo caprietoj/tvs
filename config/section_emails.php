@@ -25,8 +25,8 @@ return [
         'PAI' => ['escuelamedia@tvs.edu.co', 'coordpai@tvs.edu.co'],
         'Bachillerato' => 'escuelamedia@tvs.edu.co',
         'Diploma' => 'dp@tvs.edu.co',
-        'Administracion' => 'administrativedirector@tvs.edu.co',
-        'Administración' => 'administrativedirector@tvs.edu.co', // Con acento
+        'Administracion' => 'admini@tvs.edu.co',
+        'Administración' => 'admini@tvs.edu.co', // Con acento
         'Dirección General' => 'generaldirector@tvs.edu.co',
         'CAS' => 'mpsilva@tvs.edu.co',
         'Departamento de Apoyo' => 'psicologia2@tvs.edu.co',
@@ -55,8 +55,8 @@ return [
         'Preescolar' => ['preschool@tvs.edu.co', 'asistentepyp@tvs.edu.co'],
         'Primaria' => ['preschool@tvs.edu.co', 'asistentepyp@tvs.edu.co'],
         'Bachillerato' => ['escuelamedia@tvs.edu.co', 'dp@tvs.edu.co', 'asistentebachillerato@tvs.edu.co'],
-        'Administracion' => ['administrativedirector@tvs.edu.co'],
-        'Administración' => ['administrativedirector@tvs.edu.co'], // Con acento
+        'Administracion' => ['admini@tvs.edu.co'],
+        'Administración' => ['admini@tvs.edu.co'], // Con acento
         'Sistemas' => ['jefesistemas@tvs.edu.co'],
         'Tecnología' => ['jefesistemas@tvs.edu.co'],
         'TI' => ['jefesistemas@tvs.edu.co'],

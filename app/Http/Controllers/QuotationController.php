@@ -588,11 +588,18 @@ class QuotationController extends Controller
             
             $allEmails = array_merge($sectionEmails, [$comprasEmail]);
             
+            // Marcar que se envió para pre-aprobación y cambiar estado
+            $purchaseRequest->update([
+                'status' => 'En pre-aprobación',
+                'preapproval_sent_at' => now(),
+                'preapproval_sent_by' => Auth::id()
+            ]);
+            
             // Registrar en el historial
             RequestHistory::create([
                 'purchase_request_id' => $purchaseRequest->id,
                 'user_id' => Auth::id(),
-                'action' => 'Email de pre-aprobación enviado',
+                'action' => 'Email de pre-aprobación enviado - Estado cambiado a "En pre-aprobación"',
                 'notes' => 'Emails enviados a: ' . implode(', ', $allEmails)
             ]);
             

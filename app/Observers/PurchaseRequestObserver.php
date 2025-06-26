@@ -13,25 +13,23 @@ class PurchaseRequestObserver
      */
     public function created(PurchaseRequest $purchaseRequest)
     {
-        // COMENTADO TEMPORALMENTE: Este observer estaba enviando emails con CC hardcodeado
-        // Esto puede estar causando emails duplicados durante las pre-aprobaciones
-        
-        /*
-        // Enviar email para cualquier tipo de solicitud
+        // Enviar email para cualquier tipo de solicitud usando el interceptor
         try {
-            Mail::to($purchaseRequest->user->email)
-                ->cc('caprietoj@gmail.com')
+            $emailTestService = new \App\Services\EmailTestModeService();
+            $interceptedEmail = $emailTestService->interceptEmail($purchaseRequest->user->email, 'General');
+            
+            Mail::to($interceptedEmail)
                 ->send(new PurchaseRequestCreated($purchaseRequest));
+                
+            \Log::info('Email enviado desde PurchaseRequestObserver', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'request_number' => $purchaseRequest->request_number,
+                'to_original' => $purchaseRequest->user->email,
+                'to_intercepted' => $interceptedEmail
+            ]);
         } catch (\Exception $e) {
             \Log::error('Error al enviar email desde observer: ' . $e->getMessage());
         }
-        */
-        
-        // TODO: Revisar si este observer es necesario y corregir el email hardcodeado
-        \Log::info('PurchaseRequestObserver::created() ejecutado (emails deshabilitados temporalmente)', [
-            'purchase_request_id' => $purchaseRequest->id,
-            'request_number' => $purchaseRequest->request_number
-        ]);
     }
 
     // ...existing code...

@@ -77,6 +77,58 @@
                         <h5 class="mb-0">SERVICIOS</h5>
                     </div>
                     <div class="card-body">
+                        <!-- Tipo de Servicio -->
+                        <div class="form-group">
+                            <label for="service_type">TIPO DE SERVICIO <span class="text-danger">*</span>:</label>
+                            <select class="form-control @error('service_type') is-invalid @enderror" id="service_type" name="service_type" required>
+                                <option value="">Seleccione el tipo de servicio...</option>
+                                <option value="regular" {{ old('service_type') == 'regular' ? 'selected' : '' }}>Servicio Regular (Requiere cotización)</option>
+                                <option value="no_quotation" {{ old('service_type') == 'no_quotation' ? 'selected' : '' }}>Servicio sin Cotización (Renovación de licencia, proveedor único, etc.)</option>
+                            </select>
+                            @error('service_type')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="form-text text-muted">
+                                <strong>Servicio Regular:</strong> Requiere cotizaciones antes de la aprobación final.<br>
+                                <strong>Servicio sin Cotización:</strong> Para renovaciones de licencias, proveedores únicos o servicios que no requieren comparación de precios.
+                            </small>
+                        </div>
+
+                        <!-- Información del Proveedor (solo para servicios sin cotización) -->
+                        <div id="provider_info_section" style="display: none;">
+                            <div class="card mt-3 border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="fas fa-building mr-2"></i>Información del Proveedor</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="provider_name">NOMBRE DEL PROVEEDOR <span class="text-danger">*</span>:</label>
+                                            <input type="text" class="form-control" id="provider_name" name="provider_name" value="{{ old('provider_name') }}">
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="provider_nit">NIT DEL PROVEEDOR:</label>
+                                            <input type="text" class="form-control" id="provider_nit" name="provider_nit" value="{{ old('provider_nit') }}">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="provider_contact">CONTACTO:</label>
+                                            <input type="text" class="form-control" id="provider_contact" name="provider_contact" value="{{ old('provider_contact') }}">
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="provider_email">EMAIL:</label>
+                                            <input type="email" class="form-control" id="provider_email" name="provider_email" value="{{ old('provider_email') }}">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="no_quotation_reason">JUSTIFICACIÓN PARA NO COTIZAR <span class="text-danger">*</span>:</label>
+                                        <textarea class="form-control" id="no_quotation_reason" name="no_quotation_reason" rows="2" placeholder="Ej: Renovación de licencia anual, Proveedor único autorizado, Continuidad de servicio, etc.">{{ old('no_quotation_reason') }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-group">
                             <label for="service_justification">JUSTIFICACIÓN DEL SERVICIO <span class="text-danger">*</span>:</label>
                             <textarea class="form-control @error('service_justification') is-invalid @enderror" id="service_justification" name="service_justification" rows="3" placeholder="Describa la justificación para la contratación del servicio solicitado" required>{{ old('service_justification') }}</textarea>
@@ -416,7 +468,32 @@ $(document).ready(function() {
     if (!isNaN(initialValue) && initialValue > 0) {
         const valueInWords = convertNumberToWords(initialValue);
         $('#service_budget_text').val(valueInWords);
-    }// Validación del formulario
+    }
+
+    // Manejar cambio de tipo de servicio
+    $('#service_type').on('change', function() {
+        const serviceType = $(this).val();
+        const providerSection = $('#provider_info_section');
+        
+        if (serviceType === 'no_quotation') {
+            providerSection.show();
+            // Hacer campos obligatorios
+            $('#provider_name, #no_quotation_reason').attr('required', true);
+        } else {
+            providerSection.hide();
+            // Quitar campos obligatorios y limpiar valores
+            $('#provider_name, #provider_nit, #provider_contact, #provider_email, #no_quotation_reason').attr('required', false).val('');
+        }
+    });
+
+    // Inicializar estado basado en valor actual
+    const currentServiceType = $('#service_type').val();
+    if (currentServiceType === 'no_quotation') {
+        $('#provider_info_section').show();
+        $('#provider_name, #no_quotation_reason').attr('required', true);
+    } else {
+        $('#provider_info_section').hide();
+    }    // Validación del formulario
     $('#servicesForm').on('submit', function(e) {
         let hasServiceItems = false;
         let isValid = true;
@@ -433,6 +510,31 @@ $(document).ready(function() {
             e.preventDefault();
             alert('Debe agregar al menos un servicio con descripción.');
             isValid = false;
+        }
+        
+        // Verificar tipo de servicio
+        if ($('#service_type').val() === '') {
+            e.preventDefault();
+            alert('Debe seleccionar el tipo de servicio.');
+            $('#service_type').focus();
+            isValid = false;
+        }
+        
+        // Verificar campos del proveedor si es servicio sin cotización
+        if ($('#service_type').val() === 'no_quotation') {
+            if ($('#provider_name').val().trim() === '') {
+                e.preventDefault();
+                alert('El nombre del proveedor es obligatorio para servicios sin cotización.');
+                $('#provider_name').focus();
+                isValid = false;
+            }
+            
+            if ($('#no_quotation_reason').val().trim() === '') {
+                e.preventDefault();
+                alert('La justificación para no cotizar es obligatoria.');
+                $('#no_quotation_reason').focus();
+                isValid = false;
+            }
         }
         
         // Verificar justificación
