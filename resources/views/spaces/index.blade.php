@@ -63,14 +63,18 @@
                                 </td>
                                 <td>
                                     <div class="btn-group">
-                                        <a href="{{ route('spaces.show', $space) }}" class="btn btn-sm btn-info">
+                                        <a href="{{ route('spaces.show', $space) }}" class="btn btn-sm btn-info" title="Ver">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('spaces.edit', $space) }}" class="btn btn-sm btn-warning">
+                                        <a href="{{ route('spaces.edit', $space) }}" class="btn btn-sm btn-warning" title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <button type="button" class="btn btn-sm btn-success" 
+                                                onclick="confirmDuplicate('{{ $space->id }}', '{{ $space->name }}')" title="Duplicar">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
                                         <button type="button" class="btn btn-sm btn-danger" 
-                                                onclick="confirmDelete('{{ $space->id }}', '{{ $space->name }}')">
+                                                onclick="confirmDelete('{{ $space->id }}', '{{ $space->name }}')" title="Eliminar">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -80,6 +84,12 @@
                                           style="display: none;">
                                         @csrf
                                         @method('DELETE')
+                                    </form>
+                                    <form id="duplicate-form-{{ $space->id }}" 
+                                          action="{{ route('spaces.duplicate', $space) }}" 
+                                          method="POST" 
+                                          style="display: none;">
+                                        @csrf
                                     </form>
                                 </td>
                             </tr>
@@ -120,6 +130,12 @@
         function confirmDelete(id, name) {
             if (confirm('¿Está seguro que desea eliminar el espacio "' + name + '"?')) {
                 document.getElementById('delete-form-' + id).submit();
+            }
+        }
+
+        function confirmDuplicate(id, name) {
+            if (confirm('¿Está seguro que desea duplicar el espacio "' + name + '"?\n\nSe creará una copia con el nombre "' + name + ' (Copia)".')) {
+                document.getElementById('duplicate-form-' + id).submit();
             }
         }
     </script>

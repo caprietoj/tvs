@@ -385,4 +385,38 @@ class SpaceController extends Controller
         return redirect()->route('spaces.index')
             ->with('success', 'Espacio eliminado exitosamente.');
     }
+
+    /**
+     * Duplicate the specified space
+     */
+    public function duplicate(Space $space)
+    {
+        // Cargar el espacio con todas sus relaciones
+        $space->load(['skills', 'items']);
+        
+        // Crear una copia del espacio
+        $duplicatedSpace = $space->replicate();
+        $duplicatedSpace->name = $space->name . ' (Copia)';
+        $duplicatedSpace->save();
+        
+        // Duplicar las habilidades asociadas
+        foreach ($space->skills as $skill) {
+            $duplicatedSpace->skills()->attach($skill->id, [
+                'description' => $skill->pivot->description
+            ]);
+        }
+        
+        // Duplicar los items asociados
+        foreach ($space->items as $item) {
+            $duplicatedSpace->items()->create([
+                'name' => $item->name,
+                'description' => $item->description,
+                'quantity' => $item->quantity,
+                'available' => $item->available
+            ]);
+        }
+        
+        return redirect()->route('spaces.index')
+            ->with('success', 'Espacio duplicado exitosamente como "' . $duplicatedSpace->name . '".');
+    }
 }

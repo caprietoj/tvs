@@ -67,6 +67,11 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    // Ruta de Presupuesto
+    Route::get('/presupuesto', function () {
+        return view('presupuesto');
+    })->name('presupuesto');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -698,6 +703,9 @@ Route::middleware(['auth'])->group(function () {
     // Nueva ruta para obtener detalles de un espacio en formato JSON
     Route::get('spaces/{space}/details', [App\Http\Controllers\SpaceController::class, 'getDetails'])
         ->name('spaces.details');
+    // Ruta para duplicar espacios
+    Route::post('spaces/{space}/duplicate', [App\Http\Controllers\SpaceController::class, 'duplicate'])
+        ->name('spaces.duplicate');
     
     // Ciclos Escolares
     Route::resource('school-cycles', App\Http\Controllers\SchoolCycleController::class);
