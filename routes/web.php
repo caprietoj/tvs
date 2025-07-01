@@ -823,6 +823,8 @@ Route::middleware('auth')->group(function () {
         ->name('quotation-selections.remove');
     Route::post('/purchase-requests/{purchaseRequest}/finalize-selection', [QuotationItemSelectionController::class, 'finalize'])
         ->name('quotation-selections.finalize');
+    Route::post('/purchase-requests/{purchaseRequest}/save-and-send-selection', [QuotationItemSelectionController::class, 'saveAndSend'])
+        ->name('quotation-selections.save-and-send');
 });
 
 // Ruta temporal de debugging para verificar permisos

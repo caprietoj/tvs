@@ -245,4 +245,92 @@ class QuotationItemSelectionController extends Controller
             'message' => 'Selección no encontrada'
         ], 404);
     }
+
+    /**
+     * Guardar y enviar la selección mixta (parcial o completa)
+     */
+    public function saveAndSend(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        // Verificar que hay al menos una selección
+        $existingSelections = QuotationItemSelection::where('purchase_request_id', $purchaseRequest->id)->get();
+        
+        if ($existingSelections->count() === 0) {
+            return redirect()->back()->with('error', 'Debe realizar al menos una selección antes de guardar y enviar.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Determinar si la selección está completa
+            $purchaseItems = is_array($purchaseRequest->purchase_items) 
+                ? $purchaseRequest->purchase_items 
+                : json_decode($purchaseRequest->purchase_items, true);
+                
+            $isComplete = $existingSelections->count() === count($purchaseItems);
+            
+            // Actualizar estado de la solicitud
+            if ($isComplete) {
+                // Si está completa, usar el estado de pre-aprobación
+                $purchaseRequest->update([
+                    'status' => 'Pre-aprobada',
+                    'pre_approved_by' => auth()->id(),
+                    'pre_approved_at' => now(),
+                    'pre_approval_comments' => 'Selección mixta completa guardada y enviada'
+                ]);
+                $message = 'Selección mixta completa guardada y enviada. La solicitud está lista para aprobación final.';
+            } else {
+                // Si es parcial, mantener un estado intermedio y enviar notificación
+                $purchaseRequest->update([
+                    'pre_approval_comments' => 'Selección mixta parcial guardada - ' . $existingSelections->count() . '/' . count($purchaseItems) . ' items seleccionados'
+                ]);
+                
+                // Enviar notificación sobre selección parcial
+                $this->sendPartialSelectionNotification($purchaseRequest, $existingSelections->count(), count($purchaseItems));
+                
+                $message = 'Selección mixta parcial guardada y notificada. Progreso: ' . $existingSelections->count() . '/' . count($purchaseItems) . ' items.';
+            }
+
+            DB::commit();
+
+            return redirect()->route('approvals.show', $purchaseRequest->id)
+                           ->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Error al guardar y enviar la selección: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Enviar notificación sobre selección parcial
+     */
+    private function sendPartialSelectionNotification($purchaseRequest, $selectedItems, $totalItems)
+    {
+        try {
+            // Obtener emails de administradores o usuarios de compras
+            $adminEmails = \App\Models\User::role(['admin', 'compras'])->pluck('email')->toArray();
+            
+            foreach ($adminEmails as $email) {
+                $interceptedEmail = \App\Services\EmailTestModeService::interceptEmail($email);
+                
+                // Enviar email simple de notificación
+                \Mail::raw(
+                    "Se ha guardado una selección mixta parcial para la solicitud #{$purchaseRequest->request_number}.\n\n" .
+                    "Progreso: {$selectedItems}/{$totalItems} items seleccionados\n" .
+                    "Solicitante: {$purchaseRequest->requester}\n" .
+                    "Área: {$purchaseRequest->section_area}\n\n" .
+                    "Puede revisar y completar la selección en: " . route('quotation-selections.show', $purchaseRequest->id),
+                    function ($message) use ($interceptedEmail, $purchaseRequest) {
+                        $message->to($interceptedEmail)
+                                ->subject("Selección Mixta Parcial - Solicitud #{$purchaseRequest->request_number}");
+                    }
+                );
+            }
+            
+            \Log::info("Notificación de selección parcial enviada para solicitud #{$purchaseRequest->id}");
+            
+        } catch (\Exception $e) {
+            \Log::error("Error al enviar notificación de selección parcial: " . $e->getMessage());
+        }
+    }
 }

@@ -152,8 +152,7 @@ $(document).ready(function() {
                 quotation_id: selectedQuotation,
                 unit_price: unitPrice,
                 justification: justification
-            },
-            success: function(response) {
+            },                success: function(response) {
                 if (response.success) {
                     // Actualizar la fila en la tabla
                     updateItemRow(itemIndex, response.data);
@@ -166,6 +165,13 @@ $(document).ready(function() {
                     
                     // Actualizar el total general
                     updateGrandTotal(response.grand_total);
+                    
+                    // Actualizar botones dinámicamente usando el nuevo manager
+                    if (window.quotationButtonManager) {
+                        window.quotationButtonManager.forceUpdate();
+                    } else if (typeof window.updateSelectionButtons === 'function') {
+                        window.updateSelectionButtons();
+                    }
                 } else {
                     showAlert('danger', response.message || 'Error al guardar la selección');
                 }
@@ -200,6 +206,13 @@ $(document).ready(function() {
                         removeItemSelection(itemIndex);
                         showAlert('success', response.message || 'Selección eliminada correctamente');
                         updateGrandTotal(response.grand_total);
+                        
+                        // Actualizar botones dinámicamente usando el nuevo manager
+                        if (window.quotationButtonManager) {
+                            window.quotationButtonManager.forceUpdate();
+                        } else if (typeof window.updateSelectionButtons === 'function') {
+                            window.updateSelectionButtons();
+                        }
                     } else {
                         showAlert('danger', response.message || 'Error al eliminar la selección');
                     }

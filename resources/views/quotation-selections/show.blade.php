@@ -26,6 +26,7 @@
 <div class="container-fluid">
     <!-- Campo oculto para JavaScript -->
     <input type="hidden" name="purchase_request_id" value="{{ $purchaseRequest->id }}">
+    <input type="hidden" id="total-items-count" value="{{ count($purchaseItems) }}">
     
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show">
@@ -244,27 +245,95 @@
             </div>
 
             @if($existingSelections->count() === count($purchaseItems))
-                <div class="alert alert-success mt-3">
+                <div class="alert alert-success mt-3" id="complete-selection-alert" style="display: none;">
                     <i class="fas fa-check-circle mr-2"></i>
                     <strong>Selección completa.</strong> Todos los items tienen un proveedor asignado.
                 </div>
                 
-                <div class="text-center mt-3">
+                <div class="text-center mt-3" id="complete-buttons" style="display: none;">
                     <form action="{{ route('quotation-selections.finalize', $purchaseRequest) }}" method="POST" style="display: inline;">
                         @csrf
-                        <button type="submit" class="btn btn-success btn-lg">
+                        <button type="submit" class="btn btn-success btn-lg mr-3">
                             <i class="fas fa-check-double mr-2"></i>Finalizar Selección Mixta
+                        </button>
+                    </form>
+                    
+                    <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save mr-2"></i>Guardar y Enviar
+                        </button>
+                    </form>
+                </div>
+            @elseif($existingSelections->count() > 0)
+                <div class="alert alert-info mt-3" id="partial-selection-alert" style="display: none;">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Selección parcial.</strong> 
+                    Ha seleccionado <span id="selected-count">{{ $existingSelections->count() }}</span>/<span id="total-count">{{ count($purchaseItems) }}</span> items.
+                    Puede guardar y enviar el progreso actual o continuar seleccionando.
+                </div>
+                
+                <div class="text-center mt-3" id="partial-buttons" style="display: none;">
+                    <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save mr-2"></i>Guardar y Enviar
                         </button>
                     </form>
                 </div>
             @else
-                <div class="alert alert-warning mt-3">
+                <div class="alert alert-warning mt-3" id="no-selection-alert" style="display: none;">
                     <i class="fas fa-exclamation-triangle mr-2"></i>
                     <strong>Selección incompleta.</strong> 
                     Debe seleccionar un proveedor para todos los items antes de finalizar.
-                    Progreso: {{ $existingSelections->count() }}/{{ count($purchaseItems) }} items
+                    Progreso: <span id="progress-count">{{ $existingSelections->count() }}</span>/<span id="progress-total">{{ count($purchaseItems) }}</span> items
                 </div>
             @endif
+
+            <!-- Contenedores dinámicos que se mostrarán/ocultarán con JavaScript -->
+            <div id="dynamic-complete-alert" class="alert alert-success mt-3" style="display: none;">
+                <i class="fas fa-check-circle mr-2"></i>
+                <strong>Selección completa.</strong> Todos los items tienen un proveedor asignado.
+            </div>
+            
+            <div id="dynamic-complete-buttons" class="text-center mt-3" style="display: none;">
+                <form action="{{ route('quotation-selections.finalize', $purchaseRequest) }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-success btn-lg mr-3">
+                        <i class="fas fa-check-double mr-2"></i>Finalizar Selección Mixta
+                    </button>
+                </form>
+                
+                <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save mr-2"></i>Guardar y Enviar
+                    </button>
+                </form>
+            </div>
+
+            <div id="dynamic-partial-alert" class="alert alert-info mt-3" style="display: none;">
+                <i class="fas fa-info-circle mr-2"></i>
+                <strong>Selección parcial.</strong> 
+                Ha seleccionado <span id="dynamic-selected-count">0</span>/<span id="dynamic-total-count">{{ count($purchaseItems) }}</span> items.
+                Puede guardar y enviar el progreso actual o continuar seleccionando.
+            </div>
+            
+            <div id="dynamic-partial-buttons" class="text-center mt-3" style="display: none;">
+                <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save mr-2"></i>Guardar y Enviar
+                    </button>
+                </form>
+            </div>
+
+            <div id="dynamic-no-selection-alert" class="alert alert-warning mt-3" style="display: none;">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                <strong>Sin selecciones.</strong> 
+                Debe seleccionar al menos un proveedor para comenzar.
+                Progreso: <span id="dynamic-progress-count">0</span>/<span id="dynamic-progress-total">{{ count($purchaseItems) }}</span> items
+            </div>
         </div>
     </div>
 </div>
@@ -439,4 +508,46 @@
 
 <!-- JavaScript externo -->
 <script src="{{ asset('js/quotation-chart.js') }}"></script>
+<script src="{{ asset('js/quotation-buttons.js') }}"></script>
+
+<!-- JavaScript para configuración inicial -->
+<script>
+$(document).ready(function() {
+    // Configurar elementos iniciales si es necesario
+    console.log('Vista de selección mixta cargada');
+    console.log('Total items desde input:', $('#total-items-count').val());
+    console.log('Selecciones actuales al cargar:', $('.selected-provider').length);
+    
+    // Forzar una actualización después de que todo esté cargado
+    setTimeout(function() {
+        if (window.quotationButtonManager) {
+            console.log('QuotationButtonManager encontrado, forzando actualización');
+            window.quotationButtonManager.forceUpdate();
+        } else {
+            console.warn('QuotationButtonManager no encontrado');
+        }
+    }, 500);
+    
+    // Debug: Agregar un botón temporal de prueba (eliminar en producción)
+    if (console && typeof console.log === 'function') {
+        window.debugButtons = function() {
+            console.log('=== DEBUG BUTTONS ===');
+            console.log('Total items:', $('#total-items-count').val());
+            console.log('Selecciones actuales:', $('.selected-provider').length);
+            console.log('Elementos dinámicos visibles:');
+            console.log('- Complete alert:', $('#dynamic-complete-alert').is(':visible'));
+            console.log('- Complete buttons:', $('#dynamic-complete-buttons').is(':visible'));
+            console.log('- Partial alert:', $('#dynamic-partial-alert').is(':visible'));
+            console.log('- Partial buttons:', $('#dynamic-partial-buttons').is(':visible'));
+            console.log('- No selection alert:', $('#dynamic-no-selection-alert').is(':visible'));
+            
+            if (window.quotationButtonManager) {
+                window.quotationButtonManager.forceUpdate();
+            }
+        };
+        
+        console.log('Debug función creada. Ejecuta debugButtons() en la consola para verificar el estado.');
+    }
+});
+</script>
 @stop
