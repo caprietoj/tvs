@@ -118,7 +118,7 @@
                         @endif
                     </div>
                 </div>
-            </div>
+                </div>
         </div>
         @endif
 
@@ -140,7 +140,7 @@
                                     <th width="40%" class="text-center">Evaluación Supervisor</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody> 
                                 @foreach($section['questions'] as $questionKey => $question)
                                 <tr>
                                     <td>{{ $question }}</td>
@@ -159,7 +159,7 @@
                                                     {{ old("objectives_section_supervisor.{$sectionKey}.{$questionKey}") == $i ? 'selected' : '' }}>
                                                     {{ $i }}
                                                 </option>
-                                            @endfor
+                                            @endfor 
                                         </select>
                                     </td>
                                 </tr>

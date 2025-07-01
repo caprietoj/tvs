@@ -142,15 +142,7 @@
                                 </td>
                                 <td>
                                     @if($evaluation->performance_level)
-                                        @if($evaluation->performance_level === 'Superior')
-                                            <span class="badge badge-success">{{ $evaluation->performance_level }}</span>
-                                        @elseif($evaluation->performance_level === 'Alto')
-                                            <span class="badge badge-info">{{ $evaluation->performance_level }}</span>
-                                        @elseif($evaluation->performance_level === 'Básico')
-                                            <span class="badge badge-warning">{{ $evaluation->performance_level }}</span>
-                                        @else
-                                            <span class="badge badge-danger">{{ $evaluation->performance_level }}</span>
-                                        @endif
+                                        {{ $evaluation->performance_level }}
                                     @else
                                         -
                                     @endif
