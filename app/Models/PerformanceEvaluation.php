@@ -175,18 +175,20 @@ class PerformanceEvaluation extends Model
     }
 
     /**
-     * Obtener el nivel de desempeño basado en el puntaje
+     * Obtener el nivel de desempeño basado en el puntaje (escala 1-5)
      */
     public function getPerformanceLevel(float $score): string
     {
-        if ($score >= 85) {
-            return 'Superior';
-        } elseif ($score >= 70) {
-            return 'Alto';
-        } elseif ($score >= 30) {
-            return 'Básico';
+        if ($score >= 4.5) {
+            return 'Supera las expectativas de desempeño';
+        } elseif ($score >= 3.5) {
+            return 'Buen desempeño con caracteristicas proactivas';
+        } elseif ($score >= 2.5) {
+            return 'Cumple con lo establecido sin proactividad';
+        } elseif ($score >= 1.5) {
+            return 'Aceptable';
         } else {
-            return 'Bajo';
+            return 'No cumple';
         }
     }
 

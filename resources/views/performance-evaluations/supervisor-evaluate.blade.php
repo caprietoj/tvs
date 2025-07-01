@@ -172,7 +172,7 @@
 
                 <div class="alert alert-info">
                     <strong>Escala de Puntuación:</strong><br>
-                    <strong>1:</strong> No cumple - <strong>2:</strong> Cumple parcialmente - <strong>3:</strong> Cumple - <strong>4:</strong> Supera - <strong>5:</strong> Supera ampliamente
+                    <strong>1:</strong> No cumple - <strong>2:</strong> Aceptable - <strong>3:</strong> Cumple con lo establecido sin proactividad - <strong>4:</strong> Buen desempeño con caracteristicas proactivas - <strong>5:</strong> Supera las expectativas de desempeño
                 </div>
             </div>
         </div>

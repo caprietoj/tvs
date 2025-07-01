@@ -160,13 +160,15 @@ class PerformanceEvaluationsSummarySheet implements FromCollection, WithHeadings
     private function getPerformanceLevel($score)
     {
         if ($score >= 4.5) {
-            return 'Excelente';
+            return 'Supera las expectativas de desempeño';
         } elseif ($score >= 3.5) {
-            return 'Bueno';
+            return 'Buen desempeño con caracteristicas proactivas';
         } elseif ($score >= 2.5) {
-            return 'Satisfactorio';
+            return 'Cumple con lo establecido sin proactividad';
+        } elseif ($score >= 1.5) {
+            return 'Aceptable';
         } elseif ($score > 0) {
-            return 'Necesita Mejora';
+            return 'No cumple';
         } else {
             return 'Sin evaluar';
         }
