@@ -259,7 +259,8 @@ class PurchaseRequestController extends Controller
     */
     public function createServicesForm()
     {
-    return view('purchase-requests.create-services');
+        $providers = \App\Models\Provider::orderBy('nombre')->get();
+        return view('purchase-requests.create-services', compact('providers'));
     }
 
     /**
@@ -399,6 +400,7 @@ class PurchaseRequestController extends Controller
 
         // Agregar validación adicional para servicios sin cotización
         if ($request->service_type === 'no_quotation') {
+            $rules['provider_id'] = 'nullable|exists:proveedors,id';
             $rules['provider_name'] = 'required|string|max:255';
             $rules['provider_nit'] = 'nullable|string|max:255';
             $rules['provider_contact'] = 'nullable|string|max:255';
@@ -432,6 +434,7 @@ class PurchaseRequestController extends Controller
 
         // Agregar campos del proveedor si es servicio sin cotización
         if ($request->service_type === 'no_quotation') {
+            $data['provider_id'] = $request->provider_id;
             $data['provider_name'] = $request->provider_name;
             $data['provider_nit'] = $request->provider_nit;
             $data['provider_contact'] = $request->provider_contact;
@@ -663,7 +666,8 @@ class PurchaseRequestController extends Controller
             return view('purchase-requests.edit-purchase', compact('purchaseRequest'));
         } elseif ($purchaseRequest->type === 'services') {
             // Si es una solicitud de servicios
-            return view('purchase-requests.edit-services', compact('purchaseRequest'));
+            $providers = \App\Models\Provider::orderBy('nombre')->get();
+            return view('purchase-requests.edit-services', compact('purchaseRequest', 'providers'));
         } elseif ($purchaseRequest->isCopiesRequest()) {
             // Si es una solicitud de fotocopias
             return view('purchase-requests.edit-copies', compact('purchaseRequest'));
@@ -924,6 +928,7 @@ class PurchaseRequestController extends Controller
 
         // Agregar validación adicional para servicios sin cotización
         if ($request->service_type === 'no_quotation') {
+            $rules['provider_id'] = 'nullable|exists:proveedors,id';
             $rules['provider_name'] = 'required|string|max:255';
             $rules['provider_nit'] = 'nullable|string|max:255';
             $rules['provider_contact'] = 'nullable|string|max:255';

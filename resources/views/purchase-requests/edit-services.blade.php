@@ -106,22 +106,34 @@
                                 <div class="card-body">
                                     <div class="form-row">
                                         <div class="form-group col-md-6">
-                                            <label for="provider_name">NOMBRE DEL PROVEEDOR <span class="text-danger">*</span>:</label>
-                                            <input type="text" class="form-control" id="provider_name" name="provider_name" value="{{ old('provider_name', $purchaseRequest->provider_name) }}">
+                                            <label for="provider_id">NOMBRE DEL PROVEEDOR <span class="text-danger">*</span>:</label>
+                                            <select class="form-control" id="provider_id" name="provider_id">
+                                                <option value="">Seleccione un proveedor...</option>
+                                                @foreach($providers as $provider)
+                                                    <option value="{{ $provider->id }}" 
+                                                            data-nit="{{ $provider->nit }}"
+                                                            data-contact="{{ $provider->telefono }}"
+                                                            data-email="{{ $provider->email }}"
+                                                            {{ (old('provider_id', $purchaseRequest->provider_id) == $provider->id) ? 'selected' : '' }}>
+                                                        {{ $provider->nombre }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <input type="hidden" name="provider_name" id="provider_name_hidden" value="{{ old('provider_name', $purchaseRequest->provider_name) }}">
                                         </div>
                                         <div class="form-group col-md-6">
                                             <label for="provider_nit">NIT DEL PROVEEDOR:</label>
-                                            <input type="text" class="form-control" id="provider_nit" name="provider_nit" value="{{ old('provider_nit', $purchaseRequest->provider_nit) }}">
+                                            <input type="text" class="form-control" id="provider_nit" name="provider_nit" value="{{ old('provider_nit', $purchaseRequest->provider_nit) }}" readonly>
                                         </div>
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group col-md-6">
                                             <label for="provider_contact">CONTACTO:</label>
-                                            <input type="text" class="form-control" id="provider_contact" name="provider_contact" value="{{ old('provider_contact', $purchaseRequest->provider_contact) }}">
+                                            <input type="text" class="form-control" id="provider_contact" name="provider_contact" value="{{ old('provider_contact', $purchaseRequest->provider_contact) }}" readonly>
                                         </div>
                                         <div class="form-group col-md-6">
                                             <label for="provider_email">EMAIL:</label>
-                                            <input type="email" class="form-control" id="provider_email" name="provider_email" value="{{ old('provider_email', $purchaseRequest->provider_email) }}">
+                                            <input type="email" class="form-control" id="provider_email" name="provider_email" value="{{ old('provider_email', $purchaseRequest->provider_email) }}" readonly>
                                         </div>
                                     </div>
                                     <div class="form-group">
@@ -423,6 +435,30 @@ $(document).ready(function() {
         
         return isValid;
     });
+
+    // Manejo de selección de proveedor
+    $('#provider_id').change(function() {
+        const selectedOption = $(this).find('option:selected');
+        
+        if (selectedOption.val()) {
+            // Llenar los campos con la información del proveedor seleccionado
+            $('#provider_nit').val(selectedOption.data('nit') || '');
+            $('#provider_contact').val(selectedOption.data('contact') || '');
+            $('#provider_email').val(selectedOption.data('email') || '');
+            $('#provider_name_hidden').val(selectedOption.text());
+        } else {
+            // Limpiar los campos si no hay selección
+            $('#provider_nit').val('');
+            $('#provider_contact').val('');
+            $('#provider_email').val('');
+            $('#provider_name_hidden').val('');
+        }
+    });
+
+    // Trigger del cambio si hay un valor preseleccionado (para casos de old input)
+    if ($('#provider_id').val()) {
+        $('#provider_id').trigger('change');
+    }
 
     // Inicializar estado de los botones
     updateDeleteButtons();

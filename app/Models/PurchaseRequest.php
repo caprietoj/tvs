@@ -67,6 +67,7 @@ class PurchaseRequest extends Model
         'general_observations',
         // Campos para servicios sin cotización
         'service_type',
+        'provider_id',
         'provider_name',
         'provider_nit',
         'provider_contact',
@@ -129,11 +130,11 @@ class PurchaseRequest extends Model
     }
 
     /**
-     * Obtener el usuario que envió para pre-aprobación.
+     * Obtener el proveedor asociado (para servicios sin cotización).
      */
-    public function preapprovalSender()
+    public function provider()
     {
-        return $this->belongsTo(User::class, 'preapproval_sent_by');
+        return $this->belongsTo(Provider::class);
     }
 
     /**
