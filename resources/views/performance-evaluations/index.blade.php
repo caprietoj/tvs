@@ -6,7 +6,7 @@
     <div class="d-flex justify-content-between">
         <h1>Evaluaciones de Desempeño</h1>
         <div>
-            @if(auth()->user()->hasRole('admin') || auth()->user()->can('view-all-performance-evaluations') || auth()->user()->can('create-performance-evaluations'))
+            @if(auth()->user()->hasRole('admin') || auth()->user()->can('view-all-performance-evaluations') || auth()->user()->can('create-performance-evaluations') || auth()->user()->can('export-performance-evaluations'))
                 <a href="{{ route('performance-evaluations.export', request()->query()) }}" class="btn btn-success mr-2">
                     <i class="fas fa-file-excel"></i> Exportar a Excel
                 </a>

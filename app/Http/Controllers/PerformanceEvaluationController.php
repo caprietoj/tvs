@@ -59,7 +59,7 @@ class PerformanceEvaluationController extends Controller
         $user = Auth::user();
         
         // Verificar permisos
-        if (!$user->hasRole('admin') && !$user->can('view-all-performance-evaluations') && !$user->can('create-performance-evaluations')) {
+        if (!$user->hasRole('admin') && !$user->can('view-all-performance-evaluations') && !$user->can('create-performance-evaluations') && !$user->can('export-performance-evaluations')) {
             abort(403, 'No tienes permisos para exportar evaluaciones');
         }
         
@@ -76,11 +76,19 @@ class PerformanceEvaluationController extends Controller
         if (!$user->hasRole('admin') && !$user->can('create-performance-evaluations')) {
             abort(403, 'No tienes permisos para crear evaluaciones');
         }
-          $employees = User::orderBy('name')->get();
+        
+        // Obtener solo empleados de departamentos específicos, organizados por departamento
+        $employeesByDepartment = User::select('id', 'name', 'email', 'department')
+            ->whereIn('department', ['Mantenimiento', 'Servicios Generales'])
+            ->orderBy('department')
+            ->orderBy('name')
+            ->get()
+            ->groupBy('department');
+        
         // Usar todos los usuarios como posibles supervisores en lugar de filtrar por rol
         $supervisors = User::orderBy('name')->get();
         
-        return view('performance-evaluations.create', compact('employees', 'supervisors'));
+        return view('performance-evaluations.create', compact('employeesByDepartment', 'supervisors'));
     }
 
     /**
@@ -94,7 +102,6 @@ class PerformanceEvaluationController extends Controller
         
         $validator = Validator::make($request->all(), [
             'user_ids' => 'required|array|min:1',
-            'user_ids.*' => 'required|exists:users,id',
             'evaluator_id' => 'nullable|exists:users,id',
             'evaluation_type' => 'required|in:periodo_prueba,periodica',
             'evaluation_period_start' => 'required|date',
@@ -107,10 +114,33 @@ class PerformanceEvaluationController extends Controller
                            ->withInput();
         }
         
+        // Convertir departamentos seleccionados a IDs de usuarios
+        $userIds = [];
+        foreach ($request->user_ids as $selection) {
+            // Verificar si es un departamento o un ID de usuario
+            if (in_array($selection, ['Mantenimiento', 'Servicios Generales'])) {
+                // Es un departamento, obtener todos los usuarios de ese departamento
+                $departmentUsers = User::where('department', $selection)->pluck('id')->toArray();
+                $userIds = array_merge($userIds, $departmentUsers);
+            } elseif (is_numeric($selection)) {
+                // Es un ID de usuario
+                $userIds[] = $selection;
+            }
+        }
+        
+        // Eliminar duplicados
+        $userIds = array_unique($userIds);
+        
+        if (empty($userIds)) {
+            return redirect()->back()
+                           ->withErrors(['user_ids' => 'No se encontraron usuarios válidos para evaluar'])
+                           ->withInput();
+        }
+        
         $createdEvaluations = [];
         $duplicateEmployees = [];
         
-        foreach ($request->user_ids as $userId) {
+        foreach ($userIds as $userId) {
             // Verificar si ya existe una evaluación para este empleado en el mismo período
             $existingEvaluation = PerformanceEvaluation::where('user_id', $userId)
                 ->where('evaluation_type', $request->evaluation_type)

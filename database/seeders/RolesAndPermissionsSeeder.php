@@ -122,7 +122,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'holidays.edit',
             'holidays.delete',
             'solicitudes_compra',
-            'fotocopias_list'
+            'fotocopias_list',
+            // Permisos para evaluaciones de desempeño
+            'create-performance-evaluations',
+            'view-all-performance-evaluations',
+            'export-performance-evaluations'
         ];
        
         foreach ($ticketPermissions as $perm) {
@@ -306,6 +310,10 @@ class RolesAndPermissionsSeeder extends Seeder
             Permission::firstOrCreate(['name' => 'view.reservas']),
             Permission::firstOrCreate(['name' => 'view.events']),
             Permission::firstOrCreate(['name' => 'view.salidas']),
+            // Permisos para evaluaciones de desempeño
+            Permission::firstOrCreate(['name' => 'create-performance-evaluations']),
+            Permission::firstOrCreate(['name' => 'view-all-performance-evaluations']),
+            Permission::firstOrCreate(['name' => 'export-performance-evaluations']),
         ]);
 
          // Crear el rol "profesor"

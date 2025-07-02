@@ -74,31 +74,32 @@
                 <div class="row">
                     <div class="col-md-6">                        <div class="form-group">
                             <label for="user_ids" class="font-weight-bold">
-                                <i class="fas fa-users text-primary"></i> Empleados a Evaluar 
+                                <i class="fas fa-building text-primary"></i> Departamentos a Evaluar 
                                 <span class="text-danger">*</span>
                             </label>
                             <select name="user_ids[]" id="user_ids" class="form-control select2-multiple @error('user_ids') is-invalid @enderror" multiple required>
-                                @foreach($employees as $employee)
-                                    <option value="{{ $employee->id }}" 
-                                            {{ in_array($employee->id, old('user_ids', [])) ? 'selected' : '' }}
-                                            data-email="{{ $employee->email }}">
-                                        {{ $employee->name }}
-                                    </option>
-                                @endforeach                            </select>
+                                @foreach($employeesByDepartment as $department => $employees)
+                                    @if($department)
+                                        <option value="{{ $department }}" 
+                                                {{ in_array($department, old('user_ids', [])) ? 'selected' : '' }}
+                                                data-department="{{ $department }}"
+                                                data-employees="{{ $employees->pluck('id')->implode(',') }}">
+                                            {{ $department }}
+                                        </option>
+                                    @endif
+                                @endforeach
+                            </select>
                             
                             <!-- Botones de acción rápida -->
                             <div class="mt-2">
                                 <button type="button" class="btn btn-sm btn-outline-primary" id="select-all-employees">
-                                    <i class="fas fa-check-square"></i> Seleccionar Todos
+                                    <i class="fas fa-check-square"></i> Seleccionar Todos los Departamentos
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-employees">
                                     <i class="fas fa-times"></i> Limpiar Selección
                                 </button>
                             </div>
                             
-                            <small class="form-text text-muted">
-                                <i class="fas fa-info-circle"></i> Seleccione uno o más empleados que serán evaluados (se creará una evaluación para cada uno)
-                            </small>
                             @error('user_ids')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -570,10 +571,10 @@ $(document).ready(function() {
         }
     });
     
-    // Initialize Select2 for multiple employees
+    // Initialize Select2 for multiple departments
     $('.select2-multiple').select2({
         theme: 'bootstrap',
-        placeholder: '🔍 Buscar y seleccionar empleados...',
+        placeholder: '🔍 Buscar y seleccionar departamentos...',
         allowClear: true,
         width: '100%',
         closeOnSelect: false,
@@ -581,11 +582,7 @@ $(document).ready(function() {
             if (!option.id) {
                 return option.text;
             }
-            var email = $(option.element).data('email');
-            if (email) {
-                return $('<div><div>' + option.text + '</div><small class="text-muted">' + email + '</small></div>');
-            }
-            return option.text;
+            return $('<div><i class="fas fa-building"></i> ' + option.text + '</div>');
         },
         templateSelection: function(option) {
             return option.text;
@@ -598,36 +595,34 @@ $(document).ready(function() {
         var evaluatorSelect = $('#evaluator_id');
         var selectedInfo = $('#selected-info');
         
-        var employeesSelected = employeeSelect.val() || [];
+        var departmentsSelected = employeeSelect.val() || [];
         var evaluatorSelected = evaluatorSelect.val();
         
-        if (employeesSelected.length > 0 || evaluatorSelected) {
+        if (departmentsSelected.length > 0 || evaluatorSelected) {
             selectedInfo.show();
             
-            // Update employees info
-            $('#selected-employees-count').text(employeesSelected.length);
+            // Update departments info
+            $('#selected-employees-count').text(departmentsSelected.length);
             
             var employeesList = $('#selected-employees-list');
             employeesList.empty();
             
-            if (employeesSelected.length > 0) {
-                employeesSelected.forEach(function(employeeId) {
-                    var employeeOption = employeeSelect.find('option[value="' + employeeId + '"]');
-                    var employeeName = employeeOption.text();
-                    var employeeEmail = employeeOption.data('email');
+            if (departmentsSelected.length > 0) {
+                departmentsSelected.forEach(function(department) {
+                    var departmentOption = employeeSelect.find('option[value="' + department + '"]');
+                    var departmentName = departmentOption.text();
                     
-                    var employeeItem = $('<div class="selected-employee-item">' + 
-                                       '<i class="fas fa-user"></i> ' + employeeName + 
-                                       '<br><small>' + (employeeEmail || '') + '</small>' +
+                    var departmentItem = $('<div class="selected-employee-item">' + 
+                                       '<i class="fas fa-building"></i> ' + departmentName + 
                                        '</div>');
-                    employeesList.append(employeeItem);
+                    employeesList.append(departmentItem);
                 });
                 
                 // Add evaluation summary
                 var summaryHtml = '<div class="evaluation-summary mt-3">' +
                                 '<h6><i class="fas fa-clipboard-list"></i> Resumen de Evaluaciones a Crear:</h6>' +
-                                '<p><strong>' + employeesSelected.length + '</strong> evaluación(es) se crearán para los empleados seleccionados.</p>' +
-                                '<p><small class="text-muted">Cada empleado recibirá una evaluación individual que podrá completar independientemente.</small></p>' +
+                                '<p><strong>' + departmentsSelected.length + '</strong> departamento(s) seleccionado(s).</p>' +
+                                '<p><small class="text-muted">Se crearán evaluaciones para todos los empleados de los departamentos seleccionados.</small></p>' +
                                 '</div>';
                 employeesList.append(summaryHtml);
             }
@@ -648,10 +643,10 @@ $(document).ready(function() {
         }
         
         // Update button text
-        updateButtonText(employeesSelected.length);
+        updateButtonText(departmentsSelected.length);
     }
     
-    // Update button text based on number of selected employees
+    // Update button text based on number of selected departments
     function updateButtonText(count) {
         var btnText = $('#btn-text');
         var createBtn = $('#create-evaluations-btn');
@@ -660,17 +655,17 @@ $(document).ready(function() {
             btnText.text('Crear Evaluación');
             createBtn.prop('disabled', true);
         } else if (count === 1) {
-            btnText.text('Crear Evaluación');
+            btnText.text('Crear Evaluaciones del Departamento');
             createBtn.prop('disabled', false);
         } else {
-            btnText.text('Crear ' + count + ' Evaluaciones');
+            btnText.text('Crear Evaluaciones de ' + count + ' Departamentos');
             createBtn.prop('disabled', false);
         }
     }
     
     $('#user_ids, #evaluator_id').on('change', updateSelectedInfo);
     
-    // Botones de acción rápida para empleados
+    // Botones de acción rápida para departamentos
     $('#select-all-employees').on('click', function() {
         var employeeSelect = $('#user_ids');
         var allOptions = employeeSelect.find('option').map(function() {
@@ -681,12 +676,12 @@ $(document).ready(function() {
         });
         
         employeeSelect.val(allOptions).trigger('change');
-        showToast('success', 'Todos los empleados han sido seleccionados');
+        showToast('success', 'Todos los departamentos han sido seleccionados');
     });
     
     $('#clear-employees').on('click', function() {
         $('#user_ids').val(null).trigger('change');
-        showToast('info', 'Selección de empleados limpiada');
+        showToast('info', 'Selección de departamentos limpiada');
     });
                 var evaluatorOption = evaluatorSelect.find('option:selected');
                 var evaluatorName = evaluatorOption.text();

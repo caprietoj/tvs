@@ -24,6 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'cargo',
+        'department',
         'avatar',
         'active',
         'first_login'
