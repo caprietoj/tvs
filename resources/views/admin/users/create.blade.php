@@ -62,6 +62,32 @@
                                 </div>
 
                                 <div class="form-group">
+                                    <label for="department">Departamento</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-building"></i></span>
+                                        </div>
+                                        <select id="department" name="department" class="form-control @error('department') is-invalid @enderror">
+                                            <option value="">-- Seleccionar Departamento --</option>
+                                            <option value="Mantenimiento" {{ old('department') == 'Mantenimiento' ? 'selected' : '' }}>Mantenimiento</option>
+                                            <option value="Servicios Generales" {{ old('department') == 'Servicios Generales' ? 'selected' : '' }}>Servicios Generales</option>
+                                            <option value="Sistemas" {{ old('department') == 'Sistemas' ? 'selected' : '' }}>Sistemas</option>
+                                            <option value="Almacen" {{ old('department') == 'Almacen' ? 'selected' : '' }}>Almacén</option>
+                                            <option value="Enfermeria" {{ old('department') == 'Enfermeria' ? 'selected' : '' }}>Enfermería</option>
+                                            <option value="Docentes" {{ old('department') == 'Docentes' ? 'selected' : '' }}>Docentes</option>
+                                            <option value="EMC" {{ old('department') == 'EMC' ? 'selected' : '' }}>EMC</option>
+                                            <option value="Biblioteca" {{ old('department') == 'Biblioteca' ? 'selected' : '' }}>Biblioteca</option>
+                                            <option value="Contabilidad" {{ old('department') == 'Contabilidad' ? 'selected' : '' }}>Contabilidad</option>
+                                            <option value="Asistentes" {{ old('department') == 'Asistentes' ? 'selected' : '' }}>Asistentes</option>
+                                        </select>
+                                        <div class="invalid-feedback" id="department-error"></div>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle"></i> El departamento es opcional y se utiliza para las evaluaciones de desempeño.
+                                    </small>
+                                </div>
+
+                                <div class="form-group">
                                     <label for="password">Contraseña</label>
                                     <div class="input-group">
                                         <div class="input-group-prepend">

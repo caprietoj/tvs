@@ -67,6 +67,35 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="department" class="form-label">Departamento</label>
+                        <select name="department" id="department" class="form-control @error('department') is-invalid @enderror">
+                            <option value="">Seleccione un departamento</option>
+                            @php
+                                $departments = [
+                                    'Mantenimiento',
+                                    'Servicios Generales',
+                                    'Sistemas',
+                                    'Almacén',
+                                    'Enfermería',
+                                    'Docentes',
+                                    'EMC',
+                                    'Biblioteca',
+                                    'Contabilidad',
+                                    'Asistentes'
+                                ];
+                            @endphp
+                            @foreach($departments as $department_option)
+                                <option value="{{ $department_option }}" {{ old('department', $user->department) == $department_option ? 'selected' : '' }}>
+                                    {{ $department_option }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('department')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
                         <label for="password" class="form-label">Nueva Contraseña</label>
                         <div class="input-group">
                             <input type="password" name="password" id="password" 

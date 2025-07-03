@@ -33,12 +33,14 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'roles' => 'required|array',
+            'department' => 'nullable|string|max:255',
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'department' => $request->department,
             'first_login' => true,
         ]);
 
@@ -67,7 +69,8 @@ class UserController extends Controller
             'roles' => 'required|array',
             'roles.*' => 'exists:roles,id',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'active' => 'required|boolean'
+            'active' => 'required|boolean',
+            'department' => 'nullable|string|max:255',
         ]);
 
         $data = $request->except(['password', 'avatar']);
