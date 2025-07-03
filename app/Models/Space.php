@@ -16,6 +16,7 @@ class Space extends Model
         'image_path',
         'active',
         'is_library',
+        'electronic_resources',
     ];
 
     /**

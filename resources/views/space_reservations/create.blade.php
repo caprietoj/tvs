@@ -120,6 +120,30 @@
                             </div>
                         </div>
                         
+                        <!-- Sección para recursos electrónicos (solo visible para bibliotecas) -->
+                        <div id="electronic-resources-section" class="form-group d-none">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-laptop"></i> Recursos Electrónicos Disponibles
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="electronic-resources-content">
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle"></i> Cargando recursos electrónicos...
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="form-text text-danger" id="electronic-resources-validation-message">
+                                            <i class="fas fa-exclamation-circle"></i> Debe seleccionar al menos un recurso electrónico.
+                                        </small>
+                                    </div>
+                                    <input type="hidden" name="selected_electronic_resources" id="selected_electronic_resources" value="" required>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- Sección de implementos para préstamo -->
                         <div id="space-items-section" class="form-group d-none">
                             <label>Implementos para Préstamo</label>
@@ -1121,11 +1145,83 @@
                     
                     // Mostrar sección de bibliotecóloga y habilidades solo si el espacio contiene la palabra "biblioteca"
                     const librarianAssistanceSection = document.getElementById('librarian-assistance-section');
+                    const electronicResourcesSection = document.getElementById('electronic-resources-section');
+                    const electronicResourcesContent = document.getElementById('electronic-resources-content');
                     const isLibrary = space.name.toLowerCase().includes('biblioteca');
+                    
                     if (isLibrary) {
                         librarianAssistanceSection.classList.remove('d-none');
+                        
+                        // Mostrar recursos electrónicos si están disponibles
+                        if (space.electronic_resources) {
+                            electronicResourcesSection.classList.remove('d-none');
+                            
+                            // Formatear los recursos electrónicos como una lista de checkboxes
+                            const resourcesList = space.electronic_resources.split('\n').filter(item => item.trim() !== '');
+                            
+                            if (resourcesList.length > 0) {
+                                let html = '<div class="form-group">';
+                                html += '<label>Seleccione los recursos electrónicos que desea utilizar:</label>';
+                                resourcesList.forEach((resource, index) => {
+                                    html += `
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input electronic-resource-checkbox" 
+                                               id="electronic_resource_${index}" value="${resource}">
+                                        <label class="custom-control-label" for="electronic_resource_${index}">
+                                            <i class="fas fa-laptop-code text-success mr-2"></i>${resource}
+                                        </label>
+                                    </div>`;
+                                });
+                                html += '</div>';
+                                electronicResourcesContent.innerHTML = html;
+                                
+                                // Agregar event listeners a los checkboxes
+                                const checkboxes = document.querySelectorAll('.electronic-resource-checkbox');
+                                const selectedResourcesInput = document.getElementById('selected_electronic_resources');
+                                
+                                checkboxes.forEach(checkbox => {
+                                    checkbox.addEventListener('change', function() {
+                                        // Recopilar todos los recursos seleccionados
+                                        const selectedResources = [];
+                                        checkboxes.forEach(cb => {
+                                            if (cb.checked) {
+                                                selectedResources.push(cb.value);
+                                            }
+                                        });
+                                        
+                                        // Actualizar el campo oculto con los recursos seleccionados
+                                        selectedResourcesInput.value = selectedResources.join(',');
+                                        
+                                        // Validar que se haya seleccionado al menos uno
+                                        const form = document.querySelector('form');
+                                        const submitButton = form.querySelector('button[type="submit"]');
+                                        
+                                        if (selectedResources.length > 0) {
+                                            submitButton.disabled = false;
+                                            selectedResourcesInput.setCustomValidity('');
+                                        } else {
+                                            if (isLibrary) {
+                                                submitButton.disabled = true;
+                                                selectedResourcesInput.setCustomValidity('Debe seleccionar al menos un recurso electrónico');
+                                            }
+                                        }
+                                    });
+                                });
+                                
+                                // Inicialmente deshabilitar el botón si no hay recursos seleccionados
+                                const submitButton = document.querySelector('form button[type="submit"]');
+                                if (isLibrary) {
+                                    submitButton.disabled = true;
+                                }
+                            } else {
+                                electronicResourcesContent.innerHTML = '<div class="alert alert-warning mb-0"><i class="fas fa-info-circle"></i> No hay recursos electrónicos disponibles para este espacio.</div>';
+                            }
+                        } else {
+                            electronicResourcesSection.classList.add('d-none');
+                        }
                     } else {
                         librarianAssistanceSection.classList.add('d-none');
+                        electronicResourcesSection.classList.add('d-none');
                         // Deseleccionar el checkbox si cambia de espacio a uno que no es biblioteca
                         document.getElementById('requires_librarian').checked = false;
                     }
@@ -1277,6 +1373,28 @@
             loadSpaceDetails();
             checkAvailability();
         }
+        
+        // Validar el formulario antes de enviarlo
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const spaceId = document.getElementById('space_id').value;
+            const spaceName = document.getElementById('space_id').selectedOptions[0]?.text || '';
+            const isLibrary = spaceName.toLowerCase().includes('biblioteca');
+            const selectedResources = document.getElementById('selected_electronic_resources').value;
+            
+            if (isLibrary && !selectedResources) {
+                event.preventDefault();
+                const validationMessage = document.getElementById('electronic-resources-validation-message');
+                validationMessage.classList.add('font-weight-bold');
+                document.getElementById('electronic-resources-section').scrollIntoView({behavior: 'smooth'});
+                
+                // Mostrar mensaje de error
+                alert('Debe seleccionar al menos un recurso electrónico para este espacio de biblioteca.');
+                return false;
+            }
+            
+            return true;
+        });
     });
 </script>
 @endsection

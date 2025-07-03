@@ -84,6 +84,15 @@
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 
+                                                @can('approve-space-reservations')
+                                                <form action="{{ route('space-reservations.approve', $reservation) }}" method="POST" style="display: inline;">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-success" title="Confirmar Reserva" onclick="return confirm('¿Está seguro de que desea confirmar esta reserva?')">
+                                                        <i class="fas fa-check-circle"></i>
+                                                    </button>
+                                                </form>
+                                                @endcan
+                                                
                                                 <form action="{{ route('space-reservations.cancel', $reservation) }}" method="POST" style="display: inline;">
                                                     @csrf
                                                     @method('PATCH')

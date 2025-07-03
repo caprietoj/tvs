@@ -28,5 +28,6 @@ class DatabaseSeeder extends Seeder
         $this->call(ExternosRoleSeeder::class);
         $this->call(SkillCategorySeeder::class);
         $this->call(EmcRoleSeeder::class);
+        $this->call(SpaceReservationPermissionSeeder::class);
     }
 }

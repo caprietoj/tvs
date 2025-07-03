@@ -49,11 +49,20 @@ class SpaceController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'active' => 'nullable',
             'is_library' => 'nullable',
+            'has_electronic_resources' => 'nullable',
+            'electronic_resources' => 'nullable|string',
             'skills' => 'nullable|array',
         ]);
 
         $validated['active'] = $request->has('active') ? true : false;
         $validated['is_library'] = $request->has('is_library') ? true : false;
+        
+        // Procesar recursos electrónicos si se ha activado la opción
+        if ($request->has('has_electronic_resources')) {
+            $validated['electronic_resources'] = $request->input('electronic_resources');
+        } else {
+            $validated['electronic_resources'] = null;
+        }
         
         // Procesar la imagen si se ha subido una
         if ($request->hasFile('image')) {
@@ -148,6 +157,11 @@ class SpaceController extends Controller
 
         // Transformar los datos para incluir la información de categorías
         $spaceData = $space->toArray();
+        
+        // Asegurar que la información de recursos electrónicos esté disponible
+        if (!isset($spaceData['electronic_resources'])) {
+            $spaceData['electronic_resources'] = null;
+        }
         
         // Si hay habilidades, agregar la información de categorías y subcategorías
         if (!empty($spaceData['skills'])) {

@@ -21,7 +21,7 @@ class SpaceReservationController extends Controller
      */
     private function isSpaceAdmin()
     {
-        return Auth::user()->hasRole(['admin', 'admin-espacios']);
+        return Auth::user()->hasRole(['admin', 'admin-espacios', 'reservation_manager']);
     }
 
     /**
@@ -88,12 +88,22 @@ class SpaceReservationController extends Controller
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'purpose' => 'required|string|max:255',
+            'selected_electronic_resources' => 'nullable|string',
         ]);
         
         // Verificar si se puede realizar la reserva en esa fecha
         $canReserve = SpaceReservation::canReserveOnDate($validated['space_id'], $validated['date']);
         if (!$canReserve[0]) {
             return redirect()->back()->withInput()->with('error', 'No se puede reservar en esta fecha: ' . $canReserve[1]);
+        }
+        
+        // Obtener el espacio para verificar si es una biblioteca
+        $space = Space::findOrFail($validated['space_id']);
+        $isLibrary = stripos($space->name, 'biblioteca') !== false;
+        
+        // Validar que se hayan seleccionado recursos electrónicos si es una biblioteca
+        if ($isLibrary && empty($validated['selected_electronic_resources'])) {
+            return redirect()->back()->withInput()->with('error', 'Debe seleccionar al menos un recurso electrónico para este espacio de biblioteca.');
         }
         
         // Verificar conflictos de horario
@@ -867,5 +877,45 @@ class SpaceReservationController extends Controller
             'isCopy' => true,
             'originalId' => $spaceReservation->id
         ]);
+    }
+    
+    /**
+     * Aprobar una reserva de espacio
+     */
+    public function approve(SpaceReservation $spaceReservation)
+    {
+        // Verificar que el usuario tenga permisos para aprobar reservas
+        if (!Auth::user()->can('approve-space-reservations')) {
+            return redirect()->route('space-reservations.index')
+                ->with('error', 'No tiene permisos para aprobar reservas.');
+        }
+        
+        // Verificar que la reserva esté en estado pendiente
+        if ($spaceReservation->status !== 'pending') {
+            return redirect()->route('space-reservations.index')
+                ->with('error', 'Solo se pueden aprobar reservas que estén en estado pendiente.');
+        }
+        
+        // Actualizar el estado de la reserva
+        $spaceReservation->status = 'approved';
+        $spaceReservation->approved_by = Auth::id();
+        $spaceReservation->approved_at = now();
+        $spaceReservation->save();
+        
+        // Actualizar el estado de los implementos si existen
+        if ($spaceReservation->items()->count() > 0) {
+            $spaceReservation->items()->update(['status' => 'approved']);
+        }
+        
+        // Enviar notificación al usuario
+        $user = $spaceReservation->user;
+        
+        // Verificar si existe la clase de notificación antes de usarla
+        if (class_exists('App\\Notifications\\SpaceReservationStatusChanged')) {
+            $user->notify(new \App\Notifications\SpaceReservationStatusChanged($spaceReservation));
+        }
+        
+        return redirect()->route('space-reservations.index')
+            ->with('success', 'Reserva aprobada exitosamente.');
     }
 }

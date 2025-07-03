@@ -20,6 +20,7 @@ class SpaceReservation extends Model
         'comments',
         'notes',
         'requires_librarian',
+        'selected_electronic_resources',
         'approved_by',
         'approved_at',
         'rejected_by',

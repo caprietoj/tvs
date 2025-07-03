@@ -105,6 +105,27 @@
                                 </div>
                             </div>
                         </div>
+                        <hr>
+                        <div class="d-flex align-items-center" id="electronic-resources-section" style="display: none;">
+                            <div class="mr-3 text-success">
+                                <i class="fas fa-laptop fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1">Recursos Electrónicos</h5>
+                                <p class="text-muted mb-2">Recursos electrónicos disponibles para este espacio (solo visible si el nombre contiene "biblioteca")</p>
+                                <div class="custom-control custom-switch mb-2">
+                                    <input type="hidden" name="has_electronic_resources" value="0">
+                                    <input type="checkbox" class="custom-control-input" id="has_electronic_resources" name="has_electronic_resources" value="1">
+                                    <label class="custom-control-label" for="has_electronic_resources">
+                                        <span class="text-success">Activar Recursos Electrónicos</span>
+                                    </label>
+                                </div>
+                                <div id="electronic-resources-container" style="display: none;">
+                                    <textarea class="form-control" id="electronic_resources" name="electronic_resources" rows="3" placeholder="Ingrese la lista de recursos electrónicos disponibles">{{ old('electronic_resources') }}</textarea>
+                                    <small class="text-muted">Separe cada recurso con una nueva línea</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -241,21 +262,39 @@
             const initializeLibraryHandlers = () => {
                 const isLibrarySwitch = document.getElementById('is_library');
                 const skillsSection = document.getElementById('skills-section');
+                const electronicResourcesSection = document.getElementById('electronic-resources-section');
+                const hasElectronicResourcesSwitch = document.getElementById('has_electronic_resources');
+                const electronicResourcesContainer = document.getElementById('electronic-resources-container');
                 
                 if (isLibrarySwitch && skillsSection) {
                     isLibrarySwitch.addEventListener('change', function() {
                         if (this.checked) {
                             skillsSection.style.display = '';
+                            electronicResourcesSection.style.display = '';
                         } else {
                             if (confirm('Al desactivar esta opción se eliminarán todas las habilidades asociadas al espacio. ¿Desea continuar?')) {
                                 skillsSection.style.display = 'none';
+                                electronicResourcesSection.style.display = 'none';
                                 document.querySelectorAll('.remove-skill-item').forEach(button => {
                                     button.click();
                                 });
+                                // Reset electronic resources
+                                if (hasElectronicResourcesSwitch) {
+                                    hasElectronicResourcesSwitch.checked = false;
+                                    if (electronicResourcesContainer) {
+                                        electronicResourcesContainer.style.display = 'none';
+                                    }
+                                }
                             } else {
                                 this.checked = true;
                             }
                         }
+                    });
+                }
+                
+                if (hasElectronicResourcesSwitch && electronicResourcesContainer) {
+                    hasElectronicResourcesSwitch.addEventListener('change', function() {
+                        electronicResourcesContainer.style.display = this.checked ? '' : 'none';
                     });
                 }
             };

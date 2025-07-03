@@ -740,6 +740,10 @@ Route::middleware(['auth'])->group(function () {
     Route::match(['get', 'post'], 'space-reservations/{spaceReservation}/copy', [App\Http\Controllers\SpaceReservationController::class, 'copy'])
         ->name('space-reservations.copy');
     
+    Route::post('space-reservations/{spaceReservation}/approve', [App\Http\Controllers\SpaceReservationController::class, 'approve'])
+        ->name('space-reservations.approve')
+        ->middleware('can:approve-space-reservations');
+    
     // 2. Ruta resource general (debe ir al final para no capturar las rutas específicas)
     Route::resource('space-reservations', App\Http\Controllers\SpaceReservationController::class);
     

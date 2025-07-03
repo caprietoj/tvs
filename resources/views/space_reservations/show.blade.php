@@ -72,6 +72,17 @@
                         <dt class="col-sm-4">Acompañamiento de bibliotecóloga:</dt>
                         <dd class="col-sm-8">{{ $reservation->requires_librarian ? 'Sí' : 'No' }}</dd>
                         
+                        @if($reservation->selected_electronic_resources)
+                        <dt class="col-sm-4">Recursos electrónicos seleccionados:</dt>
+                        <dd class="col-sm-8">
+                            <ul class="list-group">
+                                @foreach(explode(',', $reservation->selected_electronic_resources) as $resource)
+                                <li class="list-group-item py-1"><i class="fas fa-laptop-code text-success mr-2"></i>{{ $resource }}</li>
+                                @endforeach
+                            </ul>
+                        </dd>
+                        @endif
+                        
                         <dt class="col-sm-4">Solicitante:</dt>
                         <dd class="col-sm-8">{{ $reservation->user->name }}</dd>
                         
