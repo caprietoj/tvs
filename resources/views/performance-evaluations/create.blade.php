@@ -72,38 +72,99 @@
                 @endif
 
                 <div class="row">
-                    <div class="col-md-6">                        <div class="form-group">
-                            <label for="user_ids" class="font-weight-bold">
+                    <div class="col-md-6">
+                        <!-- Selector de tipo de selección -->
+                        <div class="form-group">
+                            <label class="font-weight-bold">
+                                <i class="fas fa-list text-info"></i> Tipo de Selección
+                            </label>
+                            <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                                <label class="btn btn-outline-primary active">
+                                    <input type="radio" name="selection_type" id="by_department" value="department" checked> Por Departamento
+                                </label>
+                                <label class="btn btn-outline-secondary">
+                                    <input type="radio" name="selection_type" id="by_user" value="user"> Por Usuario
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Selección por Departamento -->
+                        <div class="form-group" id="department_selection">
+                            <label for="user_ids_dept" class="font-weight-bold">
                                 <i class="fas fa-building text-primary"></i> Departamentos a Evaluar 
                                 <span class="text-danger">*</span>
                             </label>
-                            <select name="user_ids[]" id="user_ids" class="form-control select2-multiple @error('user_ids') is-invalid @enderror" multiple required>
+                            <select name="user_ids[]" id="user_ids_dept" class="form-control select2-multiple @error('user_ids') is-invalid @enderror" multiple>
                                 @foreach($employeesByDepartment as $department => $employees)
                                     @if($department)
                                         <option value="{{ $department }}" 
                                                 {{ in_array($department, old('user_ids', [])) ? 'selected' : '' }}
                                                 data-department="{{ $department }}"
                                                 data-employees="{{ $employees->pluck('id')->implode(',') }}">
-                                            {{ $department }}
+                                            {{ $department }} ({{ $employees->count() }} empleados)
+                                        </option>
+                                    @endif
+                                @endforeach
+                                <!-- Mostrar también departamentos sin usuarios asignados -->
+                                @foreach($availableDepartments as $dept)
+                                    @if(!$employeesByDepartment->has($dept))
+                                        <option value="{{ $dept }}" 
+                                                {{ in_array($dept, old('user_ids', [])) ? 'selected' : '' }}
+                                                data-department="{{ $dept }}"
+                                                data-employees="">
+                                            {{ $dept }} (0 empleados)
                                         </option>
                                     @endif
                                 @endforeach
                             </select>
                             
-                            <!-- Botones de acción rápida -->
+                            <!-- Botones de acción rápida para departamentos -->
                             <div class="mt-2">
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="select-all-employees">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="select-all-departments">
                                     <i class="fas fa-check-square"></i> Seleccionar Todos los Departamentos
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-employees">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-departments">
                                     <i class="fas fa-times"></i> Limpiar Selección
                                 </button>
                             </div>
-                            
-                            @error('user_ids')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
                         </div>
+
+                        <!-- Selección por Usuario -->
+                        <div class="form-group" id="user_selection" style="display: none;">
+                            <label for="user_ids_individual" class="font-weight-bold">
+                                <i class="fas fa-users text-primary"></i> Usuarios a Evaluar 
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select name="user_ids_individual[]" id="user_ids_individual" class="form-control select2-multiple @error('user_ids') is-invalid @enderror" multiple>
+                                @foreach($allUsers as $user)
+                                    <option value="{{ $user->id }}" 
+                                            {{ in_array($user->id, old('user_ids', [])) ? 'selected' : '' }}
+                                            data-department="{{ $user->department ?? 'Sin departamento' }}"
+                                            data-email="{{ $user->email }}">
+                                        {{ $user->name }} 
+                                        @if($user->department)
+                                            ({{ $user->department }})
+                                        @else
+                                            (Sin departamento)
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            
+                            <!-- Botones de acción rápida para usuarios -->
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="select-all-users">
+                                    <i class="fas fa-check-square"></i> Seleccionar Todos los Usuarios
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-users">
+                                    <i class="fas fa-times"></i> Limpiar Selección
+                                </button>
+                            </div>
+                        </div>
+                        
+                        @error('user_ids')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     
                     <div class="col-md-6">
@@ -572,7 +633,7 @@ $(document).ready(function() {
     });
     
     // Initialize Select2 for multiple departments
-    $('.select2-multiple').select2({
+    $('#user_ids_dept').select2({
         theme: 'bootstrap',
         placeholder: '🔍 Buscar y seleccionar departamentos...',
         allowClear: true,
@@ -588,45 +649,126 @@ $(document).ready(function() {
             return option.text;
         }
     });
-    
+
+    // Initialize Select2 for multiple users
+    $('#user_ids_individual').select2({
+        theme: 'bootstrap',
+        placeholder: '🔍 Buscar y seleccionar usuarios...',
+        allowClear: true,
+        width: '100%',
+        closeOnSelect: false,
+        templateResult: function(option) {
+            if (!option.id) {
+                return option.text;
+            }
+            var department = $(option.element).data('department');
+            var email = $(option.element).data('email');
+            var html = '<div><i class="fas fa-user"></i> ' + option.text;
+            if (department && department !== 'Sin departamento') {
+                html += '<br><small class="text-muted"><i class="fas fa-building"></i> ' + department + '</small>';
+            }
+            if (email) {
+                html += '<br><small class="text-muted"><i class="fas fa-envelope"></i> ' + email + '</small>';
+            }
+            html += '</div>';
+            return $(html);
+        },
+        templateSelection: function(option) {
+            return option.text;
+        }
+    });
+
+    // Handle selection type change
+    $('input[name="selection_type"]').on('change', function() {
+        var selectionType = $(this).val();
+        
+        if (selectionType === 'department') {
+            $('#department_selection').show();
+            $('#user_selection').hide();
+            $('#user_ids_dept').prop('required', true);
+            $('#user_ids_individual').prop('required', false);
+            // Clear user selection
+            $('#user_ids_individual').val(null).trigger('change');
+        } else {
+            $('#department_selection').hide();
+            $('#user_selection').show();
+            $('#user_ids_dept').prop('required', false);
+            $('#user_ids_individual').prop('required', true);
+            // Clear department selection
+            $('#user_ids_dept').val(null).trigger('change');
+        }
+        
+        updateSelectedInfo();
+    });
+
     // Show selected employees and evaluator info
     function updateSelectedInfo() {
-        var employeeSelect = $('#user_ids');
+        var selectionType = $('input[name="selection_type"]:checked').val();
         var evaluatorSelect = $('#evaluator_id');
         var selectedInfo = $('#selected-info');
         
-        var departmentsSelected = employeeSelect.val() || [];
+        var selected = [];
         var evaluatorSelected = evaluatorSelect.val();
         
-        if (departmentsSelected.length > 0 || evaluatorSelected) {
+        if (selectionType === 'department') {
+            selected = $('#user_ids_dept').val() || [];
+        } else {
+            selected = $('#user_ids_individual').val() || [];
+        }
+        
+        if (selected.length > 0 || evaluatorSelected) {
             selectedInfo.show();
             
-            // Update departments info
-            $('#selected-employees-count').text(departmentsSelected.length);
+            // Update selection info
+            $('#selected-employees-count').text(selected.length);
             
             var employeesList = $('#selected-employees-list');
             employeesList.empty();
             
-            if (departmentsSelected.length > 0) {
-                departmentsSelected.forEach(function(department) {
-                    var departmentOption = employeeSelect.find('option[value="' + department + '"]');
-                    var departmentName = departmentOption.text();
+            if (selected.length > 0) {
+                if (selectionType === 'department') {
+                    selected.forEach(function(department) {
+                        var departmentOption = $('#user_ids_dept').find('option[value="' + department + '"]');
+                        var departmentName = departmentOption.text();
+                        
+                        var departmentItem = $('<div class="selected-employee-item">' + 
+                                           '<i class="fas fa-building"></i> ' + departmentName + 
+                                           '</div>');
+                        employeesList.append(departmentItem);
+                    });
                     
-                    var departmentItem = $('<div class="selected-employee-item">' + 
-                                       '<i class="fas fa-building"></i> ' + departmentName + 
+                    // Add evaluation summary
+                    var summaryHtml = '<div class="evaluation-summary mt-3">' +
+                                    '<h6><i class="fas fa-clipboard-list"></i> Resumen de Evaluaciones a Crear:</h6>' +
+                                    '<p><strong>' + selected.length + '</strong> departamento(s) seleccionado(s).</p>' +
+                                    '<p><small class="text-muted">Se crearán evaluaciones para todos los empleados de los departamentos seleccionados.</small></p>' +
+                                    '</div>';
+                    employeesList.append(summaryHtml);
+                } else {
+                    selected.forEach(function(userId) {
+                        var userOption = $('#user_ids_individual').find('option[value="' + userId + '"]');
+                        var userName = userOption.text();
+                        var userDepartment = userOption.data('department');
+                        
+                        var userItem = $('<div class="selected-employee-item">' + 
+                                       '<i class="fas fa-user"></i> ' + userName + 
+                                       (userDepartment && userDepartment !== 'Sin departamento' ? 
+                                        '<small class="text-muted ml-2">(' + userDepartment + ')</small>' : '') +
                                        '</div>');
-                    employeesList.append(departmentItem);
-                });
-                
-                // Add evaluation summary
-                var summaryHtml = '<div class="evaluation-summary mt-3">' +
-                                '<h6><i class="fas fa-clipboard-list"></i> Resumen de Evaluaciones a Crear:</h6>' +
-                                '<p><strong>' + departmentsSelected.length + '</strong> departamento(s) seleccionado(s).</p>' +
-                                '<p><small class="text-muted">Se crearán evaluaciones para todos los empleados de los departamentos seleccionados.</small></p>' +
-                                '</div>';
-                employeesList.append(summaryHtml);
+                        employeesList.append(userItem);
+                    });
+                    
+                    // Add evaluation summary
+                    var summaryHtml = '<div class="evaluation-summary mt-3">' +
+                                    '<h6><i class="fas fa-clipboard-list"></i> Resumen de Evaluaciones a Crear:</h6>' +
+                                    '<p><strong>' + selected.length + '</strong> usuario(s) seleccionado(s).</p>' +
+                                    '<p><small class="text-muted">Se creará una evaluación para cada usuario seleccionado.</small></p>' +
+                                    '</div>';
+                    employeesList.append(summaryHtml);
+                }
             }
-              // Update evaluator info
+            
+            // Update evaluator info
             if (evaluatorSelected) {
                 var evaluatorOption = evaluatorSelect.find('option:selected');
                 var evaluatorName = evaluatorOption.text();
@@ -643,11 +785,11 @@ $(document).ready(function() {
         }
         
         // Update button text
-        updateButtonText(departmentsSelected.length);
+        updateButtonText(selected.length, selectionType);
     }
     
-    // Update button text based on number of selected departments
-    function updateButtonText(count) {
+    // Update button text based on selection
+    function updateButtonText(count, type) {
         var btnText = $('#btn-text');
         var createBtn = $('#create-evaluations-btn');
         
@@ -655,50 +797,99 @@ $(document).ready(function() {
             btnText.text('Crear Evaluación');
             createBtn.prop('disabled', true);
         } else if (count === 1) {
-            btnText.text('Crear Evaluaciones del Departamento');
+            if (type === 'department') {
+                btnText.text('Crear Evaluaciones del Departamento');
+            } else {
+                btnText.text('Crear Evaluación del Usuario');
+            }
             createBtn.prop('disabled', false);
         } else {
-            btnText.text('Crear Evaluaciones de ' + count + ' Departamentos');
+            if (type === 'department') {
+                btnText.text('Crear Evaluaciones de ' + count + ' Departamentos');
+            } else {
+                btnText.text('Crear Evaluaciones de ' + count + ' Usuarios');
+            }
             createBtn.prop('disabled', false);
         }
     }
+
+    // Event listeners for selections
+    $('#user_ids_dept, #user_ids_individual, #evaluator_id').on('change', updateSelectedInfo);
     
-    $('#user_ids, #evaluator_id').on('change', updateSelectedInfo);
-    
-    // Botones de acción rápida para departamentos
-    $('#select-all-employees').on('click', function() {
-        var employeeSelect = $('#user_ids');
-        var allOptions = employeeSelect.find('option').map(function() {
+    // Quick action buttons for departments
+    $('#select-all-departments').on('click', function() {
+        var departmentSelect = $('#user_ids_dept');
+        var allOptions = departmentSelect.find('option').map(function() {
             return this.value;
         }).get();
         allOptions = allOptions.filter(function(value) {
             return value !== '';
         });
         
-        employeeSelect.val(allOptions).trigger('change');
+        departmentSelect.val(allOptions).trigger('change');
         showToast('success', 'Todos los departamentos han sido seleccionados');
     });
     
-    $('#clear-employees').on('click', function() {
-        $('#user_ids').val(null).trigger('change');
+    $('#clear-departments').on('click', function() {
+        $('#user_ids_dept').val(null).trigger('change');
         showToast('info', 'Selección de departamentos limpiada');
     });
-                var evaluatorOption = evaluatorSelect.find('option:selected');
-                var evaluatorName = evaluatorOption.text();
-                var evaluatorEmail = evaluatorOption.data('email');
-                
-                $('#selected-evaluator').text(evaluatorName);
-                $('#selected-evaluator-email').text(evaluatorEmail || '');
-            } else {
-                $('#selected-evaluator').text('No asignado');
-                $('#selected-evaluator-email').text('');
-            }
-        } else {
-            selectedInfo.hide();
-        }
-    }
+
+    // Quick action buttons for users
+    $('#select-all-users').on('click', function() {
+        var userSelect = $('#user_ids_individual');
+        var allOptions = userSelect.find('option').map(function() {
+            return this.value;
+        }).get();
+        allOptions = allOptions.filter(function(value) {
+            return value !== '';
+        });
+        
+        userSelect.val(allOptions).trigger('change');
+        showToast('success', 'Todos los usuarios han sido seleccionados');
+    });
     
-    $('#user_id, #evaluator_id').on('change', updateSelectedInfo);
+    $('#clear-users').on('click', function() {
+        $('#user_ids_individual').val(null).trigger('change');
+        showToast('info', 'Selección de usuarios limpiada');
+    });
+
+    // Form submission handler
+    $('#evaluation-form').on('submit', function(e) {
+        var selectionType = $('input[name="selection_type"]:checked').val();
+        var selected;
+        
+        // Remove any existing hidden inputs for user_ids
+        $('#evaluation-form input[name="user_ids[]"]').remove();
+        
+        if (selectionType === 'department') {
+            selected = $('#user_ids_dept').val() || [];
+            // Copy department values to the main user_ids field
+            selected.forEach(function(dept) {
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'user_ids[]',
+                    value: dept
+                }).appendTo('#evaluation-form');
+            });
+        } else {
+            selected = $('#user_ids_individual').val() || [];
+            // Copy user IDs to the main user_ids field
+            selected.forEach(function(userId) {
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'user_ids[]',
+                    value: userId
+                }).appendTo('#evaluation-form');
+            });
+        }
+        
+        if (selected.length === 0) {
+            e.preventDefault();
+            showToast('error', 'Debe seleccionar al menos un ' + (selectionType === 'department' ? 'departamento' : 'usuario'));
+            return false;
+        }
+    });
     
     // Show evaluation type information
     $('#evaluation_type').on('change', function() {

@@ -859,3 +859,35 @@ Route::get('/debug-permissions', function () {
     
     return response()->json($data, 200, [], JSON_PRETTY_PRINT);
 })->middleware('auth');
+
+// Ruta temporal de prueba para evaluaciones SIN autenticación
+Route::get('/test-evaluations-view', function() {
+    // Simular datos para la vista
+    $availableDepartments = [
+        'Mantenimiento',
+        'Servicios Generales', 
+        'Sistemas',
+        'Almacen',
+        'Enfermeria',
+        'Docentes',
+        'EMC',
+        'Biblioteca',
+        'Contabilidad',
+        'Asistentes'
+    ];
+    
+    $employeesByDepartment = \App\Models\User::select('id', 'name', 'email', 'department')
+        ->whereIn('department', $availableDepartments)
+        ->orderBy('department')
+        ->orderBy('name')
+        ->get()
+        ->groupBy('department');
+    
+    $allUsers = \App\Models\User::select('id', 'name', 'email', 'department')
+        ->orderBy('name')
+        ->get();
+    
+    $supervisors = \App\Models\User::orderBy('name')->get();
+    
+    return view('performance-evaluations.create', compact('employeesByDepartment', 'allUsers', 'supervisors', 'availableDepartments'));
+});

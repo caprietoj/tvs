@@ -77,18 +77,37 @@ class PerformanceEvaluationController extends Controller
             abort(403, 'No tienes permisos para crear evaluaciones');
         }
         
-        // Obtener solo empleados de departamentos específicos, organizados por departamento
+        // Definir todos los departamentos disponibles
+        $availableDepartments = [
+            'Mantenimiento',
+            'Servicios Generales', 
+            'Sistemas',
+            'Almacen',
+            'Enfermeria',
+            'Docentes',
+            'EMC',
+            'Biblioteca',
+            'Contabilidad',
+            'Asistentes'
+        ];
+        
+        // Obtener empleados organizados por departamento (solo departamentos que tienen usuarios)
         $employeesByDepartment = User::select('id', 'name', 'email', 'department')
-            ->whereIn('department', ['Mantenimiento', 'Servicios Generales'])
+            ->whereIn('department', $availableDepartments)
             ->orderBy('department')
             ->orderBy('name')
             ->get()
             ->groupBy('department');
         
-        // Usar todos los usuarios como posibles supervisores en lugar de filtrar por rol
+        // Obtener todos los usuarios para selección individual
+        $allUsers = User::select('id', 'name', 'email', 'department')
+            ->orderBy('name')
+            ->get();
+        
+        // Usar todos los usuarios como posibles supervisores
         $supervisors = User::orderBy('name')->get();
         
-        return view('performance-evaluations.create', compact('employeesByDepartment', 'supervisors'));
+        return view('performance-evaluations.create', compact('employeesByDepartment', 'allUsers', 'supervisors', 'availableDepartments'));
     }
 
     /**
@@ -115,10 +134,15 @@ class PerformanceEvaluationController extends Controller
         }
         
         // Convertir departamentos seleccionados a IDs de usuarios
+        $availableDepartments = [
+            'Mantenimiento', 'Servicios Generales', 'Sistemas', 'Almacen', 
+            'Enfermeria', 'Docentes', 'EMC', 'Biblioteca', 'Contabilidad', 'Asistentes'
+        ];
+        
         $userIds = [];
         foreach ($request->user_ids as $selection) {
             // Verificar si es un departamento o un ID de usuario
-            if (in_array($selection, ['Mantenimiento', 'Servicios Generales'])) {
+            if (in_array($selection, $availableDepartments)) {
                 // Es un departamento, obtener todos los usuarios de ese departamento
                 $departmentUsers = User::where('department', $selection)->pluck('id')->toArray();
                 $userIds = array_merge($userIds, $departmentUsers);
