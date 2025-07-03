@@ -1006,9 +1006,8 @@
                 </div>
             `;
             
-            // Mostrar secciones y cargar datos
+            // Mostrar sección de implementos y cargar datos (habilidades se mostrarán solo si es biblioteca)
             spaceItemsSection.classList.remove('d-none');
-            spaceSkillsSection.classList.remove('d-none');
             spaceItemsLoading.classList.remove('d-none');
             spaceSkillsLoading.classList.remove('d-none');
             spaceItemsContent.classList.add('d-none');
@@ -1016,6 +1015,7 @@
             noSpaceItems.classList.add('d-none');
             noSpaceSkills.classList.add('d-none');
             librarianAssistanceSection.classList.add('d-none'); // Ocultar inicialmente
+            spaceSkillsSection.classList.add('d-none'); // Ocultar inicialmente, se mostrará solo si es biblioteca
             
             fetch(`{{ url('spaces') }}/${spaceId}/details`)
                 .then(response => response.json())
@@ -1119,9 +1119,10 @@
                         noSpaceItems.classList.remove('d-none');
                     }
                     
-                    // Mostrar sección de bibliotecóloga solo si el espacio es una biblioteca
+                    // Mostrar sección de bibliotecóloga y habilidades solo si el espacio contiene la palabra "biblioteca"
                     const librarianAssistanceSection = document.getElementById('librarian-assistance-section');
-                    if (space.is_library) {
+                    const isLibrary = space.name.toLowerCase().includes('biblioteca');
+                    if (isLibrary) {
                         librarianAssistanceSection.classList.remove('d-none');
                     } else {
                         librarianAssistanceSection.classList.add('d-none');
@@ -1129,92 +1130,102 @@
                         document.getElementById('requires_librarian').checked = false;
                     }
                     
-                    // Procesar habilidades a trabajar
+                    // Procesar habilidades a trabajar solo si es biblioteca
                     spaceSkillsLoading.classList.add('d-none');
                     
-                    if (space.skills && space.skills.length > 0) {
-                        spaceSkillsContent.classList.remove('d-none');
-                        spaceSkillsList.innerHTML = '';
+                    if (isLibrary) {
+                        // Mostrar la sección de habilidades para bibliotecas
+                        spaceSkillsSection.classList.remove('d-none');
                         
-                        // Agrupar las habilidades por su categoría padre y subcategoría
-                        const skillsByCategory = {};
-                        space.skills.forEach(skill => {
-                            const categoryId = skill.category_id;
-                            const subcategoryName = skill.subcategory_name;
+                        if (space.skills && space.skills.length > 0) {
+                            spaceSkillsContent.classList.remove('d-none');
+                            spaceSkillsList.innerHTML = '';
                             
-                            if (!skillsByCategory[categoryId]) {
-                                skillsByCategory[categoryId] = {
-                                    name: skill.category_name,
-                                    subcategories: {}
-                                };
-                            }
-                            
-                            if (!skillsByCategory[categoryId].subcategories[subcategoryName]) {
-                                skillsByCategory[categoryId].subcategories[subcategoryName] = {
-                                    name: subcategoryName,
-                                    description: skill.subcategory ? skill.subcategory.description : '',
-                                    skills: []
-                                };
-                            }
-                            
-                            skillsByCategory[categoryId].subcategories[subcategoryName].skills.push({
-                                id: skill.id,
-                                name: skill.name,
-                                description: skill.description
-                            });
-                        });
-
-                        // Crear elementos para cada categoría de habilidades
-                        Object.values(skillsByCategory).forEach(category => {
-                            // Crear el encabezado de la categoría
-                            const categoryHeader = document.createElement('div');
-                            categoryHeader.className = 'mb-3';
-                            categoryHeader.innerHTML = `
-                                <h6 class="text-primary font-weight-bold">
-                                    <i class="fas fa-layer-group"></i> ${category.name}
-                                </h6>
-                            `;
-                            spaceSkillsList.appendChild(categoryHeader);
-
-                            // Crear elementos para cada subcategoría
-                            Object.values(category.subcategories).forEach(subcategory => {
-                                // Crear el encabezado de la subcategoría
-                                const subcategoryHeader = document.createElement('div');
-                                subcategoryHeader.className = 'mb-2 ml-3';
-                                subcategoryHeader.innerHTML = `
-                                    <div class="text-secondary">
-                                        <strong>${subcategory.name}</strong>
-                                        ${subcategory.description ? ` (${subcategory.description})` : ''}
-                                    </div>
-                                `;
-                                spaceSkillsList.appendChild(subcategoryHeader);
-
-                                // Crear elementos para cada habilidad de la subcategoría
-                                subcategory.skills.forEach(skill => {
-                                    const skillElement = document.createElement('div');
-                                    skillElement.className = 'form-check mb-2 ml-4';
-                                    
-                                    const skillHtml = `
-                                        <input class="form-check-input" type="checkbox" 
-                                            id="skill-${skill.id}" 
-                                            name="skills[${skill.id}][selected]" 
-                                            value="1">
-                                        <label class="form-check-label" for="skill-${skill.id}">
-                                            ${skill.name}
-                                            ${skill.description ? `
-                                                <p class="mb-0 text-muted small">${skill.description}</p>
-                                            ` : ''}
-                                        </label>
-                                    `;
-                                    
-                                    skillElement.innerHTML = skillHtml;
-                                    spaceSkillsList.appendChild(skillElement);
+                            // Agrupar las habilidades por su categoría padre y subcategoría
+                            const skillsByCategory = {};
+                            space.skills.forEach(skill => {
+                                const categoryId = skill.category_id;
+                                const subcategoryName = skill.subcategory_name;
+                                
+                                if (!skillsByCategory[categoryId]) {
+                                    skillsByCategory[categoryId] = {
+                                        name: skill.category_name,
+                                        subcategories: {}
+                                    };
+                                }
+                                
+                                if (!skillsByCategory[categoryId].subcategories[subcategoryName]) {
+                                    skillsByCategory[categoryId].subcategories[subcategoryName] = {
+                                        name: subcategoryName,
+                                        description: skill.subcategory ? skill.subcategory.description : '',
+                                        skills: []
+                                    };
+                                }
+                                
+                                skillsByCategory[categoryId].subcategories[subcategoryName].skills.push({
+                                    id: skill.id,
+                                    name: skill.name,
+                                    description: skill.description
                                 });
                             });
-                        });
+
+                            // Crear elementos para cada categoría de habilidades
+                            Object.values(skillsByCategory).forEach(category => {
+                                // Crear el encabezado de la categoría
+                                const categoryHeader = document.createElement('div');
+                                categoryHeader.className = 'mb-3';
+                                categoryHeader.innerHTML = `
+                                    <h6 class="text-primary font-weight-bold">
+                                        <i class="fas fa-layer-group"></i> ${category.name}
+                                    </h6>
+                                `;
+                                spaceSkillsList.appendChild(categoryHeader);
+
+                                // Crear elementos para cada subcategoría
+                                Object.values(category.subcategories).forEach(subcategory => {
+                                    // Crear el encabezado de la subcategoría
+                                    const subcategoryHeader = document.createElement('div');
+                                    subcategoryHeader.className = 'mb-2 ml-3';
+                                    subcategoryHeader.innerHTML = `
+                                        <div class="text-secondary">
+                                            <strong>${subcategory.name}</strong>
+                                            ${subcategory.description ? ` (${subcategory.description})` : ''}
+                                        </div>
+                                    `;
+                                    spaceSkillsList.appendChild(subcategoryHeader);
+
+                                    // Crear elementos para cada habilidad de la subcategoría
+                                    subcategory.skills.forEach(skill => {
+                                        const skillElement = document.createElement('div');
+                                        skillElement.className = 'form-check mb-2 ml-4';
+                                        
+                                        const skillHtml = `
+                                            <input class="form-check-input" type="checkbox" 
+                                                id="skill-${skill.id}" 
+                                                name="skills[${skill.id}][selected]" 
+                                                value="1">
+                                            <label class="form-check-label" for="skill-${skill.id}">
+                                                ${skill.name}
+                                                ${skill.description ? `
+                                                    <p class="mb-0 text-muted small">${skill.description}</p>
+                                                ` : ''}
+                                            </label>
+                                        `;
+                                        
+                                        skillElement.innerHTML = skillHtml;
+                                        spaceSkillsList.appendChild(skillElement);
+                                    });
+                                });
+                            });
+                        } else {
+                            spaceSkillsContent.classList.add('d-none');
+                            noSpaceSkills.classList.remove('d-none');
+                        }
                     } else {
+                        // Si no es biblioteca, ocultar la sección de habilidades
+                        spaceSkillsSection.classList.add('d-none');
                         spaceSkillsContent.classList.add('d-none');
-                        noSpaceSkills.classList.remove('d-none');
+                        noSpaceSkills.classList.add('d-none');
                     }
                 })
                 .catch(error => {

@@ -97,7 +97,7 @@
                         </div>
 
                         <!-- Sección de acompañamiento de bibliotecóloga (solo para bibliotecas) -->
-                        <div id="librarian-assistance-section" class="form-group {{ $reservation->space->is_library ? '' : 'd-none' }}">
+                        <div id="librarian-assistance-section" class="form-group {{ stripos($reservation->space->name, 'biblioteca') !== false ? '' : 'd-none' }}">
                             <div class="card border-info">
                                 <div class="card-header bg-info text-white">
                                     <h5 class="mb-0">
@@ -296,7 +296,8 @@
             fetch(`{{ url('spaces') }}/${spaceId}/details`)
                 .then(response => response.json())
                 .then(space => {
-                    if (space.is_library) {
+                    const isLibrary = space.name.toLowerCase().includes('biblioteca');
+                    if (isLibrary) {
                         librarianSection.classList.remove('d-none');
                     } else {
                         librarianSection.classList.add('d-none');
