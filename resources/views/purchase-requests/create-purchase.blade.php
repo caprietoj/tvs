@@ -150,20 +150,6 @@
                     </div>
                 </div>
 
-                <!-- Firmas -->
-                <div class="form-row mt-4">
-                    <div class="form-group col-md-6">
-                        <label>FIRMA DEL RESPONSABLE DEL PRESUPUESTO</label>
-                        <div class="border-bottom border-dark" style="height: 40px;"></div>
-                        <small class="form-text text-muted">Especificar nombre completo</small>
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label>FIRMA JEFE DE COMPRAS</label>
-                        <div class="border-bottom border-dark" style="height: 40px;"></div>
-                        <small class="form-text text-muted">Especificar nombre completo</small>
-                    </div>
-                </div>
-
                 <!-- Footer -->
                 <table class="table table-bordered mt-4">
                     <tr>

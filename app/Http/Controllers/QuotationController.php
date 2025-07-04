@@ -622,6 +622,94 @@ class QuotationController extends Controller
     }
     
     /**
+     * Marcar una solicitud como completada y enviarla automáticamente a preaprobación
+     */
+    public function markCompleted(PurchaseRequest $purchaseRequest)
+    {
+        try {
+            // Verificar autorización (usar la misma política que para agregar cotizaciones)
+            $this->authorize('addQuotation', $purchaseRequest);
+
+            // Verificar estado de la solicitud - Permitir tanto 'pending' como 'En Cotización'
+            if (!in_array($purchaseRequest->status, ['pending', 'En Cotización'])) {
+                return redirect()->back()->with('error', 'La solicitud debe estar en estado "pending" o "En Cotización" para marcarla como completada.');
+            }
+
+            // Log para auditoría
+            \Log::info('Marcando solicitud como completada y enviando a preaprobación', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'request_number' => $purchaseRequest->request_number,
+                'user_id' => Auth::id(),
+                'quotations_count' => $purchaseRequest->quotations()->count()
+            ]);
+
+            // Obtener emails de la sección correspondiente
+            $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
+            
+            // Obtener configuración dinámica
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            
+            // 1. ENVIAR NOTIFICACIÓN CON BOTÓN A DIRECTORES/COORDINADORES
+            $notificationWithButton = new QuotationsUploaded($purchaseRequest->fresh());
+            
+            foreach ($sectionEmails as $email) {
+                \Log::info('Enviando notificación CON BOTÓN (hecho cumplido) a director/coordinador: ' . $email);
+                Notification::route('mail', $email)
+                    ->notify($notificationWithButton);
+            }
+            
+            // 2. ENVIAR NOTIFICACIÓN INFORMATIVA A COMPRAS (SIN BOTÓN)
+            \Log::info('Enviando notificación INFORMATIVA (hecho cumplido) a compras: ' . $comprasEmail);
+            $informativeNotification = new \App\Notifications\QuotationsCompletedCompras($purchaseRequest->fresh());
+            Notification::route('mail', $comprasEmail)
+                ->notify($informativeNotification);
+            
+            $allEmails = array_merge($sectionEmails, [$comprasEmail]);
+            
+            // Marcar que se envió para pre-aprobación y cambiar estado
+            $purchaseRequest->update([
+                'status' => 'En pre-aprobación',
+                'preapproval_sent_at' => now(),
+                'preapproval_sent_by' => Auth::id()
+            ]);
+            
+            // Registrar en el historial
+            RequestHistory::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'user_id' => Auth::id(),
+                'action' => 'Hecho Cumplido - Estado cambiado a "En pre-aprobación"',
+                'notes' => 'Solicitud marcada como completada' . 
+                          ($purchaseRequest->quotations()->count() > 0 ? 
+                           '. Emails enviados a: ' . implode(', ', $allEmails) : 
+                           ' sin cotizaciones. Emails enviados a: ' . implode(', ', $allEmails))
+            ]);
+            
+            \Log::info('Solicitud marcada como completada y enviada a preaprobación exitosamente', [
+                'purchase_request' => $purchaseRequest->request_number,
+                'emails' => $allEmails,
+                'had_quotations' => $purchaseRequest->quotations()->count() > 0
+            ]);
+            
+            $successMessage = 'Solicitud marcada como completada exitosamente.';
+            if (count($allEmails) > 0) {
+                $successMessage .= ' Se han enviado las notificaciones de preaprobación a: ' . implode(', ', $allEmails);
+            }
+            
+            return redirect()->route('quotations.index')->with('success', $successMessage);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al marcar solicitud como completada: ' . $e->getMessage(), [
+                'purchase_request' => $purchaseRequest->request_number,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->with('error', 'Error al marcar la solicitud como completada: ' . $e->getMessage());
+        }
+    }
+    
+    /**
      * Anular una solicitud de compra por falta de descripción adecuada
      */
     public function cancelForDescription(Request $request, PurchaseRequest $purchaseRequest)

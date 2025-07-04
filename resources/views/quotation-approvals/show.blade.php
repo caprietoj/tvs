@@ -282,8 +282,29 @@
                         </div>
                     @empty
                         <div class="col-12">
-                            <div class="alert alert-info">
-                                No hay cotizaciones disponibles para esta solicitud.
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-exclamation-triangle mr-2"></i>Sin Cotizaciones</h5>
+                                <p class="mb-3">Esta solicitud no tiene cotizaciones adjuntas. Esto puede ocurrir cuando:</p>
+                                <ul class="mb-3">
+                                    <li>Se trata de un servicio que no requiere cotización previa</li>
+                                    <li>Es una compra con proveedor único o establecido</li>
+                                    <li>Es un proceso urgente que requiere aprobación directa</li>
+                                </ul>
+                                
+                                @if($request->status !== 'Pre-aprobada' && $request->status !== 'approved')
+                                    <div class="mt-3">
+                                        <button class="btn btn-success" data-toggle="modal" data-target="#preApproveWithoutQuotationModal">
+                                            <i class="fas fa-check-circle"></i> Pre-aprobar Sin Cotización
+                                        </button>
+                                        <small class="form-text text-muted mt-2">
+                                            Al pre-aprobar sin cotización, la solicitud continuará al siguiente paso del proceso de aprobación.
+                                        </small>
+                                    </div>
+                                @elseif($request->status === 'Pre-aprobada')
+                                    <div class="alert alert-success mt-3">
+                                        <i class="fas fa-check-circle mr-2"></i>Esta solicitud ya ha sido pre-aprobada sin cotización.
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @endforelse
@@ -357,6 +378,81 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de Pre-aprobación Sin Cotización -->
+<div class="modal fade" id="preApproveWithoutQuotationModal" tabindex="-1" role="dialog" aria-labelledby="preApproveWithoutQuotationModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="preApproveWithoutQuotationModalLabel">Pre-aprobar Sin Cotización</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ route('quotation-approvals.pre-approve-without-quotation', $request->id) }}">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Atención:</strong> Está a punto de pre-aprobar la solicitud <strong>#{{ $request->request_number }}</strong> sin cotizaciones adjuntas.
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="approval_comments">Comentarios de Pre-aprobación *</label>
+                        <textarea name="comments" id="approval_comments" class="form-control" rows="4" 
+                                  placeholder="Explique por qué se pre-aprueba sin cotización (ej: servicio único, proveedor establecido, urgencia, etc.)" 
+                                  required maxlength="500"></textarea>
+                        <small class="form-text text-muted">Máximo 500 caracteres. Este comentario será visible en el historial de la solicitud.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="budget_line_no_quotation">Rubro Presupuestal *</label>
+                        <select name="budget_line" id="budget_line_no_quotation" class="form-control" required>
+                            <option value="">Seleccione un rubro presupuestal</option>
+                            <option value="Textos y Guías de Estudio">Textos y Guías de Estudio</option>
+                            <option value="Laboratorios">Laboratorios</option>
+                            <option value="Equipos y Dotación Salones/Oficinas">Equipos y Dotación Salones/Oficinas</option>
+                            <option value="Mercadeo">Mercadeo</option>
+                            <option value="Eventos">Eventos</option>
+                            <option value="Reparaciones Mayores">Reparaciones Mayores</option>
+                            <option value="Útiles de Oficina y Papelería">Útiles de Oficina y Papelería</option>
+                            <option value="Bachillerato Internacional">Bachillerato Internacional</option>
+                            <option value="Textos y Útiles de Consumo">Textos y Útiles de Consumo</option>
+                            <option value="Deportes">Deportes</option>
+                            <option value="Biblioteca Institucional">Biblioteca Institucional</option>
+                            <option value="Materiales">Materiales</option>
+                            <option value="Servicios Públicos">Servicios Públicos</option>
+                            <option value="Vigilancia">Vigilancia</option>
+                            <option value="Honorarios">Honorarios</option>
+                            <option value="Comisiones Bancarias">Comisiones Bancarias</option>
+                            <option value="Arrendamientos">Arrendamientos</option>
+                            <option value="Cafetería">Cafetería</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Salarios Academia">Salarios Academia</option>
+                            <option value="Salarios Administrativos">Salarios Administrativos</option>
+                        </select>
+                        <small class="form-text text-muted">Seleccione el rubro presupuestal donde se cargará esta solicitud.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="confirm_no_quotation" required>
+                            <label class="custom-control-label" for="confirm_no_quotation">
+                                Confirmo que esta solicitud no requiere cotizaciones y puede continuar al proceso de aprobación final
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning" id="confirmPreApproveBtn" disabled>
+                        <i class="fas fa-check-circle"></i> Confirmar Pre-aprobación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('css')
@@ -374,7 +470,7 @@
 @section('js')
 <script>
     $(document).ready(function() {
-        // Configurar el modal de pre-aprobación
+        // Configurar el modal de pre-aprobación con cotización
         $('#preApproveModal').on('show.bs.modal', function (event) {
             var button = $(event.relatedTarget);
             var quotationId = button.data('quotation-id');
@@ -383,6 +479,29 @@
             var modal = $(this);
             modal.find('#quotation_id').val(quotationId);
             modal.find('#provider-name').text(provider);
+        });
+        
+        // Manejar el modal de pre-aprobación sin cotización
+        $('#confirm_no_quotation').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            const hasComments = $('#approval_comments').val().trim().length > 0;
+            const hasBudgetLine = $('#budget_line_no_quotation').val() !== '';
+            $('#confirmPreApproveBtn').prop('disabled', !(isChecked && hasComments && hasBudgetLine));
+        });
+        
+        $('#approval_comments, #budget_line_no_quotation').on('input change', function() {
+            const isChecked = $('#confirm_no_quotation').is(':checked');
+            const hasComments = $('#approval_comments').val().trim().length > 0;
+            const hasBudgetLine = $('#budget_line_no_quotation').val() !== '';
+            $('#confirmPreApproveBtn').prop('disabled', !(isChecked && hasComments && hasBudgetLine));
+        });
+        
+        // Limpiar modal al cerrar
+        $('#preApproveWithoutQuotationModal').on('hidden.bs.modal', function () {
+            $('#approval_comments').val('');
+            $('#budget_line_no_quotation').val('');
+            $('#confirm_no_quotation').prop('checked', false);
+            $('#confirmPreApproveBtn').prop('disabled', true);
         });
     });
 </script>

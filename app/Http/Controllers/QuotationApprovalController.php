@@ -22,9 +22,9 @@ class QuotationApprovalController extends Controller
      */
     public function index()
     {
-        // Obtener todas las solicitudes de compra que estén en estado "En Cotización" o "Pre-aprobada"
+        // Obtener todas las solicitudes de compra que estén en estado "En Cotización", "En pre-aprobación" o "Pre-aprobada"
         // Excluir servicios sin cotización
-        $requests = PurchaseRequest::whereIn('status', ['En Cotización', 'Pre-aprobada'])
+        $requests = PurchaseRequest::whereIn('status', ['En Cotización', 'En pre-aprobación', 'Pre-aprobada'])
             ->where(function($query) {
                 $query->where('type', '!=', 'services')
                       ->orWhere(function($subQuery) {
@@ -56,12 +56,9 @@ class QuotationApprovalController extends Controller
                 ->with('info', 'Este servicio no requiere cotización. Redirigiendo al flujo de aprobación directa.');
         }
         
-        // Si no hay cotizaciones para otros tipos de solicitud, redirigir con un mensaje
-        if ($request->quotations->isEmpty()) {
-            return redirect()->route('quotation-approvals.index')
-                ->with('error', 'No hay cotizaciones disponibles para esta solicitud.');
-        }
-
+        // Permitir que las solicitudes sin cotizaciones continúen al flujo de preaprobación
+        // ya que pueden haber pasado por el proceso de "Hecho Cumplido" sin requerir cotizaciones
+        
         return view('quotation-approvals.show', compact('request'));
     }
 
@@ -220,5 +217,72 @@ class QuotationApprovalController extends Controller
         }
 
         return view('quotation-approvals.comparison', compact('request'));
+    }
+    
+    /**
+     * Pre-aprobar una solicitud sin cotizaciones
+     */
+    public function preApproveWithoutQuotation(Request $request, $id)
+    {
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+        
+        // Validar los datos del formulario
+        $request->validate([
+            'comments' => 'required|string|max:500|min:10',
+            'budget_line' => 'required|string'
+        ], [
+            'comments.required' => 'Los comentarios son obligatorios.',
+            'comments.max' => 'Los comentarios no pueden exceder 500 caracteres.',
+            'comments.min' => 'Los comentarios deben tener al menos 10 caracteres.',
+            'budget_line.required' => 'Debe seleccionar un rubro presupuestal.'
+        ]);
+        
+        try {
+            // Log para auditoría
+            \Log::info('Iniciando pre-aprobación sin cotización', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'request_number' => $purchaseRequest->request_number,
+                'user_id' => Auth::id(),
+                'comments' => $request->comments,
+                'budget_line' => $request->budget_line
+            ]);
+            
+            // Actualizar el estado de la solicitud
+            $purchaseRequest->update([
+                'status' => 'Pre-aprobada',
+                'budget_line' => $request->budget_line,
+                'pre_approval_date' => now(),
+                'pre_approval_comments' => $request->comments,
+                'pre_approved_by' => Auth::id()
+            ]);
+            
+            // Registrar en el historial
+            RequestHistory::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'user_id' => Auth::id(),
+                'action' => 'Pre-aprobación sin cotización',
+                'notes' => 'Solicitud pre-aprobada sin cotizaciones. Rubro: ' . $request->budget_line . '. Comentarios: ' . $request->comments
+            ]);
+            
+            \Log::info('Pre-aprobación sin cotización completada exitosamente', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'request_number' => $purchaseRequest->request_number,
+                'new_status' => $purchaseRequest->status
+            ]);
+            
+            return redirect()->route('quotation-approvals.index')
+                ->with('success', 'La solicitud ha sido pre-aprobada exitosamente sin cotizaciones. Rubro asignado: ' . $request->budget_line);
+                
+        } catch (\Exception $e) {
+            \Log::error('Error al pre-aprobar solicitud sin cotización: ' . $e->getMessage(), [
+                'purchase_request_id' => $purchaseRequest->id,
+                'request_number' => $purchaseRequest->request_number,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Error al pre-aprobar la solicitud: ' . $e->getMessage());
+        }
     }
 }

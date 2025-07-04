@@ -104,7 +104,11 @@ class ApprovalController extends Controller
                 // Verificar si tiene selección mixta completa
                 $hasMixedSelection = $this->hasMixedSelectionComplete($purchaseRequest);
                 
-                if ($hasPreApprovedQuotation || $hasMixedSelection) {
+                // Verificar si fue pre-aprobada sin cotización (nuevo flujo)
+                $isPreApprovedWithoutQuotation = ($purchaseRequest->quotations->count() === 0) && 
+                                               ($purchaseRequest->preApprovedQuotation === null);
+                
+                if ($hasPreApprovedQuotation || $hasMixedSelection || $isPreApprovedWithoutQuotation) {
                     $validForApproval = true;
                 } else {
                     return redirect()->back()

@@ -7,6 +7,7 @@
 @stop
 
 @section('css')
+    <link rel="stylesheet" href="{{ asset('vendor/datatables/css/dataTables.bootstrap4.min.css') }}">
     <style>
         /* Mejoras para la tabla responsive */
         .table-responsive {
@@ -138,6 +139,14 @@
                                                 <i class="fas fa-ban"></i>
                                             </button>
                                         @endif
+                                        @if($request->status === 'En Cotización')
+                                            <a href="{{ route('quotations.mark-completed', $request->id) }}" 
+                                               class="btn btn-success btn-sm mb-1"
+                                               onclick="return confirm('¿Está seguro de marcar esta solicitud como hecho cumplido y enviarla a preaprobación?')"
+                                               title="Hecho Cumplido - Enviar a Preaprobación">
+                                                <i class="fas fa-check-circle"></i> Cumplido
+                                            </a>
+                                        @endif
                                     </div>
                                     <div class="btn-group d-none d-md-flex">
                                         <a href="{{ route('purchase-requests.show', $request->id) }}" class="btn btn-sm btn-info">
@@ -162,6 +171,14 @@
                                                     title="Anular por falta de descripción">
                                                 <i class="fas fa-ban"></i>
                                             </button>
+                                        @endif
+                                        @if(in_array($request->status, ['pending', 'En Cotización']))
+                                            <a href="{{ route('quotations.mark-completed', $request->id) }}" 
+                                               class="btn btn-sm btn-success"
+                                               onclick="return confirm('¿Está seguro de marcar esta solicitud como hecho cumplido y enviarla a preaprobación?')"
+                                               title="Hecho Cumplido - Enviar a Preaprobación">
+                                                <i class="fas fa-check-circle"></i> Cumplido
+                                            </a>
                                         @endif
                                     </div>
                                 </td>
@@ -246,6 +263,8 @@
 @stop
 
 @section('js')
+    <script src="{{ asset('vendor/datatables/js/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('vendor/datatables/js/dataTables.bootstrap4.min.js') }}"></script>
     <script>
         $(function() {
             // Usar DataTables solo para búsqueda y ordenamiento, no para paginación
@@ -259,7 +278,7 @@
                 "responsive": true,
                 "dom": 'ft', // Solo mostrar filtro y tabla
                 "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json",
+                    "url": "{{ asset('vendor/datatables/i18n/Spanish.json') }}",
                     "search": "Buscar:",
                     "searchPlaceholder": "Filtrar registros..."
                 },

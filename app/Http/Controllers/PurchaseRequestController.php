@@ -406,6 +406,7 @@ class PurchaseRequestController extends Controller
             $rules['provider_contact'] = 'nullable|string|max:255';
             $rules['provider_email'] = 'nullable|email|max:255';
             $rules['no_quotation_reason'] = 'required|string';
+            $rules['quotation_file'] = 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240'; // máximo 10MB
         }
         
         $validator = Validator::make($request->all(), $rules);
@@ -440,6 +441,14 @@ class PurchaseRequestController extends Controller
             $data['provider_contact'] = $request->provider_contact;
             $data['provider_email'] = $request->provider_email;
             $data['no_quotation_reason'] = $request->no_quotation_reason;
+            
+            // Manejar el archivo de cotización
+            if ($request->hasFile('quotation_file')) {
+                $file = $request->file('quotation_file');
+                $filename = 'quotation_' . time() . '_' . $file->getClientOriginalName();
+                $filePath = $file->storeAs('quotations', $filename, 'public');
+                $data['quotation_file_path'] = $filePath;
+            }
         }
 
         // Crear la solicitud de servicios

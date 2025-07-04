@@ -73,6 +73,7 @@ class PurchaseRequest extends Model
         'provider_contact',
         'provider_email',
         'no_quotation_reason',
+        'quotation_file_path',
     ];
 
     /**

@@ -575,6 +575,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('quotations/send-preapproval/{purchaseRequest}', [QuotationController::class, 'sendPreApprovalEmail'])
         ->name('quotations.send-preapproval-email');
     
+    // Ruta para marcar como completado y enviar a preaprobación
+    Route::get('quotations/mark-completed/{purchaseRequest}', [QuotationController::class, 'markCompleted'])
+        ->name('quotations.mark-completed');
+    
     // Ruta para anulación por falta de descripción
     Route::post('quotations/cancel-description/{purchaseRequest}', [QuotationController::class, 'cancelForDescription'])
         ->name('quotations.cancel-description');
@@ -630,6 +634,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('quotation-approvals.compare');
     Route::post('quotation-approvals/{id}/pre-approve', [QuotationApprovalController::class, 'preApprove'])
         ->name('quotation-approvals.pre-approve');
+    Route::post('quotation-approvals/{id}/pre-approve-without-quotation', [QuotationApprovalController::class, 'preApproveWithoutQuotation'])
+        ->name('quotation-approvals.pre-approve-without-quotation');
 });
 
 // Rutas para las aprobaciones finales de solicitudes de compra

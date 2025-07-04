@@ -13,7 +13,7 @@
             <h3 class="card-title">Solicitud de Servicios</h3>
         </div>
         
-        <form action="{{ route('purchase-requests.store') }}" method="POST" id="servicesForm">
+        <form action="{{ route('purchase-requests.store') }}" method="POST" id="servicesForm" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="type" value="services">
             
@@ -136,6 +136,17 @@
                                     <div class="form-group">
                                         <label for="no_quotation_reason">JUSTIFICACIÓN PARA NO COTIZAR <span class="text-danger">*</span>:</label>
                                         <textarea class="form-control" id="no_quotation_reason" name="no_quotation_reason" rows="2" placeholder="Ej: Renovación de licencia anual, Proveedor único autorizado, Continuidad de servicio, etc.">{{ old('no_quotation_reason') }}</textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="quotation_file">COTIZACIÓN O ORDEN DE RENOVACIÓN <span class="text-danger">*</span>:</label>
+                                        <input type="file" class="form-control-file @error('quotation_file') is-invalid @enderror" id="quotation_file" name="quotation_file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                        @error('quotation_file')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <small class="form-text text-muted">
+                                            Adjunte la cotización, orden de renovación o documento que respalde el costo del servicio. 
+                                            Formatos permitidos: PDF, Word, Imágenes (JPG, PNG). Tamaño máximo: 10MB.
+                                        </small>
                                     </div>
                                 </div>
                             </div>
@@ -545,6 +556,13 @@ $(document).ready(function() {
                 e.preventDefault();
                 alert('La justificación para no cotizar es obligatoria.');
                 $('#no_quotation_reason').focus();
+                isValid = false;
+            }
+            
+            if (!$('#quotation_file')[0].files.length) {
+                e.preventDefault();
+                alert('Debe adjuntar la cotización o orden de renovación.');
+                $('#quotation_file').focus();
                 isValid = false;
             }
         }
