@@ -27,7 +27,7 @@ class ProveedorNotificationService
 
             // Usar el interceptor de correos para redirigir en modo de prueba
             $emailTestService = new \App\Services\EmailTestModeService();
-            $interceptedRecipients = $emailTestService->interceptEmails($recipients, 'Contabilidad');
+            $interceptedRecipients = $emailTestService->interceptEmails($recipients);
 
             // Enviar email a todos los destinatarios
             Mail::to($interceptedRecipients)->send(new ProveedorCreated($proveedor));
@@ -49,27 +49,20 @@ class ProveedorNotificationService
     }
 
     /**
-     * Obtiene la lista de destinatarios según el entorno
+     * Obtiene la lista de destinatarios para notificaciones de proveedores
+     * Siempre usa los emails reales de producción
+     * El EmailTestModeService se encarga de la interceptación si está habilitado
      *
      * @return array
      */
     private function getNotificationRecipients()
     {
-        $environment = config('app.env');
-        
-        if ($environment === 'production') {
-            return [
-                'contabilidad@tvs.edu.co',
-                'tesoreria@tvs.edu.co',
-                'auxiliarcontable@tvs.edu.co'
-            ];
-        } else {
-            // Entorno de desarrollo/testing
-            return [
-                'contabilidad@test.com',
-                'tesoreria@test.com',
-                'auxiliarcontable@test.com'
-            ];
-        }
+        // Siempre usar los emails reales de producción
+        // El EmailTestModeService interceptará si EMAIL_TEST_MODE=true
+        return [
+            'contabilidad@tvs.edu.co',
+            'tesoreria@tvs.edu.co',
+            'auxiliarcontable@tvs.edu.co'
+        ];
     }
 }

@@ -636,6 +636,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('quotation-approvals.pre-approve');
     Route::post('quotation-approvals/{id}/pre-approve-without-quotation', [QuotationApprovalController::class, 'preApproveWithoutQuotation'])
         ->name('quotation-approvals.pre-approve-without-quotation');
+    Route::post('quotation-approvals/{id}/pre-approve-mixed-selection', [QuotationApprovalController::class, 'preApproveMixedSelection'])
+        ->name('quotation-approvals.pre-approve-mixed-selection');
 });
 
 // Rutas para las aprobaciones finales de solicitudes de compra

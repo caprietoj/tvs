@@ -1025,6 +1025,59 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de confirmación para envío de pre-aprobación -->
+<div class="modal fade" id="preapprovalModal" tabindex="-1" role="dialog" aria-labelledby="preapprovalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="preapprovalModalLabel">
+                    <i class="fas fa-envelope mr-2"></i>Cotizaciones Completadas
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-2 text-center">
+                        <i class="fas fa-file-invoice-dollar fa-3x text-warning mb-3"></i>
+                    </div>
+                    <div class="col-md-10">
+                        <h6 class="mb-3">Se han adjuntado todas las cotizaciones requeridas</h6>
+                        <p class="mb-3">
+                            Se han completado las <strong>{{ session('quotation_count', 3) }} cotizaciones</strong> para esta solicitud de compra.
+                        </p>
+                        <p class="text-muted mb-0">
+                            ¿Desea enviar las cotizaciones al supervisor correspondiente para su pre-aprobación ahora?
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <h6><i class="fas fa-info-circle mr-2"></i>¿Qué sucederá?</h6>
+                    <ul class="mb-0 small">
+                        <li>Se enviará un correo de notificación al supervisor de la sección <strong>{{ $purchaseRequest->section_area }}</strong></li>
+                        <li>La solicitud cambiará al estado <strong>"En pre-aprobación"</strong></li>
+                        <li>El supervisor podrá revisar y seleccionar la mejor cotización</li>
+                        <li>También se enviará una notificación informativa al área de compras</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-clock mr-1"></i>Enviar Más Tarde
+                </button>
+                <form action="{{ route('quotations.send-preapproval-email', $purchaseRequest) }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-envelope mr-1"></i>Enviar para Pre-aprobación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('css')
@@ -1287,6 +1340,11 @@
                 $this.addClass('border-warning');
             }
         });
+        
+        // Mostrar modal de pre-aprobación si se detecta la variable de sesión
+        @if(session('show_preapproval_modal'))
+            $('#preapprovalModal').modal('show');
+        @endif
     });
 </script>
 @stop

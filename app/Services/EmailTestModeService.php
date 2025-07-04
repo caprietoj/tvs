@@ -36,6 +36,9 @@ class EmailTestModeService
             'sistemas' => config('app.email_test_sistemas', env('EMAIL_TEST_SISTEMAS', 'test-sistemas@tvs.edu.co')),
             'pai' => config('app.email_test_pai', env('EMAIL_TEST_PAI', 'test-pai@tvs.edu.co')),
             'compras' => 'test-compras@tvs.edu.co',
+            'contabilidad' => 'test-contabilidad@tvs.edu.co',
+            'tesoreria' => 'test-tesoreria@tvs.edu.co',
+            'auxiliar' => 'test-auxiliar@tvs.edu.co',
             'administracion' => 'test-admin@tvs.edu.co',
             'general' => 'test-general@tvs.edu.co',
         ];
@@ -63,6 +66,12 @@ class EmailTestModeService
             $section = 'pai';
         } elseif (strpos($originalEmail, 'compras') !== false) {
             $section = 'compras';
+        } elseif (strpos($originalEmail, 'contabilidad') !== false) {
+            $section = 'contabilidad';
+        } elseif (strpos($originalEmail, 'tesoreria') !== false) {
+            $section = 'tesoreria';
+        } elseif (strpos($originalEmail, 'auxiliar') !== false) {
+            $section = 'auxiliar';
         } elseif (strpos($originalEmail, 'admin') !== false) {
             $section = 'administracion';
         }

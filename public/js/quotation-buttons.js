@@ -7,6 +7,7 @@
 class QuotationButtonManager {
     constructor() {
         this.totalItems = 0;
+        this.selectedCount = 0;
         this.initialized = false;
         this.init();
     }
@@ -19,12 +20,16 @@ class QuotationButtonManager {
     }
 
     setup() {
-        // Obtener el total de items desde el atributo data o contando las filas
-        this.totalItems = parseInt($('#total-items-count').val()) || 
-                         parseInt($('#dynamic-total-count').text()) || 
-                         $('table tbody tr').length;
-
+        console.log('Configurando QuotationButtonManager');
+        
+        // Obtener el total de items de múltiples fuentes
+        this.totalItems = this.getTotalItemsCount();
+        
+        // Contar selecciones actuales desde el DOM
+        this.selectedCount = this.getCurrentSelections();
+        
         console.log('QuotationButtonManager inicializado. Total items:', this.totalItems);
+        console.log('Selecciones existentes al inicializar:', this.selectedCount);
 
         // Realizar la primera actualización
         this.updateButtons();
@@ -39,6 +44,56 @@ class QuotationButtonManager {
         };
 
         this.initialized = true;
+        
+        // Forzar una segunda actualización después de un pequeño delay para asegurar que todo esté renderizado
+        setTimeout(() => {
+            console.log('Forzando segunda actualización después del setup');
+            this.forceUpdate();
+        }, 250);
+    }
+
+    getTotalItemsCount() {
+        // Intentar obtener desde diferentes fuentes
+        
+        // 1. Desde input hidden
+        const hiddenInputValue = $('#total-items-count').val();
+        if (hiddenInputValue) {
+            return parseInt(hiddenInputValue);
+        }
+        
+        // 2. Desde span dinámico
+        const spanValue = $('#dynamic-total-count').text();
+        if (spanValue && spanValue !== '0') {
+            return parseInt(spanValue);
+        }
+        
+        // 3. Desde variable JavaScript global (si existe)
+        if (window.totalItemsCount !== undefined) {
+            return parseInt(window.totalItemsCount);
+        }
+        
+        // 4. Contar filas de la tabla (excluyendo header y footer)
+        const tableRows = $('table tbody tr[id^="item-row-"]');
+        if (tableRows.length > 0) {
+            return tableRows.length;
+        }
+        
+        // 5. Contar desde cualquier elemento con data-item-index
+        const itemElements = $('[data-item-index]');
+        if (itemElements.length > 0) {
+            // Obtener el índice más alto + 1
+            let maxIndex = -1;
+            itemElements.each(function() {
+                const index = parseInt($(this).attr('data-item-index'));
+                if (index > maxIndex) {
+                    maxIndex = index;
+                }
+            });
+            return maxIndex + 1;
+        }
+        
+        console.warn('No se pudo determinar el total de items');
+        return 0;
     }
 
     setupObservers() {
@@ -101,7 +156,18 @@ class QuotationButtonManager {
     }
 
     getCurrentSelections() {
-        return $('.selected-provider').length;
+        // Contar elementos con la clase .selected-provider que sean visibles
+        const selectedProviders = $('.selected-provider');
+        let visibleCount = 0;
+        
+        selectedProviders.each(function() {
+            // Verificar que el elemento sea visible y no esté oculto
+            if ($(this).is(':visible') && $(this).css('display') !== 'none') {
+                visibleCount++;
+            }
+        });
+        
+        return visibleCount;
     }
 
     updateButtons() {
@@ -110,35 +176,45 @@ class QuotationButtonManager {
             return;
         }
 
-        const currentSelections = this.getCurrentSelections();
+        // Actualizar conteo actual
+        this.selectedCount = this.getCurrentSelections();
         
-        console.log(`Actualizando botones: ${currentSelections}/${this.totalItems} selecciones`);
+        console.log(`Actualizando botones: ${this.selectedCount}/${this.totalItems} selecciones`);
+        console.log('Elementos .selected-provider encontrados:', $('.selected-provider').length);
 
         // Ocultar todos los elementos primero
         this.hideAllElements();
 
         // Actualizar contadores dinámicos
-        $('#dynamic-selected-count').text(currentSelections);
+        $('#dynamic-selected-count').text(this.selectedCount);
         $('#dynamic-total-count').text(this.totalItems);
-        $('#dynamic-progress-count').text(currentSelections);
+        $('#dynamic-progress-count').text(this.selectedCount);
         $('#dynamic-progress-total').text(this.totalItems);
 
         // Mostrar elementos apropiados según el estado
-        if (currentSelections === this.totalItems && currentSelections > 0) {
+        if (this.selectedCount === this.totalItems && this.selectedCount > 0) {
             // Selección completa
             console.log('Mostrando elementos de selección completa');
-            $('#dynamic-complete-alert').fadeIn(300);
-            $('#dynamic-complete-buttons').fadeIn(300);
-        } else if (currentSelections > 0) {
+            $('#dynamic-complete-alert').show().fadeIn(300);
+            $('#dynamic-complete-buttons').show().fadeIn(300);
+        } else if (this.selectedCount > 0) {
             // Selección parcial
             console.log('Mostrando elementos de selección parcial');
-            $('#dynamic-partial-alert').fadeIn(300);
-            $('#dynamic-partial-buttons').fadeIn(300);
+            $('#dynamic-partial-alert').show().fadeIn(300);
+            $('#dynamic-partial-buttons').show().fadeIn(300);
         } else {
             // Sin selecciones
             console.log('Mostrando alerta sin selecciones');
-            $('#dynamic-no-selection-alert').fadeIn(300);
+            $('#dynamic-no-selection-alert').show().fadeIn(300);
         }
+        
+        // Debug: Log del estado final
+        console.log('Estado final de elementos:');
+        console.log('- Complete alert visible:', $('#dynamic-complete-alert').is(':visible'));
+        console.log('- Complete buttons visible:', $('#dynamic-complete-buttons').is(':visible'));
+        console.log('- Partial alert visible:', $('#dynamic-partial-alert').is(':visible'));
+        console.log('- Partial buttons visible:', $('#dynamic-partial-buttons').is(':visible'));
+        console.log('- No selection alert visible:', $('#dynamic-no-selection-alert').is(':visible'));
     }
 
     hideAllElements() {
@@ -153,10 +229,35 @@ class QuotationButtonManager {
         $('#no-selection-alert').hide();
     }
 
-    // Método público para forzar una actualización
-    forceUpdate() {
+    // Método público para forzar una actualización con valores específicos
+    forceUpdate(selectedCount = null, totalItems = null) {
         console.log('Actualización forzada de botones');
+        
+        if (selectedCount !== null) {
+            this.selectedCount = selectedCount;
+        } else {
+            this.selectedCount = this.getCurrentSelections();
+        }
+        
+        if (totalItems !== null) {
+            this.totalItems = totalItems;
+        } else {
+            this.totalItems = this.getTotalItemsCount();
+        }
+        
+        console.log('Valores actualizados - Selecciones:', this.selectedCount, 'Total:', this.totalItems);
         this.updateButtons();
+    }
+
+    // Métodos llamados cuando hay cambios en las selecciones
+    onSelectionAdded() {
+        console.log('Selección agregada');
+        setTimeout(() => this.updateButtons(), 100);
+    }
+
+    onSelectionRemoved() {
+        console.log('Selección eliminada');
+        setTimeout(() => this.updateButtons(), 100);
     }
 }
 

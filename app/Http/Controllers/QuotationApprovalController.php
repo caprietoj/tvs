@@ -56,10 +56,39 @@ class QuotationApprovalController extends Controller
                 ->with('info', 'Este servicio no requiere cotización. Redirigiendo al flujo de aprobación directa.');
         }
         
+        // Verificar si hay selecciones mixtas
+        $mixedSelections = \App\Models\QuotationItemSelection::where('purchase_request_id', $id)
+            ->with(['quotation', 'selectedBy'])
+            ->get();
+            
+        $hasMixedSelections = $mixedSelections->count() > 0;
+        
+        // Obtener items de la solicitud para mostrar comparación con selecciones
+        $purchaseItems = [];
+        $selectedQuotations = collect();
+        
+        if ($hasMixedSelections) {
+            $purchaseItems = is_array($request->purchase_items) 
+                ? $request->purchase_items 
+                : json_decode($request->purchase_items, true);
+                
+            // Obtener las cotizaciones que fueron seleccionadas en la selección mixta
+            $selectedQuotationIds = $mixedSelections->pluck('quotation_id')->unique();
+            $selectedQuotations = $request->quotations()->whereIn('id', $selectedQuotationIds)->get();
+            
+            // Agrupar selecciones por cotización para mostrar el resumen
+            $selectionsByQuotation = $mixedSelections->groupBy('quotation_id');
+            $selectedQuotations = $selectedQuotations->map(function($quotation) use ($selectionsByQuotation) {
+                $quotation->selectedItems = $selectionsByQuotation->get($quotation->id, collect());
+                $quotation->selectedItemsTotal = $quotation->selectedItems->sum('total_price');
+                return $quotation;
+            });
+        }
+        
         // Permitir que las solicitudes sin cotizaciones continúen al flujo de preaprobación
         // ya que pueden haber pasado por el proceso de "Hecho Cumplido" sin requerir cotizaciones
         
-        return view('quotation-approvals.show', compact('request'));
+        return view('quotation-approvals.show', compact('request', 'mixedSelections', 'hasMixedSelections', 'purchaseItems', 'selectedQuotations'));
     }
 
     /**
@@ -284,5 +313,228 @@ class QuotationApprovalController extends Controller
             return redirect()->back()
                 ->with('error', 'Error al pre-aprobar la solicitud: ' . $e->getMessage());
         }
+    }
+    
+    /**
+     * Pre-aprobar una solicitud con selección mixta de proveedores.
+     */
+    public function preApproveMixedSelection(Request $request, $id)
+    {
+        \Log::info('Iniciando pre-aprobación de selección mixta', [
+            'purchase_request_id' => $id,
+            'request_data' => $request->all(),
+            'user_id' => auth()->id()
+        ]);
+        
+        // Validar la entrada
+        $validated = $request->validate([
+            'comments' => 'nullable|string|max:500',
+            'budget_line' => 'required|string|max:255',
+        ]);
+
+        // Obtener la solicitud
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+        
+        \Log::info('Solicitud encontrada para pre-aprobación mixta', [
+            'purchase_request_id' => $id,
+            'status' => $purchaseRequest->status,
+            'request_number' => $purchaseRequest->request_number
+        ]);
+        
+        // Verificar que la solicitud esté en estado correcto
+        if (!in_array($purchaseRequest->status, ['En pre-aprobación', 'En Cotización'])) {
+            \Log::warning('Estado de solicitud no válido para pre-aprobación mixta', [
+                'purchase_request_id' => $id,
+                'current_status' => $purchaseRequest->status
+            ]);
+            return redirect()->back()->with('error', 'Esta solicitud no está en un estado válido para pre-aprobación. Estado actual: ' . $purchaseRequest->status);
+        }
+        
+        // Verificar que tenga selecciones mixtas
+        $mixedSelections = \App\Models\QuotationItemSelection::where('purchase_request_id', $id)->get();
+        if ($mixedSelections->count() === 0) {
+            return redirect()->back()->with('error', 'No se encontraron selecciones mixtas para esta solicitud.');
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            \Log::info('Iniciando transacción para pre-aprobación de selección mixta', [
+                'purchase_request_id' => $id,
+                'user_id' => auth()->id(),
+                'validated_data' => $validated
+            ]);
+
+            // Actualizar el estado de la solicitud a pre-aprobada
+            $purchaseRequest->update([
+                'status' => 'Pre-aprobada',
+                'pre_approved_by' => auth()->id(),
+                'pre_approved_at' => now(),
+                'pre_approval_comments' => $validated['comments'] ?? 'Selección mixta pre-aprobada',
+                'budget_line' => $validated['budget_line']
+            ]);
+
+            \Log::info('Solicitud actualizada exitosamente', [
+                'purchase_request_id' => $id,
+                'new_status' => 'Pre-aprobada',
+                'budget_line' => $validated['budget_line']
+            ]);
+
+            // Registrar en el historial
+            \App\Models\RequestHistory::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'user_id' => auth()->id(),
+                'action' => 'Pre-aprobación de selección mixta',
+                'notes' => 'Selección mixta pre-aprobada. Total de selecciones: ' . $mixedSelections->count() . '. Comentarios: ' . ($validated['comments'] ?? 'Sin comentarios')
+            ]);
+
+            // Enviar notificaciones
+            $this->sendMixedSelectionPreApprovalNotifications($purchaseRequest, $mixedSelections);
+
+            \DB::commit();
+
+            \Log::info('Pre-aprobación de selección mixta completada exitosamente', [
+                'purchase_request_id' => $id,
+                'request_number' => $purchaseRequest->request_number,
+                'mixed_selections_count' => $mixedSelections->count()
+            ]);
+
+            return redirect()->route('quotation-approvals.index')
+                ->with('success', 'La selección mixta ha sido pre-aprobada correctamente. La solicitud está lista para aprobación final.');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            \Log::error('Error al pre-aprobar selección mixta: ' . $e->getMessage(), [
+                'purchase_request_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->with('error', 'Error al pre-aprobar la selección mixta: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Enviar notificaciones para pre-aprobación de selección mixta
+     */
+    private function sendMixedSelectionPreApprovalNotifications($purchaseRequest, $mixedSelections)
+    {
+        try {
+            \Log::info('Iniciando envío de notificaciones de pre-aprobación de selección mixta', [
+                'purchase_request' => $purchaseRequest->request_number,
+                'purchase_request_id' => $purchaseRequest->id,
+                'mixed_selections_count' => $mixedSelections->count()
+            ]);
+            
+            // Obtener configuración dinámica
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            
+            // Obtener emails de la sección para notificación de aprobación final
+            $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            
+            // Calcular total de la selección mixta
+            $totalAmount = $mixedSelections->sum('total_price');
+            
+            \Log::info('Configuración de emails para notificaciones', [
+                'section_area' => $purchaseRequest->section_area,
+                'section_emails' => $sectionEmails,
+                'compras_email' => $comprasEmail,
+                'total_amount' => $totalAmount
+            ]);
+            
+            // 1. ENVIAR NOTIFICACIÓN A DIRECTORES/COORDINADORES PARA APROBACIÓN FINAL
+            if (!empty($sectionEmails)) {
+                // Usar la nueva notificación específica para aprobación final de selección mixta
+                $approvalNotification = new \App\Notifications\MixedSelectionFinalApproval(
+                    $purchaseRequest,
+                    $mixedSelections,
+                    $totalAmount
+                );
+                
+                foreach ($sectionEmails as $email) {
+                    \Log::info('Enviando notificación de pre-aprobación para aprobación final a: ' . $email);
+                    \Notification::route('mail', $email)->notify($approvalNotification);
+                }
+            }
+            
+            // 2. ENVIAR NOTIFICACIÓN INFORMATIVA A COMPRAS
+            if ($comprasEmail) {
+                $comprasNotification = new \App\Notifications\MixedSelectionCompras(
+                    $purchaseRequest, 
+                    true, // Es completa porque ya fue pre-aprobada
+                    $mixedSelections->count(), 
+                    $mixedSelections->count() // Total count es igual al selected count ya que está completa
+                );
+                
+                \Log::info('Enviando notificación informativa a compras: ' . $comprasEmail);
+                \Notification::route('mail', $comprasEmail)->notify($comprasNotification);
+            }
+            
+            \Log::info('Notificaciones de pre-aprobación de selección mixta enviadas correctamente', [
+                'section_emails' => $sectionEmails,
+                'compras_email' => $comprasEmail,
+                'purchase_request' => $purchaseRequest->request_number,
+                'selections_count' => $mixedSelections->count(),
+                'total_amount' => $totalAmount
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar notificación de pre-aprobación de selección mixta: ' . $e->getMessage(), [
+                'purchase_request' => $purchaseRequest->request_number,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+    
+    /**
+     * Obtener los correos electrónicos de la sección especificada
+     */
+    private function getSectionEmails($section_area)
+    {
+        if (empty($section_area)) {
+            \Log::warning('Sección/Área vacía en getSectionEmails');
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            return [config($configSource . '.default')];
+        }
+        
+        \Log::info("Buscando email para la sección: '$section_area'");
+        
+        // Obtener todas las secciones configuradas usando configuración dinámica
+        $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+        $configuredSections = config($configSource . '.sections');
+        
+        // Verificar si la sección existe exactamente como está escrita
+        if (isset($configuredSections[$section_area])) {
+            $email = $configuredSections[$section_area];
+            $emailLog = is_array($email) ? '[' . implode(', ', $email) . ']' : $email;
+            \Log::info("✓ Email encontrado para la sección '$section_area': " . $emailLog);
+            return is_array($email) ? $email : [$email];
+        }
+        
+        // Si no se encuentra exactamente, buscar por coincidencia sin distinguir mayúsculas/minúsculas
+        foreach ($configuredSections as $sectionName => $sectionEmail) {
+            if (strcasecmp($sectionName, $section_area) === 0) {
+                $emailLog = is_array($sectionEmail) ? '[' . implode(', ', $sectionEmail) . ']' : $sectionEmail;
+                \Log::info("✓ Email encontrado para la sección '$section_area' (case insensitive): " . $emailLog);
+                return is_array($sectionEmail) ? $sectionEmail : [$sectionEmail];
+            }
+        }
+        
+        // Último intento - buscar si la sección es parte del nombre configurado o viceversa
+        foreach ($configuredSections as $sectionName => $sectionEmail) {
+            if (stripos($sectionName, $section_area) !== false || stripos($section_area, $sectionName) !== false) {
+                $emailLog = is_array($sectionEmail) ? '[' . implode(', ', $sectionEmail) . ']' : $sectionEmail;
+                \Log::info("✓ Email encontrado por coincidencia parcial '$sectionName' para la sección '$section_area': " . $emailLog);
+                return is_array($sectionEmail) ? $sectionEmail : [$sectionEmail];
+            }
+        }
+        
+        // Si aún no se encuentra, usar el email predeterminado
+        $defaultEmail = config($configSource . '.default');
+        \Log::warning("✗ No se encontró email configurado para la sección: '$section_area'. Usando predeterminado: $defaultEmail");
+        
+        return [$defaultEmail];
     }
 }

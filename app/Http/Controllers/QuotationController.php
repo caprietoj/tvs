@@ -178,58 +178,11 @@ class QuotationController extends Controller
                 ]);
             }
             
-            // Si ya hay 3 cotizaciones, notificar según el flujo corregido
+            // Log cuando se completan las 3 cotizaciones (sin envío automático)
             if ($quotationCount >= 3) {
-                // Obtener correos de la sección correspondiente usando configuración dinámica
-                $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
-                
-                // Obtener configuración dinámica
-                $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
-                $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
-                
-                \Log::info('Preparando envío de notificaciones diferenciadas', [
+                \Log::info('Se completaron 3 cotizaciones - esperando confirmación manual para envío', [
                     'purchase_request' => $purchaseRequest->request_number,
-                    'section_area' => $purchaseRequest->section_area,
-                    'section_emails' => $sectionEmails,
-                    'compras_email' => $comprasEmail
-                ]);
-                
-                // 1. ENVIAR NOTIFICACIÓN CON BOTÓN A DIRECTORES/COORDINADORES
-                $notificationWithButton = new QuotationsUploaded($purchaseRequest->fresh());
-                
-                try {
-                    foreach ($sectionEmails as $email) {
-                        \Log::info('Enviando notificación CON BOTÓN (director/coordinador) a: ' . $email);
-                        Notification::route('mail', $email)
-                            ->notify($notificationWithButton);
-                    }
-                } catch (\Exception $e) {
-                    \Log::error('Error al enviar notificación con botón: ' . $e->getMessage(), [
-                        'purchase_request' => $purchaseRequest->request_number,
-                        'section_emails' => $sectionEmails,
-                        'error' => $e->getMessage()
-                    ]);
-                }
-                
-                // 2. ENVIAR NOTIFICACIÓN INFORMATIVA A COMPRAS (SIN BOTÓN)
-                try {
-                    \Log::info('Enviando notificación INFORMATIVA (sin botón) a compras: ' . $comprasEmail);
-                    $informativeNotification = new \App\Notifications\QuotationsCompletedCompras($purchaseRequest->fresh());
-                    Notification::route('mail', $comprasEmail)
-                        ->notify($informativeNotification);
-                } catch (\Exception $e) {
-                    \Log::error('Error al enviar notificación informativa a compras: ' . $e->getMessage(), [
-                        'purchase_request' => $purchaseRequest->request_number,
-                        'compras_email' => $comprasEmail,
-                        'error' => $e->getMessage()
-                    ]);
-                }
-                
-                // Registrar resumen final
-                \Log::info('Notificaciones diferenciadas enviadas exitosamente', [
-                    'purchase_request' => $purchaseRequest->request_number,
-                    'directores_con_boton' => $sectionEmails,
-                    'compras_informativo' => $comprasEmail
+                    'quotation_count' => $quotationCount
                 ]);
             }
             
@@ -271,8 +224,17 @@ class QuotationController extends Controller
         \Log::info('Estado final de la solicitud después de agregar cotización', [
             'request_number' => $purchaseRequest->request_number,
             'request_id' => $purchaseRequest->id,
-            'status_after' => $purchaseRequest->fresh()->status
+            'status_after' => $purchaseRequest->fresh()->status,
+            'quotation_count' => $quotationCount
         ]);
+        
+        // Verificar si ahora tiene 3 cotizaciones y mostrar modal
+        if ($quotationCount >= 3 && is_null($purchaseRequest->preapproval_sent_at)) {
+            return redirect()->route('purchase-requests.show', $purchaseRequest->id)
+                ->with('success', 'Cotización agregada exitosamente.')
+                ->with('show_preapproval_modal', true)
+                ->with('quotation_count', $quotationCount);
+        }
         
         return redirect()->route('purchase-requests.show', $purchaseRequest->id)
             ->with('success', 'Cotización agregada exitosamente.');

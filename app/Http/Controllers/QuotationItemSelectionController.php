@@ -247,7 +247,7 @@ class QuotationItemSelectionController extends Controller
     }
 
     /**
-     * Guardar y enviar la selección mixta (parcial o completa)
+     * Guardar y enviar la selección mixta directamente a pre-aprobación
      */
     public function saveAndSend(Request $request, PurchaseRequest $purchaseRequest)
     {
@@ -268,36 +268,103 @@ class QuotationItemSelectionController extends Controller
                 
             $isComplete = $existingSelections->count() === count($purchaseItems);
             
-            // Actualizar estado de la solicitud
-            if ($isComplete) {
-                // Si está completa, usar el estado de pre-aprobación
-                $purchaseRequest->update([
-                    'status' => 'Pre-aprobada',
-                    'pre_approved_by' => auth()->id(),
-                    'pre_approved_at' => now(),
-                    'pre_approval_comments' => 'Selección mixta completa guardada y enviada'
-                ]);
-                $message = 'Selección mixta completa guardada y enviada. La solicitud está lista para aprobación final.';
-            } else {
-                // Si es parcial, mantener un estado intermedio y enviar notificación
-                $purchaseRequest->update([
-                    'pre_approval_comments' => 'Selección mixta parcial guardada - ' . $existingSelections->count() . '/' . count($purchaseItems) . ' items seleccionados'
-                ]);
-                
-                // Enviar notificación sobre selección parcial
-                $this->sendPartialSelectionNotification($purchaseRequest, $existingSelections->count(), count($purchaseItems));
-                
-                $message = 'Selección mixta parcial guardada y notificada. Progreso: ' . $existingSelections->count() . '/' . count($purchaseItems) . ' items.';
-            }
+            // Actualizar estado de la solicitud a "En pre-aprobación" para revisión del director
+            $purchaseRequest->update([
+                'status' => 'En pre-aprobación',
+                'preapproval_sent_at' => now(),
+                'preapproval_sent_by' => auth()->id(),
+                'pre_approval_comments' => $isComplete 
+                    ? 'Selección mixta completa - Enviada para pre-aprobación al director'
+                    : 'Selección mixta parcial - ' . $existingSelections->count() . '/' . count($purchaseItems) . ' items - Enviada para pre-aprobación al director'
+            ]);
+
+            // Enviar notificaciones de pre-aprobación usando el sistema existente
+            $this->sendPreApprovalNotifications($purchaseRequest, $isComplete, $existingSelections->count(), count($purchaseItems));
 
             DB::commit();
 
-            return redirect()->route('approvals.show', $purchaseRequest->id)
+            $message = $isComplete 
+                ? 'Selección mixta completa enviada al director para pre-aprobación exitosamente.'
+                : 'Selección mixta parcial enviada al director para pre-aprobación. Progreso: ' . $existingSelections->count() . '/' . count($purchaseItems) . ' items.';
+
+            return redirect()->route('purchase-requests.show', $purchaseRequest->id)
                            ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollback();
-            return redirect()->back()->with('error', 'Error al guardar y enviar la selección: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al enviar la selección para pre-aprobación: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Enviar notificaciones de pre-aprobación para selección mixta
+     */
+    private function sendPreApprovalNotifications($purchaseRequest, $isComplete, $selectedCount, $totalCount)
+    {
+        try {
+            // Usar el servicio de clasificación de secciones
+            $sectionClassifier = new \App\Services\SectionClassifierService();
+            $directorEmail = $sectionClassifier->getDirectorEmail($purchaseRequest->section_area);
+            
+            // Obtener emails específicos de la sección
+            $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area);
+            
+            // Crear lista de todos los emails que deben ser notificados
+            $allEmails = [];
+            
+            // Agregar director
+            if ($directorEmail) {
+                $allEmails[] = $directorEmail;
+            }
+            
+            // Agregar emails específicos de la sección
+            if (!empty($sectionEmails)) {
+                $allEmails = array_merge($allEmails, $sectionEmails);
+            }
+            
+            // Agregar correos que SIEMPRE deben ser notificados
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            $alwaysNotifyEmails = config($configSource . '.always_notify', []);
+            foreach ($alwaysNotifyEmails as $email) {
+                if (!in_array($email, $allEmails)) {
+                    $allEmails[] = $email;
+                }
+            }
+            
+            // Eliminar duplicados
+            $allEmails = array_unique($allEmails);
+            
+            // Registrar en log
+            \Log::info('Enviando notificación de pre-aprobación para selección mixta', [
+                'purchase_request' => $purchaseRequest->request_number,
+                'section' => $purchaseRequest->section_area,
+                'is_complete' => $isComplete,
+                'selected_count' => $selectedCount,
+                'total_count' => $totalCount,
+                'emails' => $allEmails
+            ]);
+            
+            // Enviar notificación al director específico
+            if ($directorEmail) {
+                \Notification::route('mail', $directorEmail)
+                    ->notify(new \App\Notifications\MixedSelectionPreApproved($purchaseRequest, $isComplete, $selectedCount, $totalCount));
+                \Log::info("Notificación de selección mixta enviada al director: $directorEmail");
+            }
+            
+            // Enviar notificación informativa a compras
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            if ($comprasEmail) {
+                \Notification::route('mail', $comprasEmail)
+                    ->notify(new \App\Notifications\MixedSelectionCompras($purchaseRequest, $isComplete, $selectedCount, $totalCount));
+                \Log::info("Notificación informativa de selección mixta enviada a compras: $comprasEmail");
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar notificaciones de pre-aprobación para selección mixta: ' . $e->getMessage(), [
+                'purchase_request' => $purchaseRequest->request_number,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 

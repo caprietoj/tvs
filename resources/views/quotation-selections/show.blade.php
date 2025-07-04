@@ -140,6 +140,9 @@
             </h5>
         </div>
         <div class="card-body">
+            <!-- Campo oculto para JavaScript -->
+            <input type="hidden" id="total-items-count" value="{{ count($purchaseItems) }}">
+            
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
                     <thead style="background-color: #f8f9fa;">
@@ -245,27 +248,22 @@
             </div>
 
             @if($existingSelections->count() === count($purchaseItems))
+                <!-- Elementos estáticos ocultos inicialmente para evitar conflictos -->
                 <div class="alert alert-success mt-3" id="complete-selection-alert" style="display: none;">
                     <i class="fas fa-check-circle mr-2"></i>
                     <strong>Selección completa.</strong> Todos los items tienen un proveedor asignado.
                 </div>
                 
                 <div class="text-center mt-3" id="complete-buttons" style="display: none;">
-                    <form action="{{ route('quotation-selections.finalize', $purchaseRequest) }}" method="POST" style="display: inline;">
+                    <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;" id="save-and-send-form">
                         @csrf
-                        <button type="submit" class="btn btn-success btn-lg mr-3">
-                            <i class="fas fa-check-double mr-2"></i>Finalizar Selección Mixta
-                        </button>
-                    </form>
-                    
-                    <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;">
-                        @csrf
-                        <button type="submit" class="btn btn-primary btn-lg">
+                        <button type="button" class="btn btn-primary btn-lg" onclick="showPreapprovalConfirmModal()">
                             <i class="fas fa-save mr-2"></i>Guardar y Enviar
                         </button>
                     </form>
                 </div>
             @elseif($existingSelections->count() > 0)
+                <!-- Elementos estáticos ocultos inicialmente para evitar conflictos -->
                 <div class="alert alert-info mt-3" id="partial-selection-alert" style="display: none;">
                     <i class="fas fa-info-circle mr-2"></i>
                     <strong>Selección parcial.</strong> 
@@ -274,14 +272,15 @@
                 </div>
                 
                 <div class="text-center mt-3" id="partial-buttons" style="display: none;">
-                    <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;">
+                    <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;" id="partial-save-and-send-form">
                         @csrf
-                        <button type="submit" class="btn btn-primary btn-lg">
+                        <button type="button" class="btn btn-primary btn-lg" onclick="showPreapprovalConfirmModal()">
                             <i class="fas fa-save mr-2"></i>Guardar y Enviar
                         </button>
                     </form>
                 </div>
             @else
+                <!-- Elementos estáticos ocultos inicialmente para evitar conflictos -->
                 <div class="alert alert-warning mt-3" id="no-selection-alert" style="display: none;">
                     <i class="fas fa-exclamation-triangle mr-2"></i>
                     <strong>Selección incompleta.</strong> 
@@ -297,16 +296,9 @@
             </div>
             
             <div id="dynamic-complete-buttons" class="text-center mt-3" style="display: none;">
-                <form action="{{ route('quotation-selections.finalize', $purchaseRequest) }}" method="POST" style="display: inline;">
+                <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;" id="dynamic-save-and-send-form">
                     @csrf
-                    <button type="submit" class="btn btn-success btn-lg mr-3">
-                        <i class="fas fa-check-double mr-2"></i>Finalizar Selección Mixta
-                    </button>
-                </form>
-                
-                <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;">
-                    @csrf
-                    <button type="submit" class="btn btn-primary btn-lg">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="showPreapprovalConfirmModal()">
                         <i class="fas fa-save mr-2"></i>Guardar y Enviar
                     </button>
                 </form>
@@ -320,9 +312,9 @@
             </div>
             
             <div id="dynamic-partial-buttons" class="text-center mt-3" style="display: none;">
-                <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;">
+                <form action="{{ route('quotation-selections.save-and-send', $purchaseRequest) }}" method="POST" style="display: inline;" id="dynamic-partial-save-and-send-form">
                     @csrf
-                    <button type="submit" class="btn btn-primary btn-lg">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="showPreapprovalConfirmModal()">
                         <i class="fas fa-save mr-2"></i>Guardar y Enviar
                     </button>
                 </form>
@@ -430,6 +422,65 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de confirmación para envío a pre-aprobación -->
+<div class="modal fade" id="preapprovalConfirmModal" tabindex="-1" role="dialog" aria-labelledby="preapprovalConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #364E76; color: white;">
+                <h5 class="modal-title" id="preapprovalConfirmModalLabel">
+                    <i class="fas fa-paper-plane mr-2"></i>Enviar Selección Mixta a Pre-aprobación
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-2 text-center">
+                        <i class="fas fa-balance-scale fa-3x text-primary mb-3"></i>
+                    </div>
+                    <div class="col-md-10">
+                        <h6 class="mb-3">¿Está seguro de enviar la selección mixta para pre-aprobación?</h6>
+                        <p class="mb-3">
+                            Se guardará su selección actual de proveedores y se enviará la solicitud al supervisor correspondiente.
+                        </p>
+                        <p class="text-muted mb-0">
+                            Una vez enviada, no podrá modificar la selección de proveedores.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <h6><i class="fas fa-info-circle mr-2"></i>¿Qué sucederá?</h6>
+                    <ul class="mb-0 small">
+                        <li>Se guardará la selección mixta de proveedores</li>
+                        <li>Se enviará un correo de notificación al supervisor de la sección <strong>{{ $purchaseRequest->section_area }}</strong></li>
+                        <li>La solicitud cambiará al estado <strong>"En pre-aprobación"</strong></li>
+                        <li>El supervisor podrá revisar y aprobar la selección realizada</li>
+                    </ul>
+                </div>
+                
+                <!-- Resumen de selección -->
+                <div class="mt-3">
+                    <h6><i class="fas fa-clipboard-list mr-2"></i>Resumen de su selección:</h6>
+                    <div id="selection-summary" class="small">
+                        <!-- Se llenará dinámicamente con JavaScript -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="confirmSaveAndSend()">
+                    <i class="fas fa-paper-plane mr-1"></i>Enviar a Pre-aprobación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @stop
 
 @section('css')
@@ -506,48 +557,279 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<!-- Definir funciones críticas ANTES de cargar otros scripts -->
+<script>
+console.log('Definiendo funciones JavaScript críticas...');
+
+// Asegurar que las funciones estén disponibles inmediatamente, incluso antes de jQuery
+window.showPreapprovalConfirmModal = function() {
+    console.log('showPreapprovalConfirmModal llamada');
+    
+    try {
+        // Verificar si jQuery y el modal están disponibles
+        if (typeof $ === 'undefined') {
+            console.warn('jQuery no está disponible, reintentando en 100ms...');
+            setTimeout(window.showPreapprovalConfirmModal, 100);
+            return;
+        }
+        
+        if (!$.fn.modal) {
+            console.warn('Bootstrap modal no está disponible, reintentando en 100ms...');
+            setTimeout(window.showPreapprovalConfirmModal, 100);
+            return;
+        }
+        
+        // Actualizar resumen y mostrar modal
+        updateSelectionSummary();
+        $('#preapprovalConfirmModal').modal('show');
+        
+    } catch (error) {
+        console.error('Error en showPreapprovalConfirmModal:', error);
+        alert('Error al abrir el modal. Por favor, recargue la página e intente nuevamente.');
+    }
+};
+
+window.confirmSaveAndSend = function() {
+    console.log('confirmSaveAndSend llamada');
+    
+    try {
+        // Buscar el formulario activo
+        const activeForm = document.querySelector('#save-and-send-form') ||
+                           document.querySelector('#partial-save-and-send-form') ||
+                           document.querySelector('#dynamic-save-and-send-form') ||
+                           document.querySelector('#dynamic-partial-save-and-send-form');
+        
+        if (!activeForm) {
+            console.error('No se encontró formulario activo para enviar');
+            alert('Error: No se pudo encontrar el formulario. Por favor, recargue la página e intente nuevamente.');
+            return;
+        }
+        
+        // Cerrar modal y enviar formulario
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#preapprovalConfirmModal').modal('hide');
+        }
+        
+        console.log('Enviando formulario:', activeForm.id);
+        activeForm.submit();
+        
+    } catch (error) {
+        console.error('Error en confirmSaveAndSend:', error);
+        alert('Error al enviar el formulario. Por favor, recargue la página e intente nuevamente.');
+    }
+};
+
+// Función para actualizar el resumen de selección en el modal
+window.updateSelectionSummary = function() {
+    console.log('Actualizando resumen de selección...');
+    
+    try {
+        const summaryContainer = document.getElementById('selection-summary');
+        if (!summaryContainer) {
+            console.warn('Container de resumen no encontrado');
+            return;
+        }
+        
+        let summaryHTML = '<div class="table-responsive"><table class="table table-sm">';
+        summaryHTML += '<thead><tr><th>Item</th><th>Proveedor Seleccionado</th><th>Precio</th></tr></thead><tbody>';
+        
+        // Obtener todas las selecciones actuales desde el DOM
+        const selectedProviders = document.querySelectorAll('.selected-provider');
+        let totalSelected = 0;
+        
+        selectedProviders.forEach(function(providerDiv, index) {
+            const row = providerDiv.closest('tr');
+            if (row) {
+                const description = row.querySelector('td:nth-child(2) strong')?.textContent || `Item ${index + 1}`;
+                const providerName = providerDiv.querySelector('strong')?.textContent || 'No seleccionado';
+                const priceElement = row.querySelector('[id^="total-price-"] strong');
+                const price = priceElement ? priceElement.textContent : '$0.00';
+                
+                summaryHTML += `<tr><td>${description}</td><td>${providerName}</td><td>${price}</td></tr>`;
+                totalSelected++;
+            }
+        });
+        
+        if (totalSelected === 0) {
+            summaryHTML += '<tr><td colspan="3" class="text-center text-muted">No hay selecciones realizadas</td></tr>';
+        }
+        
+        summaryHTML += '</tbody></table></div>';
+        summaryHTML += `<div class="text-right"><strong>Total de items seleccionados: ${totalSelected}</strong></div>`;
+        
+        summaryContainer.innerHTML = summaryHTML;
+        
+    } catch (error) {
+        console.error('Error al actualizar resumen:', error);
+    }
+};
+
+// Verificar que las funciones estén disponibles
+console.log('Funciones definidas:');
+console.log('- showPreapprovalConfirmModal:', typeof window.showPreapprovalConfirmModal);
+console.log('- confirmSaveAndSend:', typeof window.confirmSaveAndSend);
+console.log('- updateSelectionSummary:', typeof window.updateSelectionSummary);
+</script>
+
 <!-- JavaScript externo -->
 <script src="{{ asset('js/quotation-chart.js') }}"></script>
 <script src="{{ asset('js/quotation-buttons.js') }}"></script>
 
 <!-- JavaScript para configuración inicial -->
 <script>
-$(document).ready(function() {
-    // Configurar elementos iniciales si es necesario
-    console.log('Vista de selección mixta cargada');
-    console.log('Total items desde input:', $('#total-items-count').val());
-    console.log('Selecciones actuales al cargar:', $('.selected-provider').length);
+// Definir las versiones completas de las funciones cuando jQuery esté listo
+window.showPreapprovalConfirmModal_ready = function() {
+    updateSelectionSummary();
+    $('#preapprovalConfirmModal').modal('show');
+};
+
+window.confirmSaveAndSend_ready = function() {
+    // Buscar el formulario activo y enviarlo
+    const activeForm = document.querySelector('#save-and-send-form') ||
+                       document.querySelector('#partial-save-and-send-form') ||
+                       document.querySelector('#dynamic-save-and-send-form') ||
+                       document.querySelector('#dynamic-partial-save-and-send-form');
     
-    // Forzar una actualización después de que todo esté cargado
-    setTimeout(function() {
+    if (activeForm) {
+        $('#preapprovalConfirmModal').modal('hide');
+        activeForm.submit();
+    } else {
+        console.error('No se encontró formulario activo para enviar');
+        alert('Error: No se pudo encontrar el formulario. Por favor, recargue la página e intente nuevamente.');
+    }
+};
+
+// Redefinir las funciones principales para que usen las versiones _ready
+window.showPreapprovalConfirmModal = function() {
+    if (typeof $ !== 'undefined' && $.fn.modal) {
+        window.showPreapprovalConfirmModal_ready();
+    } else {
+        console.warn('jQuery no está listo, reintentando en 100ms');
+        setTimeout(window.showPreapprovalConfirmModal, 100);
+    }
+};
+
+window.confirmSaveAndSend = function() {
+    if (typeof $ !== 'undefined' && $.fn.modal) {
+        window.confirmSaveAndSend_ready();
+    } else {
+        console.warn('jQuery no está listo, reintentando en 100ms');
+        setTimeout(window.confirmSaveAndSend, 100);
+    }
+};
+
+// Función para actualizar el resumen de selección en el modal
+function updateSelectionSummary() {
+    const summaryContainer = document.getElementById('selection-summary');
+    if (!summaryContainer) {
+        console.warn('Container de resumen no encontrado');
+        return;
+    }
+    
+    let summaryHTML = '<div class="table-responsive"><table class="table table-sm">';
+    summaryHTML += '<thead><tr><th>Item</th><th>Proveedor Seleccionado</th><th>Precio</th></tr></thead><tbody>';
+    
+    // Obtener todas las selecciones actuales desde el DOM
+    const selectedProviders = document.querySelectorAll('.selected-provider');
+    let totalSelected = 0;
+    
+    selectedProviders.forEach(function(providerDiv, index) {
+        const row = providerDiv.closest('tr');
+        if (row) {
+            const description = row.querySelector('td:nth-child(2) strong')?.textContent || `Item ${index + 1}`;
+            const providerName = providerDiv.querySelector('strong')?.textContent || 'No seleccionado';
+            const priceElement = row.querySelector('[id^="total-price-"] strong');
+            const price = priceElement ? priceElement.textContent : '$0.00';
+            
+            summaryHTML += `<tr><td>${description}</td><td>${providerName}</td><td>${price}</td></tr>`;
+            totalSelected++;
+        }
+    });
+    
+    if (totalSelected === 0) {
+        summaryHTML += '<tr><td colspan="3" class="text-center text-muted">No hay selecciones realizadas</td></tr>';
+    }
+    
+    summaryHTML += '</tbody></table></div>';
+    summaryHTML += `<div class="text-right"><strong>Total de items seleccionados: ${totalSelected}</strong></div>`;
+    
+    summaryContainer.innerHTML = summaryHTML;
+}
+
+$(document).ready(function() {
+    console.log('Vista de selección mixta cargada');
+    
+    // Contar elementos existentes desde el servidor (PHP)
+    const totalItems = {{ count($purchaseItems) }};
+    const existingSelections = {{ $existingSelections->count() }};
+    
+    console.log('Total items:', totalItems);
+    console.log('Selecciones existentes desde servidor:', existingSelections);
+    console.log('Elementos .selected-provider encontrados:', $('.selected-provider').length);
+    
+    // Función para forzar actualización manual (para debug)
+    window.debugButtons = function() {
+        console.log('=== DEBUG BUTTONS ===');
+        console.log('Total items:', totalItems);
+        console.log('Selecciones existentes desde servidor:', existingSelections);
+        console.log('Elementos .selected-provider encontrados:', $('.selected-provider').length);
+        console.log('Elementos dinámicos visibles:');
+        console.log('- Complete alert:', $('#dynamic-complete-alert').is(':visible'));
+        console.log('- Complete buttons:', $('#dynamic-complete-buttons').is(':visible'));
+        console.log('- Partial alert:', $('#dynamic-partial-alert').is(':visible'));
+        console.log('- Partial buttons:', $('#dynamic-partial-buttons').is(':visible'));
+        console.log('- No selection alert:', $('#dynamic-no-selection-alert').is(':visible'));
+        
         if (window.quotationButtonManager) {
-            console.log('QuotationButtonManager encontrado, forzando actualización');
+            console.log('Forzando actualización del QuotationButtonManager');
             window.quotationButtonManager.forceUpdate();
         } else {
-            console.warn('QuotationButtonManager no encontrado');
+            console.log('QuotationButtonManager no disponible');
         }
-    }, 500);
+    };
     
-    // Debug: Agregar un botón temporal de prueba (eliminar en producción)
-    if (console && typeof console.log === 'function') {
-        window.debugButtons = function() {
-            console.log('=== DEBUG BUTTONS ===');
-            console.log('Total items:', $('#total-items-count').val());
-            console.log('Selecciones actuales:', $('.selected-provider').length);
-            console.log('Elementos dinámicos visibles:');
-            console.log('- Complete alert:', $('#dynamic-complete-alert').is(':visible'));
-            console.log('- Complete buttons:', $('#dynamic-complete-buttons').is(':visible'));
-            console.log('- Partial alert:', $('#dynamic-partial-alert').is(':visible'));
-            console.log('- Partial buttons:', $('#dynamic-partial-buttons').is(':visible'));
-            console.log('- No selection alert:', $('#dynamic-no-selection-alert').is(':visible'));
+    // Inicialización con múltiples intentos
+    function initializeButtonManager() {
+        if (window.quotationButtonManager) {
+            console.log('QuotationButtonManager encontrado, inicializando con datos del servidor');
             
-            if (window.quotationButtonManager) {
+            // Forzar el conteo correcto basado en datos del servidor
+            window.quotationButtonManager.selectedCount = existingSelections;
+            window.quotationButtonManager.totalItems = totalItems;
+            
+            // Actualizar inmediatamente
+            window.quotationButtonManager.forceUpdate();
+            
+            // También actualizar después de un breve delay por si acaso
+            setTimeout(() => {
                 window.quotationButtonManager.forceUpdate();
-            }
-        };
-        
-        console.log('Debug función creada. Ejecuta debugButtons() en la consola para verificar el estado.');
+            }, 100);
+            
+            return true;
+        }
+        return false;
     }
-});
+    
+    // Intentar inicializar inmediatamente
+    if (!initializeButtonManager()) {
+        // Si no está disponible, intentar varias veces
+        let attempts = 0;
+        const maxAttempts = 10;
+        const initInterval = setInterval(() => {
+            attempts++;
+            console.log(`Intento ${attempts} de inicialización del QuotationButtonManager`);
+            
+            if (initializeButtonManager() || attempts >= maxAttempts) {
+                clearInterval(initInterval);
+                if (attempts >= maxAttempts) {
+                    console.warn('No se pudo inicializar QuotationButtonManager después de', maxAttempts, 'intentos');
+                }
+            }
+        }, 100);
+    }
+    
+    console.log('Debug función creada. Ejecuta debugButtons() en la consola para verificar el estado.');
+    console.log('Funciones globales definidas:', typeof window.showPreapprovalConfirmModal, typeof window.confirmSaveAndSend);
+    console.log('jQuery disponible:', typeof $ !== 'undefined');
 </script>
 @stop
