@@ -23,6 +23,16 @@ class PerformanceEvaluationController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        
+        // Verificar permisos de acceso
+        if (!$user->hasRole('admin') && 
+            !$user->can('view-all-performance-evaluations') && 
+            !$user->can('view-own-performance-evaluations') &&
+            !$user->can('create-performance-evaluations') &&
+            !$user->can('complete-own-performance-evaluations')) {
+            abort(403, 'No tienes permisos para acceder a las evaluaciones de desempeño');
+        }
+        
         $query = PerformanceEvaluation::query();        // Filtrar evaluaciones según el rol del usuario
         if ($user->hasRole('admin') || $user->can('view-all-performance-evaluations')) {
             // Los admins pueden ver todas las evaluaciones

@@ -854,14 +854,16 @@ $(document).ready(function() {
         showToast('info', 'Selección de usuarios limpiada');
     });
 
-    // Form submission handler
+    // Form submission handler with validation
     $('#evaluation-form').on('submit', function(e) {
+        var isValid = true;
         var selectionType = $('input[name="selection_type"]:checked').val();
         var selected;
         
         // Remove any existing hidden inputs for user_ids
         $('#evaluation-form input[name="user_ids[]"]').remove();
         
+        // Get selected users/departments
         if (selectionType === 'department') {
             selected = $('#user_ids_dept').val() || [];
             // Copy department values to the main user_ids field
@@ -884,9 +886,48 @@ $(document).ready(function() {
             });
         }
         
+        // Validate user selection
         if (selected.length === 0) {
-            e.preventDefault();
+            var userField = selectionType === 'department' ? $('#user_ids_dept') : $('#user_ids_individual');
+            userField.addClass('is-invalid');
+            isValid = false;
             showToast('error', 'Debe seleccionar al menos un ' + (selectionType === 'department' ? 'departamento' : 'usuario'));
+        } else {
+            var userField = selectionType === 'department' ? $('#user_ids_dept') : $('#user_ids_individual');
+            userField.removeClass('is-invalid').addClass('is-valid');
+        }
+        
+        // Check other required fields
+        var requiredFields = ['evaluation_type', 'evaluation_period_start', 'evaluation_period_end'];
+        
+        requiredFields.forEach(function(fieldId) {
+            var field = $('#' + fieldId);
+            var fieldValue = field.val();
+            
+            if (!fieldValue) {
+                field.addClass('is-invalid');
+                isValid = false;
+            } else {
+                field.removeClass('is-invalid').addClass('is-valid');
+            }
+        });
+        
+        // Validate dates
+        if (!validateDates()) {
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            showToast('error', 'Por favor, complete todos los campos obligatorios correctamente');
+            
+            // Scroll to first error
+            var firstError = $('.is-invalid:first');
+            if (firstError.length) {
+                $('html, body').animate({
+                    scrollTop: firstError.offset().top - 100
+                }, 500);
+            }
             return false;
         }
     });
@@ -971,53 +1012,6 @@ $(document).ready(function() {
     }
     
     $('#evaluation_period_start, #evaluation_period_end').on('change', validateDates);
-    
-    // Form validation before submit
-    $('#evaluation-form').on('submit', function(e) {
-        var isValid = true;
-          // Check required fields
-        var requiredFields = ['user_ids', 'evaluation_type', 'evaluation_period_start', 'evaluation_period_end'];
-        
-        requiredFields.forEach(function(fieldId) {
-            var field = $('#' + fieldId);
-            var fieldValue = field.val();
-            
-            // Special handling for multiple select
-            if (fieldId === 'user_ids') {
-                if (!fieldValue || fieldValue.length === 0) {
-                    field.addClass('is-invalid');
-                    isValid = false;
-                } else {
-                    field.removeClass('is-invalid').addClass('is-valid');
-                }
-            } else {
-                if (!fieldValue) {
-                    field.addClass('is-invalid');
-                    isValid = false;
-                } else {
-                    field.removeClass('is-invalid').addClass('is-valid');
-                }
-            }
-        });
-        
-        // Validate dates
-        if (!validateDates()) {
-            isValid = false;
-        }
-        
-        if (!isValid) {
-            e.preventDefault();
-            showToast('error', 'Por favor, complete todos los campos obligatorios correctamente');
-            
-            // Scroll to first error
-            var firstError = $('.is-invalid:first');
-            if (firstError.length) {
-                $('html, body').animate({
-                    scrollTop: firstError.offset().top - 100
-                }, 500);
-            }
-        }
-    });
     
     // Toast notification function
     function showToast(type, message) {

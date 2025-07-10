@@ -360,8 +360,7 @@ return [
             'url'  => 'performance-evaluations',
             'icon' => 'fas fa-user-check',
             'active' => ['performance-evaluations*'],
-            'classes' => 'menu-item',
-            'can' => 'create-performance-evaluations'
+            'classes' => 'menu-item'
         ],
         [
             'text' => 'Reserva de Equipos',

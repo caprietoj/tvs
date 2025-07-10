@@ -126,7 +126,9 @@ class RolesAndPermissionsSeeder extends Seeder
             // Permisos para evaluaciones de desempeño
             'create-performance-evaluations',
             'view-all-performance-evaluations',
-            'export-performance-evaluations'
+            'export-performance-evaluations',
+            'view-own-performance-evaluations', // Para ver y realizar sus propias evaluaciones
+            'complete-own-performance-evaluations' // Para completar autoevaluaciones y evaluaciones asignadas
         ];
        
         foreach ($ticketPermissions as $perm) {
@@ -174,6 +176,9 @@ class RolesAndPermissionsSeeder extends Seeder
             // Agregar permisos de reserva de espacios consistentes con profesor
             Permission::firstOrCreate(['name' => 'view.space-reservations']),
             Permission::firstOrCreate(['name' => 'create.space-reservations']),
+            // Permisos para evaluaciones de desempeño
+            Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
+            Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
         
         ]);
 
@@ -203,6 +208,9 @@ class RolesAndPermissionsSeeder extends Seeder
              Permission::firstOrCreate(['name' => 'view.reservas']),
              Permission::firstOrCreate(['name' => 'view.events']),
              Permission::firstOrCreate(['name' => 'view.salidas']),
+             // Permisos para evaluaciones de desempeño
+             Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
+             Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
          ]);
 
           // Crear el rol "contabilidad"
@@ -244,6 +252,9 @@ class RolesAndPermissionsSeeder extends Seeder
             Permission::firstOrCreate(['name' => 'view.reservas']),
             Permission::firstOrCreate(['name' => 'view.events']),
             Permission::firstOrCreate(['name' => 'view.salidas']),
+            // Permisos para evaluaciones de desempeño
+            Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
+            Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
         ]);
 
          // Crear el rol "compras"
@@ -279,6 +290,9 @@ class RolesAndPermissionsSeeder extends Seeder
              Permission::firstOrCreate(['name' => 'view.reservas']),
              Permission::firstOrCreate(['name' => 'view.events']),
              Permission::firstOrCreate(['name' => 'view.salidas']),
+             // Permisos para evaluaciones de desempeño
+             Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
+             Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
          ]);
 
           // Crear el rol "rrhh"
@@ -336,6 +350,9 @@ class RolesAndPermissionsSeeder extends Seeder
              Permission::firstOrCreate(['name' => 'view.space-reservations']),
              Permission::firstOrCreate(['name' => 'create.space-reservations']),
              Permission::firstOrCreate(['name' => 'almacen']),
+             // Permisos para evaluaciones de desempeño
+             Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
+             Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
          ]);
 
          // Crear el rol "reservation_manager"
@@ -393,6 +410,9 @@ class RolesAndPermissionsSeeder extends Seeder
              // Agregar permisos de reserva de espacios consistentes con profesor
              Permission::firstOrCreate(['name' => 'view.space-reservations']),
              Permission::firstOrCreate(['name' => 'create.space-reservations']),
+             // Permisos para evaluaciones de desempeño
+             Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
+             Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
          ]);
 
          // Crear el rol "tecnicos"
@@ -441,6 +461,9 @@ class RolesAndPermissionsSeeder extends Seeder
             Permission::firstOrCreate(['name' => 'view.reservas']),
             Permission::firstOrCreate(['name' => 'view.events']),
             Permission::firstOrCreate(['name' => 'view.salidas']),
+            // Permisos para evaluaciones de desempeño
+            Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
+            Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
          ]);
 
          // Crear el rol "admin-espacios" (administrador de reservas de espacios)
@@ -491,6 +514,30 @@ class RolesAndPermissionsSeeder extends Seeder
             Permission::firstOrCreate(['name' => 'view.reservas']),
             Permission::firstOrCreate(['name' => 'view.events']),
             Permission::firstOrCreate(['name' => 'view.salidas']),
+         ]);
+
+         // Crear el rol "emc" (Educación Media y Continua)
+         $emcRole = Role::firstOrCreate(['name' => 'emc']);
+         $emcRole->syncPermissions([
+            Permission::firstOrCreate(['name' => 'view.dashboard']),
+            Permission::firstOrCreate(['name' => 'ticket.view']),
+            Permission::firstOrCreate(['name' => 'document-requests']),
+            Permission::firstOrCreate(['name' => 'view.maintenance']),
+            Permission::firstOrCreate(['name' => 'view-loan-requests']),
+            Permission::firstOrCreate(['name' => 'create-loan-requests']),
+            Permission::firstOrCreate(['name' => 'solicitudes_compra']),
+            Permission::firstOrCreate(['name' => 'almacen']),
+            // Agregar permisos de reserva de espacios
+            Permission::firstOrCreate(['name' => 'view.space-reservations']),
+            Permission::firstOrCreate(['name' => 'create.space-reservations']),
+            // Agregar permisos para acceso completo a Gestión Académica
+            Permission::firstOrCreate(['name' => 'view.reservas']),
+            Permission::firstOrCreate(['name' => 'view.events']),
+            Permission::firstOrCreate(['name' => 'view.salidas']),
+            Permission::firstOrCreate(['name' => 'view.calendar']),
+            // Permisos para evaluaciones de desempeño
+            Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
+            Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
          ]);
     }
 }
