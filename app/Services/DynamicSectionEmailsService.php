@@ -9,16 +9,28 @@ class DynamicSectionEmailsService
 {
     /**
      * Get the current configuration source
+     * Determina automáticamente qué configuración usar según el ambiente
      */
     public static function getCurrentConfigSource(): string
     {
-        // Usar config() primero, luego env() como fallback
+        // En producción, SIEMPRE usar section_emails (correos reales)
+        if (config('app.env') === 'production') {
+            return 'section_emails';
+        }
+        
+        // Para desarrollo/testing: usar config() primero, luego env() como fallback
         $configValue = config('app.section_emails_config');
         if ($configValue !== null) {
             return $configValue;
         }
         
-        return env('SECTION_EMAILS_CONFIG', 'section_emails');
+        $envValue = env('SECTION_EMAILS_CONFIG');
+        if ($envValue !== null) {
+            return $envValue;
+        }
+        
+        // Default para desarrollo: usar correos de prueba
+        return config('app.env') === 'local' ? 'section-mail-test' : 'section_emails';
     }
 
     /**

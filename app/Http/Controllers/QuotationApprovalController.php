@@ -96,11 +96,21 @@ class QuotationApprovalController extends Controller
      */
     public function preApprove(Request $request, $id)
     {
+        \Log::info('Iniciando pre-aprobación normal', [
+            'purchase_request_id' => $id,
+            'request_data' => $request->all(),
+            'user_id' => auth()->id()
+        ]);
+        
         // Validar la entrada
         $validated = $request->validate([
             'quotation_id' => 'required|exists:quotations,id',
             'comments' => 'nullable|string',
             'budget' => 'required|string|max:255',
+        ]);
+
+        \Log::info('Validación exitosa para pre-aprobación', [
+            'validated_data' => $validated
         ]);
 
         // Obtener la solicitud y la cotización
@@ -127,6 +137,12 @@ class QuotationApprovalController extends Controller
             'pre_approved_by' => auth()->id(),
             'pre_approved_at' => now(),
             'budget' => $validated['budget']
+        ]);
+
+        \Log::info('Solicitud de compra actualizada exitosamente', [
+            'purchase_request_id' => $id,
+            'budget_saved' => $validated['budget'],
+            'status' => 'Pre-aprobada'
         ]);
 
         // Registrar en el historial
@@ -371,13 +387,13 @@ class QuotationApprovalController extends Controller
                 'pre_approved_by' => auth()->id(),
                 'pre_approved_at' => now(),
                 'pre_approval_comments' => $validated['comments'] ?? 'Selección mixta pre-aprobada',
-                'budget_line' => $validated['budget_line']
+                'budget' => $validated['budget_line']
             ]);
 
             \Log::info('Solicitud actualizada exitosamente', [
                 'purchase_request_id' => $id,
                 'new_status' => 'Pre-aprobada',
-                'budget_line' => $validated['budget_line']
+                'budget' => $validated['budget_line']
             ]);
 
             // Registrar en el historial

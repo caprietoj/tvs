@@ -91,8 +91,8 @@ class PurchaseRequestPolicy
     public function addQuotation(User $user, PurchaseRequest $purchaseRequest)
     {
         // Permitir a cualquier usuario autenticado agregar cotizaciones
-        // a solicitudes de tipo "compra" que no estén rechazadas o completadas
-        if ($purchaseRequest->type !== 'purchase') {
+        // a solicitudes que requieren cotizaciones (compras y servicios regulares)
+        if (!$purchaseRequest->requiresQuotations()) {
             return false;
         }
 

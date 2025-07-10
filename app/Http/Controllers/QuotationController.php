@@ -63,12 +63,17 @@ class QuotationController extends Controller
             'ipoconsumo_8_amount' => 'nullable|numeric|min:0',
             'includes_ipoconsumo_4' => 'nullable|boolean',
             'ipoconsumo_4_amount' => 'nullable|numeric|min:0',
+            'tax_application_mode' => 'nullable|string|in:global,per_item',
             'quotation_file' => 'required|file|mimes:pdf|max:5120',
             'additional_items' => 'nullable|array',
             'additional_items.*.description' => 'required_with:additional_items|string|max:255',
             'additional_items.*.quantity' => 'required_with:additional_items|numeric|min:0',
             'additional_items.*.unit' => 'nullable|string|max:50',
             'additional_items.*.price' => 'required_with:additional_items|numeric|min:0',
+            'additional_items.*.includes_iva_19' => 'nullable|boolean',
+            'additional_items.*.includes_iva_5' => 'nullable|boolean',
+            'additional_items.*.includes_ipoconsumo_8' => 'nullable|boolean',
+            'additional_items.*.includes_ipoconsumo_4' => 'nullable|boolean',
         ]);
         
         if ($validator->fails()) {
@@ -79,6 +84,8 @@ class QuotationController extends Controller
         
         // Procesar items adicionales
         $additionalItems = [];
+        $taxMode = $request->input('tax_application_mode', 'global');
+        
         if ($request->has('additional_items') && is_array($request->additional_items)) {
             foreach ($request->additional_items as $key => $item) {
                 if (!empty($item['description']) && !empty($item['quantity']) && isset($item['price'])) {
@@ -86,13 +93,31 @@ class QuotationController extends Controller
                     $price = floatval($item['price']);
                     $total = $quantity * $price;
                     
-                    $additionalItems[] = [
+                    $itemData = [
                         'description' => $item['description'],
                         'quantity' => $quantity,
                         'unit' => $item['unit'] ?? 'Unidad',
                         'price' => $price,
                         'total' => $total
                     ];
+                    
+                    // Si está en modo por item, agregar información de impuestos
+                    if ($taxMode === 'per_item') {
+                        $itemData['includes_iva_19'] = isset($item['includes_iva_19']) && $item['includes_iva_19'];
+                        $itemData['includes_iva_5'] = isset($item['includes_iva_5']) && $item['includes_iva_5'];
+                        $itemData['includes_ipoconsumo_8'] = isset($item['includes_ipoconsumo_8']) && $item['includes_ipoconsumo_8'];
+                        $itemData['includes_ipoconsumo_4'] = isset($item['includes_ipoconsumo_4']) && $item['includes_ipoconsumo_4'];
+                        
+                        // Calcular impuestos para este item
+                        $itemData['iva_19_amount'] = $itemData['includes_iva_19'] ? $total * 0.19 : 0;
+                        $itemData['iva_5_amount'] = $itemData['includes_iva_5'] ? $total * 0.05 : 0;
+                        $itemData['ipoconsumo_8_amount'] = $itemData['includes_ipoconsumo_8'] ? $total * 0.08 : 0;
+                        $itemData['ipoconsumo_4_amount'] = $itemData['includes_ipoconsumo_4'] ? $total * 0.04 : 0;
+                        $itemData['total_with_taxes'] = $total + $itemData['iva_19_amount'] + $itemData['iva_5_amount'] + 
+                                                      $itemData['ipoconsumo_8_amount'] + $itemData['ipoconsumo_4_amount'];
+                    }
+                    
+                    $additionalItems[] = $itemData;
                 }
             }
         }
@@ -102,17 +127,39 @@ class QuotationController extends Controller
         $additionalItemsTotal = array_sum(array_column($additionalItems, 'total'));
         $totalSubtotal = $subtotal + $additionalItemsTotal;
         
-        // Calcular todos los impuestos
+        // Calcular todos los impuestos según el modo
         $includesIva = $request->has('includes_iva');
         $includesIva19 = $request->has('includes_iva_19');
         $includesIva5 = $request->has('includes_iva_5');
         $includesIpoconsumo8 = $request->has('includes_ipoconsumo_8');
         $includesIpoconsumo4 = $request->has('includes_ipoconsumo_4');
         
-        $iva19Amount = $includesIva19 ? $totalSubtotal * 0.19 : 0;
-        $iva5Amount = $includesIva5 ? $totalSubtotal * 0.05 : 0;
-        $ipoconsumo8Amount = $includesIpoconsumo8 ? $totalSubtotal * 0.08 : 0;
-        $ipoconsumo4Amount = $includesIpoconsumo4 ? $totalSubtotal * 0.04 : 0;
+        if ($taxMode === 'global') {
+            // Modo global: aplicar impuestos a todo el subtotal
+            $iva19Amount = $includesIva19 ? $totalSubtotal * 0.19 : 0;
+            $iva5Amount = $includesIva5 ? $totalSubtotal * 0.05 : 0;
+            $ipoconsumo8Amount = $includesIpoconsumo8 ? $totalSubtotal * 0.08 : 0;
+            $ipoconsumo4Amount = $includesIpoconsumo4 ? $totalSubtotal * 0.04 : 0;
+        } else {
+            // Modo por item: sumar los impuestos calculados por item
+            $iva19Amount = 0;
+            $iva5Amount = 0;
+            $ipoconsumo8Amount = 0;
+            $ipoconsumo4Amount = 0;
+            
+            foreach ($additionalItems as $item) {
+                $iva19Amount += $item['iva_19_amount'] ?? 0;
+                $iva5Amount += $item['iva_5_amount'] ?? 0;
+                $ipoconsumo8Amount += $item['ipoconsumo_8_amount'] ?? 0;
+                $ipoconsumo4Amount += $item['ipoconsumo_4_amount'] ?? 0;
+            }
+            
+            // Marcar que hay impuestos si hay algún monto
+            $includesIva19 = $iva19Amount > 0;
+            $includesIva5 = $iva5Amount > 0;
+            $includesIpoconsumo8 = $ipoconsumo8Amount > 0;
+            $includesIpoconsumo4 = $ipoconsumo4Amount > 0;
+        }
         
         // Para compatibilidad con el IVA original
         $expectedIvaAmount = $includesIva ? $totalSubtotal * 0.19 : $iva19Amount;
@@ -149,6 +196,7 @@ class QuotationController extends Controller
                 'ipoconsumo_8_amount' => $ipoconsumo8Amount,
                 'includes_ipoconsumo_4' => $includesIpoconsumo4,
                 'ipoconsumo_4_amount' => $ipoconsumo4Amount,
+                'tax_application_mode' => $taxMode,
                 'additional_items' => $additionalItems,
                 'delivery_time' => $request->delivery_time,
                 'payment_method' => $request->payment_method,
@@ -320,8 +368,16 @@ class QuotationController extends Controller
      */
     public function index()
     {
-        // Obtener solicitudes de tipo compra (purchase) que estén pendientes o en cotización
-        $purchaseRequests = PurchaseRequest::where('type', 'purchase')
+        // Obtener solicitudes que requieren cotizaciones (compras y servicios regulares)
+        $purchaseRequests = PurchaseRequest::where(function($query) {
+                                // Solicitudes de compra
+                                $query->where('type', 'purchase')
+                                      // O servicios regulares (que requieren cotización)
+                                      ->orWhere(function($q) {
+                                          $q->where('type', 'services')
+                                            ->where('service_type', 'regular');
+                                      });
+                            })
                             ->whereIn('status', ['pending', 'En Cotización'])
                             ->with('quotations', 'user')
                             ->latest()
@@ -335,9 +391,9 @@ class QuotationController extends Controller
      */
     public function askForMore(PurchaseRequest $purchaseRequest)
     {
-        // Verificar que sea una solicitud de tipo compra
-        if (!$purchaseRequest->isPurchaseRequest()) {
-            return redirect()->back()->with('error', 'Solo se pueden adjuntar cotizaciones a solicitudes de compra.');
+        // Verificar que sea una solicitud que requiere cotizaciones
+        if (!$purchaseRequest->requiresQuotations()) {
+            return redirect()->back()->with('error', 'Esta solicitud no requiere cotizaciones.');
         }
 
         // Verificar que no tenga ya 3 cotizaciones

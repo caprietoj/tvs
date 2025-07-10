@@ -25,18 +25,15 @@ class ProveedorNotificationService
                 return;
             }
 
-            // Usar el interceptor de correos para redirigir en modo de prueba
-            $emailTestService = new \App\Services\EmailTestModeService();
-            $interceptedRecipients = $emailTestService->interceptEmails($recipients);
-
-            // Enviar email a todos los destinatarios
-            Mail::to($interceptedRecipients)->send(new ProveedorCreated($proveedor));
+            // Enviar email a todos los destinatarios directamente
+            // Ya no necesitamos EmailTestModeService porque usamos configuración dinámica
+            Mail::to($recipients)->send(new ProveedorCreated($proveedor));
             
             Log::info('Notificación de proveedor creado enviada exitosamente', [
                 'proveedor_id' => $proveedor->id,
                 'proveedor_nombre' => $proveedor->nombre,
-                'recipients_original' => $recipients,
-                'recipients_intercepted' => $interceptedRecipients
+                'recipients' => $recipients,
+                'config_source' => \App\Services\DynamicSectionEmailsService::getCurrentConfigSource()
             ]);
             
         } catch (\Exception $e) {
@@ -50,19 +47,63 @@ class ProveedorNotificationService
 
     /**
      * Obtiene la lista de destinatarios para notificaciones de proveedores
-     * Siempre usa los emails reales de producción
-     * El EmailTestModeService se encarga de la interceptación si está habilitado
+     * Usa la configuración dinámica de secciones según el ambiente
      *
      * @return array
      */
     private function getNotificationRecipients()
     {
-        // Siempre usar los emails reales de producción
-        // El EmailTestModeService interceptará si EMAIL_TEST_MODE=true
-        return [
-            'contabilidad@tvs.edu.co',
-            'tesoreria@tvs.edu.co',
-            'auxiliarcontable@tvs.edu.co'
-        ];
+        // Usar la configuración dinámica de secciones
+        // En desarrollo/pruebas usará section-mail-test.php
+        // En producción usará section_emails.php
+        $dynamicService = new \App\Services\DynamicSectionEmailsService();
+        $sections = $dynamicService->getSections();
+        
+        $recipients = [];
+        
+        // Obtener correos de las secciones relacionadas con proveedores
+        if (isset($sections['Contabilidad'])) {
+            $recipients[] = $sections['Contabilidad'];
+        }
+        
+        if (isset($sections['Tesorería'])) {
+            $recipients[] = $sections['Tesorería'];
+        }
+        
+        if (isset($sections['Asistente Contabilidad'])) {
+            $recipients[] = $sections['Asistente Contabilidad'];
+        }
+        
+        // Fallback a correos hardcodeados si no se encuentran en la configuración
+        if (empty($recipients)) {
+            Log::warning('No se encontraron correos en la configuración de secciones, usando fallback');
+            
+            // Determinar si estamos en modo de prueba
+            if (\App\Services\DynamicSectionEmailsService::isTestingMode()) {
+                return [
+                    'contabilidad@test.com',
+                    'tesoreria@test.com',
+                    'asistentecontabilidad@test.com'
+                ];
+            } else {
+                return [
+                    'contabilidad@tvs.edu.co',
+                    'tesoreria@tvs.edu.co',
+                    'asistentecontabilidad@tvs.edu.co'
+                ];
+            }
+        }
+        
+        // Aplanar el array en caso de que algunos elementos sean arrays
+        $flattenedRecipients = [];
+        foreach ($recipients as $recipient) {
+            if (is_array($recipient)) {
+                $flattenedRecipients = array_merge($flattenedRecipients, $recipient);
+            } else {
+                $flattenedRecipients[] = $recipient;
+            }
+        }
+        
+        return array_unique($flattenedRecipients);
     }
 }

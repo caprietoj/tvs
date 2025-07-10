@@ -80,10 +80,14 @@ $(document).ready(function() {
     $(document).on('click', '.select-provider-btn, .change-selection-btn', function() {
         currentItemIndex = $(this).data('item-index');
         currentItemQuantity = $(this).data('item-quantity');
+        const itemDescription = $(this).data('item-description');
         
-        $('#modal-item-description').text($(this).data('item-description'));
+        $('#modal-item-description').text(itemDescription);
         $('#modal-item-quantity').text(currentItemQuantity);
         $('#modal-item-index').val(currentItemIndex);
+        
+        // Actualizar la descripción en todas las filas del modal
+        $('#item-description-display').html('<strong>' + itemDescription + '</strong>');
         
         // Limpiar formulario
         $('.quotation-radio').prop('checked', false);

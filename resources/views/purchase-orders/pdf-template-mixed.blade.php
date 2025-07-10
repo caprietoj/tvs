@@ -59,15 +59,6 @@
             margin-bottom: 10px;
         }
         
-        .mixed-selection-notice {
-            font-size: 11px;
-            background-color: #e6f3ff;
-            padding: 8px;
-            border: 2px solid #0066cc;
-            margin-bottom: 15px;
-            border-radius: 5px;
-        }
-        
         .provider-section {
             background-color: #f9f9f9;
             font-weight: bold;
@@ -87,17 +78,11 @@
             El envío de las facturas se debe realizar al correo 830097105@recepciondefacturas.co para poder realizar las respectivas aceptaciones y acuse de facturas ante la DIAN.
         </div>
 
-        <!-- Aviso de selección mixta -->
-        <div class="mixed-selection-notice">
-            <strong>ORDEN DE COMPRA CON SELECCIÓN MIXTA DE PROVEEDORES</strong><br>
-            Esta orden incluye productos/servicios de múltiples proveedores. Cada proveedor debe facturar únicamente los items que le corresponden según se detalla a continuación.
-        </div>
-
         <!-- Título principal -->
         <table>
             <tr>
                 <td colspan="7" class="center bold" style="font-size: 14px; padding: 10px; background-color: #e0e0e0;">
-                    FORMATO DE ORDEN DE COMPRA Y/O SERVICIO COLEGIO VICTORIA S.A.S - SELECCIÓN MIXTA
+                    FORMATO DE ORDEN DE COMPRA Y/O SERVICIO COLEGIO VICTORIA S.A.S
                 </td>
             </tr>
         </table>
@@ -105,7 +90,7 @@
         <!-- Encabezado principal -->
         <table>
             <tr>
-                <td colspan="4" class="center bold header-section">ORDEN DE COMPRA/SERVICIO - SELECCIÓN MIXTA</td>
+                <td colspan="4" class="center bold header-section">ORDEN DE COMPRA/SERVICIO</td>
                 <td class="bold">FECHA</td>
                 <td>{{ $order->created_at->format('d/m/Y') }}</td>
             </tr>
@@ -147,52 +132,87 @@
                 $currentProvider = '';
                 $providerTotal = 0;
                 $grandTotal = 0;
+                $isSingleProvider = $mixedSelections->pluck('quotation.provider_name')->unique()->count() === 1;
             @endphp
             
-            @foreach($mixedSelections as $selection)
-                @if($currentProvider !== $selection->quotation->provider_name)
-                    @if($currentProvider !== '')
-                        <!-- Subtotal del proveedor anterior -->
-                        <tr class="provider-section">
-                            <td colspan="5" class="right bold">Subtotal {{ $currentProvider }}:</td>
-                            <td class="right bold">${{ number_format($providerTotal, 0, ',', '.') }}</td>
-                        </tr>
-                        @php $providerTotal = 0; @endphp
-                    @endif
-                    @php $currentProvider = $selection->quotation->provider_name; @endphp
+            @if($isSingleProvider)
+                <!-- Vista simplificada para un solo proveedor -->
+                @php $providerName = $mixedSelections->first()->quotation->provider_name; @endphp
+                
+                <!-- Encabezado del proveedor -->
+                <tr class="provider-section">
+                    <td colspan="6" class="bold center">{{ $providerName }}</td>
+                </tr>
+                
+                @foreach($mixedSelections as $selection)
+                    <tr>
+                        <td class="center">{{ $itemNumber++ }}</td>
+                        <td>{{ $selection->item_description }}</td>
+                        <td class="center">{{ $selection->quantity }}</td>
+                        <td class="right">${{ number_format($selection->unit_price, 0, ',', '.') }}</td>
+                        <td class="right">${{ number_format($selection->total_price, 0, ',', '.') }}</td>
+                        <td class="right">{{ $selection->quotation->delivery_time ?? 'Por definir' }}</td>
+                    </tr>
                     
-                    <!-- Encabezado del nuevo proveedor -->
+                    @php 
+                        $providerTotal += $selection->total_price;
+                        $grandTotal += $selection->total_price;
+                    @endphp
+                @endforeach
+                
+                <!-- Subtotal del proveedor -->
+                <tr class="provider-section">
+                    <td colspan="4" class="right bold">Subtotal:</td>
+                    <td class="right bold">${{ number_format($providerTotal, 0, ',', '.') }}</td>
+                    <td class="right">-</td>
+                </tr>
+            @else
+                <!-- Vista original para múltiples proveedores (compatibilidad) -->
+                @foreach($mixedSelections as $selection)
+                    @if($currentProvider !== $selection->quotation->provider_name)
+                        @if($currentProvider !== '')
+                            <!-- Subtotal del proveedor anterior -->
+                            <tr class="provider-section">
+                                <td colspan="5" class="right bold">Subtotal {{ $currentProvider }}:</td>
+                                <td class="right bold">${{ number_format($providerTotal, 0, ',', '.') }}</td>
+                            </tr>
+                            @php $providerTotal = 0; @endphp
+                        @endif
+                        @php $currentProvider = $selection->quotation->provider_name; @endphp
+                        
+                        <!-- Encabezado del nuevo proveedor -->
+                        <tr class="provider-section">
+                            <td colspan="6" class="bold center">{{ $selection->quotation->provider_name }}</td>
+                        </tr>
+                    @endif
+                    
+                    <tr>
+                        <td class="center">{{ $itemNumber++ }}</td>
+                        <td>{{ $selection->quotation->provider_name }}</td>
+                        <td>{{ $selection->item_description }}</td>
+                        <td class="center">{{ $selection->quantity }}</td>
+                        <td class="right">${{ number_format($selection->unit_price, 0, ',', '.') }}</td>
+                        <td class="right">${{ number_format($selection->total_price, 0, ',', '.') }}</td>
+                    </tr>
+                    
+                    @php 
+                        $providerTotal += $selection->total_price;
+                        $grandTotal += $selection->total_price;
+                    @endphp
+                @endforeach
+                
+                <!-- Subtotal del último proveedor -->
+                @if($currentProvider !== '')
                     <tr class="provider-section">
-                        <td colspan="6" class="bold center">{{ $selection->quotation->provider_name }}</td>
+                        <td colspan="5" class="right bold">Subtotal {{ $currentProvider }}:</td>
+                        <td class="right bold">${{ number_format($providerTotal, 0, ',', '.') }}</td>
                     </tr>
                 @endif
-                
-                <tr>
-                    <td class="center">{{ $itemNumber++ }}</td>
-                    <td>{{ $selection->quotation->provider_name }}</td>
-                    <td>{{ $selection->item_description }}</td>
-                    <td class="center">{{ $selection->quantity }}</td>
-                    <td class="right">${{ number_format($selection->unit_price, 0, ',', '.') }}</td>
-                    <td class="right">${{ number_format($selection->total_price, 0, ',', '.') }}</td>
-                </tr>
-                
-                @php 
-                    $providerTotal += $selection->total_price;
-                    $grandTotal += $selection->total_price;
-                @endphp
-            @endforeach
-            
-            <!-- Subtotal del último proveedor -->
-            @if($currentProvider !== '')
-                <tr class="provider-section">
-                    <td colspan="5" class="right bold">Subtotal {{ $currentProvider }}:</td>
-                    <td class="right bold">${{ number_format($providerTotal, 0, ',', '.') }}</td>
-                </tr>
             @endif
             
             <tr>
                 <td class="bold">Observaciones:</td>
-                <td colspan="4">{{ $order->observations ?? 'Orden de compra con selección mixta de proveedores' }}</td>
+                <td colspan="4">{{ $order->observations ?? 'Orden de compra generada automáticamente' }}</td>
                 <td class="right">-</td>
             </tr>
         </table>

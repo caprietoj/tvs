@@ -122,7 +122,26 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">
+                        <!-- Opción de modo de aplicación de impuestos -->
+                        <div class="form-group" id="tax-mode-container" style="display: none;">
+                            <label>Aplicación de Impuestos</label>
+                            <div class="form-check">
+                                <input type="radio" name="tax_application_mode" id="tax_mode_global" class="form-check-input" value="global" {{ old('tax_application_mode', 'global') == 'global' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="tax_mode_global">
+                                    <strong>Aplicar globalmente</strong> <small class="text-muted">(a toda la cotización)</small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" name="tax_application_mode" id="tax_mode_per_item" class="form-check-input" value="per_item" {{ old('tax_application_mode') == 'per_item' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="tax_mode_per_item">
+                                    <strong>Aplicar por item</strong> <small class="text-muted">(cada item puede tener impuestos diferentes)</small>
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">Esta opción aparece cuando hay múltiples items en la cotización.</small>
+                        </div>
+                        
+                        <!-- Impuestos globales -->
+                        <div class="form-group" id="global-taxes-container">
                             <label>Impuestos Aplicables</label>
                             <div class="form-check">
                                 <input type="checkbox" name="includes_iva_19" id="includes_iva_19" class="form-check-input" value="1" {{ old('includes_iva_19') ? 'checked' : '' }}>
@@ -559,55 +578,91 @@
         // Función para calcular totales
         function calculateTotals() {
             const subtotal = parseFloat($('#subtotal').val()) || 0;
-            const additionalItemsTotal = calculateAdditionalItemsTotal();
+            const taxMode = $('input[name="tax_application_mode"]:checked').val();
+            let additionalItemsTotal = 0;
+            let totalIva19 = 0;
+            let totalIva5 = 0;
+            let totalIpoconsumo8 = 0;
+            let totalIpoconsumo4 = 0;
+            
+            // Calcular totales de items adicionales
+            $('.additional-item-row').each(function() {
+                const quantity = parseFloat($(this).find('.item-quantity').val()) || 0;
+                const price = parseFloat($(this).find('.item-price').val()) || 0;
+                const itemSubtotal = quantity * price;
+                $(this).find('.item-total-display').text(itemSubtotal.toFixed(2));
+                additionalItemsTotal += itemSubtotal;
+                
+                // Si está en modo por item, calcular impuestos por item
+                if (taxMode === 'per_item') {
+                    const includesIva19 = $(this).find('input[name*="[includes_iva_19]"]').prop('checked');
+                    const includesIva5 = $(this).find('input[name*="[includes_iva_5]"]').prop('checked');
+                    const includesIpoconsumo8 = $(this).find('input[name*="[includes_ipoconsumo_8]"]').prop('checked');
+                    const includesIpoconsumo4 = $(this).find('input[name*="[includes_ipoconsumo_4]"]').prop('checked');
+                    
+                    if (includesIva19) totalIva19 += itemSubtotal * 0.19;
+                    if (includesIva5) totalIva5 += itemSubtotal * 0.05;
+                    if (includesIpoconsumo8) totalIpoconsumo8 += itemSubtotal * 0.08;
+                    if (includesIpoconsumo4) totalIpoconsumo4 += itemSubtotal * 0.04;
+                }
+            });
+            
             const totalSubtotal = subtotal + additionalItemsTotal;
             
-            // Verificar qué impuestos están seleccionados
-            const includesIva19 = $('#includes_iva_19').prop('checked');
-            const includesIva5 = $('#includes_iva_5').prop('checked');
-            const includesIpoconsumo8 = $('#includes_ipoconsumo_8').prop('checked');
-            const includesIpoconsumo4 = $('#includes_ipoconsumo_4').prop('checked');
-            
-            // Calcular impuestos
-            const iva19Amount = includesIva19 ? totalSubtotal * 0.19 : 0;
-            const iva5Amount = includesIva5 ? totalSubtotal * 0.05 : 0;
-            const ipoconsumo8Amount = includesIpoconsumo8 ? totalSubtotal * 0.08 : 0;
-            const ipoconsumo4Amount = includesIpoconsumo4 ? totalSubtotal * 0.04 : 0;
+            // Calcular impuestos según el modo
+            if (taxMode === 'global') {
+                // Modo global: aplicar impuestos a todo el subtotal
+                const includesIva19 = $('#includes_iva_19').prop('checked');
+                const includesIva5 = $('#includes_iva_5').prop('checked');
+                const includesIpoconsumo8 = $('#includes_ipoconsumo_8').prop('checked');
+                const includesIpoconsumo4 = $('#includes_ipoconsumo_4').prop('checked');
+                
+                totalIva19 = includesIva19 ? totalSubtotal * 0.19 : 0;
+                totalIva5 = includesIva5 ? totalSubtotal * 0.05 : 0;
+                totalIpoconsumo8 = includesIpoconsumo8 ? totalSubtotal * 0.08 : 0;
+                totalIpoconsumo4 = includesIpoconsumo4 ? totalSubtotal * 0.04 : 0;
+            } else {
+                // Modo por item: agregar impuestos del subtotal principal si aplica
+                // (en este caso asumimos que el subtotal principal no tiene impuestos individuales
+                // y se aplicarían solo a los items adicionales)
+            }
             
             // Calcular total general
-            const totalImpuestos = iva19Amount + iva5Amount + ipoconsumo8Amount + ipoconsumo4Amount;
+            const totalImpuestos = totalIva19 + totalIva5 + totalIpoconsumo8 + totalIpoconsumo4;
             const totalGeneral = totalSubtotal + totalImpuestos;
             
             // Actualizar campos de impuestos
-            $('#iva_19_amount').val(iva19Amount.toFixed(2));
-            $('#iva_5_amount').val(iva5Amount.toFixed(2));
-            $('#ipoconsumo_8_amount').val(ipoconsumo8Amount.toFixed(2));
-            $('#ipoconsumo_4_amount').val(ipoconsumo4Amount.toFixed(2));
+            $('#iva_19_amount').val(totalIva19.toFixed(2));
+            $('#iva_5_amount').val(totalIva5.toFixed(2));
+            $('#ipoconsumo_8_amount').val(totalIpoconsumo8.toFixed(2));
+            $('#ipoconsumo_4_amount').val(totalIpoconsumo4.toFixed(2));
             $('#total_amount').val(totalGeneral.toFixed(2));
             
             // Actualizar campos ocultos para compatibilidad
+            const includesIva19 = (taxMode === 'global' && $('#includes_iva_19').prop('checked')) || 
+                                 (taxMode === 'per_item' && totalIva19 > 0);
             $('#includes_iva_hidden').val(includesIva19 ? '1' : '0');
-            $('#iva_amount_hidden').val(iva19Amount.toFixed(2));
+            $('#iva_amount_hidden').val(totalIva19.toFixed(2));
             
             // Actualizar displays del resumen
             $('#subtotal-display').text(subtotal.toFixed(2));
             $('#additional-items-total').text(additionalItemsTotal.toFixed(2));
             $('#additional-items-total-display').text(additionalItemsTotal.toFixed(2));
             $('#total-subtotal-display').text(totalSubtotal.toFixed(2));
-            $('#iva-19-display').text(iva19Amount.toFixed(2));
-            $('#iva-5-display').text(iva5Amount.toFixed(2));
-            $('#ipoconsumo-8-display').text(ipoconsumo8Amount.toFixed(2));
-            $('#ipoconsumo-4-display').text(ipoconsumo4Amount.toFixed(2));
+            $('#iva-19-display').text(totalIva19.toFixed(2));
+            $('#iva-5-display').text(totalIva5.toFixed(2));
+            $('#ipoconsumo-8-display').text(totalIpoconsumo8.toFixed(2));
+            $('#ipoconsumo-4-display').text(totalIpoconsumo4.toFixed(2));
             $('#total-general-display').text(totalGeneral.toFixed(2));
             
-            // Mostrar/ocultar filas de impuestos según estén seleccionados
-            $('#iva-19-row').toggle(includesIva19);
-            $('#iva-5-row').toggle(includesIva5);
-            $('#ipoconsumo-8-row').toggle(includesIpoconsumo8);
-            $('#ipoconsumo-4-row').toggle(includesIpoconsumo4);
+            // Mostrar/ocultar filas de impuestos según estén presentes
+            $('#iva-19-row').toggle(totalIva19 > 0);
+            $('#iva-5-row').toggle(totalIva5 > 0);
+            $('#ipoconsumo-8-row').toggle(totalIpoconsumo8 > 0);
+            $('#ipoconsumo-4-row').toggle(totalIpoconsumo4 > 0);
         }
         
-        // Función para calcular total de items adicionales
+        // Función para calcular total de items adicionales (método legacy - ya no se usa)
         function calculateAdditionalItemsTotal() {
             let total = 0;
             $('.additional-item-row').each(function() {
@@ -621,19 +676,67 @@
         }
         
         // Event listeners para cálculos automáticos
-        $('#subtotal, #includes_iva_19, #includes_iva_5, #includes_ipoconsumo_8, #includes_ipoconsumo_4').on('change input', calculateTotals);
+        $('#subtotal, #includes_iva_19, #includes_iva_5, #includes_ipoconsumo_8, #includes_ipoconsumo_4').on('change input', function() {
+            calculateTotals();
+            updateTaxModeVisibility();
+        });
         
         // Agregar item adicional
         let itemCounter = 0;
         $('#add-item-btn').on('click', function() {
             itemCounter++;
+            const taxMode = $('input[name="tax_application_mode"]:checked').val();
+            const perItemTaxesHtml = taxMode === 'per_item' ? `
+                <div class="col-12 mt-3">
+                    <div class="card card-light">
+                        <div class="card-header py-2">
+                            <h6 class="mb-0">Impuestos para este item</h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="additional_items[${itemCounter}][includes_iva_19]" class="form-check-input item-tax-checkbox" value="1">
+                                        <label class="form-check-label">IVA (19%)</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="additional_items[${itemCounter}][includes_iva_5]" class="form-check-input item-tax-checkbox" value="1">
+                                        <label class="form-check-label">IVA (5%)</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="additional_items[${itemCounter}][includes_ipoconsumo_8]" class="form-check-input item-tax-checkbox" value="1">
+                                        <label class="form-check-label">Ipoconsumo (8%)</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="additional_items[${itemCounter}][includes_ipoconsumo_4]" class="form-check-input item-tax-checkbox" value="1">
+                                        <label class="form-check-label">Ipoconsumo (4%)</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+            
             const itemHtml = `
                 <div class="additional-item-row border p-3 mb-3 rounded">
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label>Descripción</label>
-                                <input type="text" name="additional_items[${itemCounter}][description]" class="form-control" placeholder="Descripción del item">
+                                <label>Descripción 
+                                    @if($purchaseRequest->type === 'purchase')
+                                        del Artículo
+                                    @else
+                                        del Servicio
+                                    @endif
+                                </label>
+                                ${createDescriptionSelector(itemCounter)}
                             </div>
                         </div>
                         <div class="col-md-2">
@@ -668,23 +771,211 @@
                                 </button>
                             </div>
                         </div>
+                        ${perItemTaxesHtml}
                     </div>
                 </div>
             `;
             $('#additional-items-container').append(itemHtml);
+            
+            // Mostrar u ocultar la opción de modo de impuestos si hay más de un item
+            updateTaxModeVisibility();
         });
         
         // Remover item adicional
         $(document).on('click', '.remove-item', function() {
             $(this).closest('.additional-item-row').remove();
             calculateTotals();
+            updateTaxModeVisibility();
         });
         
         // Calcular cuando cambian los valores de items adicionales
         $(document).on('input change', '.item-quantity, .item-price', calculateTotals);
         
+        // Calcular cuando cambian los impuestos por item
+        $(document).on('change', '.item-tax-checkbox', calculateTotals);
+        
+        // Manejar cambio de modo de aplicación de impuestos
+        $('input[name="tax_application_mode"]').on('change', function() {
+            const mode = $(this).val();
+            toggleTaxMode(mode);
+            calculateTotals();
+        });
+        
+        // Función para actualizar la visibilidad del selector de modo de impuestos
+        function updateTaxModeVisibility() {
+            const itemCount = $('.additional-item-row').length;
+            const hasSubtotal = parseFloat($('#subtotal').val()) > 0;
+            const totalItems = (hasSubtotal ? 1 : 0) + itemCount;
+            
+            if (totalItems > 1) {
+                $('#tax-mode-container').show();
+            } else {
+                $('#tax-mode-container').hide();
+                // Si solo hay un item, asegurar que esté en modo global
+                $('#tax_mode_global').prop('checked', true);
+                toggleTaxMode('global');
+            }
+        }
+        
+        // Función para alternar entre modos de impuestos
+        function toggleTaxMode(mode) {
+            if (mode === 'per_item') {
+                $('#global-taxes-container').hide();
+                $('.additional-item-row').each(function() {
+                    if ($(this).find('.card-light').length === 0) {
+                        // Agregar impuestos por item si no existen
+                        const itemIndex = $('.additional-item-row').index(this) + 1;
+                        const taxesHtml = `
+                            <div class="col-12 mt-3">
+                                <div class="card card-light">
+                                    <div class="card-header py-2">
+                                        <h6 class="mb-0">Impuestos para este item</h6>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="additional_items[${itemIndex}][includes_iva_19]" class="form-check-input item-tax-checkbox" value="1">
+                                                    <label class="form-check-label">IVA (19%)</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="additional_items[${itemIndex}][includes_iva_5]" class="form-check-input item-tax-checkbox" value="1">
+                                                    <label class="form-check-label">IVA (5%)</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="additional_items[${itemIndex}][includes_ipoconsumo_8]" class="form-check-input item-tax-checkbox" value="1">
+                                                    <label class="form-check-label">Ipoconsumo (8%)</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="additional_items[${itemIndex}][includes_ipoconsumo_4]" class="form-check-input item-tax-checkbox" value="1">
+                                                    <label class="form-check-label">Ipoconsumo (4%)</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        $(this).find('.row').append(taxesHtml);
+                    }
+                });
+            } else {
+                $('#global-taxes-container').show();
+                // Remover impuestos por item
+                $('.additional-item-row .card-light').parent().remove();
+            }
+        }
+        
+        // Obtener items originales de la solicitud para autocomplete
+        const originalItems = [
+            @if($purchaseRequest->type === 'purchase' && is_array($purchaseRequest->purchase_items))
+                @foreach($purchaseRequest->purchase_items as $item)
+                    @if(!empty($item['quantity']))
+                        {
+                            description: "{{ $item['description'] ?? '' }}",
+                            quantity: "{{ $item['quantity'] ?? '' }}",
+                            unit: "{{ $item['unit'] ?? '' }}",
+                            type: "artículo"
+                        },
+                    @endif
+                @endforeach
+            @elseif($purchaseRequest->type === 'services' && $purchaseRequest->service_type === 'regular' && is_array($purchaseRequest->service_items))
+                @foreach($purchaseRequest->service_items as $item)
+                    @if(!empty($item['quantity']))
+                        {
+                            description: "{{ $item['description'] ?? '' }}",
+                            quantity: "{{ $item['quantity'] ?? '' }}",
+                            unit: "",
+                            type: "servicio"
+                        },
+                    @endif
+                @endforeach
+            @endif
+        ];
+
+        // Función para crear selector de descripción
+        function createDescriptionSelector(itemIndex) {
+            if (originalItems.length === 0) {
+                return `<input type="text" name="additional_items[${itemIndex}][description]" class="form-control" placeholder="Descripción del item">`;
+            }
+            
+            let selectorHtml = `
+                <div class="input-group">
+                    <select class="form-control description-selector" data-item-index="${itemIndex}">
+                        <option value="">-- Escribir descripción personalizada --</option>
+            `;
+            
+            originalItems.forEach((item, index) => {
+                selectorHtml += `<option value="${item.description}" data-quantity="${item.quantity}" data-unit="${item.unit}">${item.description}</option>`;
+            });
+            
+            selectorHtml += `
+                    </select>
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-outline-secondary" title="Usar descripción personalizada" onclick="toggleCustomDescription(${itemIndex})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+                <input type="text" name="additional_items[${itemIndex}][description]" class="form-control mt-2" placeholder="Descripción del item" style="display: none;">
+            `;
+            
+            return selectorHtml;
+        }
+
+        // Función para alternar entre selector y input personalizado
+        window.toggleCustomDescription = function(itemIndex) {
+            const container = $(`.additional-item-row:has([data-item-index="${itemIndex}"])`);
+            const selector = container.find('.description-selector').parent();
+            const customInput = container.find('input[name*="[description]"]');
+            
+            if (customInput.is(':visible')) {
+                selector.show();
+                customInput.hide().val('');
+            } else {
+                selector.hide();
+                customInput.show().focus();
+            }
+        };
+
+        // Event handler para cuando se selecciona una descripción original
+        $(document).on('change', '.description-selector', function() {
+            const selectedOption = $(this).find(':selected');
+            const description = selectedOption.val();
+            const quantity = selectedOption.data('quantity');
+            const unit = selectedOption.data('unit');
+            const itemIndex = $(this).data('item-index');
+            
+            const container = $(this).closest('.additional-item-row');
+            const hiddenInput = container.find('input[name*="[description]"]');
+            
+            if (description) {
+                hiddenInput.val(description);
+                
+                // Auto-completar cantidad y unidad si están disponibles
+                if (quantity) {
+                    container.find('input[name*="[quantity]"]').val(quantity);
+                }
+                if (unit) {
+                    container.find('input[name*="[unit]"]').val(unit);
+                }
+                
+                // Recalcular totales
+                calculateTotals();
+            } else {
+                hiddenInput.val('');
+            }
+        });
+
         // Calcular totales al cargar la página
         calculateTotals();
+        updateTaxModeVisibility();
     });
 </script>
 @stop

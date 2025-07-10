@@ -171,6 +171,14 @@ class PurchaseRequest extends Model
     }
 
     /**
+     * Obtener las órdenes de compra para esta solicitud.
+     */
+    public function purchaseOrders()
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
+
+    /**
      * Verificar si es una solicitud de compra.
      */
     public function isPurchaseRequest()

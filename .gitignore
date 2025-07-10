@@ -26,6 +26,8 @@ verify_equipment_fix.php
 verify_auto_return.php
 temp_db_check.php
 documentation
+create_service_test.php
+
 
 # Test files and verification scripts
 test_*

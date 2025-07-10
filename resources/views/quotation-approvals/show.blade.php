@@ -509,7 +509,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success">Confirmar Pre-aprobación</button>
+                    <button type="submit" class="btn btn-success" id="preApproveSubmitBtn">Confirmar Pre-aprobación</button>
                 </div>
             </form>
         </div>
@@ -730,6 +730,52 @@
             var modal = $(this);
             modal.find('#quotation_id').val(quotationId);
             modal.find('#provider-name').text(provider);
+            
+            // Inicializar estado del botón
+            const hasBudget = $('#budget').val() !== '';
+            $('#preApproveSubmitBtn').prop('disabled', !hasBudget);
+        });
+        
+        // Validación para el modal de pre-aprobación normal
+        $('#budget').on('change', function() {
+            const hasBudget = $(this).val() !== '';
+            // Habilitar/deshabilitar botón solo si hay budget seleccionado
+            $('#preApproveSubmitBtn').prop('disabled', !hasBudget);
+        });
+        
+        // Limpiar modal de pre-aprobación normal al cerrar
+        $('#preApproveModal').on('hidden.bs.modal', function () {
+            $('#comments').val('');
+            $('#budget').val('');
+            // No deshabilitar aquí, se hace en show.bs.modal
+        });
+        
+        // Agregar evento de depuración para el formulario de pre-aprobación normal
+        $('#preApproveModal form').on('submit', function(e) {
+            console.log('Formulario de pre-aprobación normal enviándose...');
+            console.log('Datos del formulario:', $(this).serialize());
+            
+            const quotationId = $('#quotation_id').val();
+            const comments = $('#comments').val();
+            const budget = $('#budget').val();
+            
+            console.log('Quotation ID:', quotationId);
+            console.log('Comentarios:', comments);
+            console.log('Presupuesto:', budget);
+            
+            if (!budget) {
+                e.preventDefault();
+                alert('Por favor seleccione un rubro presupuestal');
+                return false;
+            }
+            
+            if (!quotationId) {
+                e.preventDefault();
+                alert('Error: No se ha seleccionado una cotización');
+                return false;
+            }
+            
+            console.log('Formulario válido, enviando...');
         });
         
         // Manejar el modal de pre-aprobación sin cotización

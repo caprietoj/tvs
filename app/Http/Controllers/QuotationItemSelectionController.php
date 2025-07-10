@@ -41,25 +41,50 @@ class QuotationItemSelectionController extends Controller
             ]);
         }
 
-        // Obtener items de la solicitud
-        $purchaseItems = is_array($purchaseRequest->purchase_items) 
-            ? $purchaseRequest->purchase_items 
-            : json_decode($purchaseRequest->purchase_items, true);
+        // Obtener items de la solicitud según el tipo
+        $purchaseItems = [];
         
-        // Si no hay items, crear algunos de prueba
+        if ($purchaseRequest->type === 'purchase') {
+            // Para compras, usar purchase_items
+            $purchaseItems = is_array($purchaseRequest->purchase_items) 
+                ? $purchaseRequest->purchase_items 
+                : json_decode($purchaseRequest->purchase_items, true);
+        } elseif ($purchaseRequest->type === 'services' && $purchaseRequest->service_type === 'regular') {
+            // Para servicios regulares, usar service_items
+            $purchaseItems = is_array($purchaseRequest->service_items) 
+                ? $purchaseRequest->service_items 
+                : json_decode($purchaseRequest->service_items, true);
+        }
+        
+        // Si no hay items, crear algunos de prueba según el tipo
         if (empty($purchaseItems)) {
-            $purchaseItems = [
-                [
-                    'description' => 'Computador portátil',
-                    'quantity' => 1,
-                    'specification' => 'Intel Core i5, 8GB RAM, 256GB SSD'
-                ],
-                [
-                    'description' => 'Monitor LED 24"',
-                    'quantity' => 2,
-                    'specification' => 'Full HD, HDMI'
-                ]
-            ];
+            if ($purchaseRequest->type === 'purchase') {
+                $purchaseItems = [
+                    [
+                        'description' => 'Computador portátil',
+                        'quantity' => 1,
+                        'specification' => 'Intel Core i5, 8GB RAM, 256GB SSD'
+                    ],
+                    [
+                        'description' => 'Monitor LED 24"',
+                        'quantity' => 2,
+                        'specification' => 'Full HD, HDMI'
+                    ]
+                ];
+            } else {
+                $purchaseItems = [
+                    [
+                        'description' => 'Servicio de mantenimiento de equipos',
+                        'quantity' => 1,
+                        'observations' => 'Incluye limpieza y actualización'
+                    ],
+                    [
+                        'description' => 'Instalación de software especializado',
+                        'quantity' => 5,
+                        'observations' => 'Para laboratorio de informática'
+                    ]
+                ];
+            }
         }
         
         // Obtener selecciones existentes
@@ -101,10 +126,20 @@ class QuotationItemSelectionController extends Controller
         
         $quotation = Quotation::findOrFail($request->quotation_id);
         
-        // Obtener items de la solicitud
-        $purchaseItems = is_array($purchaseRequest->purchase_items) 
-            ? $purchaseRequest->purchase_items 
-            : json_decode($purchaseRequest->purchase_items, true);
+        // Obtener items de la solicitud según el tipo
+        $purchaseItems = [];
+        
+        if ($purchaseRequest->type === 'purchase') {
+            // Para compras, usar purchase_items
+            $purchaseItems = is_array($purchaseRequest->purchase_items) 
+                ? $purchaseRequest->purchase_items 
+                : json_decode($purchaseRequest->purchase_items, true);
+        } elseif ($purchaseRequest->type === 'services' && $purchaseRequest->service_type === 'regular') {
+            // Para servicios regulares, usar service_items
+            $purchaseItems = is_array($purchaseRequest->service_items) 
+                ? $purchaseRequest->service_items 
+                : json_decode($purchaseRequest->service_items, true);
+        }
         
         // Verificar que el item existe
         if (!isset($purchaseItems[$request->item_index])) {

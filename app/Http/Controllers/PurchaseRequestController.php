@@ -146,13 +146,27 @@ class PurchaseRequestController extends Controller
             case 'Pre Escolar':
             case 'Primaria':
             case 'Bachillerato':
-                $approvalEmails[] = config($configSource . '.sections.Director Académico', 'director.academico@tvs.edu.co');
+                // Intentar obtener de la configuración de directores primero
+                $academicDirector = config($configSource . '.directors.academic');
+                if ($academicDirector) {
+                    $approvalEmails[] = $academicDirector;
+                } else {
+                    // Fallback a la sección de Dirección General
+                    $approvalEmails[] = config($configSource . '.sections.Dirección General', 'generaldirector@tvs.edu.co');
+                }
                 break;
             
             case 'PEP':
             case 'PAI':
             case 'Diploma':
-                $approvalEmails[] = config($configSource . '.sections.Coordinador IB', 'coordinador.ib@tvs.edu.co');
+                // Intentar obtener de la configuración de directores primero
+                $ibCoordinator = config($configSource . '.directors.ib_coordinator');
+                if ($ibCoordinator) {
+                    $approvalEmails[] = $ibCoordinator;
+                } else {
+                    // Fallback genérico
+                    $approvalEmails[] = 'coordinador.ib@tvs.edu.co';
+                }
                 break;
             
             case 'Administración':
@@ -160,17 +174,37 @@ class PurchaseRequestController extends Controller
             case 'Compras':
             case 'Sistemas':
             case 'Mantenimiento':
-                $approvalEmails[] = config($configSource . '.sections.Director Administrativo', 'director.administrativo@tvs.edu.co');
+                // Intentar obtener de la configuración de directores primero
+                $administrativeDirector = config($configSource . '.directors.administrative');
+                if ($administrativeDirector) {
+                    $approvalEmails[] = $administrativeDirector;
+                } else {
+                    // Fallback a la sección de Administración
+                    $approvalEmails[] = config($configSource . '.sections.Administración', 'administrativedirector@tvs.edu.co');
+                }
                 break;
             
             case 'Psicología':
             case 'CAS':
-                $approvalEmails[] = config($configSource . '.sections.Coordinador Bienestar', 'coordinador.bienestar@tvs.edu.co');
+                // Intentar obtener de la configuración de directores primero
+                $wellnessCoordinator = config($configSource . '.directors.wellness_coordinator');
+                if ($wellnessCoordinator) {
+                    $approvalEmails[] = $wellnessCoordinator;
+                } else {
+                    // Fallback a la sección de Psicología si existe
+                    $approvalEmails[] = config($configSource . '.sections.Psicología', 'coordinador.bienestar@tvs.edu.co');
+                }
                 break;
             
             default:
                 // Para secciones no específicas, enviar al director administrativo por defecto
-                $approvalEmails[] = config($configSource . '.sections.Director Administrativo', 'director.administrativo@tvs.edu.co');
+                $administrativeDirector = config($configSource . '.directors.administrative');
+                if ($administrativeDirector) {
+                    $approvalEmails[] = $administrativeDirector;
+                } else {
+                    // Fallback a la sección de Administración
+                    $approvalEmails[] = config($configSource . '.sections.Administración', 'administrativedirector@tvs.edu.co');
+                }
                 break;
         }
 

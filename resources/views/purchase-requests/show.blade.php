@@ -231,9 +231,9 @@
 
         <div class="col-md-8">
             <!-- Detalles específicos según el tipo de solicitud -->
-            @if($purchaseRequest->type == 'purchase')
-                <!-- Solicitud de compra -->
-                @if($purchaseRequest->purchase_justification)
+            @if($purchaseRequest->type == 'purchase' || ($purchaseRequest->type == 'services' && $purchaseRequest->service_type == 'regular'))
+                <!-- Justificación -->
+                @if($purchaseRequest->type == 'purchase' && $purchaseRequest->purchase_justification)
                 <div class="card card-primary card-outline">
                     <div class="card-header">
                         <h3 class="card-title">
@@ -247,7 +247,22 @@
                 </div>
                 @endif
 
-                <!-- Artículos de compra -->
+                @if($purchaseRequest->type == 'services' && $purchaseRequest->service_justification)
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-comment-alt mr-1"></i>
+                            Justificación del Servicio
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">{{ $purchaseRequest->service_justification }}</p>
+                    </div>
+                </div>
+                @endif
+
+                <!-- Artículos de compra o servicios -->
+                @if($purchaseRequest->type == 'purchase')
                 <div class="card card-primary card-outline">
                     <div class="card-header">
                         <h3 class="card-title">
@@ -297,14 +312,79 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
-                <!-- Cotizaciones (si existen) -->
-                @if($purchaseRequest->type == 'purchase')
+                @if($purchaseRequest->type == 'services' && $purchaseRequest->service_type == 'regular')
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-concierge-bell mr-1"></i>
+                            Servicios Solicitados
+                            <span class="badge badge-info ml-2">Regular</span>
+                        </h3>
+                    </div>
+                    <div class="card-body p-0">
+                        @if($purchaseRequest->service_budget)
+                            <div class="alert alert-info mx-3 mt-3">
+                                <i class="fas fa-money-bill-wave mr-1"></i>
+                                <strong>Presupuesto:</strong> ${{ number_format($purchaseRequest->service_budget, 2) }} 
+                                @if($purchaseRequest->service_budget_text)
+                                    ({{ $purchaseRequest->service_budget_text }})
+                                @endif
+                            </div>
+                        @endif
+
+                        <div class="table-responsive">
+                            <table class="table table-striped mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th style="width: 5%">#</th>
+                                        <th style="width: 10%">Cant.</th>
+                                        <th style="width: 60%">Descripción</th>
+                                        <th style="width: 25%">Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if(is_array($purchaseRequest->service_items))
+                                        @php $hasServices = false; @endphp
+                                        @foreach($purchaseRequest->service_items as $service)
+                                            @if(!empty($service['quantity']))
+                                                @php $hasServices = true; @endphp
+                                                <tr>
+                                                    <td>{{ $service['item'] ?? '' }}</td>
+                                                    <td>{{ $service['quantity'] ?? '' }}</td>
+                                                    <td>{{ $service['description'] ?? '' }}</td>
+                                                    <td>{{ $service['observations'] ?? '' }}</td>
+                                                </tr>
+                                            @endif
+                                        @endforeach
+                                        @if(!$hasServices)
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted py-3">No hay servicios registrados</td>
+                                            </tr>
+                                        @endif
+                                    @else
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-3">No hay servicios registrados</td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                <!-- Cotizaciones (si la solicitud requiere cotizaciones) -->
+                @if($purchaseRequest->requiresQuotations())
                     <div class="card card-primary card-outline">
                         <div class="card-header">
                             <h3 class="card-title">
                                 <i class="fas fa-file-invoice-dollar mr-1"></i>
                                 Cotizaciones
+                                @if($purchaseRequest->type == 'services')
+                                    <span class="badge badge-info ml-2">para Servicios</span>
+                                @endif
                             </h3>
                             <div class="card-tools">
                                 @if(!$purchaseRequest->hasRequiredQuotations() && in_array($purchaseRequest->status, ['pending', 'En Cotización']))
@@ -417,8 +497,8 @@
                                     </div>
                                 @endif
                                 
-                                <!-- Botón para selección mixta si hay más de una cotización -->
-                                @if($purchaseRequest->quotations->count() > 1)
+                                <!-- Botón para selección mixta si hay más de una cotización (para compras y servicios regulares) -->
+                                @if(($purchaseRequest->type == 'purchase' || ($purchaseRequest->type == 'services' && $purchaseRequest->service_type == 'regular')) && $purchaseRequest->quotations->count() > 1)
                                     <div class="p-3 text-center">
                                         <h5 class="mb-3"><i class="fas fa-balance-scale mr-2"></i>Opciones de Selección</h5>
                                         @if($purchaseRequest->status === 'approved')
@@ -454,7 +534,7 @@
                     </div>
                     
                     <!-- Configuración de Cotizaciones (solo para administradores) -->
-                    @if(auth()->user()->hasRole(['admin', 'compras']) && $purchaseRequest->type == 'purchase')
+                    @if(auth()->user()->hasRole(['admin', 'compras']) && ($purchaseRequest->type == 'purchase' || ($purchaseRequest->type == 'services' && $purchaseRequest->service_type == 'regular')))
                         <div class="card card-secondary card-outline">
                             <div class="card-header">
                                 <h3 class="card-title">
@@ -505,19 +585,14 @@
                     @endif
                 @endif
                 
-                <!-- Servicios (si hay) -->
-                @if(is_array($purchaseRequest->service_items) && count(array_filter($purchaseRequest->service_items, function($item) { return !empty($item['quantity']); })))
+                <!-- Servicios sin cotización (si hay) -->
+                @if($purchaseRequest->type == 'services' && $purchaseRequest->service_type === 'no_quotation' && is_array($purchaseRequest->service_items) && count(array_filter($purchaseRequest->service_items, function($item) { return !empty($item['quantity']); })))
                     <div class="card card-primary card-outline">
-                        <div class="card-header">
-                            <h3 class="card-title">
-                                <i class="fas fa-concierge-bell mr-1"></i>
-                                Servicios Solicitados
-                                @if($purchaseRequest->service_type === 'no_quotation')
-                                    <span class="badge badge-warning ml-2">Sin Cotización</span>
-                                @else
-                                    <span class="badge badge-info ml-2">Regular</span>
-                                @endif
-                            </h3>
+                        <div class="card-header">                        <h3 class="card-title">
+                            <i class="fas fa-concierge-bell mr-1"></i>
+                            Servicios Solicitados
+                            <span class="badge badge-warning ml-2">Sin Cotización</span>
+                        </h3>
                         </div>
                         <div class="card-body">
                             @if($purchaseRequest->service_type === 'no_quotation')

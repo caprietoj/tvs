@@ -24,6 +24,7 @@ class Quotation extends Model
         'ipoconsumo_8_amount',
         'includes_ipoconsumo_4',
         'ipoconsumo_4_amount',
+        'tax_application_mode',
         'delivery_time',
         'payment_method',
         'validity',

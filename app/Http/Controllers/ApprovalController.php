@@ -336,62 +336,21 @@ class ApprovalController extends Controller
                 return;
             }
 
-            // Lógica original para solicitudes de compra con cotizaciones
-            // Obtener o crear un proveedor por defecto si no existe
-            $provider = \App\Models\Proveedor::first();
+            // Verificar si hay selección mixta de proveedores
+            $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
             
-            if (!$provider) {
-                $provider = \App\Models\Proveedor::create([
-                    'name' => 'Proveedor Por Asignar',
-                    'email' => 'porAsignar@test.com',
-                    'phone' => '000-000-0000',
-                    'address' => 'Por definir',
-                    'contact_person' => 'Por asignar',
-                    'nit' => '000000000-0'
-                ]);
-            }
-
-            // Obtener datos de la cotización o selección mixta
-            $quotation = $purchaseRequest->selectedQuotation ?? $purchaseRequest->preApprovedQuotation;
-            $hasMixedSelection = $this->hasMixedSelectionComplete($purchaseRequest);
-            
-            // Calcular monto total
             if ($hasMixedSelection) {
-                // Para selección mixta, sumar todos los totales de las selecciones
-                $totalAmount = $purchaseRequest->quotationItemSelections()->sum('total_price');
-                $paymentTerms = 'Mixto - Ver selecciones individuales';
-            } else {
-                // Para cotización única
-                $totalAmount = $quotation ? $quotation->total_amount : 0;
-                $paymentTerms = $quotation ? ($quotation->payment_terms ?? 'Contado') : 'Contado';
+                \Log::info('Selección mixta detectada, creando órdenes individuales', [
+                    'purchase_request_id' => $purchaseRequest->id,
+                    'selections_count' => $purchaseRequest->quotationItemSelections()->count()
+                ]);
+                // Crear órdenes de compra individuales por proveedor
+                $this->createMixedSelectionPurchaseOrders($purchaseRequest);
+                return;
             }
-            
-            // Calcular IVA si es necesario
-            $includesIva = true;
-            $subtotal = $totalAmount / 1.19; // Asumir que el total ya incluye IVA
-            $ivaAmount = $totalAmount - $subtotal;
-            
-            // Crear la orden de compra
-            $purchaseOrder = \App\Models\PurchaseOrder::create([
-                'purchase_request_id' => $purchaseRequest->id,
-                'provider_id' => $provider->id,
-                'order_number' => 'ORD-' . str_pad($purchaseRequest->id, 4, '0', STR_PAD_LEFT),
-                'total_amount' => $totalAmount,
-                'subtotal' => $subtotal,
-                'iva_amount' => $ivaAmount,
-                'includes_iva' => $includesIva,
-                'payment_terms' => $paymentTerms,
-                'delivery_date' => now()->addDays(15), // 15 días por defecto
-                'file_path' => 'pending_generation',
-                'observations' => $hasMixedSelection 
-                    ? 'Orden creada automáticamente - Selección mixta de proveedores'
-                    : 'Orden creada automáticamente al aprobar solicitud',
-                'created_by' => Auth::id(),
-                'status' => 'pending'
-            ]);
 
-            // Generar el PDF inmediatamente
-            $this->generatePurchaseOrderPdf($purchaseOrder, $purchaseRequest);
+            // Lógica original para solicitudes con cotización única
+            $this->createSinglePurchaseOrder($purchaseRequest);
 
         } catch (\Exception $e) {
             \Log::error('Error al crear orden de compra automáticamente', [
@@ -400,6 +359,147 @@ class ApprovalController extends Controller
             ]);
             // No lanzar excepción para no interrumpir el flujo de aprobación
         }
+    }
+
+    /**
+     * Crear órdenes de compra individuales para selección mixta de proveedores
+     */
+    private function createMixedSelectionPurchaseOrders(PurchaseRequest $purchaseRequest): void
+    {
+        \Log::info('Iniciando creación de órdenes individuales para selección mixta', [
+            'purchase_request_id' => $purchaseRequest->id
+        ]);
+        
+        $itemSelections = $purchaseRequest->quotationItemSelections()->with('quotation')->get();
+        
+        \Log::info('Selecciones obtenidas', [
+            'purchase_request_id' => $purchaseRequest->id,
+            'total_selections' => $itemSelections->count(),
+            'selections' => $itemSelections->map(function($sel) {
+                return [
+                    'quotation_id' => $sel->quotation_id,
+                    'provider' => $sel->quotation->provider_name ?? 'N/A',
+                    'item' => $sel->item_description,
+                    'total' => $sel->total_price
+                ];
+            })
+        ]);
+        
+        // Agrupar las selecciones por proveedor (quotation_id)
+        $selectionsByProvider = $itemSelections->groupBy('quotation_id');
+        
+        \Log::info('Agrupación por proveedor', [
+            'purchase_request_id' => $purchaseRequest->id,
+            'providers_count' => $selectionsByProvider->count(),
+            'providers' => $selectionsByProvider->keys()->toArray()
+        ]);
+        
+        $orderCounter = 1;
+        
+        foreach ($selectionsByProvider as $quotationId => $providerSelections) {
+            $quotation = $providerSelections->first()->quotation;
+            
+            // Buscar o crear proveedor basado en el nombre de la cotización
+            $provider = \App\Models\Proveedor::where('nombre', $quotation->provider_name)->first();
+            
+            if (!$provider) {
+                $provider = \App\Models\Proveedor::create([
+                    'nombre' => $quotation->provider_name,
+                    'email' => 'proveedor@contacto.com',
+                    'telefono' => '000-000-0000',
+                    'direccion' => 'Por definir',
+                    'persona_contacto' => 'Por asignar',
+                    'nit' => '000000000-0'
+                ]);
+            }
+            
+            // Calcular total para este proveedor
+            $totalAmount = $providerSelections->sum('total_price');
+            
+            // Calcular IVA si es necesario
+            $includesIva = true;
+            $subtotal = $totalAmount / 1.19; // Asumir que el total ya incluye IVA
+            $ivaAmount = $totalAmount - $subtotal;
+            
+            // Crear orden de compra individual para este proveedor
+            $purchaseOrder = \App\Models\PurchaseOrder::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'provider_id' => $provider->id,
+                'order_number' => 'ORD-' . str_pad($purchaseRequest->id, 4, '0', STR_PAD_LEFT) . '-' . $orderCounter,
+                'total_amount' => $totalAmount,
+                'subtotal' => $subtotal,
+                'iva_amount' => $ivaAmount,
+                'includes_iva' => $includesIva,
+                'payment_terms' => $quotation->payment_terms ?? 'Contado',
+                'delivery_date' => now()->addDays(15),
+                'file_path' => 'pending_generation',
+                'observations' => 'Orden creada automáticamente - Proveedor: ' . $quotation->provider_name,
+                'created_by' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
+                'status' => 'pending'
+            ]);
+            
+            // Generar el PDF para esta orden individual
+            $this->generatePurchaseOrderPdf($purchaseOrder, $purchaseRequest, $providerSelections);
+            
+            $orderCounter++;
+            
+            \Log::info('Orden de compra individual creada para selección mixta', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'order_id' => $purchaseOrder->id,
+                'provider' => $quotation->provider_name,
+                'total_amount' => $totalAmount
+            ]);
+        }
+    }
+
+    /**
+     * Crear orden de compra única para cotización tradicional
+     */
+    private function createSinglePurchaseOrder(PurchaseRequest $purchaseRequest): void
+    {
+        // Obtener o crear un proveedor por defecto si no existe
+        $provider = \App\Models\Proveedor::first();
+        
+        if (!$provider) {
+            $provider = \App\Models\Proveedor::create([
+                'nombre' => 'Proveedor Por Asignar',
+                'email' => 'porAsignar@test.com',
+                'telefono' => '000-000-0000',
+                'direccion' => 'Por definir',
+                'persona_contacto' => 'Por asignar',
+                'nit' => '000000000-0'
+            ]);
+        }
+
+        // Obtener datos de la cotización
+        $quotation = $purchaseRequest->selectedQuotation ?? $purchaseRequest->preApprovedQuotation;
+        $totalAmount = $quotation ? $quotation->total_amount : 0;
+        $paymentTerms = $quotation ? ($quotation->payment_terms ?? 'Contado') : 'Contado';
+        
+        // Calcular IVA si es necesario
+        $includesIva = true;
+        $subtotal = $totalAmount / 1.19; // Asumir que el total ya incluye IVA
+        $ivaAmount = $totalAmount - $subtotal;
+        
+        // Crear la orden de compra
+        $purchaseOrder = \App\Models\PurchaseOrder::create([
+            'purchase_request_id' => $purchaseRequest->id,
+            'provider_id' => $provider->id,
+            'order_number' => 'ORD-' . str_pad($purchaseRequest->id, 4, '0', STR_PAD_LEFT),
+            'total_amount' => $totalAmount,
+            'subtotal' => $subtotal,
+            'iva_amount' => $ivaAmount,
+            'includes_iva' => $includesIva,
+            'payment_terms' => $paymentTerms,
+            'delivery_date' => now()->addDays(15),
+            'file_path' => 'pending_generation',
+            'observations' => 'Orden creada automáticamente al aprobar solicitud',
+            'created_by' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
+            'status' => 'pending'
+        ]);
+
+        // Generar el PDF inmediatamente
+        $this->generatePurchaseOrderPdf($purchaseOrder, $purchaseRequest);
     }
 
     /**
@@ -468,18 +568,19 @@ class ApprovalController extends Controller
     /**
      * Generar PDF para la orden de compra
      */
-    private function generatePurchaseOrderPdf(\App\Models\PurchaseOrder $purchaseOrder, PurchaseRequest $purchaseRequest): void
+    private function generatePurchaseOrderPdf(\App\Models\PurchaseOrder $purchaseOrder, PurchaseRequest $purchaseRequest, $providerSelections = null): void
     {
         try {
             $pdfService = app(\App\Services\PurchaseOrderPdfService::class);
-            $pdfPath = $pdfService->generatePdf($purchaseOrder);
+            $pdfPath = $pdfService->generatePdf($purchaseOrder, $providerSelections);
             
             if ($pdfPath) {
                 $purchaseOrder->update(['file_path' => $pdfPath]);
                 \Log::info('PDF generado automáticamente para orden de compra', [
                     'purchase_request_id' => $purchaseRequest->id,
                     'order_id' => $purchaseOrder->id,
-                    'pdf_path' => $pdfPath
+                    'pdf_path' => $pdfPath,
+                    'provider_selections' => $providerSelections ? $providerSelections->count() : 0
                 ]);
             }
         } catch (\Exception $e) {

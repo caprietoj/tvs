@@ -8,15 +8,24 @@ class EmailTestModeService
 {
     /**
      * Check if email test mode is enabled
+     * 
+     * IMPORTANTE: Este servicio solo debe usarse para interceptación adicional
+     * La configuración principal debe usar SECTION_EMAILS_CONFIG
      */
     public static function isTestModeEnabled(): bool
     {
+        // Si APP_ENV es production, NUNCA interceptar
+        if (config('app.env') === 'production') {
+            return false;
+        }
+        
         // Si ya estamos usando configuración de prueba (section-mail-test), 
         // NO necesitamos interceptar porque los correos ya son de prueba
         if (\App\Services\DynamicSectionEmailsService::isTestingMode()) {
             return false; // No interceptar cuando ya usamos section-mail-test.php
         }
         
+        // Para desarrollo/testing: verificar si EMAIL_TEST_MODE está explícitamente habilitado
         // Intentar usar config() primero, luego env() como fallback
         $configValue = config('app.email_test_mode');
         if ($configValue !== null) {

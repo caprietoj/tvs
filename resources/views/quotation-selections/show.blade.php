@@ -359,7 +359,13 @@
                                 <tr>
                                     <th>Seleccionar</th>
                                     <th>Proveedor</th>
-                                    <th>Precio Unitario</th>
+                                    <th>
+                                        @if($purchaseRequest->type === 'purchase')
+                                            Descripción del Artículo
+                                        @else
+                                            Descripción del Servicio
+                                        @endif
+                                    </th>
                                     <th>Total</th>
                                 </tr>
                             </thead>
@@ -380,9 +386,13 @@
                                             <strong>{{ $quotation->provider_name }}</strong>
                                         </td>
                                         <td>
-                                            <div class="input-group input-group-sm">
+                                            <div class="item-description" id="item-description-display">
+                                                <!-- La descripción se llenará dinámicamente via JavaScript -->
+                                                <em class="text-muted">Seleccione un item para ver la descripción</em>
+                                            </div>
+                                            <div class="input-group input-group-sm mt-2">
                                                 <div class="input-group-prepend">
-                                                    <span class="input-group-text">$</span>
+                                                    <span class="input-group-text">Precio: $</span>
                                                 </div>
                                                 <input type="number" 
                                                        class="form-control unit-price-input" 
