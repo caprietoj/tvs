@@ -37,6 +37,27 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
+        // Gate para verificar si el usuario es admin
+        Gate::define('admin', function ($user = null) {
+            // Si no hay usuario, denegar acceso
+            if (!$user) {
+                return false;
+            }
+            
+            // Verificar que el usuario tiene el trait HasRoles
+            if (!method_exists($user, 'hasRole')) {
+                return false;
+            }
+            
+            try {
+                // Verificar el rol admin usando Spatie Permission
+                return $user->hasRole('admin');
+            } catch (\Exception $e) {
+                // En caso de error, denegar acceso
+                return false;
+            }
+        });
+
         // ... existing code ...
     }
 }

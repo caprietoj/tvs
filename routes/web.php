@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Gate;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\DebugPhotocopiesController;
 use App\Http\Controllers\TestPhotocopiesDashboardController;
@@ -905,4 +906,45 @@ Route::get('/test-evaluations-view', function() {
     $supervisors = \App\Models\User::orderBy('name')->get();
     
     return view('performance-evaluations.create', compact('employeesByDepartment', 'allUsers', 'supervisors', 'availableDepartments'));
+});
+
+// ==== RUTAS PARA ENCUESTAS INSTITUCIONALES (Solo Administradores) ====
+Route::middleware(['auth', 'admin.role'])->prefix('surveys')->name('surveys.')->group(function () {
+    
+    // Cliente Interno
+    Route::prefix('internal-client')->name('internal-client.')->group(function () {
+        Route::get('/warehouse', function () {
+            return view('surveys.internal-client.warehouse.index');
+        })->name('warehouse');
+        
+        Route::get('/cafeteria', function () {
+            return view('surveys.internal-client.cafeteria.index');
+        })->name('cafeteria');
+        
+        Route::get('/systems', function () {
+            return view('surveys.internal-client.systems.index');
+        })->name('systems');
+    });
+    
+    // Servicios Complementarios
+    Route::prefix('complementary-services')->name('complementary-services.')->group(function () {
+        Route::get('/cafeteria', function () {
+            return view('surveys.complementary-services.cafeteria.index');
+        })->name('cafeteria');
+        
+        Route::get('/transport', function () {
+            return view('surveys.complementary-services.transport.index');
+        })->name('transport');
+    });
+    
+    // Padres de Familia y/o Estudiantes
+    Route::prefix('parents-students')->name('parents-students.')->group(function () {
+        Route::get('/cafeteria', function () {
+            return view('surveys.parents-students.cafeteria.index');
+        })->name('cafeteria');
+        
+        Route::get('/transport', function () {
+            return view('surveys.parents-students.transport.index');
+        })->name('transport');
+    });
 });

@@ -363,6 +363,78 @@ return [
             'classes' => 'menu-item'
         ],
         [
+            'text' => 'Encuestas Institucionales',
+            'icon' => 'fas fa-poll',
+            'classes' => 'menu-item',
+            // 'can'  => 'admin',  // Temporalmente desactivado para debug
+            'active' => ['surveys*', 'encuestas*'],
+            'submenu' => [
+                [
+                    'text' => 'Cliente Interno',
+                    'icon' => 'fas fa-user-tie',
+                    'classes' => 'submenu-item',
+                    'submenu' => [
+                        [
+                            'text' => 'Almacén',
+                            'url'  => 'surveys/internal-client/warehouse',
+                            'icon' => 'fas fa-warehouse',
+                            'active' => ['surveys/internal-client/warehouse*'],
+                        ],
+                        [
+                            'text' => 'Cafetería',
+                            'url'  => 'surveys/internal-client/cafeteria',
+                            'icon' => 'fas fa-coffee',
+                            'active' => ['surveys/internal-client/cafeteria*'],
+                        ],
+                        [
+                            'text' => 'Sistemas',
+                            'url'  => 'surveys/internal-client/systems',
+                            'icon' => 'fas fa-desktop',
+                            'active' => ['surveys/internal-client/systems*'],
+                        ],
+                    ],
+                ],
+                [
+                    'text' => 'Servicios Complementarios',
+                    'icon' => 'fas fa-handshake',
+                    'classes' => 'submenu-item',
+                    'submenu' => [
+                        [
+                            'text' => 'Cafetería',
+                            'url'  => 'surveys/complementary-services/cafeteria',
+                            'icon' => 'fas fa-utensils',
+                            'active' => ['surveys/complementary-services/cafeteria*'],
+                        ],
+                        [
+                            'text' => 'Transporte',
+                            'url'  => 'surveys/complementary-services/transport',
+                            'icon' => 'fas fa-bus',
+                            'active' => ['surveys/complementary-services/transport*'],
+                        ],
+                    ],
+                ],
+                [
+                    'text' => 'Padres de Familia y/o Estudiantes',
+                    'icon' => 'fas fa-users',
+                    'classes' => 'submenu-item',
+                    'submenu' => [
+                        [
+                            'text' => 'Cafetería',
+                            'url'  => 'surveys/parents-students/cafeteria',
+                            'icon' => 'fas fa-apple-alt',
+                            'active' => ['surveys/parents-students/cafeteria*'],
+                        ],
+                        [
+                            'text' => 'Transporte',
+                            'url'  => 'surveys/parents-students/transport',
+                            'icon' => 'fas fa-school',
+                            'active' => ['surveys/parents-students/transport*'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+        [
             'text' => 'Reserva de Equipos',
             'icon' => 'fas fa-laptop',
             'classes' => 'menu-item',

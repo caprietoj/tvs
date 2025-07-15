@@ -151,6 +151,121 @@
                     </div>
                     @endcan
 
+                    <!-- Encuestas Institucionales - Solo Admin -->
+                    @if(auth()->user()->hasRole('admin'))
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-muted mb-3">
+                                <i class="fas fa-poll mr-2" style="color: #364E76;"></i>Encuestas Institucionales
+                            </h5>
+                        </div>
+                        <!-- Cliente Interno - Almacén -->
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{{ route('surveys.internal-client.warehouse') }}" class="quick-access-card">
+                                <div class="quick-access-item">
+                                    <div class="icon-wrapper">
+                                        <i class="fas fa-warehouse"></i>
+                                    </div>
+                                    <div class="content">
+                                        <h6>Cliente Interno - Almacén</h6>
+                                        <p>Evaluación de gestión de inventario</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Cliente Interno - Cafetería -->
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{{ route('surveys.internal-client.cafeteria') }}" class="quick-access-card">
+                                <div class="quick-access-item">
+                                    <div class="icon-wrapper">
+                                        <i class="fas fa-coffee"></i>
+                                    </div>
+                                    <div class="content">
+                                        <h6>Cliente Interno - Cafetería</h6>
+                                        <p>Calidad de alimentos e higiene</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Cliente Interno - Sistemas -->
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{{ route('surveys.internal-client.systems') }}" class="quick-access-card">
+                                <div class="quick-access-item">
+                                    <div class="icon-wrapper">
+                                        <i class="fas fa-desktop"></i>
+                                    </div>
+                                    <div class="content">
+                                        <h6>Cliente Interno - Sistemas</h6>
+                                        <p>Soporte técnico y conectividad</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Servicios Complementarios - Cafetería -->
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{{ route('surveys.complementary-services.cafeteria') }}" class="quick-access-card">
+                                <div class="quick-access-item">
+                                    <div class="icon-wrapper">
+                                        <i class="fas fa-utensils"></i>
+                                    </div>
+                                    <div class="content">
+                                        <h6>Servicios - Cafetería</h6>
+                                        <p>Menú variado y alimentación</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Servicios Complementarios - Transporte -->
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{{ route('surveys.complementary-services.transport') }}" class="quick-access-card">
+                                <div class="quick-access-item">
+                                    <div class="icon-wrapper">
+                                        <i class="fas fa-bus"></i>
+                                    </div>
+                                    <div class="content">
+                                        <h6>Servicios - Transporte</h6>
+                                        <p>Puntualidad y seguridad vehicular</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Padres y Estudiantes - Cafetería -->
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{{ route('surveys.parents-students.cafeteria') }}" class="quick-access-card">
+                                <div class="quick-access-item">
+                                    <div class="icon-wrapper">
+                                        <i class="fas fa-apple-alt"></i>
+                                    </div>
+                                    <div class="content">
+                                        <h6>Padres - Cafetería</h6>
+                                        <p>Opiniones de padres y estudiantes</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Padres y Estudiantes - Transporte -->
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{{ route('surveys.parents-students.transport') }}" class="quick-access-card">
+                                <div class="quick-access-item">
+                                    <div class="icon-wrapper">
+                                        <i class="fas fa-school"></i>
+                                    </div>
+                                    <div class="content">
+                                        <h6>Padres - Transporte</h6>
+                                        <p>Evaluación del servicio de transporte</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    @endif
+
                     <!-- Proceso Administrativo -->
                     @if(auth()->user()->hasRole('admin'))
                     <div class="row mb-4">
