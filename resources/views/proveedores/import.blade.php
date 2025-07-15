@@ -15,8 +15,21 @@
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
+        @if(session('warning'))
+            <div class="alert alert-warning">{{ session('warning') }}</div>
+        @endif
         @if(session('error'))
             <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
+        @if(session('errors'))
+            <div class="alert alert-danger">
+                <h5><i class="icon fas fa-exclamation-triangle"></i> Errores encontrados:</h5>
+                <ul class="mb-0">
+                    @foreach(session('errors') as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         @endif
 
         <div class="row">
@@ -38,6 +51,12 @@
                     <p>3. Pegue los datos en el área de texto de abajo</p>
                     <p>4. Cada fila debe representar un proveedor</p>
                     <p>5. Los campos deben estar separados por tabuladores (como al copiar desde Excel)</p>
+                    
+                    <div class="mb-3">
+                        <a href="{{ route('proveedores.download-template') }}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-download mr-1"></i>Descargar Plantilla de Ejemplo
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

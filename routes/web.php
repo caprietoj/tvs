@@ -402,6 +402,7 @@ Route::middleware('auth')->group(function () {
         // Rutas de exportación e importación (DEBEN IR ANTES de las rutas con parámetros)
         Route::get('/export', [ProveedorController::class, 'export'])->name('proveedores.export');
         Route::get('/import/show', [ProveedorController::class, 'showImport'])->name('proveedores.import');
+        Route::get('/import/template', [ProveedorController::class, 'downloadTemplate'])->name('proveedores.download-template');
         Route::post('/import/process', [ProveedorController::class, 'processImport'])->name('proveedores.process-import');
         
         Route::post('/', [ProveedorController::class, 'store'])->name('proveedores.store');

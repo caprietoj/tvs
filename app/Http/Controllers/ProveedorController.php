@@ -299,33 +299,57 @@ class ProveedorController extends Controller
         ]);
 
         try {
+            \Log::info('Iniciando importación de proveedores', [
+                'data_length' => strlen($request->data),
+                'user_id' => auth()->id()
+            ]);
+
             $rows = explode("\n", trim($request->data));
             $success = 0;
             $errors = [];
 
+            \Log::info('Datos divididos en filas', [
+                'total_rows' => count($rows),
+                'first_row_preview' => isset($rows[0]) ? substr($rows[0], 0, 100) : 'N/A'
+            ]);
+
             foreach ($rows as $index => $row) {
                 try {
-                    $data = explode("\t", trim($row));
-                    
-                    // Verificar que tenga todos los campos necesarios
-                    if (count($data) < 11) {
-                        $errors[] = "Fila " . ($index + 1) . ": Faltan campos";
+                    $row = trim($row);
+                    if (empty($row)) {
+                        \Log::info("Saltando fila vacía en posición " . ($index + 1));
                         continue;
                     }
 
-                    // Crear el proveedor
-                    $proveedor = Proveedor::create([
-                        'nombre' => $data[0],
-                        'nit' => $data[1],
-                        'direccion' => $data[2],
-                        'ciudad' => $data[3],
-                        'telefono' => $data[4],
-                        'email' => $data[5],
-                        'persona_contacto' => $data[6],
-                        'market_segment' => $data[7],
-                        'servicio_producto' => $data[8],
-                        'alto_riesgo' => $data[9],
-                        'proveedor_critico' => $data[10],
+                    $data = explode("\t", $row);
+                    
+                    \Log::info("Procesando fila " . ($index + 1), [
+                        'raw_row' => $row,
+                        'fields_count' => count($data),
+                        'fields' => $data
+                    ]);
+                    
+                    // Verificar que tenga todos los campos necesarios
+                    if (count($data) < 11) {
+                        $error = "Fila " . ($index + 1) . ": Faltan campos (se encontraron " . count($data) . ", se requieren 11)";
+                        $errors[] = $error;
+                        \Log::warning($error);
+                        continue;
+                    }
+
+                    // Validar campos antes de crear
+                    $proveedorData = [
+                        'nombre' => trim($data[0]),
+                        'nit' => trim($data[1]),
+                        'direccion' => trim($data[2]),
+                        'ciudad' => trim($data[3]),
+                        'telefono' => trim($data[4]),
+                        'email' => trim($data[5]),
+                        'persona_contacto' => trim($data[6]),
+                        'market_segment' => trim($data[7]),
+                        'servicio_producto' => trim($data[8]),
+                        'alto_riesgo' => filter_var(trim($data[9]), FILTER_VALIDATE_BOOLEAN),
+                        'proveedor_critico' => filter_var(trim($data[10]), FILTER_VALIDATE_BOOLEAN),
                         // Valores por defecto para los campos de puntaje
                         'puntaje_forma_pago' => 60,
                         'puntaje_referencias' => 60,
@@ -334,15 +358,68 @@ class ProveedorController extends Controller
                         'puntaje_valores_agregados' => 0,
                         'puntaje_precios' => 50,
                         'puntaje_criterios_tecnicos' => 60
+                    ];
+
+                    // Validaciones básicas
+                    if (empty($proveedorData['nombre'])) {
+                        $errors[] = "Fila " . ($index + 1) . ": El nombre es requerido";
+                        continue;
+                    }
+
+                    if (empty($proveedorData['nit'])) {
+                        $errors[] = "Fila " . ($index + 1) . ": El NIT es requerido";
+                        continue;
+                    }
+
+                    if (empty($proveedorData['email']) || !filter_var($proveedorData['email'], FILTER_VALIDATE_EMAIL)) {
+                        $errors[] = "Fila " . ($index + 1) . ": Email inválido o faltante";
+                        continue;
+                    }
+
+                    // Verificar duplicados
+                    $existingNit = Proveedor::where('nit', $proveedorData['nit'])->first();
+                    if ($existingNit) {
+                        $errors[] = "Fila " . ($index + 1) . ": Ya existe un proveedor con NIT " . $proveedorData['nit'];
+                        continue;
+                    }
+
+                    $existingEmail = Proveedor::where('email', $proveedorData['email'])->first();
+                    if ($existingEmail) {
+                        $errors[] = "Fila " . ($index + 1) . ": Ya existe un proveedor con email " . $proveedorData['email'];
+                        continue;
+                    }
+
+                    // Crear el proveedor
+                    $proveedor = Proveedor::create($proveedorData);
+
+                    \Log::info("Proveedor creado exitosamente", [
+                        'id' => $proveedor->id,
+                        'nombre' => $proveedor->nombre,
+                        'nit' => $proveedor->nit,
+                        'fila' => $index + 1
                     ]);
 
-                    $proveedor->calcularPuntajeTotal();
+                    // Calcular puntaje total si el método existe
+                    if (method_exists($proveedor, 'calcularPuntajeTotal')) {
+                        $proveedor->calcularPuntajeTotal();
+                    }
+
                     $success++;
 
                 } catch (\Exception $e) {
-                    $errors[] = "Fila " . ($index + 1) . ": " . $e->getMessage();
+                    $error = "Fila " . ($index + 1) . ": " . $e->getMessage();
+                    $errors[] = $error;
+                    \Log::error("Error al procesar fila " . ($index + 1), [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
                 }
             }
+
+            \Log::info('Importación completada', [
+                'success_count' => $success,
+                'error_count' => count($errors)
+            ]);
 
             $message = "Se importaron {$success} proveedores exitosamente.";
             if (count($errors) > 0) {
@@ -352,8 +429,29 @@ class ProveedorController extends Controller
 
             return redirect()->route('proveedores.index')->with('success', $message);
         } catch (\Exception $e) {
+            \Log::error('Error general en importación de proveedores', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->route('proveedores.index')
                 ->with('error', 'Error al procesar la importación: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Descargar plantilla de ejemplo para importación
+     */
+    public function downloadTemplate()
+    {
+        $content = "Nombre\tNIT\tDirección\tCiudad\tTeléfono\tEmail\tPersona de Contacto\tSegmento de Mercado\tServicio/Producto\tAlto Riesgo\tProveedor Crítico\n";
+        $content .= "Proveedor Ejemplo S.A.S\t900123456-1\tCarrera 7 # 123-45\tBogotá\t3001234567\tejemplo@proveedor.com\tJuan Pérez\tTecnología y equipos de cómputo\tVenta de equipos\t0\t1\n";
+        $content .= "Suministros ABC Ltda\t800654321-2\tCalle 45 # 67-89\tMedellín\t3209876543\tcontacto@abc.com\tMaria González\tPapelería y útiles de oficina\tSuministros de oficina\t0\t0\n";
+
+        $headers = [
+            'Content-Type' => 'text/plain; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="plantilla_proveedores.txt"',
+        ];
+
+        return response($content, 200, $headers);
     }
 }
