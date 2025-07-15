@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\PerformanceEvaluation;
 use App\Models\User;
 use App\Exports\PerformanceEvaluationsExport;
+use App\Mail\PerformanceEvaluationCreated;
+use App\Services\EmailTestModeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -203,6 +206,21 @@ class PerformanceEvaluationController extends Controller
                 'status' => 'draft'
             ]);
             
+            // Cargar la relación user para el correo
+            $evaluation->load('user');
+            
+            // Enviar correo de notificación al usuario evaluado
+            try {
+                if ($evaluation->user && $evaluation->user->email) {
+                    // Usar el servicio de interceptación de correos para modo de prueba
+                    $emailToSend = EmailTestModeService::interceptEmail($evaluation->user->email);
+                    Mail::to($emailToSend)->send(new PerformanceEvaluationCreated($evaluation));
+                }
+            } catch (\Exception $e) {
+                // Log del error pero no interrumpir el proceso
+                \Log::error('Error enviando correo de evaluación de desempeño: ' . $e->getMessage());
+            }
+            
             $createdEvaluations[] = $evaluation;
         }
         
@@ -210,7 +228,8 @@ class PerformanceEvaluationController extends Controller
         $messageType = 'success';
         
         if (count($createdEvaluations) > 0) {
-            $message = 'Se crearon ' . count($createdEvaluations) . ' evaluación(es) exitosamente.';
+            $message = 'Se crearon ' . count($createdEvaluations) . ' evaluación(es) exitosamente. ';
+            $message .= 'Se ha enviado un correo de notificación a cada empleado evaluado.';
         }
         
         if (count($duplicateEmployees) > 0) {
