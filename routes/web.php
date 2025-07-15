@@ -398,16 +398,17 @@ Route::middleware('auth')->group(function () {
     Route::prefix('proveedores')->group(function () {
         Route::get('/', [ProveedorController::class, 'index'])->name('proveedores.index');
         Route::get('/create', [ProveedorController::class, 'create'])->name('proveedores.create');
+        
+        // Rutas de exportación e importación (DEBEN IR ANTES de las rutas con parámetros)
+        Route::get('/export', [ProveedorController::class, 'export'])->name('proveedores.export');
+        Route::get('/import/show', [ProveedorController::class, 'showImport'])->name('proveedores.import');
+        Route::post('/import/process', [ProveedorController::class, 'processImport'])->name('proveedores.process-import');
+        
         Route::post('/', [ProveedorController::class, 'store'])->name('proveedores.store');
         Route::get('/{proveedor}', [ProveedorController::class, 'show'])->name('proveedores.show');
         Route::get('/{proveedor}/edit', [ProveedorController::class, 'edit'])->name('proveedores.edit');
         Route::put('/{proveedor}', [ProveedorController::class, 'update'])->name('proveedores.update');
         Route::delete('/{proveedor}', [ProveedorController::class, 'destroy'])->name('proveedores.destroy');
-        
-        // Rutas de exportación e importación
-        Route::get('/export', [ProveedorController::class, 'export'])->name('proveedores.export');
-        Route::get('/import/show', [ProveedorController::class, 'showImport'])->name('proveedores.import');
-        Route::post('/import/process', [ProveedorController::class, 'processImport'])->name('proveedores.process-import');
     });
 
     Route::resource('evaluaciones', EvaluacionProveedorController::class);
@@ -438,16 +439,17 @@ Route::middleware('auth')->group(function () {
     Route::prefix('proveedores')->group(function () {
         Route::get('/', [ProveedorController::class, 'index'])->name('proveedores.index');
         Route::get('/create', [ProveedorController::class, 'create'])->name('proveedores.create');
+        
+        // Rutas de exportación e importación (DEBEN IR ANTES de las rutas con parámetros)
+        Route::get('/export', [ProveedorController::class, 'export'])->name('proveedores.export');
+        Route::get('/import/show', [ProveedorController::class, 'showImport'])->name('proveedores.import');
+        Route::post('/import/process', [ProveedorController::class, 'processImport'])->name('proveedores.process-import');
+        
         Route::post('/', [ProveedorController::class, 'store'])->name('proveedores.store');
         Route::get('/{proveedor}', [ProveedorController::class, 'show'])->name('proveedores.show');
         Route::get('/{proveedor}/edit', [ProveedorController::class, 'edit'])->name('proveedores.edit');
         Route::put('/{proveedor}', [ProveedorController::class, 'update'])->name('proveedores.update');
         Route::delete('/{proveedor}', [ProveedorController::class, 'destroy'])->name('proveedores.destroy');
-        
-        // Rutas de exportación e importación
-        Route::get('/export', [ProveedorController::class, 'export'])->name('proveedores.export');
-        Route::get('/import/show', [ProveedorController::class, 'showImport'])->name('proveedores.import');
-        Route::post('/import/process', [ProveedorController::class, 'processImport'])->name('proveedores.process-import');
     });
 
     Route::prefix('purchases')->name('purchases.')->group(function () {

@@ -480,24 +480,46 @@ class ApprovalController extends Controller
      */
     private function createSinglePurchaseOrder(PurchaseRequest $purchaseRequest): void
     {
-        // Obtener o crear un proveedor por defecto si no existe
-        $provider = \App\Models\Proveedor::first();
+        // Obtener datos de la cotización
+        $quotation = $purchaseRequest->selectedQuotation ?? $purchaseRequest->preApprovedQuotation;
         
+        if (!$quotation) {
+            \Log::error('No se encontró cotización para crear orden de compra', [
+                'purchase_request_id' => $purchaseRequest->id
+            ]);
+            return;
+        }
+
+        // Buscar el proveedor por nombre de la cotización
+        $provider = \App\Models\Proveedor::where('nombre', $quotation->provider_name)->first();
+        
+        // Si no existe el proveedor, crearlo basado en los datos de la cotización
         if (!$provider) {
+            \Log::info('Creando nuevo proveedor desde cotización', [
+                'provider_name' => $quotation->provider_name,
+                'purchase_request_id' => $purchaseRequest->id
+            ]);
+            
             $provider = \App\Models\Proveedor::create([
-                'nombre' => 'Proveedor Por Asignar',
-                'email' => 'porAsignar@test.com',
-                'telefono' => '000-000-0000',
-                'direccion' => 'Por definir',
-                'persona_contacto' => 'Por asignar',
-                'nit' => '000000000-0'
+                'nombre' => $quotation->provider_name,
+                'email' => $quotation->provider_email ?? 'sin-email@proveedor.com',
+                'telefono' => $quotation->provider_phone ?? '000-000-0000',
+                'direccion' => $quotation->provider_address ?? 'Por definir',
+                'persona_contacto' => $quotation->provider_contact ?? 'Por asignar',
+                'nit' => $quotation->provider_nit ?? '000000000-0',
+                'ciudad' => 'Por definir',
+                'servicio_producto' => 'Productos/Servicios'
+            ]);
+        } else {
+            \Log::info('Usando proveedor existente', [
+                'provider_id' => $provider->id,
+                'provider_name' => $provider->nombre,
+                'purchase_request_id' => $purchaseRequest->id
             ]);
         }
 
-        // Obtener datos de la cotización
-        $quotation = $purchaseRequest->selectedQuotation ?? $purchaseRequest->preApprovedQuotation;
-        $totalAmount = $quotation ? $quotation->total_amount : 0;
-        $paymentTerms = $quotation ? ($quotation->payment_terms ?? 'Contado') : 'Contado';
+        $totalAmount = $quotation->total_amount;
+        $paymentTerms = $quotation->payment_terms ?? 'Contado';
         
         // Calcular IVA si es necesario
         $includesIva = true;
@@ -519,6 +541,14 @@ class ApprovalController extends Controller
             'observations' => 'Orden creada automáticamente al aprobar solicitud',
             'created_by' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
             'status' => 'pending'
+        ]);
+
+        \Log::info('Orden de compra creada exitosamente', [
+            'purchase_order_id' => $purchaseOrder->id,
+            'order_number' => $purchaseOrder->order_number,
+            'provider_id' => $provider->id,
+            'provider_name' => $provider->nombre,
+            'total_amount' => $totalAmount
         ]);
 
         // Generar el PDF inmediatamente
