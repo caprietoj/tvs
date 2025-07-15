@@ -49,15 +49,29 @@ class ApprovalController extends Controller
      */
     public function show($id)
     {
-        $request = PurchaseRequest::with(['quotations', 'user', 'preApprover', 'preApprovedQuotation'])
+        $request = PurchaseRequest::with(['quotations', 'user', 'preApprover', 'preApprovedQuotation', 'quotationItemSelections'])
             ->findOrFail($id);
         
         // Validar que la solicitud esté en un estado apropiado para aprobación
         $validForApproval = false;
         
-        // Para solicitudes de compra: deben estar pre-aprobadas
-        if ($request->type === 'purchase' && in_array($request->status, ['pre-approved', 'Pre-aprobada'])) {
-            $validForApproval = true;
+        // Para solicitudes de compra: deben estar pre-aprobadas y tener cotización o selección mixta
+        if ($request->type === 'purchase') {
+            if (in_array($request->status, ['pre-approved', 'Pre-aprobada'])) {
+                // Verificar si tiene cotización pre-aprobada tradicional
+                $hasPreApprovedQuotation = $request->preApprovedQuotation !== null;
+                
+                // Verificar si tiene selección mixta completa
+                $hasMixedSelection = $this->hasMixedSelectionComplete($request);
+                
+                // Verificar si fue pre-aprobada sin cotización (nuevo flujo)
+                $isPreApprovedWithoutQuotation = ($request->quotations->count() === 0) && 
+                                               ($request->preApprovedQuotation === null);
+                
+                if ($hasPreApprovedQuotation || $hasMixedSelection || $isPreApprovedWithoutQuotation) {
+                    $validForApproval = true;
+                }
+            }
         }
         
         // Para solicitudes de materiales: pueden estar pending o pre-aprobadas
@@ -67,7 +81,16 @@ class ApprovalController extends Controller
 
         // Para solicitudes de servicios: pueden estar pending o pre-aprobadas
         if ($request->type === 'services' && in_array($request->status, ['pending', 'pre-approved', 'Pre-aprobada'])) {
-            $validForApproval = true;
+            // Los servicios sin cotización no requieren validación de cotizaciones
+            if ($request->isNoQuotationService()) {
+                $validForApproval = true;
+            } else {
+                // Para servicios regulares, validar que tengan cotizaciones disponibles
+                $hasQuotations = $request->quotations()->count() > 0;
+                if ($hasQuotations || in_array($request->status, ['pre-approved', 'Pre-aprobada'])) {
+                    $validForApproval = true;
+                }
+            }
         }
         
         if (!$validForApproval) {
