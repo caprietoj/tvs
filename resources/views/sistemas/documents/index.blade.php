@@ -31,6 +31,8 @@
                 <thead>
                     <tr>
                         <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Información</th>
                         <th>Subido por</th>
                         <th>Fecha</th>
                         <th>Acciones</th>
@@ -39,18 +41,53 @@
                 <tbody>
                     @forelse ($documents as $document)
                         <tr>
-                            <td>{{ $document->name }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    @if($document->isFolder())
+                                        <i class="fas fa-folder text-warning mr-2"></i>
+                                    @else
+                                        <i class="fas fa-file-pdf text-danger mr-2"></i>
+                                    @endif
+                                    <span>{{ $document->name }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                @if($document->isFolder())
+                                    <span class="badge badge-info">CARPETA</span>
+                                @else
+                                    <span class="badge badge-secondary">PDF</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($document->isFolder())
+                                    <small class="text-muted">
+                                        {{ $document->file_count }} archivo(s)<br>
+                                        {{ $document->formatted_size }}
+                                    </small>
+                                @else
+                                    <small class="text-muted">
+                                        {{ $document->formatted_size }}
+                                    </small>
+                                @endif
+                            </td>
                             <td>{{ $document->user->name }}</td>
                             <td>{{ $document->created_at->format('d/m/Y H:i') }}</td>
                             <td>
                                 <div class="btn-group" role="group">
+                                    @if($document->isFolder())
+                                        <a href="{{ route('sistemas.documents.structure', $document->id) }}" 
+                                           class="btn btn-sm btn-warning" title="Ver estructura">
+                                            <i class="fas fa-sitemap"></i>
+                                        </a>
+                                    @endif
                                     <a href="{{ route('sistemas.documents.download', $document->id) }}" 
                                        class="btn btn-sm btn-info" title="Descargar">
                                         <i class="fas fa-download"></i>
                                     </a>
                                     <form action="{{ route('sistemas.documents.destroy', $document->id) }}" 
                                           method="POST" 
-                                          onsubmit="return confirm('¿Está seguro de eliminar este documento?');">
+                                          onsubmit="return confirm('¿Está seguro de eliminar este documento?');" 
+                                          style="display: inline;">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
@@ -62,7 +99,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="text-center">No hay documentos disponibles</td>
+                            <td colspan="6" class="text-center">No hay documentos disponibles</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -120,7 +157,7 @@
             "language": {
                 "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
             },
-            "order": [[2, 'desc']],
+            "order": [[4, 'desc']],
             "pageLength": 10
         });
     });

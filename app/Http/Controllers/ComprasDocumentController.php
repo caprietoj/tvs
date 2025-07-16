@@ -6,6 +6,8 @@ use App\Models\ComprasDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class ComprasDocumentController extends Controller
 {
@@ -36,16 +38,48 @@ class ComprasDocumentController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        // Validación dinámica basada en el tipo de subida
+        $rules = [
             'name' => 'required|string|max:255',
-            'document' => 'required|file|mimes:pdf|max:10240',
-        ], [
+        ];
+
+        if ($request->hasFile('document')) {
+            $rules['document'] = 'required|file|mimes:pdf|max:10240';
+        } elseif ($request->hasFile('folder')) {
+            $rules['folder'] = 'required|array|min:1';
+            $rules['folder.*'] = 'file|max:10240'; // 10MB por archivo individual
+            $rules['folder_paths'] = 'array';
+            $rules['folder_paths.*'] = 'string';
+        }
+
+        $messages = [
             'name.required' => 'El nombre del documento es obligatorio.',
             'document.required' => 'Debe seleccionar un archivo PDF.',
             'document.mimes' => 'El archivo debe ser un PDF.',
             'document.max' => 'El archivo no puede ser mayor a 10MB.',
-        ]);
+            'folder.required' => 'Debe seleccionar una carpeta.',
+            'folder.array' => 'La carpeta debe contener archivos.',
+            'folder.min' => 'La carpeta debe contener al menos un archivo.',
+            'folder.*.file' => 'Todos los elementos deben ser archivos válidos.',
+            'folder.*.max' => 'Cada archivo no puede ser mayor a 10MB.',
+        ];
 
+        $request->validate($rules, $messages);
+
+        if ($request->hasFile('document')) {
+            return $this->storeSingleFile($request);
+        } elseif ($request->hasFile('folder')) {
+            return $this->storeFolder($request);
+        }
+
+        return redirect()->back()->with('error', 'Debe seleccionar un archivo o carpeta.');
+    }
+
+    /**
+     * Store a single PDF file
+     */
+    private function storeSingleFile(Request $request)
+    {
         $file = $request->file('document');
         $path = $file->store('public/compras/documents');
         
@@ -53,10 +87,150 @@ class ComprasDocumentController extends Controller
             'name' => $request->name,
             'file_path' => $path,
             'user_id' => Auth::id(),
+            'type' => 'file',
+            'original_filename' => $file->getClientOriginalName(),
+            'file_count' => 1,
+            'total_size' => $file->getSize(),
         ]);
 
         return redirect()->route('compras.documents.index')
             ->with('success', 'Documento subido exitosamente.');
+    }
+
+    /**
+     * Store a folder (multiple files from folder selection)
+     */
+    private function storeFolder(Request $request)
+    {
+        $files = $request->file('folder');
+        
+        if (empty($files)) {
+            return redirect()->back()->with('error', 'No se seleccionaron archivos.');
+        }
+        
+        // Obtener las rutas relativas de los inputs hidden
+        $folderPaths = $request->input('folder_paths', []);
+        
+        // Crear directorio único para esta carpeta
+        $folderName = str_replace(' ', '_', $request->name) . '_' . time();
+        $basePath = 'public/compras/documents/' . $folderName;
+        
+        try {
+            $totalSize = 0;
+            $fileCount = 0;
+            $folderStructure = [];
+            
+            // Calcular tamaño total primero
+            foreach ($files as $file) {
+                $totalSize += $file->getSize();
+            }
+            
+            // Validar tamaño total (100MB máximo)
+            $maxTotalSize = 100 * 1024 * 1024; // 100MB
+            if ($totalSize > $maxTotalSize) {
+                return redirect()->back()->with('error', 'El tamaño total de la carpeta excede los 100MB permitidos.');
+            }
+            
+            // Obtener el nombre de la carpeta raíz
+            $rootFolderName = 'Archivos';
+            if (!empty($folderPaths)) {
+                $firstPath = $folderPaths[0] ?? '';
+                $pathParts = explode('/', $firstPath);
+                if (count($pathParts) > 0) {
+                    $rootFolderName = $pathParts[0];
+                }
+            }
+            
+            Log::info("Procesando carpeta: {$rootFolderName} con " . count($files) . " archivos");
+            
+            // Procesar cada archivo
+            foreach ($files as $index => $file) {
+                // Obtener la ruta relativa del input hidden
+                $relativePath = $folderPaths[$index] ?? $file->getClientOriginalName();
+                
+                Log::info("Procesando archivo $index: " . $file->getClientOriginalName() . " -> $relativePath");
+                
+                // Crear estructura completa del archivo
+                $fullPath = $basePath . '/' . $relativePath;
+                
+                // Crear directorio si no existe
+                $directory = dirname($fullPath);
+                if (!Storage::exists($directory)) {
+                    Storage::makeDirectory($directory);
+                }
+                
+                // Guardar archivo
+                $file->storeAs($directory, basename($relativePath));
+                
+                $fileCount++;
+                
+                // Agregar a la estructura de carpetas
+                $pathParts = explode('/', $relativePath);
+                $currentLevel = &$folderStructure;
+                
+                foreach ($pathParts as $i => $part) {
+                    if ($i === count($pathParts) - 1) {
+                        // Es un archivo
+                        $currentLevel['files'][] = [
+                            'name' => $part,
+                            'size' => $file->getSize(),
+                            'path' => $relativePath
+                        ];
+                    } else {
+                        // Es una carpeta
+                        if (!isset($currentLevel['folders'][$part])) {
+                            $currentLevel['folders'][$part] = [
+                                'folders' => [],
+                                'files' => []
+                            ];
+                        }
+                        $currentLevel = &$currentLevel['folders'][$part];
+                    }
+                }
+            }
+            
+            // Crear registro en la base de datos
+            ComprasDocument::create([
+                'name' => $request->name,
+                'file_path' => $basePath,
+                'user_id' => Auth::id(),
+                'type' => 'folder',
+                'original_filename' => $rootFolderName,
+                'file_count' => $fileCount,
+                'total_size' => $totalSize,
+                'folder_structure' => $folderStructure,
+            ]);
+
+            Log::info("Carpeta guardada exitosamente con $fileCount archivos y tamaño total: $totalSize bytes");
+
+            return redirect()->route('compras.documents.index')
+                ->with('success', "Carpeta subida exitosamente. $fileCount archivos procesados.");
+
+        } catch (\Exception $e) {
+            Log::error('Error al subir carpeta: ' . $e->getMessage());
+            
+            // Limpiar archivos parciales en caso de error
+            if (Storage::exists($basePath)) {
+                Storage::deleteDirectory($basePath);
+            }
+            
+            return redirect()->back()->with('error', 'Error al subir la carpeta: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show the structure of a folder.
+     */
+    public function showStructure($id)
+    {
+        $document = ComprasDocument::findOrFail($id);
+        
+        if (!$document->isFolder()) {
+            return redirect()->route('compras.documents.index')
+                ->with('error', 'Este documento no es una carpeta.');
+        }
+        
+        return view('compras.documents.structure', compact('document'));
     }
 
     /**
@@ -65,7 +239,55 @@ class ComprasDocumentController extends Controller
     public function download($id)
     {
         $document = ComprasDocument::findOrFail($id);
-        return Storage::download($document->file_path);
+        
+        if ($document->isFile()) {
+            return Storage::download($document->file_path, $document->original_filename ?? $document->name . '.pdf');
+        } else {
+            // Para carpetas, crear y descargar ZIP
+            return $this->downloadFolderAsZip($document);
+        }
+    }
+
+    /**
+     * Download folder as ZIP
+     */
+    private function downloadFolderAsZip($document)
+    {
+        $zipFileName = $document->name . '.zip';
+        $zipPath = storage_path('app/temp/' . $zipFileName);
+        
+        // Crear directorio temporal si no existe
+        if (!File::exists(dirname($zipPath))) {
+            File::makeDirectory(dirname($zipPath), 0755, true);
+        }
+        
+        $zip = new \ZipArchive();
+        
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+            $this->addFolderToZip($zip, $document->file_path, '');
+            $zip->close();
+            
+            return response()->download($zipPath)->deleteFileAfterSend(true);
+        }
+        
+        return redirect()->back()->with('error', 'Error al crear el archivo ZIP.');
+    }
+
+    /**
+     * Add folder contents to ZIP recursively
+     */
+    private function addFolderToZip($zip, $folderPath, $zipPath)
+    {
+        $files = Storage::allFiles($folderPath);
+        
+        foreach ($files as $file) {
+            $relativePath = str_replace($folderPath . '/', '', $file);
+            if (!empty($zipPath)) {
+                $relativePath = $zipPath . '/' . $relativePath;
+            }
+            
+            $zip->addFile(Storage::path($file), $relativePath);
+        }
     }
 
     /**
@@ -75,8 +297,12 @@ class ComprasDocumentController extends Controller
     {
         $document = ComprasDocument::findOrFail($id);
         
-        // Delete the file
-        Storage::delete($document->file_path);
+        // Delete the file or folder
+        if ($document->isFile()) {
+            Storage::delete($document->file_path);
+        } else {
+            Storage::deleteDirectory($document->file_path);
+        }
         
         // Delete the record
         $document->delete();

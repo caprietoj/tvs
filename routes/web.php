@@ -110,6 +110,8 @@ Route::middleware('auth')->group(function () {
             ->name('enfermeria.documents.create');
         Route::post('/documents', [App\Http\Controllers\EnfermeriaDocumentController::class, 'store'])
             ->name('enfermeria.documents.store');
+        Route::get('/documents/{document}/structure', [App\Http\Controllers\EnfermeriaDocumentController::class, 'showStructure'])
+            ->name('enfermeria.documents.structure');
         Route::get('/documents/{document}/download', [App\Http\Controllers\EnfermeriaDocumentController::class, 'download'])
             ->name('enfermeria.documents.download');
         Route::delete('/documents/{document}', [App\Http\Controllers\EnfermeriaDocumentController::class, 'destroy'])
@@ -146,6 +148,8 @@ Route::middleware('auth')->group(function () {
             ->name('compras.documents.create');
         Route::post('/documents', [App\Http\Controllers\ComprasDocumentController::class, 'store'])
             ->name('compras.documents.store');
+        Route::get('/documents/{document}/structure', [App\Http\Controllers\ComprasDocumentController::class, 'showStructure'])
+            ->name('compras.documents.structure');
         Route::get('/documents/{document}/download', [App\Http\Controllers\ComprasDocumentController::class, 'download'])
             ->name('compras.documents.download');
         Route::delete('/documents/{document}', [App\Http\Controllers\ComprasDocumentController::class, 'destroy'])
@@ -180,6 +184,8 @@ Route::middleware('auth')->group(function () {
                 ->name('rrhh.documents.store');
             Route::get('/documents/{document}/download', [App\Http\Controllers\RrhhDocumentController::class, 'download'])
                 ->name('rrhh.documents.download');
+            Route::get('/documents/{document}/structure', [App\Http\Controllers\RrhhDocumentController::class, 'showStructure'])
+                ->name('rrhh.documents.structure');
             Route::delete('/documents/{document}', [App\Http\Controllers\RrhhDocumentController::class, 'destroy'])
                 ->name('rrhh.documents.destroy');
         });
@@ -201,6 +207,8 @@ Route::middleware('auth')->group(function () {
                 ->name('contabilidad.documents.store');
             Route::get('/documents/{document}/download', [App\Http\Controllers\ContabilidadDocumentController::class, 'download'])
                 ->name('contabilidad.documents.download');
+            Route::get('/documents/{document}/structure', [App\Http\Controllers\ContabilidadDocumentController::class, 'showStructure'])
+                ->name('contabilidad.documents.structure');
             Route::delete('/documents/{document}', [App\Http\Controllers\ContabilidadDocumentController::class, 'destroy'])
                 ->name('contabilidad.documents.destroy');
         });
@@ -240,6 +248,8 @@ Route::middleware('auth')->group(function () {
                 ->name('sistemas.documents.create');
             Route::post('/documents', [App\Http\Controllers\SistemasDocumentController::class, 'store'])
                 ->name('sistemas.documents.store');
+            Route::get('/documents/{document}/structure', [App\Http\Controllers\SistemasDocumentController::class, 'showStructure'])
+                ->name('sistemas.documents.structure');
             Route::get('/documents/{document}/download', [App\Http\Controllers\SistemasDocumentController::class, 'download'])
                 ->name('sistemas.documents.download');
             Route::delete('/documents/{document}', [App\Http\Controllers\SistemasDocumentController::class, 'destroy'])
