@@ -6,6 +6,7 @@ use App\Models\RrhhDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use ZipArchive;
 use Illuminate\Support\Str;
 
@@ -209,40 +210,45 @@ class RrhhDocumentController extends Controller
      */
     public function downloadFolderAsZip($id)
     {
-        $document = RrhhDocument::findOrFail($id);
-        
-        if (!$document->isFolder()) {
-            abort(404);
+        try {
+            $document = RrhhDocument::findOrFail($id);
+            
+            if (!$document->isFolder()) {
+                abort(404, 'Document is not a folder');
+            }
+
+            $zip = new ZipArchive();
+            $zipFileName = storage_path('app/temp/' . Str::slug($document->name) . '_' . time() . '.zip');
+            
+            // Create temp directory if it doesn't exist
+            if (!file_exists(dirname($zipFileName))) {
+                mkdir(dirname($zipFileName), 0755, true);
+            }
+
+            if ($zip->open($zipFileName, ZipArchive::CREATE) !== TRUE) {
+                abort(500, 'Cannot create zip file');
+            }
+
+            $this->addFolderToZip($zip, $document->folder_structure, '', $document->file_path);
+            $zip->close();
+
+            return response()->download($zipFileName)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            \Log::error('Error creating ZIP file: ' . $e->getMessage());
+            abort(500, 'Error creating ZIP file: ' . $e->getMessage());
         }
-
-        $zip = new ZipArchive();
-        $zipFileName = storage_path('app/temp/' . Str::slug($document->name) . '_' . time() . '.zip');
-        
-        // Create temp directory if it doesn't exist
-        if (!file_exists(dirname($zipFileName))) {
-            mkdir(dirname($zipFileName), 0755, true);
-        }
-
-        if ($zip->open($zipFileName, ZipArchive::CREATE) !== TRUE) {
-            abort(500, 'Cannot create zip file');
-        }
-
-        $this->addFolderToZip($zip, $document->folder_structure, '');
-        $zip->close();
-
-        return response()->download($zipFileName)->deleteFileAfterSend(true);
     }
 
     /**
      * Recursively add folder contents to ZIP
      */
-    private function addFolderToZip($zip, $structure, $basePath)
+    private function addFolderToZip($zip, $structure, $basePath, $documentPath = '')
     {
         // Add files in current level
         if (isset($structure['files'])) {
             foreach ($structure['files'] as $file) {
                 $filePath = $basePath . $file['name'];
-                $fullPath = storage_path('app/' . $file['path']);
+                $fullPath = storage_path('app/' . $documentPath . '/' . $file['path']);
                 if (file_exists($fullPath)) {
                     $zip->addFile($fullPath, $filePath);
                 }
@@ -254,7 +260,7 @@ class RrhhDocumentController extends Controller
             foreach ($structure['folders'] as $folderName => $folderData) {
                 $folderPath = $basePath . $folderName . '/';
                 $zip->addEmptyDir($basePath . $folderName);
-                $this->addFolderToZip($zip, $folderData, $folderPath);
+                $this->addFolderToZip($zip, $folderData, $folderPath, $documentPath);
             }
         }
     }
@@ -264,13 +270,24 @@ class RrhhDocumentController extends Controller
      */
     public function download($id)
     {
-        $document = RrhhDocument::findOrFail($id);
-        
-        if ($document->isFolder()) {
-            return $this->downloadFolderAsZip($id);
+        try {
+            $document = RrhhDocument::findOrFail($id);
+            
+            if ($document->isFolder()) {
+                return $this->downloadFolderAsZip($id);
+            }
+            
+            // Check if file exists before attempting download
+            if (!Storage::exists($document->file_path)) {
+                abort(404, 'File not found');
+            }
+            
+            return Storage::download($document->file_path);
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::error('Error downloading document: ' . $e->getMessage());
+            abort(500, 'Error downloading file: ' . $e->getMessage());
         }
-        
-        return Storage::download($document->file_path);
     }
 
     /**
