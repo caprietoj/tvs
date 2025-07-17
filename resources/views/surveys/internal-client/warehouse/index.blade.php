@@ -41,8 +41,8 @@
                     </div>
                     <div class="card-body text-center">
                         <p class="lead">Para comenzar a visualizar los análisis estadísticos, sube el primer archivo de resultados de la encuesta.</p>
-                        <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="btn btn-primary btn-lg">
-                            <i class="fas fa-upload"></i>
+                        <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="btn btn-primary btn-md">
+                            <i class="fas fa-upload mr-2"></i>
                             Subir Archivo Excel
                         </a>
                     </div>
@@ -184,7 +184,7 @@
                         </h3>
                     </div>
                     <div class="card-body">
-                        <canvas id="satisfactionTrendChart" style="height: 400px;"></canvas>
+                        <canvas id="satisfactionTrendChart" style="height: 250px;"></canvas>
                     </div>
                 </div>
             </div>
@@ -198,7 +198,7 @@
                         </h3>
                     </div>
                     <div class="card-body">
-                        <canvas id="dependencyChart" style="height: 300px;"></canvas>
+                        <canvas id="dependencyChart" style="height: 250px;"></canvas>
                     </div>
                 </div>
             </div>
@@ -215,7 +215,7 @@
                         </h3>
                     </div>
                     <div class="card-body">
-                        <canvas id="questionAnalysisChart" style="height: 500px;"></canvas>
+                        <canvas id="questionAnalysisChart" style="height: 350px;"></canvas>
                     </div>
                 </div>
             </div>
@@ -233,12 +233,12 @@
                     </div>
                     <div class="card-body">
                         @forelse($latestStats['top_highlights'] as $highlight)
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                            <span>{{ $highlight['text'] }}</span>
+                        <div class="d-flex justify-content-between align-items-center mb-1 p-2 bg-light rounded">
+                            <span class="text-sm">{{ $highlight['text'] }}</span>
                             <span class="badge badge-success">{{ $highlight['count'] }}</span>
                         </div>
                         @empty
-                        <p class="text-muted">No hay aspectos destacados registrados.</p>
+                        <p class="text-muted text-sm">No hay aspectos destacados registrados.</p>
                         @endforelse
                     </div>
                 </div>
@@ -254,12 +254,12 @@
                     </div>
                     <div class="card-body">
                         @forelse($latestStats['top_issues'] as $issue)
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                            <span>{{ $issue['text'] }}</span>
+                        <div class="d-flex justify-content-between align-items-center mb-1 p-2 bg-light rounded">
+                            <span class="text-sm">{{ $issue['text'] }}</span>
                             <span class="badge badge-warning">{{ $issue['count'] }}</span>
                         </div>
                         @empty
-                        <p class="text-muted">No hay oportunidades de mejora registradas.</p>
+                        <p class="text-muted text-sm">No hay oportunidades de mejora registradas.</p>
                         @endforelse
                     </div>
                 </div>
@@ -281,8 +281,8 @@
                             <div class="col-md-3">
                                 <div class="text-center">
                                     <a href="{{ route('surveys.internal-client.warehouse.upload') }}" 
-                                       class="btn btn-success btn-lg btn-block">
-                                        <i class="fas fa-upload"></i><br>
+                                       class="btn btn-success btn-md btn-block">
+                                        <i class="fas fa-upload mr-2"></i>
                                         Subir Nueva Encuesta
                                     </a>
                                     <small class="text-muted">Sube resultados de encuesta en Excel</small>
@@ -291,8 +291,8 @@
                             <div class="col-md-3">
                                 <div class="text-center">
                                     <a href="{{ route('surveys.internal-client.warehouse.export') }}" 
-                                       class="btn btn-primary btn-lg btn-block">
-                                        <i class="fas fa-download"></i><br>
+                                       class="btn btn-primary btn-md btn-block">
+                                        <i class="fas fa-download mr-2"></i>
                                         Exportar Datos
                                     </a>
                                     <small class="text-muted">Descarga datos en Excel</small>
@@ -300,8 +300,8 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="text-center">
-                                    <button class="btn btn-warning btn-lg btn-block" onclick="printDashboard()">
-                                        <i class="fas fa-print"></i><br>
+                                    <button class="btn btn-warning btn-md btn-block" onclick="printDashboard()">
+                                        <i class="fas fa-print mr-2"></i>
                                         Imprimir Reporte
                                     </button>
                                     <small class="text-muted">Genera reporte imprimible</small>
@@ -309,8 +309,8 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="text-center">
-                                    <button class="btn btn-info btn-lg btn-block" onclick="refreshData()">
-                                        <i class="fas fa-sync"></i><br>
+                                    <button class="btn btn-info btn-md btn-block" onclick="refreshData()">
+                                        <i class="fas fa-sync mr-2"></i>
                                         Actualizar Datos
                                     </button>
                                     <small class="text-muted">Recarga la información</small>
@@ -327,28 +327,37 @@
 
 @section('css')
 <style>
+    .text-sm {
+        font-size: 0.875rem;
+    }
+    
+    .row {
+        margin-bottom: 15px;
+    }
+    
     .info-box {
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         transition: transform 0.2s;
     }
     
     .info-box:hover {
-        transform: translateY(-2px);
+        transform: translateY(-1px);
     }
     
     .card {
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
     }
     
     .small-box {
-        border-radius: 10px;
+        border-radius: 8px;
         transition: transform 0.2s;
     }
     
     .small-box:hover {
-        transform: translateY(-2px);
+        transform: translateY(-1px);
     }
     
     .bg-light {
@@ -356,29 +365,38 @@
     }
     
     .progress {
-        height: 8px;
-        border-radius: 5px;
+        height: 6px;
+        border-radius: 3px;
     }
     
     .progress-bar {
-        border-radius: 5px;
+        border-radius: 3px;
     }
     
     .btn {
-        border-radius: 25px;
-        padding: 12px 30px;
-        font-weight: 600;
+        border-radius: 20px;
+        padding: 8px 20px;
+        font-weight: 500;
+        font-size: 14px;
+    }
+    
+    .btn-md {
+        padding: 10px 24px;
+        font-size: 14px;
     }
     
     .chart-container {
         position: relative;
-        height: 400px;
-        margin: 20px 0;
+        height: 300px;
+        margin: 15px 0;
     }
     
     .highlight-item, .issue-item {
         transition: all 0.3s ease;
-        border-left: 4px solid transparent;
+        border-left: 3px solid transparent;
+        padding: 8px 12px;
+        margin-bottom: 6px;
+        border-radius: 6px;
     }
     
     .highlight-item:hover {
@@ -392,15 +410,16 @@
     }
     
     .badge {
-        font-size: 0.9em;
-        padding: 6px 12px;
-        border-radius: 15px;
+        font-size: 0.75em;
+        padding: 4px 8px;
+        border-radius: 12px;
     }
     
     .card-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        border-radius: 10px 10px 0 0;
+        border-radius: 8px 8px 0 0;
+        padding: 12px 20px;
     }
     
     .card-success .card-header {
@@ -415,6 +434,25 @@
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
     
+    @media (max-width: 768px) {
+        .btn-md {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        
+        .card-body {
+            padding: 15px;
+        }
+        
+        .small-box {
+            margin-bottom: 15px;
+        }
+        
+        canvas {
+            max-height: 200px !important;
+        }
+    }
+    
     @media print {
         .btn, .card-tools {
             display: none !important;
@@ -423,6 +461,10 @@
         .card {
             border: 1px solid #ddd !important;
             box-shadow: none !important;
+        }
+        
+        canvas {
+            max-height: 300px !important;
         }
     }
 </style>
@@ -439,8 +481,10 @@
     
     // Configuración global de Chart.js
     Chart.defaults.font.family = 'Arial, sans-serif';
-    Chart.defaults.font.size = 12;
+    Chart.defaults.font.size = 11;
     Chart.defaults.color = '#495057';
+    Chart.defaults.elements.point.radius = 4;
+    Chart.defaults.elements.point.hoverRadius = 6;
     
     // Gráfico de tendencia de satisfacción
     const trendCtx = document.getElementById('satisfactionTrendChart').getContext('2d');
@@ -455,8 +499,8 @@
                 backgroundColor: 'rgba(0, 123, 255, 0.1)',
                 tension: 0.4,
                 fill: true,
-                pointRadius: 6,
-                pointHoverRadius: 8,
+                pointRadius: 4,
+                pointHoverRadius: 6,
                 pointBackgroundColor: '#007bff',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2
@@ -516,8 +560,11 @@
                 legend: {
                     position: 'bottom',
                     labels: {
-                        padding: 20,
-                        usePointStyle: true
+                        padding: 15,
+                        usePointStyle: true,
+                        font: {
+                            size: 11
+                        }
                     }
                 }
             }
@@ -583,7 +630,7 @@
                     ticks: {
                         maxRotation: 45,
                         font: {
-                            size: 10
+                            size: 9
                         }
                     }
                 },
@@ -602,8 +649,11 @@
                 legend: {
                     position: 'top',
                     labels: {
-                        padding: 20,
-                        usePointStyle: true
+                        padding: 15,
+                        usePointStyle: true,
+                        font: {
+                            size: 11
+                        }
                     }
                 },
                 tooltip: {
