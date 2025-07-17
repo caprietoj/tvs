@@ -923,25 +923,35 @@ Route::middleware(['auth', 'admin.role'])->prefix('surveys')->name('surveys.')->
     
     // Cliente Interno
     Route::prefix('internal-client')->name('internal-client.')->group(function () {
-        Route::get('/warehouse', function () {
-            return view('surveys.internal-client.warehouse.index');
-        })->name('warehouse');
+        // Almacén
+        Route::get('/warehouse', [App\Http\Controllers\WarehouseSurveyController::class, 'index'])->name('warehouse');
+        Route::get('/warehouse/upload', [App\Http\Controllers\WarehouseSurveyController::class, 'upload'])->name('warehouse.upload');
+        Route::post('/warehouse/upload', [App\Http\Controllers\WarehouseSurveyController::class, 'processUpload'])->name('warehouse.process-upload');
+        Route::get('/warehouse/export', [App\Http\Controllers\WarehouseSurveyController::class, 'export'])->name('warehouse.export');
         
-        Route::get('/cafeteria', function () {
-            return view('surveys.internal-client.cafeteria.index');
-        })->name('cafeteria');
+        // Enfermería (anteriormente cafetería)
+        Route::get('/cafeteria', [App\Http\Controllers\NursingSurveyController::class, 'index'])->name('cafeteria');
+        Route::get('/cafeteria/upload', [App\Http\Controllers\NursingSurveyController::class, 'upload'])->name('cafeteria.upload');
+        Route::post('/cafeteria/process-upload', [App\Http\Controllers\NursingSurveyController::class, 'processUpload'])->name('cafeteria.process-upload');
+        Route::get('/cafeteria/export', [App\Http\Controllers\NursingSurveyController::class, 'export'])->name('cafeteria.export');
         
-        Route::get('/systems', function () {
-            return view('surveys.internal-client.systems.index');
-        })->name('systems');
+        // Enfermería con URL correcta
+        Route::get('/enfermeria', [App\Http\Controllers\NursingSurveyController::class, 'index'])->name('enfermeria');
+        Route::get('/enfermeria/upload', [App\Http\Controllers\NursingSurveyController::class, 'upload'])->name('enfermeria.upload');
+        Route::post('/enfermeria/process-upload', [App\Http\Controllers\NursingSurveyController::class, 'processUpload'])->name('enfermeria.process-upload');
+        Route::get('/enfermeria/export', [App\Http\Controllers\NursingSurveyController::class, 'export'])->name('enfermeria.export');
+        
+        Route::get('/systems', [App\Http\Controllers\SurveySistemas\SystemsSurveyController::class, 'index'])->name('systems');
+        
+        Route::get('/systems/upload', [App\Http\Controllers\SurveySistemas\SystemsSurveyController::class, 'upload'])->name('systems.upload');
+        Route::post('/systems/process', [App\Http\Controllers\SurveySistemas\SystemsSurveyController::class, 'processUpload'])->name('systems.process');
+        Route::get('/systems/results', [App\Http\Controllers\SurveySistemas\SystemsSurveyController::class, 'results'])->name('systems.results');
+        Route::get('/systems/details/{id}', [App\Http\Controllers\SurveySistemas\SystemsSurveyController::class, 'details'])->name('systems.details');
+        Route::get('/systems/export', [App\Http\Controllers\SurveySistemas\SystemsSurveyController::class, 'export'])->name('systems.export');
     });
     
     // Servicios Complementarios
     Route::prefix('complementary-services')->name('complementary-services.')->group(function () {
-        Route::get('/cafeteria', function () {
-            return view('surveys.complementary-services.cafeteria.index');
-        })->name('cafeteria');
-        
         Route::get('/transport', function () {
             return view('surveys.complementary-services.transport.index');
         })->name('transport');
@@ -949,10 +959,6 @@ Route::middleware(['auth', 'admin.role'])->prefix('surveys')->name('surveys.')->
     
     // Padres de Familia y/o Estudiantes
     Route::prefix('parents-students')->name('parents-students.')->group(function () {
-        Route::get('/cafeteria', function () {
-            return view('surveys.parents-students.cafeteria.index');
-        })->name('cafeteria');
-        
         Route::get('/transport', function () {
             return view('surveys.parents-students.transport.index');
         })->name('transport');

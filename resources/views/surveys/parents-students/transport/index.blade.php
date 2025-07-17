@@ -1,11 +1,12 @@
 @extends('adminlte::page')
 
-@section('title', 'Encuesta Padres de Familia - Transporte')
+@section('title', 'Encuesta Padres de Familia - Cafetería y Transporte')
 
 @section('content_header')
     <h1>
+        <i class="fas fa-utensils"></i>
         <i class="fas fa-school"></i>
-        Encuesta Padres de Familia y/o Estudiantes - Transporte
+        Encuesta Padres de Familia y/o Estudiantes - Cafetería y Transporte
     </h1>
 @stop
 
@@ -17,13 +18,13 @@
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-poll"></i>
-                        Evaluación del Servicio de Transporte Escolar - Comunidad Educativa
+                        Evaluación de los Servicios de Cafetería y Transporte Escolar - Comunidad Educativa
                     </h3>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-primary">
                         <i class="fas fa-info-circle"></i>
-                        <strong>Propósito:</strong> Esta encuesta evalúa la satisfacción de padres de familia y estudiantes con el servicio de transporte escolar institucional.
+                        <strong>Propósito:</strong> Esta encuesta evalúa la satisfacción de padres de familia y estudiantes con los servicios de cafetería y transporte escolar institucional.
                     </div>
                     
                     <div class="row">

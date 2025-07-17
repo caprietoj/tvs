@@ -381,10 +381,10 @@ return [
                             'active' => ['surveys/internal-client/warehouse*'],
                         ],
                         [
-                            'text' => 'Cafetería',
-                            'url'  => 'surveys/internal-client/cafeteria',
-                            'icon' => 'fas fa-coffee',
-                            'active' => ['surveys/internal-client/cafeteria*'],
+                            'text' => 'Enfermería',
+                            'url'  => 'surveys/internal-client/enfermeria',
+                            'icon' => 'fas fa-user-nurse',
+                            'active' => ['surveys/internal-client/enfermeria*'],
                         ],
                         [
                             'text' => 'Sistemas',
@@ -400,13 +400,7 @@ return [
                     'classes' => 'submenu-item',
                     'submenu' => [
                         [
-                            'text' => 'Cafetería',
-                            'url'  => 'surveys/complementary-services/cafeteria',
-                            'icon' => 'fas fa-utensils',
-                            'active' => ['surveys/complementary-services/cafeteria*'],
-                        ],
-                        [
-                            'text' => 'Transporte',
+                            'text' => 'Cafetería y Transporte',
                             'url'  => 'surveys/complementary-services/transport',
                             'icon' => 'fas fa-bus',
                             'active' => ['surveys/complementary-services/transport*'],
@@ -419,13 +413,7 @@ return [
                     'classes' => 'submenu-item',
                     'submenu' => [
                         [
-                            'text' => 'Cafetería',
-                            'url'  => 'surveys/parents-students/cafeteria',
-                            'icon' => 'fas fa-apple-alt',
-                            'active' => ['surveys/parents-students/cafeteria*'],
-                        ],
-                        [
-                            'text' => 'Transporte',
+                            'text' => 'Cafetería y Transporte',
                             'url'  => 'surveys/parents-students/transport',
                             'icon' => 'fas fa-school',
                             'active' => ['surveys/parents-students/transport*'],

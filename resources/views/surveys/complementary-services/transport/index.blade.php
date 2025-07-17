@@ -1,11 +1,12 @@
 @extends('adminlte::page')
 
-@section('title', 'Encuesta Servicios Complementarios - Transporte')
+@section('title', 'Encuesta Servicios Complementarios - Cafetería y Transporte')
 
 @section('content_header')
     <h1>
+        <i class="fas fa-utensils"></i>
         <i class="fas fa-bus"></i>
-        Encuesta Servicios Complementarios - Transporte
+        Encuesta Servicios Complementarios - Cafetería y Transporte
     </h1>
 @stop
 
@@ -17,13 +18,13 @@
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-poll"></i>
-                        Evaluación del Servicio de Transporte Escolar
+                        Evaluación de los Servicios de Cafetería y Transporte Escolar
                     </h3>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-success">
                         <i class="fas fa-info-circle"></i>
-                        <strong>Propósito:</strong> Esta encuesta evalúa la calidad y seguridad del servicio de transporte escolar institucional.
+                        <strong>Propósito:</strong> Esta encuesta evalúa la calidad de los servicios de cafetería y transporte escolar institucional.
                     </div>
                     
                     <div class="row">

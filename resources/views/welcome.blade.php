@@ -174,16 +174,16 @@
                             </a>
                         </div>
                         
-                        <!-- Cliente Interno - Cafetería -->
+                        <!-- Cliente Interno - Enfermería -->
                         <div class="col-md-3 col-sm-6 mb-3">
-                            <a href="{{ route('surveys.internal-client.cafeteria') }}" class="quick-access-card">
+                            <a href="{{ route('surveys.internal-client.enfermeria') }}" class="quick-access-card">
                                 <div class="quick-access-item">
                                     <div class="icon-wrapper">
-                                        <i class="fas fa-coffee"></i>
+                                        <i class="fas fa-user-nurse"></i>
                                     </div>
                                     <div class="content">
-                                        <h6>Cliente Interno - Cafetería</h6>
-                                        <p>Calidad de alimentos e higiene</p>
+                                        <h6>Cliente Interno - Enfermería</h6>
+                                        <p>Atención y servicios de salud</p>
                                     </div>
                                 </div>
                             </a>
@@ -204,61 +204,33 @@
                             </a>
                         </div>
                         
-                        <!-- Servicios Complementarios - Cafetería -->
-                        <div class="col-md-3 col-sm-6 mb-3">
-                            <a href="{{ route('surveys.complementary-services.cafeteria') }}" class="quick-access-card">
-                                <div class="quick-access-item">
-                                    <div class="icon-wrapper">
-                                        <i class="fas fa-utensils"></i>
-                                    </div>
-                                    <div class="content">
-                                        <h6>Servicios - Cafetería</h6>
-                                        <p>Menú variado y alimentación</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-                        
-                        <!-- Servicios Complementarios - Transporte -->
+                        <!-- Servicios Complementarios - Cafetería y Transporte -->
                         <div class="col-md-3 col-sm-6 mb-3">
                             <a href="{{ route('surveys.complementary-services.transport') }}" class="quick-access-card">
                                 <div class="quick-access-item">
                                     <div class="icon-wrapper">
+                                        <i class="fas fa-utensils"></i>
                                         <i class="fas fa-bus"></i>
                                     </div>
                                     <div class="content">
-                                        <h6>Servicios - Transporte</h6>
-                                        <p>Puntualidad y seguridad vehicular</p>
+                                        <h6>Servicios - Cafetería y Transporte</h6>
+                                        <p>Evaluación integral de servicios</p>
                                     </div>
                                 </div>
                             </a>
                         </div>
                         
-                        <!-- Padres y Estudiantes - Cafetería -->
-                        <div class="col-md-3 col-sm-6 mb-3">
-                            <a href="{{ route('surveys.parents-students.cafeteria') }}" class="quick-access-card">
-                                <div class="quick-access-item">
-                                    <div class="icon-wrapper">
-                                        <i class="fas fa-apple-alt"></i>
-                                    </div>
-                                    <div class="content">
-                                        <h6>Padres - Cafetería</h6>
-                                        <p>Opiniones de padres y estudiantes</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-                        
-                        <!-- Padres y Estudiantes - Transporte -->
+                        <!-- Padres y Estudiantes - Cafetería y Transporte -->
                         <div class="col-md-3 col-sm-6 mb-3">
                             <a href="{{ route('surveys.parents-students.transport') }}" class="quick-access-card">
                                 <div class="quick-access-item">
                                     <div class="icon-wrapper">
+                                        <i class="fas fa-utensils"></i>
                                         <i class="fas fa-school"></i>
                                     </div>
                                     <div class="content">
-                                        <h6>Padres - Transporte</h6>
-                                        <p>Evaluación del servicio de transporte</p>
+                                        <h6>Padres - Cafetería y Transporte</h6>
+                                        <p>Opiniones de padres y estudiantes</p>
                                     </div>
                                 </div>
                             </a>
