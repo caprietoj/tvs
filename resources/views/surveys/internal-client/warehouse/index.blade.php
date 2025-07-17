@@ -63,11 +63,14 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info">
                     <div class="inner">
-                        <h3>{{ $latestStats['total_responses'] }}</h3>
-                        <p>Total de Respuestas</p>
+                        <h3>{{ $latestStats['total_responses'] }}/{{ $latestStats['expected_responses'] ?? 50 }}</h3>
+                        <p>Respuestas vs Esperadas</p>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: {{ ($latestStats['total_responses'] / ($latestStats['expected_responses'] ?? 50)) * 100 }}%"></div>
+                        </div>
                     </div>
                     <div class="icon">
-                        <i class="fas fa-users"></i>
+                        <i class="fas fa-chart-pie"></i>
                     </div>
                     <a href="#" class="small-box-footer">
                         Ver detalles <i class="fas fa-arrow-circle-right"></i>

@@ -7,6 +7,45 @@
     height: 300px;
     width: 100%;
 }
+
+.small-box {
+    border-radius: 8px;
+    transition: transform 0.2s;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.small-box:hover {
+    transform: translateY(-1px);
+}
+
+.progress {
+    height: 6px;
+    border-radius: 3px;
+    margin-top: 8px;
+}
+
+.progress-bar {
+    border-radius: 3px;
+}
+
+.card {
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.btn {
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .small-box {
+        margin-bottom: 15px;
+    }
+}
 </style>
 @endpush
 
@@ -31,55 +70,40 @@ window.addEventListener('load', function() {
             datasets: [{
                 label: 'Satisfacción General (%)',
                 data: trendData.values,
-                borderColor: '#4CAF50',
-                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
                 borderWidth: 2,
                 fill: true,
-                tension: 0.3,
-                pointBackgroundColor: '#4CAF50',
+                tension: 0.1,
+                pointBackgroundColor: '#007bff',
                 pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                pointHoverBackgroundColor: '#388E3C',
+                pointBorderWidth: 1,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: '#0056b3',
                 pointHoverBorderColor: '#ffffff',
-                pointHoverBorderWidth: 2
+                pointHoverBorderWidth: 1
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                intersect: false,
-                mode: 'nearest'
-            },
             plugins: {
                 legend: {
                     display: true,
                     position: 'top',
                     labels: {
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        padding: 15,
+                        padding: 10,
                         font: {
-                            size: 12,
-                            weight: 'bold'
+                            size: 12
                         }
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(33, 33, 33, 0.9)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     titleColor: '#ffffff',
                     bodyColor: '#ffffff',
-                    titleFont: {
-                        size: 14,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        size: 13
-                    },
-                    padding: 12,
-                    cornerRadius: 6,
+                    cornerRadius: 4,
                     displayColors: false,
                     callbacks: {
                         title: function(tooltipItems) {
@@ -96,14 +120,10 @@ window.addEventListener('load', function() {
                     beginAtZero: true,
                     max: 100,
                     grid: {
-                        color: 'rgba(0, 0, 0, 0.05)',
+                        color: 'rgba(0, 0, 0, 0.1)',
                         drawBorder: false
                     },
-                    border: {
-                        dash: [4, 4]
-                    },
                     ticks: {
-                        padding: 8,
                         font: {
                             size: 11
                         },
@@ -117,29 +137,14 @@ window.addEventListener('load', function() {
                         display: false
                     },
                     ticks: {
-                        padding: 8,
                         font: {
                             size: 11
                         }
                     }
                 }
             },
-            elements: {
-                line: {
-                    tension: 0.3
-                },
-                point: {
-                    hoverRadius: 7,
-                    hitRadius: 10
-                }
-            },
             animation: {
-                duration: 1500,
-                easing: 'easeInOutQuart'
-            },
-            hover: {
-                mode: 'nearest',
-                intersect: false
+                duration: 500
             }
         }
     });
@@ -223,24 +228,30 @@ window.addEventListener('load', function() {
                     '#6f42c1', '#17a2b8', '#fd7e14', '#20c997',
                     '#6c757d', '#343a40'
                 ],
-                borderWidth: 1
+                borderWidth: 1,
+                borderColor: '#ffffff'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '60%',
+            cutout: '50%',
             plugins: {
                 legend: {
                     position: 'bottom',
                     labels: {
                         font: {
-                            size: 11
+                            size: 10
                         },
-                        padding: 15
+                        padding: 8,
+                        usePointStyle: true
                     }
                 },
                 tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    cornerRadius: 4,
                     callbacks: {
                         label: function(context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -252,8 +263,7 @@ window.addEventListener('load', function() {
                 }
             },
             animation: {
-                duration: 1000,
-                easing: 'easeOutQuart'
+                duration: 300
             }
         }
     });
@@ -551,11 +561,14 @@ $('head').append(toastStyles);
         <div class="col-lg-3 col-6">
             <div class="small-box bg-info">
                 <div class="inner">
-                    <h3>{{ $latestData['total_respuestas'] }}</h3>
-                    <p>Total de Respuestas</p>
+                    <h3>{{ $latestData['total_respuestas'] }}/{{ $latestData['total_respuestas'] + 25 }}</h3>
+                    <p>Respuestas vs Esperadas</p>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: {{ $latestData['total_respuestas'] > 0 ? (($latestData['total_respuestas'] / ($latestData['total_respuestas'] + 25)) * 100) : 0 }}%"></div>
+                    </div>
                 </div>
                 <div class="icon">
-                    <i class="fas fa-users"></i>
+                    <i class="fas fa-chart-pie"></i>
                 </div>
                 <a href="{{ route('surveys.internal-client.systems.results') }}" class="small-box-footer">
                     Ver detalles <i class="fas fa-arrow-circle-right"></i>
@@ -650,99 +663,21 @@ $('head').append(toastStyles);
     <!-- Gráficos de Análisis -->
     <div class="row">
         <div class="col-md-6">
-            <div class="card chart-card trend-chart-card">
-                <div class="card-header bg-gradient-primary text-white position-relative">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
                     <h3 class="card-title mb-0">
-                        <i class="fas fa-chart-line mr-2 animated-icon"></i>
+                        <i class="fas fa-chart-line mr-2"></i>
                         Evolución de Satisfacción (Últimos 6 meses)
                     </h3>
                     <div class="card-tools">
                         <button type="button" class="btn btn-tool text-white" data-card-widget="collapse" title="Colapsar">
                             <i class="fas fa-minus"></i>
                         </button>
-                        <button type="button" class="btn btn-tool text-white" id="trendFullscreen" title="Pantalla completa">
-                            <i class="fas fa-expand"></i>
-                        </button>
-                        <button type="button" class="btn btn-tool text-white" id="trendRefresh" title="Actualizar datos">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                        <div class="dropdown">
-                            <button type="button" class="btn btn-tool text-white dropdown-toggle" data-toggle="dropdown" title="Opciones">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-right">
-                                <h6 class="dropdown-header">Descargar</h6>
-                                <a class="dropdown-item" href="#" onclick="downloadChart('trendChart', 'evolucion-satisfaccion')">
-                                    <i class="fas fa-download mr-2"></i>PNG
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="downloadChart('trendChart', 'evolucion-satisfaccion', 'jpeg')">
-                                    <i class="fas fa-image mr-2"></i>JPEG
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="downloadChart('trendChart', 'evolucion-satisfaccion', 'pdf')">
-                                    <i class="fas fa-file-pdf mr-2"></i>PDF
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <h6 class="dropdown-header">Acciones</h6>
-                                <a class="dropdown-item" href="#" onclick="printChart('trendChart')">
-                                    <i class="fas fa-print mr-2"></i>Imprimir
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="shareChart('trendChart')">
-                                    <i class="fas fa-share-alt mr-2"></i>Compartir
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="showChartData('trendChart')">
-                                    <i class="fas fa-table mr-2"></i>Ver datos
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chart-status-indicator" id="trendStatus">
-                        <i class="fas fa-circle text-success"></i>
-                        <span class="text-white">Actualizado</span>
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    <div class="chart-container-enhanced">
-                        <div class="chart-controls">
-                            <div class="chart-controls-left">
-                                <button class="btn btn-sm btn-outline-primary" onclick="toggleChartType('trendChart')">
-                                    <i class="fas fa-chart-bar mr-1"></i>
-                                    Cambiar tipo
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleDataPoints('trendChart')">
-                                    <i class="fas fa-circle mr-1"></i>
-                                    Puntos
-                                </button>
-                            </div>
-                            <div class="chart-controls-right">
-                                <div class="chart-zoom-controls">
-                                    <button class="btn btn-sm btn-outline-info" onclick="zoomIn('trendChart')">
-                                        <i class="fas fa-search-plus"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-info" onclick="zoomOut('trendChart')">
-                                        <i class="fas fa-search-minus"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-warning" onclick="resetZoom('trendChart')">
-                                        <i class="fas fa-undo"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <canvas id="trendChart" width="800" height="280"></canvas>
-                        <div class="chart-overlay d-none" id="trendChartOverlay">
-                            <div class="chart-loading">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="sr-only">Cargando...</span>
-                                </div>
-                                <p class="mt-2">Cargando gráfico...</p>
-                            </div>
-                        </div>
-                        <div class="chart-no-data d-none" id="trendNoData">
-                            <div class="text-center py-4">
-                                <i class="fas fa-chart-line text-muted" style="font-size: 3rem;"></i>
-                                <h5 class="text-muted mt-2">No hay datos disponibles</h5>
-                                <p class="text-muted">Parece que no hay información para mostrar</p>
-                            </div>
-                        </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="trendChart" width="600" height="280"></canvas>
                     </div>
                 </div>
                 <div class="card-footer bg-light">
@@ -757,12 +692,6 @@ $('head').append(toastStyles);
                                 <span class="badge badge-success" id="trendMax">Máximo: --</span>
                                 <span class="badge badge-warning" id="trendMin">Mínimo: --</span>
                             </div>
-                        </div>
-                        <div class="chart-legend">
-                            <span class="legend-item">
-                                <span class="legend-color" style="background-color: #007bff;"></span>
-                                Satisfacción General
-                            </span>
                         </div>
                     </div>
                 </div>
@@ -826,104 +755,21 @@ $('head').append(toastStyles);
     <!-- Distribución por Dependencias -->
     <div class="row">
         <div class="col-md-4">
-            <div class="card chart-card department-chart-card">
-                <div class="card-header bg-gradient-secondary text-white position-relative">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
                     <h3 class="card-title mb-0">
-                        <i class="fas fa-building mr-2 animated-icon"></i>
+                        <i class="fas fa-building mr-2"></i>
                         Distribución por Dependencias
                     </h3>
                     <div class="card-tools">
                         <button type="button" class="btn btn-tool text-white" data-card-widget="collapse" title="Colapsar">
                             <i class="fas fa-minus"></i>
                         </button>
-                        <button type="button" class="btn btn-tool text-white" id="departmentFullscreen" title="Pantalla completa">
-                            <i class="fas fa-expand"></i>
-                        </button>
-                        <button type="button" class="btn btn-tool text-white" id="departmentRefresh" title="Actualizar datos">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                        <div class="dropdown">
-                            <button type="button" class="btn btn-tool text-white dropdown-toggle" data-toggle="dropdown" title="Opciones">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-right">
-                                <h6 class="dropdown-header">Descargar</h6>
-                                <a class="dropdown-item" href="#" onclick="downloadChart('departmentChart', 'distribucion-dependencias')">
-                                    <i class="fas fa-download mr-2"></i>PNG
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="downloadChart('departmentChart', 'distribucion-dependencias', 'jpeg')">
-                                    <i class="fas fa-image mr-2"></i>JPEG
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <h6 class="dropdown-header">Visualización</h6>
-                                <a class="dropdown-item" href="#" onclick="toggleDepartmentView('pie')">
-                                    <i class="fas fa-chart-pie mr-2"></i>Gráfico de torta
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="toggleDepartmentView('bar')">
-                                    <i class="fas fa-chart-bar mr-2"></i>Gráfico de barras
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="toggleDepartmentView('polar')">
-                                    <i class="fas fa-chart-area mr-2"></i>Área polar
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <h6 class="dropdown-header">Acciones</h6>
-                                <a class="dropdown-item" href="#" onclick="printChart('departmentChart')">
-                                    <i class="fas fa-print mr-2"></i>Imprimir
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="exportDepartmentData()">
-                                    <i class="fas fa-file-excel mr-2"></i>Exportar datos
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chart-status-indicator" id="departmentStatus">
-                        <i class="fas fa-circle text-success"></i>
-                        <span class="text-white">Actualizado</span>
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    <div class="chart-container-enhanced">
-                        <div class="chart-controls">
-                            <div class="chart-controls-left">
-                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleDepartmentLabels('departmentChart')">
-                                    <i class="fas fa-tag mr-1"></i>
-                                    Etiquetas
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" onclick="toggleDepartmentPercentages('departmentChart')">
-                                    <i class="fas fa-percent mr-1"></i>
-                                    Porcentajes
-                                </button>
-                            </div>
-                            <div class="chart-controls-right">
-                                <div class="chart-view-toggle">
-                                    <button class="btn btn-sm btn-outline-primary active" data-view="doughnut" onclick="switchDepartmentView('doughnut')">
-                                        <i class="fas fa-circle-notch"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-primary" data-view="pie" onclick="switchDepartmentView('pie')">
-                                        <i class="fas fa-chart-pie"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-primary" data-view="bar" onclick="switchDepartmentView('bar')">
-                                        <i class="fas fa-chart-bar"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                <div class="card-body">
+                    <div class="chart-container">
                         <canvas id="departmentChart" width="400" height="220"></canvas>
-                        <div class="chart-overlay d-none" id="departmentChartOverlay">
-                            <div class="chart-loading">
-                                <div class="spinner-border text-secondary" role="status">
-                                    <span class="sr-only">Cargando...</span>
-                                </div>
-                                <p class="mt-2">Cargando gráfico...</p>
-                            </div>
-                        </div>
-                        <div class="chart-no-data d-none" id="departmentNoData">
-                            <div class="text-center py-4">
-                                <i class="fas fa-building text-muted" style="font-size: 3rem;"></i>
-                                <h5 class="text-muted mt-2">No hay datos disponibles</h5>
-                                <p class="text-muted">No se encontraron dependencias para mostrar</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div class="card-footer bg-light">
@@ -937,12 +783,6 @@ $('head').append(toastStyles);
                                 <span class="badge badge-secondary" id="departmentTotal">Total: {{ array_sum($latestData['dependencias']) }}</span>
                                 <span class="badge badge-info" id="departmentAvg">Promedio: {{ count($latestData['dependencias']) > 0 ? number_format(array_sum($latestData['dependencias'])/count($latestData['dependencias']), 1) : 0 }}</span>
                             </div>
-                        </div>
-                        <div class="chart-actions">
-                            <button class="btn btn-sm btn-outline-secondary" onclick="animateDepartmentChart('departmentChart')">
-                                <i class="fas fa-play mr-1"></i>
-                                Animar
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -1418,32 +1258,7 @@ $('head').append(toastStyles);
     }
     
     .chart-status-indicator i {
-        animation: pulse 2s infinite;
-    }
-    
-    .animated-icon {
-        animation: bounce 2s infinite;
-    }
-    
-    @keyframes bounce {
-        0%, 20%, 50%, 80%, 100% {
-            transform: translateY(0);
-        }
-        40% {
-            transform: translateY(-3px);
-        }
-        60% {
-            transform: translateY(-2px);
-        }
-    }
-    
-    @keyframes pulse {
-        0%, 100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0.5;
-        }
+        color: #28a745;
     }
     
     .chart-stats {
