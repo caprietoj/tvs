@@ -43,6 +43,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\EvaluacionProveedorController;
 use App\Http\Controllers\SatisfactionSurveyController; // Add this line
+use App\Http\Controllers\Surveys\ComplementaryServices\TransportController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\WeeklyBiometricController;
 use App\Http\Controllers\SalidaPedagogicaController;
@@ -952,9 +953,16 @@ Route::middleware(['auth', 'admin.role'])->prefix('surveys')->name('surveys.')->
     
     // Servicios Complementarios
     Route::prefix('complementary-services')->name('complementary-services.')->group(function () {
-        Route::get('/transport', function () {
-            return view('surveys.complementary-services.transport.index');
-        })->name('transport');
+        Route::prefix('transport')->name('transport.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'index'])->name('index');
+            Route::get('/upload', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'upload'])->name('upload');
+            Route::post('/upload', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'processUpload'])->name('process-upload');
+            Route::post('/upload-multiple', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'processMultipleUpload'])->name('process-multiple-upload');
+            Route::get('/comparison', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'comparison'])->name('comparison');
+            Route::post('/comparison', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'generateComparison'])->name('generate-comparison');
+            Route::get('/compare', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'generateComparison'])->name('compare');
+            Route::get('/export', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'export'])->name('export');
+        });
     });
     
     // Padres de Familia y/o Estudiantes
