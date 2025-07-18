@@ -206,7 +206,7 @@
                         
                         <!-- Servicios Complementarios - Cafetería y Transporte -->
                         <div class="col-md-3 col-sm-6 mb-3">
-                            <a href="{{ route('surveys.complementary-services.transport') }}" class="quick-access-card">
+                            <a href="{{ route('surveys.complementary-services.transport.index') }}" class="quick-access-card">
                                 <div class="quick-access-item">
                                     <div class="icon-wrapper">
                                         <i class="fas fa-utensils"></i>

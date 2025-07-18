@@ -884,7 +884,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
         
         try {
-            const response = await fetch('{{ route("surveys.complementary-services.transport.upload") }}', {
+            const response = await fetch('{{ route("surveys.complementary-services.transport.process-upload") }}', {
                 method: 'POST',
                 body: formData
             });

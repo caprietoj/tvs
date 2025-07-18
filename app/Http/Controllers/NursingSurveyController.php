@@ -37,6 +37,20 @@ class NursingSurveyController extends Controller
         $chartData = NursingSurveyResponse::getChartData($selectedPeriod);
         $dependencyAnalysis = NursingSurveyResponse::getAnalysisByDependency($selectedPeriod);
         
+        // Asegurar que chartData tenga estructura por defecto si está vacío
+        if (empty($chartData)) {
+            $chartData = [
+                'experience' => ['labels' => [], 'data' => []],
+                'presentation' => ['labels' => [], 'data' => []],
+                'availability' => ['labels' => [], 'data' => []],
+                'professionalism' => ['labels' => [], 'data' => []],
+                'effective_response' => ['labels' => [], 'data' => []],
+                'cleanliness' => ['labels' => [], 'data' => []],
+                'reports' => ['labels' => [], 'data' => []],
+                'clarity' => ['labels' => [], 'data' => []]
+            ];
+        }
+        
         $responses = NursingSurveyResponse::when($selectedPeriod, function($query) use ($selectedPeriod) {
             return $query->where('survey_period', $selectedPeriod);
         })->with('uploader')->orderBy('timestamp', 'desc')->paginate(10);

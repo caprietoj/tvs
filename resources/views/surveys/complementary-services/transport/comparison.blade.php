@@ -83,7 +83,151 @@
                                 @endphp
                                 {{ $responseChange > 0 ? '+' : '' }}{{ $responseChange }}%
                             </span>
+                            <div class="progress">
+                                <div class="progress-bar {{ $responseChange > 0 ? 'bg-success' : ($responseChange < 0 ? 'bg-danger' : 'bg-warning') }}" 
+                                     style="width: {{ abs($responseChange) > 100 ? 100 : abs($responseChange) }}%"></div>
+                            </div>
+                            <span class="progress-description">
+                                {{ $comparisonData['responses_period1'] }} → {{ $comparisonData['responses_period2'] }} respuestas
+                            </span>
                         </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Métricas de Variación de Satisfacción -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="info-box bg-gradient-primary">
+                        <span class="info-box-icon"><i class="fas fa-utensils"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Variación Satisfacción Cafetería</span>
+                            <span class="info-box-number">
+                                @php
+                                    $cafeteriaAvg1 = collect($comparisonData['cafeteria_period1'])->only(['calidad_sabor', 'porcion_satisfaccion', 'menu_calidad', 'variedad_menu', 'temperatura_adecuada', 'limpieza_comedor', 'trato_personal'])->avg();
+                                    $cafeteriaAvg2 = collect($comparisonData['cafeteria_period2'])->only(['calidad_sabor', 'porcion_satisfaccion', 'menu_calidad', 'variedad_menu', 'temperatura_adecuada', 'limpieza_comedor', 'trato_personal'])->avg();
+                                    $cafeteriaChange = $cafeteriaAvg1 > 0 ? round((($cafeteriaAvg2 - $cafeteriaAvg1) / $cafeteriaAvg1) * 100, 1) : 0;
+                                @endphp
+                                {{ $cafeteriaChange > 0 ? '+' : '' }}{{ $cafeteriaChange }}%
+                            </span>
+                            <div class="progress">
+                                <div class="progress-bar {{ $cafeteriaChange > 0 ? 'bg-success' : ($cafeteriaChange < 0 ? 'bg-danger' : 'bg-warning') }}" 
+                                     style="width: {{ abs($cafeteriaChange) > 100 ? 100 : abs($cafeteriaChange) }}%"></div>
+                            </div>
+                            <span class="progress-description">
+                                {{ round($cafeteriaAvg1, 1) }}% → {{ round($cafeteriaAvg2, 1) }}% promedio
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-box bg-gradient-info">
+                        <span class="info-box-icon"><i class="fas fa-bus"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Variación Satisfacción Transporte</span>
+                            <span class="info-box-number">
+                                @php
+                                    $transportAvg1 = collect($comparisonData['transport_period1'])->only(['puntualidad', 'limpieza_vehiculo', 'trato_personal', 'comunicacion'])->avg();
+                                    $transportAvg2 = collect($comparisonData['transport_period2'])->only(['puntualidad', 'limpieza_vehiculo', 'trato_personal', 'comunicacion'])->avg();
+                                    $transportChange = $transportAvg1 > 0 ? round((($transportAvg2 - $transportAvg1) / $transportAvg1) * 100, 1) : 0;
+                                @endphp
+                                {{ $transportChange > 0 ? '+' : '' }}{{ $transportChange }}%
+                            </span>
+                            <div class="progress">
+                                <div class="progress-bar {{ $transportChange > 0 ? 'bg-success' : ($transportChange < 0 ? 'bg-danger' : 'bg-warning') }}" 
+                                     style="width: {{ abs($transportChange) > 100 ? 100 : abs($transportChange) }}%"></div>
+                            </div>
+                            <span class="progress-description">
+                                {{ round($transportAvg1, 1) }}% → {{ round($transportAvg2, 1) }}% promedio
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-box bg-gradient-success">
+                        <span class="info-box-icon"><i class="fas fa-chart-line"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Variación Satisfacción General</span>
+                            <span class="info-box-number">
+                                @php
+                                    $generalAvg1 = ($cafeteriaAvg1 + $transportAvg1) / 2;
+                                    $generalAvg2 = ($cafeteriaAvg2 + $transportAvg2) / 2;
+                                    $generalChange = $generalAvg1 > 0 ? round((($generalAvg2 - $generalAvg1) / $generalAvg1) * 100, 1) : 0;
+                                @endphp
+                                {{ $generalChange > 0 ? '+' : '' }}{{ $generalChange }}%
+                            </span>
+                            <div class="progress">
+                                <div class="progress-bar {{ $generalChange > 0 ? 'bg-success' : ($generalChange < 0 ? 'bg-danger' : 'bg-warning') }}" 
+                                     style="width: {{ abs($generalChange) > 100 ? 100 : abs($generalChange) }}%"></div>
+                            </div>
+                            <span class="progress-description">
+                                {{ round($generalAvg1, 1) }}% → {{ round($generalAvg2, 1) }}% promedio
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen Ejecutivo de Variaciones -->
+    <div class="card card-info mb-4">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-chart-line"></i> RESUMEN EJECUTIVO DE VARIACIONES
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary"><i class="fas fa-utensils"></i> Servicios de Cafetería</h6>
+                    <div class="list-group list-group-flush">
+                        @php
+                            $cafeteriaMetrics = [
+                                'calidad_sabor' => 'Calidad y Sabor',
+                                'porcion_satisfaccion' => 'Satisfacción con Porciones',
+                                'menu_calidad' => 'Calidad del Menú',
+                                'variedad_menu' => 'Variedad del Menú',
+                                'temperatura_adecuada' => 'Temperatura Adecuada',
+                                'limpieza_comedor' => 'Limpieza del Comedor',
+                                'trato_personal' => 'Trato del Personal'
+                            ];
+                        @endphp
+                        @foreach($cafeteriaMetrics as $key => $label)
+                            @if(isset($comparisonData['cafeteria_differences'][$key]))
+                                @php $diff = $comparisonData['cafeteria_differences'][$key]; @endphp
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ $label }}</span>
+                                    <span class="badge {{ $diff['trend_class'] == 'text-success' ? 'badge-success' : ($diff['trend_class'] == 'text-danger' ? 'badge-danger' : 'badge-secondary') }} badge-pill">
+                                        {{ $diff['percentage_change'] > 0 ? '+' : '' }}{{ $diff['percentage_change'] }}%
+                                    </span>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-info"><i class="fas fa-bus"></i> Servicios de Transporte</h6>
+                    <div class="list-group list-group-flush">
+                        @php
+                            $transportMetrics = [
+                                'puntualidad' => 'Puntualidad',
+                                'limpieza_vehiculo' => 'Limpieza del Vehículo',
+                                'trato_personal' => 'Trato del Personal',
+                                'comunicacion' => 'Comunicación'
+                            ];
+                        @endphp
+                        @foreach($transportMetrics as $key => $label)
+                            @if(isset($comparisonData['transport_differences'][$key]))
+                                @php $diff = $comparisonData['transport_differences'][$key]; @endphp
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ $label }}</span>
+                                    <span class="badge {{ $diff['trend_class'] == 'text-success' ? 'badge-success' : ($diff['trend_class'] == 'text-danger' ? 'badge-danger' : 'badge-secondary') }} badge-pill">
+                                        {{ $diff['percentage_change'] > 0 ? '+' : '' }}{{ $diff['percentage_change'] }}%
+                                    </span>
+                                </div>
+                            @endif
+                        @endforeach
                     </div>
                 </div>
             </div>

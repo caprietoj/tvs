@@ -20,6 +20,17 @@
 @stop
 
 @section('content')
+@php
+    // Definir el mapeo de satisfacción globalmente
+    $satisfactionMapping = [
+        'Excelente' => 5,
+        'Muy buena' => 4,
+        'Buena' => 3,
+        'Regular' => 2,
+        'Mala' => 1
+    ];
+@endphp
+
 <div class="container-fluid">
     <!-- Estadísticas generales -->
     <div class="row">
@@ -43,13 +54,6 @@
                     @php
                         $satisfactionSum = 0;
                         $satisfactionCount = 0;
-                        $satisfactionMapping = [
-                            'Excelente' => 5,
-                            'Muy buena' => 4,
-                            'Buena' => 3,
-                            'Regular' => 2,
-                            'Mala' => 1
-                        ];
                         
                         foreach($chartData as $category => $data) {
                             if(isset($data['labels']) && isset($data['data'])) {
@@ -130,6 +134,7 @@
                                     $total = array_sum($data['data']);
                                     $excellentPercentage = 0;
                                     $averageScore = 0;
+                                    $overallPercentage = 0;
                                     
                                     if($total > 0) {
                                         $scoreSum = 0;
