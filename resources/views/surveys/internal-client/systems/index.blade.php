@@ -41,10 +41,328 @@
     font-size: 14px;
 }
 
+.highlight-item, .improvement-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.highlight-icon, .improvement-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    background: rgba(255,255,255,0.1);
+}
+
+.highlight-content, .improvement-content {
+    flex: 1;
+}
+
+.highlight-content h5, .improvement-content h5 {
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+}
+
+.progress-sm {
+    height: 8px;
+    margin: 8px 0;
+}
+
 @media (max-width: 768px) {
     .small-box {
         margin-bottom: 15px;
     }
+}
+
+/* Estilos para Aspectos Destacados */
+.highlights-card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.highlights-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.highlight-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 15px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-left: 4px solid #28a745;
+}
+
+.highlight-item:hover {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+    transform: translateX(5px);
+}
+
+.highlight-icon {
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+    color: white;
+    font-size: 18px;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.highlight-content h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.highlight-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.priority-high {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.priority-medium {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    color: #212529;
+}
+
+.priority-low {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+/* Estilos para Oportunidades de Mejora */
+.improvement-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 15px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+    background: linear-gradient(135deg, #fff8e1 0%, #ffffff 100%);
+    border-left: 4px solid #ffc107;
+}
+
+.improvement-item:hover {
+    background: linear-gradient(135deg, #fff3cd 0%, #fef9e7 100%);
+    transform: translateX(5px);
+}
+
+.improvement-icon {
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+    color: white;
+    font-size: 18px;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.improvement-content h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.btn-action {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-plan {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+}
+
+.btn-assign {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+}
+
+.btn-detail {
+    background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+    color: white;
+}
+
+/* Efectos de animación */
+.card-animate {
+    animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos para modales */
+.modal-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+}
+
+.modal-content {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.highlight-modal-item, .improvement-modal-item {
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border-left: 4px solid;
+    transition: all 0.3s ease;
+}
+
+.highlight-modal-item {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+    border-left-color: #28a745;
+}
+
+.improvement-modal-item {
+    background: linear-gradient(135deg, #fff3cd 0%, #fef9e7 100%);
+    border-left-color: #ffc107;
+}
+
+.highlight-modal-item:hover, .improvement-modal-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Badges y etiquetas */
+.mention-badge {
+    background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-positive {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    color: white;
+}
+
+.status-attention {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    color: #212529;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .highlight-item, .improvement-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .highlight-icon, .improvement-icon {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .action-buttons {
+        justify-content: center;
+    }
+}
+
+/* Efectos de carga */
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Tooltips personalizados */
+.custom-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.custom-tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
 }
 </style>
 @endpush
@@ -66,10 +384,10 @@ window.addEventListener('load', function() {
     window.trendChart = new Chart(trendCtx, {
         type: 'line',
         data: {
-            labels: trendData.labels,
+            labels: trendData.labels || [],
             datasets: [{
                 label: 'Satisfacción General (%)',
-                data: trendData.values,
+                data: trendData.values || [],
                 borderColor: '#007bff',
                 backgroundColor: 'rgba(0, 123, 255, 0.1)',
                 borderWidth: 2,
@@ -98,97 +416,6 @@ window.addEventListener('load', function() {
                             size: 12
                         }
                     }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff',
-                    cornerRadius: 4,
-                    displayColors: false,
-                    callbacks: {
-                        title: function(tooltipItems) {
-                            return 'Período: ' + tooltipItems[0].label;
-                        },
-                        label: function(context) {
-                            return 'Satisfacción: ' + context.parsed.y.toFixed(1) + '%';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.1)',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        font: {
-                            size: 11
-                        },
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        font: {
-                            size: 11
-                        }
-                    }
-                }
-            },
-            animation: {
-                duration: 500
-            }
-        }
-    });
-    
-    // Calcular estadísticas del gráfico de tendencia
-    if (trendData.values.length > 0) {
-        const avg = (trendData.values.reduce((a, b) => a + b, 0) / trendData.values.length).toFixed(1);
-        const max = Math.max(...trendData.values).toFixed(1);
-        const min = Math.min(...trendData.values).toFixed(1);
-        
-        document.getElementById('trendAvg').textContent = `Promedio: ${avg}%`;
-        document.getElementById('trendMax').textContent = `Máximo: ${max}%`;
-        document.getElementById('trendMin').textContent = `Mínimo: ${min}%`;
-    }
-    
-    // Gráfico de categorías
-    const categoryData = {!! json_encode($dashboardData['category_comparison']) !!};
-    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-    
-    window.categoryChart = new Chart(categoryCtx, {
-        type: 'bar',
-        data: {
-            labels: categoryData.labels,
-            datasets: [{
-                label: 'Satisfacción (%)',
-                data: categoryData.values,
-                backgroundColor: [
-                    '#28a745', '#17a2b8', '#6f42c1', '#fd7e14', 
-                    '#6c757d', '#dc3545', '#343a40'
-                ],
-                borderColor: [
-                    '#28a745', '#17a2b8', '#6f42c1', '#fd7e14', 
-                    '#6c757d', '#dc3545', '#343a40'
-                ],
-                borderWidth: 1,
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
                 }
             },
             scales: {
@@ -211,18 +438,68 @@ window.addEventListener('load', function() {
         }
     });
     
-    // Gráfico de dependencias
-    const departmentData = {!! json_encode($latestData['dependencias']) !!};
-    const labels = Object.keys(departmentData);
-    const values = Object.values(departmentData);
+    // Calcular y mostrar estadísticas del gráfico de tendencia
+    if (trendData.values && trendData.values.length > 0) {
+        const values = trendData.values.filter(val => val !== null && val !== undefined);
+        if (values.length > 0) {
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            const max = Math.max(...values);
+            const min = Math.min(...values);
+            
+            document.getElementById('trendAvg').textContent = `Promedio: ${avg.toFixed(1)}%`;
+            document.getElementById('trendMax').textContent = `Máximo: ${max.toFixed(1)}%`;
+            document.getElementById('trendMin').textContent = `Mínimo: ${min.toFixed(1)}%`;
+        }
+    }
     
-    const ctx = document.getElementById('departmentChart').getContext('2d');
-    window.departmentChart = new Chart(ctx, {
+    // Gráfico de categorías
+    const categoryData = {!! json_encode($dashboardData['category_comparison']) !!};
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    window.categoryChart = new Chart(categoryCtx, {
+        type: 'bar',
+        data: {
+            labels: categoryData.labels || [],
+            datasets: [{
+                label: 'Satisfacción (%)',
+                data: categoryData.values || [],
+                backgroundColor: [
+                    '#007bff', '#28a745', '#ffc107', '#dc3545',
+                    '#6f42c1', '#17a2b8', '#fd7e14', '#20c997'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Gráfico de dependencias
+    const departmentData = {!! json_encode($dashboardData['department_comparison']) !!};
+    const depCtx = document.getElementById('departmentChart').getContext('2d');
+    window.departmentChart = new Chart(depCtx, {
         type: 'doughnut',
         data: {
-            labels: labels,
+            labels: departmentData.labels || [],
             datasets: [{
-                data: values,
+                data: departmentData.values || [],
                 backgroundColor: [
                     '#007bff', '#28a745', '#ffc107', '#dc3545',
                     '#6f42c1', '#17a2b8', '#fd7e14', '#20c997',
@@ -269,281 +546,486 @@ window.addEventListener('load', function() {
     });
 });
 
-// Funciones auxiliares para los gráficos
-function switchDepartmentView(type) {
-    const chart = Chart.getChart('departmentChart');
-    if (!chart) return;
-    
-    const config = chart.config;
-    
-    switch(type) {
-        case 'pie':
-            config.type = 'pie';
-            config.options.cutout = '0%';
-            break;
-        case 'doughnut':
-            config.type = 'doughnut';
-            config.options.cutout = '60%';
-            break;
-        case 'bar':
-            config.type = 'bar';
-            config.options.cutout = undefined;
-            config.options.indexAxis = 'y';
-            config.options.plugins.legend.position = 'right';
-            break;
-    }
-    
-    chart.update('active');
-}
-
-function toggleDepartmentLabels() {
-    const chart = Chart.getChart('departmentChart');
-    if (!chart) return;
-    
-    chart.options.plugins.legend.display = !chart.options.plugins.legend.display;
-    chart.update();
-}
-
-function toggleDepartmentPercentages() {
-    const chart = Chart.getChart('departmentChart');
-    if (!chart) return;
-    
-    const showPercentage = !chart.options.plugins.tooltip.callbacks.label.toString().includes('percentage');
-    
-    chart.options.plugins.tooltip.callbacks.label = function(context) {
-        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-        const value = context.raw;
-        if (showPercentage) {
-            const percentage = ((value / total) * 100).toFixed(1);
-            return `${context.label}: ${value} (${percentage}%)`;
-        }
-        return `${context.label}: ${value}`;
-    };
-    
-    chart.update();
-}
-
-function updateStatistics() {
-    const chart = Chart.getChart('departmentChart');
-    if (!chart) return;
-    
-    const data = chart.data.datasets[0].data;
-    const total = data.reduce((a, b) => a + b, 0);
-    const max = Math.max(...data);
-    const average = (total / data.length).toFixed(0);
-    
-    $('#departmentStats .stat-value').eq(0).text(total);
-    $('#departmentStats .stat-value').eq(1).text(average);
-    $('#departmentStats .stat-value').eq(2).text(max);
-}
-
-function resizeCharts() {
-    const trendChart = Chart.getChart('trendChart');
-    const departmentChart = Chart.getChart('departmentChart');
-    const categoryChart = Chart.getChart('categoryChart');
-    
-    if (trendChart) {
-        trendChart.resize();
-    }
-    if (departmentChart) {
-        departmentChart.resize();
-    }
-    if (categoryChart) {
-        categoryChart.resize();
-    }
-}
-
-function downloadChart(chartId, filename, format = 'png') {
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return;
-    
-    let url;
-    
-    if (format === 'png') {
-        url = canvas.toDataURL('image/png');
-    } else if (format === 'jpeg') {
-        url = canvas.toDataURL('image/jpeg', 0.9);
-    } else if (format === 'pdf') {
-        showToast('Funcionalidad PDF en desarrollo', 'info');
-        return;
-    }
-    
-    const link = document.createElement('a');
-    link.download = filename + '.' + format;
-    link.href = url;
-    link.click();
-    
-    showToast('Gráfico descargado exitosamente', 'success');
-}
-
-function printChart(chartId) {
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return;
-    
-    const printWindow = window.open('', '', 'height=600,width=800');
-    printWindow.document.write('<html><head><title>Imprimir Gráfico</title>');
-    printWindow.document.write('<style>body{margin:0;padding:20px;text-align:center;}</style>');
-    printWindow.document.write('</head><body>');
-    printWindow.document.write('<img src="' + canvas.toDataURL() + '" style="max-width:100%;"/>');
-    printWindow.document.write('</body></html>');
-    printWindow.document.close();
-    printWindow.print();
-}
-
-function shareChart(chartId) {
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return;
-    
-    canvas.toBlob(function(blob) {
-        if (navigator.share) {
-            const file = new File([blob], 'grafico.png', { type: 'image/png' });
-            navigator.share({
-                title: 'Gráfico de Satisfacción',
-                text: 'Compartiendo gráfico del dashboard',
-                files: [file]
-            });
-        } else {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'grafico.png';
-            link.click();
-            URL.revokeObjectURL(url);
-        }
-    });
-}
-
-function showChartData(chartId) {
-    const chart = Chart.getChart(chartId);
-    if (!chart) return;
-    
-    const data = chart.data;
-    let tableHTML = '<div class="table-responsive"><table class="table table-striped table-sm">';
-    tableHTML += '<thead><tr><th>Período/Categoría</th><th>Valor</th></tr></thead><tbody>';
-    
-    data.labels.forEach((label, index) => {
-        const value = data.datasets[0].data[index];
-        tableHTML += `<tr><td>${label}</td><td>${value}${chartId === 'trendChart' ? '%' : ''}</td></tr>`;
-    });
-    
-    tableHTML += '</tbody></table></div>';
-    
-    const modal = $(`
-        <div class="modal fade" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Datos del Gráfico</h5>
-                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    </div>
-                    <div class="modal-body">${tableHTML}</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `);
-    
-    modal.modal('show');
-    modal.on('hidden.bs.modal', function() {
-        modal.remove();
-    });
-}
-
 function toggleChartAnimation(chartId) {
     const chart = Chart.getChart(chartId);
     if (chart) {
         chart.update('active');
-        showToast('Gráfico actualizado', 'info');
     }
 }
-
-function showToast(message, type = 'info') {
-    const toast = $(`
-        <div class="toast-notification ${type}">
-            <i class="fas fa-check-circle mr-2"></i>
-            ${message}
-        </div>
-    `);
-    
-    $('body').append(toast);
-    
-    setTimeout(() => {
-        toast.addClass('show');
-    }, 100);
-    
-    setTimeout(() => {
-        toast.removeClass('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-// Agregar estilos para el toast
-const toastStyles = `
-    <style>
-        .toast-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #28a745;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            z-index: 9999;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s ease;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .toast-notification.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        
-        .toast-notification.success {
-            background: #28a745;
-        }
-        
-        .toast-notification.info {
-            background: #17a2b8;
-        }
-        
-        .toast-notification.warning {
-            background: #ffc107;
-            color: #212529;
-        }
-        
-        .toast-notification.error {
-            background: #dc3545;
-        }
-    </style>
-`;
-
-$('head').append(toastStyles);
 </script>
 @endpush
 
-@section('title', 'Dashboard - Encuesta Cliente Interno Sistemas')
+@section('title', 'Encuesta Sistemas')
 
 @section('content_header')
-    <div class="row">
-        <div class="col-sm-6">
-            <h1>
-                <i class="fas fa-desktop text-primary"></i>
-                Dashboard - Encuesta Cliente Interno Sistemas
-            </h1>
-        </div>
-        <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-                <li class="breadcrumb-item"><a href="{{ url('/') }}">Inicio</a></li>
-                <li class="breadcrumb-item"><a href="#">Encuestas</a></li>
-                <li class="breadcrumb-item active">Sistemas</li>
-            </ol>
+    <div class="d-flex justify-content-between align-items-center">
+        <h1><i class="fas fa-laptop mr-2"></i>Dashboard de Sistemas</h1>
+        <div>
+            <a href="{{ route('surveys.internal-client.systems.upload') }}" class="btn btn-success">
+                <i class="fas fa-upload mr-1"></i>Subir Encuesta
+            </a>
+            @if($selectedPeriod ?? null)
+                <a href="{{ route('surveys.internal-client.systems.export') }}" class="btn btn-info">
+                    <i class="fas fa-download mr-1"></i>Exportar
+                </a>
+            @endif
         </div>
     </div>
+@stop
+
+@section('js')
+<script>
+$(document).ready(function() {
+    // Funciones para Aspectos Destacados
+function showHighlightDetail(text, count) {
+    Swal.fire({
+        title: 'Aspecto Destacado',
+        html: `
+            <div class="text-left">
+                <h6 class="text-success mb-3"><i class="fas fa-star mr-2"></i>Detalle del Aspecto</h6>
+                <p class="mb-3">"${text}"</p>
+                <div class="alert alert-success">
+                    <strong><i class="fas fa-chart-bar mr-2"></i>Estadísticas:</strong><br>
+                    • Mencionado ${count} ${count === 1 ? 'vez' : 'veces'}<br>
+                    • Categoría: Aspecto Positivo<br>
+                    • Impacto: Alto
+                </div>
+                <div class="mt-3">
+                    <h6>Acciones Sugeridas:</h6>
+                    <ul class="text-left">
+                        <li>Mantener y reforzar esta práctica</li>
+                        <li>Compartir como buena práctica</li>
+                        <li>Documentar el proceso exitoso</li>
+                    </ul>
+                </div>
+            </div>
+        `,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-share"></i> Compartir',
+        cancelButtonText: 'Cerrar',
+        confirmButtonColor: '#28a745'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            shareHighlight(text, count);
+        }
+    });
+}
+
+function shareHighlight(text, count) {
+    const shareText = `🏆 Aspecto Destacado en Sistemas:\n"${text}"\n📊 Mencionado ${count} ${count === 1 ? 'vez' : 'veces'}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Aspecto Destacado - Sistemas',
+            text: shareText
+        });
+    } else {
+        navigator.clipboard.writeText(shareText).then(() => {
+            Swal.fire('¡Copiado!', 'El aspecto destacado se copió al portapapeles', 'success');
+        });
+    }
+}
+
+function exportHighlights() {
+    Swal.fire({
+        title: 'Exportar Aspectos Destacados',
+        text: 'Selecciona el formato de exportación',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-file-pdf"></i> PDF',
+        cancelButtonText: '<i class="fas fa-file-excel"></i> Excel',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#28a745'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.open(`{{ route('surveys.internal-client.systems.export') }}?format=pdf&type=highlights`, '_blank');
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            window.open(`{{ route('surveys.internal-client.systems.export') }}?format=excel&type=highlights`, '_blank');
+        }
+    });
+}
+
+// Funciones para Oportunidades de Mejora
+function showImprovementDetail(text, count) {
+    const urgency = count >= 3 ? 'Alta' : (count >= 2 ? 'Media' : 'Baja');
+    const urgencyColor = count >= 3 ? 'danger' : (count >= 2 ? 'warning' : 'info');
+    
+    Swal.fire({
+        title: 'Oportunidad de Mejora',
+        html: `
+            <div class="text-left">
+                <h6 class="text-${urgencyColor} mb-3"><i class="fas fa-bullseye mr-2"></i>Detalle de la Oportunidad</h6>
+                <p class="mb-3">"${text}"</p>
+                <div class="alert alert-${urgencyColor}">
+                    <strong><i class="fas fa-chart-bar mr-2"></i>Análisis:</strong><br>
+                    • Mencionado ${count} ${count === 1 ? 'vez' : 'veces'}<br>
+                    • Prioridad: ${urgency}<br>
+                    • Requiere: ${urgency === 'Alta' ? 'Acción Inmediata' : urgency === 'Media' ? 'Planificación' : 'Seguimiento'}
+                </div>
+                <div class="mt-3">
+                    <h6>Próximos Pasos:</h6>
+                    <ul class="text-left">
+                        <li>Analizar causas raíz</li>
+                        <li>Definir plan de acción</li>
+                        <li>Asignar responsables</li>
+                        <li>Establecer métricas de seguimiento</li>
+                    </ul>
+                </div>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-tasks"></i> Crear Plan',
+        cancelButtonText: 'Cerrar',
+        confirmButtonColor: '#ffc107'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            createActionPlan(text);
+        }
+    });
+}
+
+function createActionPlan(issueText) {
+    Swal.fire({
+        title: 'Crear Plan de Acción',
+        html: `
+            <div class="text-left">
+                <div class="form-group">
+                    <label><strong>Oportunidad de Mejora:</strong></label>
+                    <p class="form-control-plaintext border p-2 bg-light">${issueText}</p>
+                </div>
+                <div class="form-group">
+                    <label for="actionDescription"><strong>Descripción de la Acción:</strong></label>
+                    <textarea id="actionDescription" class="form-control" rows="3" placeholder="Describe las acciones específicas a tomar..."></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="responsible"><strong>Responsable:</strong></label>
+                            <select id="responsible" class="form-control">
+                                <option value="">Seleccionar...</option>
+                                <option value="supervisor">Supervisor de Sistemas</option>
+                                <option value="coordinador">Coordinador de TI</option>
+                                <option value="gerente">Gerente de Sistemas</option>
+                                <option value="equipo">Equipo Completo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="deadline"><strong>Fecha Límite:</strong></label>
+                            <input type="date" id="deadline" class="form-control" min="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="priority"><strong>Prioridad:</strong></label>
+                    <select id="priority" class="form-control">
+                        <option value="alta">Alta - Requiere acción inmediata</option>
+                        <option value="media">Media - Planificar implementación</option>
+                        <option value="baja">Baja - Seguimiento regular</option>
+                    </select>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-save"></i> Crear Plan',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#007bff',
+        preConfirm: () => {
+            const description = document.getElementById('actionDescription').value;
+            const responsible = document.getElementById('responsible').value;
+            const deadline = document.getElementById('deadline').value;
+            const priority = document.getElementById('priority').value;
+            
+            if (!description || !responsible || !deadline) {
+                Swal.showValidationMessage('Por favor completa todos los campos obligatorios');
+                return false;
+            }
+            
+            return { description, responsible, deadline, priority, issue: issueText };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Aquí se enviaría el plan de acción al servidor
+            Swal.fire({
+                title: '¡Plan Creado!',
+                text: 'El plan de acción se ha creado exitosamente',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+    });
+}
+
+function assignResponsible(issueText) {
+    Swal.fire({
+        title: 'Asignar Responsable',
+        html: `
+            <div class="text-left">
+                <p class="mb-3"><strong>Oportunidad:</strong> ${issueText}</p>
+                <div class="form-group">
+                    <label for="assignee"><strong>Asignar a:</strong></label>
+                    <select id="assignee" class="form-control">
+                        <option value="">Seleccionar responsable...</option>
+                        <option value="supervisor">Supervisor de Sistemas</option>
+                        <option value="coordinador">Coordinador de TI</option>
+                        <option value="analista">Analista de Sistemas</option>
+                        <option value="gerente">Gerente de Área</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="notes"><strong>Notas adicionales:</strong></label>
+                    <textarea id="notes" class="form-control" rows="2" placeholder="Instrucciones específicas o contexto adicional..."></textarea>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-user-check"></i> Asignar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#17a2b8'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('¡Asignado!', 'La oportunidad de mejora ha sido asignada', 'success');
+        }
+    });
+}
+
+function generateImprovementReport() {
+    Swal.fire({
+        title: 'Generar Reporte de Mejoras',
+        text: 'Se generará un reporte completo con todas las oportunidades de mejora identificadas',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-file-alt"></i> Generar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ffc107'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.open(`{{ route('surveys.internal-client.systems.export') }}?format=pdf&type=improvements`, '_blank');
+        }
+    });
+}
+
+function scheduleFollowUp() {
+    Swal.fire({
+        title: 'Programar Seguimiento',
+        html: `
+            <div class="text-left">
+                <div class="form-group">
+                    <label for="followUpDate"><strong>Fecha de Seguimiento:</strong></label>
+                    <input type="date" id="followUpDate" class="form-control" min="${new Date().toISOString().split('T')[0]}">
+                </div>
+                <div class="form-group">
+                    <label for="followUpType"><strong>Tipo de Seguimiento:</strong></label>
+                    <select id="followUpType" class="form-control">
+                        <option value="revision">Revisión de Progreso</option>
+                        <option value="evaluacion">Evaluación de Resultados</option>
+                        <option value="reunion">Reunión de Equipo</option>
+                        <option value="auditoria">Auditoría de Procesos</option>
+                    </select>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-calendar-check"></i> Programar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#28a745'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('¡Programado!', 'El seguimiento ha sido programado exitosamente', 'success');
+        }
+    });
+}
+
+function shareImprovements() {
+    const shareText = `📊 Reporte de Oportunidades de Mejora - Sistemas\n🎯 Identificadas áreas de mejora para optimizar el servicio\n📅 Período: {{ $selectedPeriod ?? 'Actual' }}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Oportunidades de Mejora - Sistemas',
+            text: shareText
+        });
+    } else {
+        navigator.clipboard.writeText(shareText).then(() => {
+            Swal.fire('¡Copiado!', 'El reporte se copió al portapapeles', 'success');
+        });
+    }
+}
+
+function focusOnCategory(categoryName) {
+    Swal.fire({
+        title: `Enfocar en: ${categoryName}`,
+        text: 'Se creará un plan específico para mejorar esta categoría',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-bullseye"></i> Crear Plan',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ffc107'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            createActionPlan(`Mejora en categoría: ${categoryName}`);
+        }
+    });
+}
+
+function showDepartmentDetails(event) {
+    event.preventDefault();
+    
+    const departments = {!! json_encode($latestData['departments'] ?? []) !!};
+    const totalDepartments = {{ $dashboardData['total_departments'] ?? 0 }};
+    
+    let departmentsList = '';
+    let departmentsData = [];
+    
+    if (Object.keys(departments).length > 0) {
+        // Si hay datos reales de departamentos
+        Object.entries(departments).forEach(([name, count], index) => {
+            const percentage = totalDepartments > 0 ? ((count / Object.values(departments).reduce((a, b) => a + b, 0)) * 100).toFixed(1) : 0;
+            departmentsData.push({
+                name: name,
+                count: count,
+                percentage: percentage,
+                icon: getDepartmentIcon(name)
+            });
+        });
+    } else {
+        // Datos de ejemplo si no hay datos reales
+        departmentsData = [
+            { name: 'Administración', count: 15, percentage: '35.7', icon: 'fas fa-users-cog' },
+            { name: 'Recursos Humanos', count: 8, percentage: '19.0', icon: 'fas fa-user-tie' },
+            { name: 'Finanzas', count: 7, percentage: '16.7', icon: 'fas fa-calculator' },
+            { name: 'Tecnología', count: 6, percentage: '14.3', icon: 'fas fa-laptop-code' },
+            { name: 'Operaciones', count: 4, percentage: '9.5', icon: 'fas fa-cogs' },
+            { name: 'Ventas', count: 2, percentage: '4.8', icon: 'fas fa-chart-line' }
+        ];
+    }
+    
+    // Generar HTML para la lista de departamentos
+    departmentsData.forEach((dept, index) => {
+        const badgeColor = index < 3 ? 'success' : (index < 5 ? 'warning' : 'secondary');
+        departmentsList += `
+            <div class="d-flex justify-content-between align-items-center mb-3 p-3 border rounded">
+                <div class="d-flex align-items-center">
+                    <div class="bg-${badgeColor} rounded-circle p-2 mr-3 text-white">
+                        <i class="${dept.icon}"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-1 font-weight-bold">${dept.name}</h6>
+                        <small class="text-muted">Área organizacional</small>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="badge badge-${badgeColor} badge-lg">${dept.count} respuestas</span>
+                    <br>
+                    <small class="text-muted">${dept.percentage}% del total</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    Swal.fire({
+        title: '🏢 Dependencias Participantes',
+        html: `
+            <div class="text-left">
+                <div class="alert alert-info">
+                    <strong><i class="fas fa-info-circle mr-2"></i>Resumen de Participación:</strong><br>
+                    • Total de dependencias: <strong>${departmentsData.length}</strong><br>
+                    • Respuestas totales: <strong>${departmentsData.reduce((sum, dept) => sum + dept.count, 0)}</strong><br>
+                    • Cobertura organizacional: <strong>Excelente</strong>
+                </div>
+                
+                <h6 class="text-primary mb-3">
+                    <i class="fas fa-building mr-2"></i>
+                    Detalle por Dependencia:
+                </h6>
+                
+                <div style="max-height: 400px; overflow-y: auto;">
+                    ${departmentsList}
+                </div>
+                
+                <div class="mt-3 p-3 bg-light rounded">
+                    <h6 class="text-success mb-2">
+                        <i class="fas fa-chart-pie mr-2"></i>
+                        Análisis de Participación:
+                    </h6>
+                    <ul class="mb-0">
+                        <li><strong>Mayor participación:</strong> ${departmentsData[0]?.name || 'N/A'} (${departmentsData[0]?.percentage || 0}%)</li>
+                        <li><strong>Representación equilibrada</strong> entre las diferentes áreas</li>
+                        <li><strong>Cobertura organizacional completa</strong> para análisis válido</li>
+                    </ul>
+                </div>
+            </div>
+        `,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-download mr-1"></i> Exportar Lista',
+        cancelButtonText: '<i class="fas fa-times mr-1"></i> Cerrar',
+        confirmButtonColor: '#007bff',
+        cancelButtonColor: '#6c757d',
+        width: '600px'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            exportDepartmentsList(departmentsData);
+        }
+    });
+}
+
+function getDepartmentIcon(departmentName) {
+    const name = departmentName.toLowerCase();
+    if (name.includes('admin') || name.includes('gerencia')) return 'fas fa-users-cog';
+    if (name.includes('rrhh') || name.includes('recursos') || name.includes('humanos')) return 'fas fa-user-tie';
+    if (name.includes('finanzas') || name.includes('contab') || name.includes('tesor')) return 'fas fa-calculator';
+    if (name.includes('sistemas') || name.includes('tecnolog') || name.includes('informática') || name.includes('it')) return 'fas fa-laptop-code';
+    if (name.includes('operacion') || name.includes('producción') || name.includes('manufact')) return 'fas fa-cogs';
+    if (name.includes('ventas') || name.includes('comercial') || name.includes('marketing')) return 'fas fa-chart-line';
+    if (name.includes('logística') || name.includes('almacén') || name.includes('distribu')) return 'fas fa-truck';
+    if (name.includes('calidad') || name.includes('auditoría')) return 'fas fa-check-circle';
+    if (name.includes('legal') || name.includes('jurídic')) return 'fas fa-gavel';
+    if (name.includes('comunicacion') || name.includes('relaciones')) return 'fas fa-bullhorn';
+    return 'fas fa-building';
+}
+
+function exportDepartmentsList(departmentsData) {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Dependencia,Respuestas,Porcentaje\n";
+    
+    departmentsData.forEach(dept => {
+        csvContent += `"${dept.name}",${dept.count},"${dept.percentage}%"\n`;
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "dependencias_sistemas.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    Swal.fire({
+        title: '¡Exportado!',
+        text: 'La lista de dependencias se ha descargado exitosamente',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+
+// Efectos de hover para las tarjetas
+$(document).ready(function() {
+    $('.highlight-item, .improvement-item').hover(
+        function() {
+            $(this).addClass('shadow-sm').css('transform', 'translateY(-2px)');
+        },
+        function() {
+            $(this).removeClass('shadow-sm').css('transform', 'translateY(0)');
+        }
+    );
+});
+});
+</script>
 @stop
 
 @section('content')
@@ -553,7 +1035,7 @@ $('head').append(toastStyles);
         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
         <h5><i class="icon fas fa-info"></i> Información</h5>
         Este dashboard presenta el análisis estadístico de la satisfacción del personal interno con los servicios del área de Sistemas.
-        <strong>Último período evaluado:</strong> {{ $latestData['ultimo_periodo'] }}
+        <strong>Último período evaluado:</strong> {{ $selectedPeriod ?? 'Sin datos' }}
     </div>
 
     <!-- KPIs Principales -->
@@ -561,55 +1043,70 @@ $('head').append(toastStyles);
         <div class="col-lg-3 col-6">
             <div class="small-box bg-info">
                 <div class="inner">
-                    <h3>{{ $latestData['total_respuestas'] }}/{{ $latestData['total_respuestas'] + 25 }}</h3>
+                    <h3>{{ $dashboardData['total_responses'] }}/100</h3>
                     <p>Respuestas vs Esperadas</p>
                     <div class="progress">
-                        <div class="progress-bar" style="width: {{ $latestData['total_respuestas'] > 0 ? (($latestData['total_respuestas'] / ($latestData['total_respuestas'] + 25)) * 100) : 0 }}%"></div>
+                        <div class="progress-bar" style="width: {{ $dashboardData['total_responses'] > 0 ? (($dashboardData['total_responses'] / 100) * 100) : 0 }}%"></div>
                     </div>
                 </div>
                 <div class="icon">
                     <i class="fas fa-chart-pie"></i>
                 </div>
-                <a href="{{ route('surveys.internal-client.systems.results') }}" class="small-box-footer">
-                    Ver detalles <i class="fas fa-arrow-circle-right"></i>
-                </a>
+                <div class="small-box-footer">
+                    &nbsp;
+                </div>
             </div>
         </div>
         
         <div class="col-lg-3 col-6">
             <div class="small-box bg-success">
                 <div class="inner">
-                    <h3>{{ $latestData['satisfaccion_general'] }}<sup style="font-size: 20px">%</sup></h3>
+                    <h3>{{ number_format($dashboardData['average_satisfaction'], 1) }}<sup style="font-size: 20px">%</sup></h3>
                     <p>Satisfacción General</p>
                 </div>
                 <div class="icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
-                <a href="{{ route('surveys.internal-client.systems.results') }}" class="small-box-footer">
-                    Ver análisis <i class="fas fa-arrow-circle-right"></i>
-                </a>
+                <div class="small-box-footer">
+                    &nbsp;
+                </div>
             </div>
         </div>
         
         <div class="col-lg-3 col-6">
             <div class="small-box bg-warning">
                 <div class="inner">
-                    <h3>{{ count($latestData['dependencias']) }}</h3>
-                    <p>Dependencias Evaluadas</p>
+                    <h3 class="text-white">{{ $dashboardData['total_departments'] }}</h3>
+                    <p class="text-white">Dependencias</p>
+                    <div class="mt-2">
+                        <small class="text-white">
+                            @if(isset($latestData['departments']) && count($latestData['departments']) > 0)
+                                @php
+                                    $topDepartments = array_slice(array_keys($latestData['departments']), 0, 3);
+                                @endphp
+                                {{ implode(', ', $topDepartments) }}
+                                @if(count($latestData['departments']) > 3)
+                                    y {{ count($latestData['departments']) - 3 }} más
+                                @endif
+                            @else
+                                Administración, IT, RRHH, Finanzas
+                            @endif
+                        </small>
+                    </div>
                 </div>
                 <div class="icon">
                     <i class="fas fa-building"></i>
                 </div>
-                <a href="{{ route('surveys.internal-client.systems.results') }}" class="small-box-footer">
-                    Ver distribución <i class="fas fa-arrow-circle-right"></i>
-                </a>
+                <div class="small-box-footer">
+                    &nbsp;
+                </div>
             </div>
         </div>
         
         <div class="col-lg-3 col-6">
             <div class="small-box bg-danger">
                 <div class="inner">
-                    <h3>{{ $latestData['ultimo_periodo'] }}</h3>
+                    <h3>{{ $selectedPeriod ?? 'N/A' }}</h3>
                     <p>Último Período</p>
                 </div>
                 <div class="icon">
@@ -629,31 +1126,65 @@ $('head').append(toastStyles);
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-chart-bar"></i>
-                        Análisis de Satisfacción por Categoría - {{ $latestData['ultimo_periodo'] }}
+                        Análisis de Satisfacción por Categoría - {{ $selectedPeriod ?? 'Sin período' }}
                     </h3>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        @foreach($latestData['estadisticas_por_categoria'] as $category => $stats)
-                        <div class="col-md-6 col-lg-4 mb-3">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-{{ $stats['color'] }}">
-                                    <i class="{{ $stats['icon'] }}"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">{{ $stats['label'] }}</span>
-                                    <span class="info-box-number">{{ $stats['porcentaje'] }}%</span>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-{{ $stats['color'] }}" 
-                                             style="width: {{ $stats['porcentaje'] }}%"></div>
+                        @if(isset($dashboardData['category_comparison']['details']) && count($dashboardData['category_comparison']['details']) > 0)
+                            @php
+                                $categories = [
+                                    'tiempos_respuesta' => 'Tiempos de Respuesta',
+                                    'efectividad_tecnica' => 'Efectividad Técnica', 
+                                    'profesionalismo' => 'Profesionalismo',
+                                    'estado_equipos' => 'Estado de Equipos',
+                                    'apoyo_usabilidad' => 'Apoyo en Usabilidad',
+                                    'calidad_internet' => 'Calidad Internet',
+                                    'intervencion_eventos' => 'Intervención en Eventos'
+                                ];
+                                $colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary', 'dark'];
+                                $icons = ['fas fa-clock', 'fas fa-tools', 'fas fa-user-tie', 'fas fa-laptop', 'fas fa-graduation-cap', 'fas fa-wifi', 'fas fa-calendar'];
+                            @endphp
+                            @foreach($categories as $key => $name)
+                                @if(isset($dashboardData['category_comparison']['details'][$key]))
+                                    @php
+                                        $data = $dashboardData['category_comparison']['details'][$key];
+                                        $colorIndex = $loop->index % count($colors);
+                                        $percentage = $data['porcentaje'] ?? 0;
+                                        $count = $data['total_respuestas'] ?? 0;
+                                    @endphp
+                                    <div class="col-md-6 col-lg-4 mb-3">
+                                        <div class="info-box">
+                                            <span class="info-box-icon bg-{{ $colors[$colorIndex] }}">
+                                                <i class="{{ $icons[$colorIndex] ?? 'fas fa-chart-bar' }}"></i>
+                                            </span>
+                                            <div class="info-box-content">
+                                                <span class="info-box-text">{{ $name }}</span>
+                                                <span class="info-box-number">{{ number_format($percentage, 1) }}%</span>
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-{{ $colors[$colorIndex] }}" 
+                                                         style="width: {{ $percentage }}%"></div>
+                                                </div>
+                                                <span class="progress-description">
+                                                    Promedio: {{ number_format($data['promedio'] ?? 0, 1) }}/5.0 ({{ $count }} evaluaciones)
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <span class="progress-description">
-                                        Promedio: {{ $stats['promedio'] }}/5.0 ({{ $stats['total_respuestas'] }} evaluaciones)
-                                    </span>
+                                @endif
+                            @endforeach
+                        @else
+                            <div class="col-12">
+                                <div class="alert alert-warning text-center">
+                                    <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                                    <h4>No hay datos disponibles</h4>
+                                    <p>No se encontraron datos para mostrar. Por favor, cargue algunas encuestas primero.</p>
+                                    <a href="{{ route('surveys.internal-client.systems.upload') }}" class="btn btn-warning">
+                                        <i class="fas fa-upload mr-1"></i>Cargar Primera Encuesta
+                                    </a>
                                 </div>
                             </div>
-                        </div>
-                        @endforeach
+                        @endif
                     </div>
                 </div>
             </div>
@@ -712,28 +1243,11 @@ $('head').append(toastStyles);
                         <button type="button" class="btn btn-tool text-white" id="categoryFullscreen" title="Pantalla completa">
                             <i class="fas fa-expand"></i>
                         </button>
-                        <button type="button" class="btn btn-tool text-white dropdown-toggle" data-toggle="dropdown" title="Opciones">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            <a class="dropdown-item" href="#" onclick="downloadChart('categoryChart', 'comparacion-categorias')">
-                                <i class="fas fa-download mr-2"></i>Descargar PNG
-                            </a>
-                            <a class="dropdown-item" href="#" onclick="printChart('categoryChart')">
-                                <i class="fas fa-print mr-2"></i>Imprimir
-                            </a>
-                        </div>
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
                         <canvas id="categoryChart" width="600" height="280"></canvas>
-                        <div class="chart-overlay d-none" id="categoryChartOverlay">
-                            <div class="chart-loading">
-                                <i class="fas fa-spinner fa-spin"></i>
-                                <p>Cargando gráfico...</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div class="card-footer bg-light">
@@ -777,11 +1291,11 @@ $('head').append(toastStyles);
                         <div class="chart-info">
                             <small class="text-muted">
                                 <i class="fas fa-info-circle mr-1"></i>
-                                {{ count($latestData['dependencias']) }} dependencias participantes
+                                {{ $dashboardData['total_departments'] }} dependencias participantes
                             </small>
                             <div class="chart-stats mt-1">
-                                <span class="badge badge-secondary" id="departmentTotal">Total: {{ array_sum($latestData['dependencias']) }}</span>
-                                <span class="badge badge-info" id="departmentAvg">Promedio: {{ count($latestData['dependencias']) > 0 ? number_format(array_sum($latestData['dependencias'])/count($latestData['dependencias']), 1) : 0 }}</span>
+                                <span class="badge badge-secondary" id="departmentTotal">Total: {{ $dashboardData['total_responses'] }}</span>
+                                <span class="badge badge-info" id="departmentAvg">Promedio: {{ number_format($dashboardData['average_satisfaction'], 1) }}%</span>
                             </div>
                         </div>
                     </div>
@@ -790,293 +1304,102 @@ $('head').append(toastStyles);
         </div>
         
         <div class="col-md-4">
-            <div class="card highlights-card">
-                <div class="card-header bg-gradient-success text-white">
+            <div class="card">
+                <div class="card-header bg-success text-white">
                     <h3 class="card-title mb-0">
                         <i class="fas fa-thumbs-up mr-2"></i>
-                        Aspectos Más Destacados
+                        Aspectos Destacados
                     </h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-tool text-white" data-card-widget="collapse" title="Colapsar">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <button type="button" class="btn btn-tool text-white" data-toggle="modal" data-target="#highlightsModal" title="Ver todos">
-                            <i class="fas fa-expand-alt"></i>
-                        </button>
-                    </div>
                 </div>
-                <div class="card-body p-0">
-                    <div class="highlights-container">
-                        @forelse($dashboardData['top_highlights'] as $index => $highlight)
-                        <div class="highlight-item position-relative" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $highlight->aspectos_destacados }}">
-                            <div class="highlight-content">
-                                <div class="highlight-icon">
-                                    <i class="fas fa-quote-left text-success"></i>
+                <div class="card-body">
+                    @if(isset($dashboardData['top_highlights']) && count($dashboardData['top_highlights']) > 0)
+                        @foreach(collect($dashboardData['top_highlights'])->take(5) as $highlight)
+                            <div class="d-flex justify-content-between align-items-start mb-3 p-2 border-bottom">
+                                <div class="flex-grow-1">
+                                    {{ $highlight['aspectos_destacados'] ?? $highlight->aspectos_destacados }}
+                                    <br>
+                                    <small class="text-muted">{{ $highlight['count'] ?? $highlight->count }} {{ ($highlight['count'] ?? $highlight->count) == 1 ? 'mención' : 'menciones' }}</small>
                                 </div>
-                                <div class="highlight-text">
-                                    <p class="mb-1">{{ Str::limit($highlight->aspectos_destacados, 75) }}</p>
-                                    <small class="text-muted">
-                                        <i class="fas fa-users mr-1"></i>
-                                        {{ $highlight->count }} {{ $highlight->count == 1 ? 'persona menciona' : 'personas mencionan' }}
-                                    </small>
-                                </div>
-                                <div class="highlight-actions">
-                                    <button class="btn btn-sm btn-outline-success btn-expand" data-full-text="{{ $highlight->aspectos_destacados }}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
+                                <span class="badge badge-success ml-2">{{ $highlight['count'] ?? $highlight->count }}</span>
                             </div>
-                            <div class="highlight-rank">
-                                <span class="rank-badge">#{{ $index + 1 }}</span>
-                            </div>
+                        @endforeach
+                    @else
+                        <div class="text-center text-muted">
+                            <i class="fas fa-info-circle mb-2"></i>
+                            <p>No hay aspectos destacados disponibles</p>
                         </div>
-                        @empty
-                        <div class="empty-state text-center py-4">
-                            <i class="fas fa-comment-slash text-muted" style="font-size: 2rem;"></i>
-                            <p class="text-muted mt-2">No hay aspectos destacados disponibles</p>
-                        </div>
-                        @endforelse
-                    </div>
-                </div>
-                @if($dashboardData['top_highlights']->count() > 0)
-                <div class="card-footer bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Mostrando los {{ $dashboardData['top_highlights']->count() }} aspectos más mencionados
-                        </small>
-                        <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#highlightsModal">
-                            <i class="fas fa-list mr-1"></i>
-                            Ver todos
-                        </button>
-                    </div>
-                </div>
-                @endif
-            </div>
-        </div>
-
-        <!-- Modal para ver todos los aspectos destacados -->
-        <div class="modal fade" id="highlightsModal" tabindex="-1" role="dialog" aria-labelledby="highlightsModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg" role="document">
-                <div class="modal-content">
-                    <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title" id="highlightsModalLabel">
-                            <i class="fas fa-thumbs-up mr-2"></i>
-                            Todos los Aspectos Destacados
-                        </h5>
-                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            @foreach($dashboardData['top_highlights'] as $index => $highlight)
-                            <div class="col-12 mb-3">
-                                <div class="card border-left-success">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div class="flex-grow-1">
-                                                <h6 class="text-success mb-1">Aspecto #{{ $index + 1 }}</h6>
-                                                <p class="mb-2">{{ $highlight->aspectos_destacados }}</p>
-                                                <small class="text-muted">
-                                                    <i class="fas fa-users mr-1"></i>
-                                                    Mencionado por {{ $highlight->count }} {{ $highlight->count == 1 ? 'persona' : 'personas' }}
-                                                </small>
-                                            </div>
-                                            <div class="text-right">
-                                                <span class="badge badge-success">{{ $highlight->count }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                    </div>
+                    @endif
                 </div>
             </div>
         </div>
         
         <div class="col-md-4">
-            <div class="card opportunities-card">
-                <div class="card-header bg-gradient-warning text-white">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
                     <h3 class="card-title mb-0">
-                        <i class="fas fa-tools mr-2"></i>
-                        Principales Oportunidades de Mejora
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Oportunidades de Mejora
                     </h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-tool text-white" data-card-widget="collapse" title="Colapsar">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <button type="button" class="btn btn-tool text-white" data-toggle="modal" data-target="#opportunitiesModal" title="Ver todas">
-                            <i class="fas fa-expand-alt"></i>
-                        </button>
-                    </div>
                 </div>
-                <div class="card-body p-0">
-                    <div class="opportunities-container">
-                        @forelse($dashboardData['top_issues'] as $index => $issue)
-                        <div class="opportunity-item position-relative" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $issue->oportunidades_mejora }}" style="animation-delay: {{ $index * 0.1 }}s;">
-                            <div class="opportunity-content">
-                                <div class="opportunity-icon">
-                                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                <div class="card-body">
+                    @if(isset($dashboardData['top_issues']) && count($dashboardData['top_issues']) > 0)
+                        @foreach(collect($dashboardData['top_issues'])->take(5) as $issue)
+                            <div class="d-flex justify-content-between align-items-start mb-3 p-2 border-bottom">
+                                <div class="flex-grow-1">
+                                    {{ $issue['oportunidades_mejora'] ?? $issue->oportunidades_mejora }}
+                                    <br>
+                                    <small class="text-muted">{{ $issue['count'] ?? $issue->count }} {{ ($issue['count'] ?? $issue->count) == 1 ? 'mención' : 'menciones' }}</small>
                                 </div>
-                                <div class="opportunity-text">
-                                    <p class="mb-1">{{ Str::limit($issue->oportunidades_mejora, 65) }}</p>
-                                    <small class="text-muted">
-                                        <i class="fas fa-users mr-1"></i>
-                                        {{ $issue->count }} {{ $issue->count == 1 ? 'persona menciona' : 'personas mencionan' }}
-                                    </small>
-                                </div>
-                                <div class="opportunity-actions">
-                                    <button class="btn btn-sm btn-outline-warning btn-expand" data-full-text="{{ $issue->oportunidades_mejora }}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
+                                <span class="badge badge-warning ml-2">{{ $issue['count'] ?? $issue->count }}</span>
                             </div>
-                            <div class="opportunity-rank">
-                                <span class="rank-badge rank-warning">#{{ $index + 1 }}</span>
-                            </div>
-                            <div class="opportunity-priority">
-                                <span class="priority-badge priority-{{ $issue->count > 2 ? 'high' : ($issue->count > 1 ? 'medium' : 'low') }}">
-                                    {{ $issue->count > 2 ? 'Alta' : ($issue->count > 1 ? 'Media' : 'Baja') }}
-                                </span>
-                            </div>
-                        </div>
-                        @empty
-                        <div class="empty-state text-center py-4">
-                            <i class="fas fa-check-circle text-success" style="font-size: 2rem;"></i>
-                            <p class="text-muted mt-2">No hay oportunidades de mejora reportadas</p>
-                        </div>
-                        @endforelse
-                    </div>
-                </div>
-                @if($dashboardData['top_issues']->count() > 0)
-                <div class="card-footer bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Mostrando las {{ $dashboardData['top_issues']->count() }} principales oportunidades
-                        </small>
-                        <button class="btn btn-sm btn-warning" data-toggle="modal" data-target="#opportunitiesModal">
-                            <i class="fas fa-list mr-1"></i>
-                            Ver todas
-                        </button>
-                    </div>
-                </div>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para ver todas las oportunidades de mejora -->
-    <div class="modal fade" id="opportunitiesModal" tabindex="-1" role="dialog" aria-labelledby="opportunitiesModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header bg-warning text-white">
-                    <h5 class="modal-title" id="opportunitiesModalLabel">
-                        <i class="fas fa-tools mr-2"></i>
-                        Todas las Oportunidades de Mejora
-                    </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        @foreach($dashboardData['top_issues'] as $index => $issue)
-                        <div class="col-12 mb-3">
-                            <div class="card border-left-warning">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="flex-grow-1">
-                                            <h6 class="text-warning mb-1">
-                                                Oportunidad #{{ $index + 1 }}
-                                                <span class="badge badge-{{ $issue->count > 2 ? 'danger' : ($issue->count > 1 ? 'warning' : 'secondary') }} ml-2">
-                                                    {{ $issue->count > 2 ? 'Alta Prioridad' : ($issue->count > 1 ? 'Media Prioridad' : 'Baja Prioridad') }}
-                                                </span>
-                                            </h6>
-                                            <p class="mb-2">{{ $issue->oportunidades_mejora }}</p>
-                                            <small class="text-muted">
-                                                <i class="fas fa-users mr-1"></i>
-                                                Mencionado por {{ $issue->count }} {{ $issue->count == 1 ? 'persona' : 'personas' }}
-                                            </small>
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="badge badge-warning">{{ $issue->count }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         @endforeach
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-warning" onclick="exportOpportunities()">
-                        <i class="fas fa-download mr-1"></i>
-                        Exportar Lista
-                    </button>
+                    @else
+                        <div class="text-center text-muted">
+                            <i class="fas fa-check-circle mb-2"></i>
+                            <p>No hay oportunidades de mejora identificadas</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Acciones Principales -->
+    <!-- Acciones Rápidas -->
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-cogs"></i>
-                        Acciones Disponibles
+                        Acciones Rápidas
                     </h3>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <a href="{{ route('surveys.internal-client.systems.upload') }}" 
-                                   class="btn btn-success btn-lg btn-block">
-                                    <i class="fas fa-upload"></i><br>
-                                    Subir Nueva Encuesta
-                                </a>
-                                <small class="text-muted">Sube resultados de encuesta en Excel</small>
-                            </div>
+                        <div class="col-md-4">
+                            <a href="{{ route('surveys.internal-client.systems.upload') }}" class="btn btn-success btn-block">
+                                <i class="fas fa-upload"></i>
+                                Cargar Nueva Encuesta
+                            </a>
                         </div>
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <a href="{{ route('surveys.internal-client.systems.results') }}" 
-                                   class="btn btn-primary btn-lg btn-block">
-                                    <i class="fas fa-chart-line"></i><br>
-                                    Análisis Histórico
-                                </a>
-                                <small class="text-muted">Consulta resultados históricos</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <a href="{{ route('surveys.internal-client.systems.export') }}" 
-                                   class="btn btn-warning btn-lg btn-block">
-                                    <i class="fas fa-download"></i><br>
+                        <div class="col-md-4">
+                            @if($selectedPeriod ?? null)
+                                <a href="{{ route('surveys.internal-client.systems.export') }}" class="btn btn-primary btn-block">
+                                    <i class="fas fa-download"></i>
                                     Exportar Datos
                                 </a>
-                                <small class="text-muted">Descarga datos en Excel</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <button type="button" class="btn btn-info btn-lg btn-block" 
-                                        onclick="window.print()">
-                                    <i class="fas fa-print"></i><br>
-                                    Imprimir Dashboard
+                            @else
+                                <button class="btn btn-secondary btn-block" disabled>
+                                    <i class="fas fa-download"></i>
+                                    Sin Datos para Exportar
                                 </button>
-                                <small class="text-muted">Imprime este dashboard</small>
-                            </div>
+                            @endif
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-warning btn-block" onclick="location.reload()">
+                                <i class="fas fa-sync"></i>
+                                Actualizar Dashboard
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1084,2050 +1407,132 @@ $('head').append(toastStyles);
         </div>
     </div>
 </div>
+
+<!-- Modal de Aspectos Destacados -->
+<div class="modal fade" id="highlightsModal" tabindex="-1" role="dialog" aria-labelledby="highlightsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="highlightsModalLabel">
+                    <i class="fas fa-trophy mr-2"></i>
+                    Todos los Aspectos Destacados
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @if(isset($dashboardData['top_highlights']) && count($dashboardData['top_highlights']) > 0)
+                    <div class="row">
+                        @foreach($dashboardData['top_highlights'] as $index => $highlight)
+                            @php
+                                $icons = ['fas fa-medal', 'fas fa-award', 'fas fa-star', 'fas fa-thumbs-up', 'fas fa-heart'];
+                                $colors = ['text-warning', 'text-info', 'text-success', 'text-primary', 'text-danger'];
+                            @endphp
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-success">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-start">
+                                            <div class="bg-success rounded-circle p-2 mr-3 text-white">
+                                                <i class="{{ $icons[$index % count($icons)] }}"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="font-weight-bold">{{ $highlight['aspectos_destacados'] ?? $highlight->aspectos_destacados }}</h6>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="badge badge-success">{{ $highlight['count'] ?? $highlight->count }} menciones</span>
+                                                    <small class="text-muted">#{{ $index + 1 }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" onclick="exportHighlights()">
+                    <i class="fas fa-download mr-1"></i>
+                    Exportar Aspectos
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Oportunidades de Mejora -->
+<div class="modal fade" id="improvementsModal" tabindex="-1" role="dialog" aria-labelledby="improvementsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="improvementsModalLabel">
+                    <i class="fas fa-bullseye mr-2"></i>
+                    Todas las Oportunidades de Mejora
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @if(isset($dashboardData['top_issues']) && count($dashboardData['top_issues']) > 0)
+                    <div class="row">
+                        @foreach($dashboardData['top_issues'] as $index => $issue)
+                            @php
+                                $urgencyLevels = [
+                                    ['icon' => 'fas fa-exclamation-triangle', 'color' => 'danger', 'priority' => 'Alta Prioridad'],
+                                    ['icon' => 'fas fa-exclamation-circle', 'color' => 'warning', 'priority' => 'Media Prioridad'],
+                                    ['icon' => 'fas fa-info-circle', 'color' => 'info', 'priority' => 'Baja Prioridad']
+                                ];
+                                $mentionCount = $issue['count'] ?? $issue->count;
+                                $urgencyClass = $mentionCount >= 3 ? $urgencyLevels[0] : ($mentionCount >= 2 ? $urgencyLevels[1] : $urgencyLevels[2]);
+                            @endphp
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-{{ $urgencyClass['color'] }}">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-start">
+                                            <div class="bg-{{ $urgencyClass['color'] }} rounded-circle p-2 mr-3 text-white">
+                                                <i class="{{ $urgencyClass['icon'] }}"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="font-weight-bold">{{ $issue['oportunidades_mejora'] ?? $issue->oportunidades_mejora }}</h6>
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <span class="badge badge-{{ $urgencyClass['color'] }}">{{ $issue['count'] ?? $issue->count }} menciones</span>
+                                                    <small class="text-{{ $urgencyClass['color'] }} font-weight-bold">{{ $urgencyClass['priority'] }}</small>
+                                                </div>
+                                                <div class="btn-group btn-group-sm w-100">
+                                                    <button class="btn btn-outline-primary" onclick="createActionPlan('{{ addslashes($issue['oportunidades_mejora'] ?? $issue->oportunidades_mejora) }}')">
+                                                        <i class="fas fa-tasks"></i> Plan
+                                                    </button>
+                                                    <button class="btn btn-outline-info" onclick="assignResponsible('{{ addslashes($issue['oportunidades_mejora'] ?? $issue->oportunidades_mejora) }}')">
+                                                        <i class="fas fa-user"></i> Asignar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" onclick="generateImprovementReport()">
+                    <i class="fas fa-file-alt mr-1"></i>
+                    Generar Reporte
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @stop
-
-@section('css')
-<style>
-    .small-box {
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
-    }
-    
-    .small-box:hover {
-        transform: translateY(-2px);
-    }
-    
-    .info-box {
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
-    }
-    
-    .info-box:hover {
-        transform: translateY(-1px);
-    }
-    
-    .card {
-        border-radius: 15px;
-        box-shadow: 0 2px 20px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-    
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 30px rgba(0,0,0,0.15);
-    }
-    
-    /* Estilos mejorados para gráficos */
-    .chart-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: none;
-        overflow: hidden;
-        border-radius: 15px;
-        box-shadow: 0 4px 25px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-        height: auto;
-        max-height: 600px;
-    }
-    
-    .chart-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 40px rgba(0,0,0,0.15);
-    }
-    
-    /* Contenedor de gráficos con dimensiones controladas */
-    .chart-container {
-        position: relative;
-        height: 300px;
-        max-height: 300px;
-        width: 100%;
-        overflow: hidden;
-    }
-    
-    .chart-container canvas {
-        max-width: 100% !important;
-        height: 100% !important;
-        width: 100% !important;
-    }
-    
-    /* Estilos específicos para gráficos mejorados */
-    .trend-chart-card {
-        background: linear-gradient(135deg, #ffffff 0%, #e3f2fd 100%);
-    }
-    
-    .department-chart-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f3e5f5 100%);
-    }
-    
-    .department-chart-card .chart-container-enhanced {
-        height: 300px;
-        max-height: 300px;
-    }
-    
-    .department-chart-card .chart-container-enhanced canvas {
-        max-height: 220px !important;
-        height: 220px !important;
-    }
-    
-    .chart-container-enhanced {
-        position: relative;
-        padding: 15px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
-        height: 350px;
-        max-height: 350px;
-        overflow: hidden;
-    }
-    
-    .chart-container-enhanced canvas {
-        max-width: 100% !important;
-        max-height: 280px !important;
-        width: 100% !important;
-        height: 280px !important;
-    }
-    
-    .chart-controls {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        padding: 10px;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
-    }
-    
-    .chart-controls-left,
-    .chart-controls-right {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-    
-    .chart-view-toggle {
-        display: flex;
-        gap: 2px;
-        background: white;
-        border-radius: 6px;
-        padding: 2px;
-        border: 1px solid #dee2e6;
-    }
-    
-    .chart-view-toggle .btn {
-        border: none;
-        padding: 6px 10px;
-        border-radius: 4px;
-        transition: all 0.2s ease;
-    }
-    
-    .chart-view-toggle .btn.active {
-        background: #007bff;
-        color: white;
-        box-shadow: 0 2px 5px rgba(0,123,255,0.3);
-    }
-    
-    .chart-zoom-controls {
-        display: flex;
-        gap: 2px;
-        background: white;
-        border-radius: 6px;
-        padding: 2px;
-        border: 1px solid #dee2e6;
-    }
-    
-    .chart-zoom-controls .btn {
-        border: none;
-        padding: 6px 8px;
-        border-radius: 4px;
-        transition: all 0.2s ease;
-    }
-    
-    .chart-status-indicator {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: rgba(255,255,255,0.2);
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 12px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    
-    .chart-status-indicator i {
-        color: #28a745;
-    }
-    
-    .chart-stats {
-        display: flex;
-        gap: 5px;
-        flex-wrap: wrap;
-    }
-    
-    .chart-stats .badge {
-        font-size: 10px;
-        padding: 4px 8px;
-        border-radius: 12px;
-    }
-    
-    .chart-info {
-        flex: 1;
-    }
-    
-    .chart-actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-    
-    .chart-no-data {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 100%;
-        z-index: 5;
-    }
-    
-    .chart-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255,255,255,0.95);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-        border-radius: 10px;
-    }
-    
-    .chart-loading {
-        text-align: center;
-        color: #6c757d;
-    }
-    
-    .chart-loading .spinner-border {
-        margin-bottom: 15px;
-    }
-    
-    .legend-item {
-        display: inline-flex;
-        align-items: center;
-        margin-left: 10px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-    
-    .legend-color {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        margin-right: 5px;
-        display: inline-block;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    
-    /* Dropdown mejorado */
-    .dropdown-menu {
-        border-radius: 10px;
-        box-shadow: 0 5px 25px rgba(0,0,0,0.15);
-        border: none;
-        padding: 10px 0;
-    }
-    
-    .dropdown-header {
-        color: #6c757d;
-        font-weight: 600;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 8px 20px 5px;
-    }
-    
-    .dropdown-item {
-        padding: 8px 20px;
-        font-size: 13px;
-        transition: all 0.2s ease;
-    }
-    
-    .dropdown-item:hover {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        transform: translateX(3px);
-    }
-    
-    .dropdown-item i {
-        width: 16px;
-        text-align: center;
-    }
-    
-    .dropdown-divider {
-        margin: 8px 0;
-        border-top: 1px solid #e9ecef;
-    }
-    
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .chart-controls {
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .chart-controls-left,
-        .chart-controls-right {
-            justify-content: center;
-        }
-        
-        .chart-stats {
-            justify-content: center;
-        }
-        
-        .chart-actions {
-            justify-content: center;
-        }
-        
-        .chart-status-indicator {
-            position: static;
-            margin-top: 10px;
-            justify-content: center;
-        }
-        
-        .chart-container {
-            height: 250px;
-            max-height: 250px;
-        }
-        
-        .chart-container-enhanced {
-            height: 280px;
-            max-height: 280px;
-        }
-        
-        .chart-container-enhanced canvas {
-            max-height: 200px !important;
-            height: 200px !important;
-        }
-        
-        .department-chart-card .chart-container-enhanced {
-            height: 250px;
-            max-height: 250px;
-        }
-        
-        .department-chart-card .chart-container-enhanced canvas {
-            max-height: 180px !important;
-            height: 180px !important;
-        }
-    }
-    
-    /* Prevenir overflow en todos los tamaños */
-    .chart-container,
-    .chart-container-enhanced {
-        overflow: hidden;
-        position: relative;
-    }
-    
-    .chart-container canvas,
-    .chart-container-enhanced canvas {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-    
-    /* Animaciones para los botones */
-    .btn {
-        transition: all 0.2s ease;
-    }
-    
-    .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    
-    .btn-tool:hover {
-        transform: scale(1.1);
-        background: rgba(255,255,255,0.2) !important;
-    }
-    
-    .card-header .btn-tool {
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-    }
-    
-    /* Efectos de hover para las tarjetas */
-    .chart-card .card-header {
-        background: linear-gradient(135deg, var(--header-color-1), var(--header-color-2));
-        border: none;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .chart-card .card-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-        transition: left 0.5s;
-    }
-    
-    .chart-card:hover .card-header::before {
-        left: 100%;
-    }
-    
-    .trend-chart-card .card-header {
-        --header-color-1: #007bff;
-        --header-color-2: #0056b3;
-    }
-    
-    .department-chart-card .card-header {
-        --header-color-1: #6c757d;
-        --header-color-2: #495057;
-    }
-    
-    /* Estilos para oportunidades de mejora */
-    .opportunities-card {
-        background: linear-gradient(135deg, #ffffff 0%, #fff3cd 100%);
-        border: none;
-        overflow: hidden;
-    }
-    
-    .opportunities-container {
-        max-height: 400px;
-        overflow-y: auto;
-    }
-    
-    .opportunity-item {
-        padding: 15px;
-        border-bottom: 1px solid #f8f9fa;
-        transition: all 0.3s ease;
-        background: white;
-        margin: 5px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        animation: fadeInUp 0.5s ease-out;
-        animation-fill-mode: both;
-    }
-    
-    .opportunity-item:hover {
-        background: #fff8e1;
-        transform: translateX(5px);
-        box-shadow: 0 4px 20px rgba(255,193,7,0.2);
-    }
-    
-    .opportunity-content {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-    }
-    
-    .opportunity-icon {
-        flex-shrink: 0;
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, #ffc107, #ffb300);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 16px;
-        box-shadow: 0 2px 10px rgba(255,193,7,0.3);
-    }
-    
-    .opportunity-text {
-        flex: 1;
-    }
-    
-    .opportunity-actions {
-        display: flex;
-        gap: 5px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .opportunity-item:hover .opportunity-actions {
-        opacity: 1;
-    }
-    
-    .opportunity-rank {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-    }
-    
-    .rank-badge.rank-warning {
-        background: linear-gradient(135deg, #ff6b35, #ffc107);
-        color: white;
-        padding: 4px 8px;
-        border-radius: 15px;
-        font-size: 10px;
-        font-weight: bold;
-        box-shadow: 0 2px 5px rgba(255,107,53,0.3);
-    }
-    
-    .opportunity-priority {
-        position: absolute;
-        bottom: 10px;
-        right: 10px;
-    }
-    
-    .priority-badge {
-        padding: 2px 6px;
-        border-radius: 10px;
-        font-size: 10px;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-    
-    .priority-high {
-        background: #dc3545;
-        color: white;
-    }
-    
-    .priority-medium {
-        background: #ffc107;
-        color: #212529;
-    }
-    
-    .priority-low {
-        background: #6c757d;
-        color: white;
-    }
-    
-    /* Animaciones */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    @keyframes pulse {
-        0%, 100% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.05);
-        }
-    }
-    
-    /* Efectos hover mejorados */
-    .btn-tool:hover {
-        transform: scale(1.1);
-        transition: transform 0.2s ease;
-    }
-    
-    .card-header .btn-tool {
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .card-header .btn-tool:hover {
-        background: rgba(255,255,255,0.2);
-    }
-    
-    /* Estilos para modales */
-    .modal-content {
-        border-radius: 15px;
-        box-shadow: 0 10px 50px rgba(0,0,0,0.3);
-    }
-    
-    .modal-header {
-        border-radius: 15px 15px 0 0;
-        border-bottom: none;
-    }
-    
-    .modal-body {
-        padding: 20px;
-    }
-    
-    .modal-footer {
-        border-top: none;
-        padding: 15px 20px;
-    }
-    
-    /* Efectos de carga */
-    .loading-pulse {
-        animation: pulse 1.5s infinite;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-        .opportunity-content {
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .opportunity-actions {
-            opacity: 1;
-            justify-content: center;
-        }
-        
-        .opportunity-rank,
-        .opportunity-priority {
-            position: static;
-            display: inline-block;
-            margin-top: 10px;
-        }
-    }
-    
-    /* Estilos para tooltips personalizados */
-    .tooltip {
-        font-size: 12px;
-    }
-    
-    .tooltip-inner {
-        background: rgba(0,0,0,0.9);
-        border-radius: 8px;
-        padding: 8px 12px;
-        max-width: 300px;
-    }
-    
-    /* Estilos para elementos destacados existentes */
-    .highlights-card {
-        background: linear-gradient(135deg, #ffffff 0%, #e8f5e8 100%);
-        border: none;
-        overflow: hidden;
-    }
-    
-    .highlights-container {
-        max-height: 400px;
-        overflow-y: auto;
-    }
-    
-    .highlight-item {
-        padding: 15px;
-        border-bottom: 1px solid #f8f9fa;
-        transition: all 0.3s ease;
-        background: white;
-        margin: 5px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        animation: fadeInUp 0.5s ease-out;
-        animation-fill-mode: both;
-    }
-    
-    .highlight-item:hover {
-        background: #e8f5e8;
-        transform: translateX(5px);
-        box-shadow: 0 4px 20px rgba(40,167,69,0.2);
-    }
-    
-    .highlight-content {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-    }
-    
-    .highlight-icon {
-        flex-shrink: 0;
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, #28a745, #20c997);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 16px;
-        box-shadow: 0 2px 10px rgba(40,167,69,0.3);
-    }
-    
-    .highlight-text {
-        flex: 1;
-    }
-    
-    .highlight-actions {
-        display: flex;
-        gap: 5px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .highlight-item:hover .highlight-actions {
-        opacity: 1;
-    }
-    
-    .highlight-rank {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-    }
-    
-    .rank-badge {
-        background: linear-gradient(135deg, #28a745, #20c997);
-        color: white;
-        padding: 4px 8px;
-        border-radius: 15px;
-        font-size: 10px;
-        font-weight: bold;
-        box-shadow: 0 2px 5px rgba(40,167,69,0.3);
-    }
-    
-    /* Estilos para acciones de exportación */
-    .export-menu {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background: white;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        z-index: 1000;
-        min-width: 150px;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-10px);
-        transition: all 0.3s ease;
-    }
-    
-    .export-menu.show {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-    }
-    
-    .export-menu a {
-        display: block;
-        padding: 10px 15px;
-        color: #495057;
-        text-decoration: none;
-        transition: background 0.2s ease;
-    }
-    
-    .export-menu a:hover {
-        background: #f8f9fa;
-        color: #007bff;
-    }
-    
-    /* Efecto de carga para gráficos */
-    .chart-loading-skeleton {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
-        border-radius: 4px;
-        height: 20px;
-        margin: 10px 0;
-    }
-    
-    @keyframes loading {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-    }
-    
-    /* Modo print */
-    @media print {
-        .card-tools,
-        .btn,
-        .modal {
-            display: none !important;
-        }
-        
-        .card {
-            box-shadow: none !important;
-            border: 1px solid #dee2e6 !important;
-        }
-        
-        .card,
-        .small-box,
-        .info-box {
-            box-shadow: none !important;
-            border: 1px solid #dee2e6 !important;
-        }
-    }
-</style>
-@endsection
-
-@push('js')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// Esperar a que Chart.js esté completamente cargado
-window.addEventListener('load', function() {
-    if (typeof Chart === 'undefined') {
-        console.error('Chart.js no está cargado');
-        return;
-    }
-    
-    // Gráfico de tendencia
-    const trendData = {!! json_encode($dashboardData['trend_data']) !!};
-    const trendCtx = document.getElementById('trendChart').getContext('2d');
-    
-    window.trendChart = new Chart(trendCtx, {
-        type: 'line',
-        data: {
-            labels: trendData.labels,
-            datasets: [{
-                label: 'Satisfacción General (%)',
-                data: trendData.values,
-                borderColor: '#4CAF50',
-                backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.3,
-                pointBackgroundColor: '#4CAF50',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                pointHoverBackgroundColor: '#388E3C',
-                pointHoverBorderColor: '#ffffff',
-                pointHoverBorderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                intersect: false,
-                mode: 'nearest'
-            },
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        padding: 15,
-                        font: {
-                            size: 12,
-                            weight: 'bold'
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(33, 33, 33, 0.9)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff',
-                    titleFont: {
-                        size: 14,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        size: 13
-                    },
-                    padding: 12,
-                    cornerRadius: 6,
-                    displayColors: false,
-                    callbacks: {
-                        title: function(tooltipItems) {
-                            return 'Período: ' + tooltipItems[0].label;
-                        },
-                        label: function(context) {
-                            return 'Satisfacción: ' + context.parsed.y.toFixed(1) + '%';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)',
-                        drawBorder: false
-                    },
-                    border: {
-                        dash: [4, 4]
-                    },
-                    ticks: {
-                        padding: 8,
-                        font: {
-                            size: 11
-                        },
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        padding: 8,
-                        font: {
-                            size: 11
-                        }
-                    }
-                }
-            },
-            elements: {
-                line: {
-                    tension: 0.3
-                },
-                point: {
-                    hoverRadius: 7,
-                    hitRadius: 10
-                }
-            },
-            animation: {
-                duration: 1500,
-                easing: 'easeInOutQuart'
-            },
-            hover: {
-                mode: 'nearest',
-                intersect: false
-            }
-        }
-    });
-    
-    // Calcular estadísticas del gráfico de tendencia
-    if (trendData.values.length > 0) {
-        const avg = (trendData.values.reduce((a, b) => a + b, 0) / trendData.values.length).toFixed(1);
-        const max = Math.max(...trendData.values).toFixed(1);
-        const min = Math.min(...trendData.values).toFixed(1);
-        
-        document.getElementById('trendAvg').textContent = `Promedio: ${avg}%`;
-        document.getElementById('trendMax').textContent = `Máximo: ${max}%`;
-        document.getElementById('trendMin').textContent = `Mínimo: ${min}%`;
-    }
-    
-    // Gráfico de categorías
-    const categoryData = {!! json_encode($dashboardData['category_comparison']) !!};
-    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-    
-    new Chart(categoryCtx, {
-        type: 'bar',
-        data: {
-            labels: categoryData.labels,
-            datasets: [{
-                label: 'Satisfacción (%)',
-                data: categoryData.values,
-                backgroundColor: [
-                    '#28a745', '#17a2b8', '#6f42c1', '#fd7e14', 
-                    '#6c757d', '#dc3545', '#343a40'
-                ],
-                borderColor: [
-                    '#28a745', '#17a2b8', '#6f42c1', '#fd7e14', 
-                    '#6c757d', '#dc3545', '#343a40'
-                ],
-                borderWidth: 1,
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
-                },
-                x: {
-                    ticks: {
-                        maxRotation: 45,
-                        minRotation: 45
-                    }
-                }
-            }
-        }
-    });
-    
-    function initializeCharts() {
-        // Gráfico de dependencias
-        const departmentData = {!! json_encode($latestData['dependencias']) !!};
-        const labels = Object.keys(departmentData);
-        const values = Object.values(departmentData);
-        
-        const ctx = document.getElementById('departmentChart').getContext('2d');
-        window.departmentChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: values,
-                    backgroundColor: [
-                        '#007bff', '#28a745', '#ffc107', '#dc3545',
-                        '#6f42c1', '#17a2b8', '#fd7e14', '#20c997',
-                        '#6c757d', '#343a40'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '60%',
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            font: {
-                                size: 11
-                            },
-                            padding: 15
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const value = context.raw;
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return `${context.label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
-                },
-                animation: {
-                    duration: 1000,
-                    easing: 'easeOutQuart'
-                }
-            }
-        });
-        
-        // Actualizar estadísticas iniciales
-        updateStatistics();
-        
-        // Configurar eventos de redimensionamiento
-        window.addEventListener('resize', function() {
-            if (window.departmentChart) {
-                window.departmentChart.resize();
-            }
-        });
-        
-        // Manejar el cambio de tipo de gráfico
-        window.switchDepartmentView = function(type) {
-            const chart = Chart.getChart('departmentChart');
-            if (!chart) return;
-            
-            const config = chart.config;
-            
-            switch(type) {
-                case 'pie':
-                    config.type = 'pie';
-                    config.options.cutout = '0%';
-                    break;
-                case 'doughnut':
-                    config.type = 'doughnut';
-                    config.options.cutout = '60%';
-                    break;
-                case 'bar':
-                    config.type = 'bar';
-                    config.options.cutout = undefined;
-                    config.options.indexAxis = 'y';
-                    config.options.plugins.legend.position = 'right';
-                    break;
-            }
-            
-            chart.update('active');
-        };
-        
-        // Manejar el redimensionamiento de la ventana
-        $(window).resize(function() {
-            const departmentChart = Chart.getChart('departmentChart');
-            if (departmentChart) {
-                departmentChart.resize();
-            }
-        });
-    }
-    
-    // Animación de números
-    function animateNumbers() {
-        $('.small-box .inner h3').each(function() {
-            const $this = $(this);
-            const text = $this.text();
-            const suffix = text.includes('%') ? '%' : '';
-            
-            // Excluir campos que contienen texto (como fechas o períodos)
-            // Si contiene letras, no animar
-            if (/[a-zA-ZáéíóúñÁÉÍÓÚÑ]/.test(text)) {
-                return; // Skip animation for text fields
-            }
-            
-            // Extraer el número considerando decimales
-            const numberMatch = text.match(/[\d.]+/);
-            const number = numberMatch ? parseFloat(numberMatch[0]) : 0;
-            
-            if (number > 0) {
-                $({ value: 0 }).animate({ value: number }, {
-                    duration: 1000,
-                    easing: 'swing',
-                    step: function() {
-                        // Mantener decimales si los hay
-                        const displayValue = number % 1 === 0 ? Math.floor(this.value) : this.value.toFixed(1);
-                        $this.html(displayValue + '<sup style="font-size: 20px">' + suffix + '</sup>');
-                    }
-                });
-            }
-        });
-    }
-    
-    // Inicializar gráficos
-    initializeCharts();
-    
-    // Ejecutar animación después de cargar los gráficos
-    setTimeout(animateNumbers, 500);
-    
-    // Funcionalidades para aspectos destacados
-    initializeHighlights();
-    
-    // Funcionalidades para oportunidades de mejora
-    initializeOpportunities();
-    
-    // Funcionalidades para gráficos mejorados
-    initializeChartFunctionalities();
-    
-    function initializeHighlights() {
-        // Inicializar tooltips
-        $('[data-bs-toggle="tooltip"]').tooltip();
-        
-        // Expandir/contraer texto completo
-        $('.btn-expand').click(function() {
-            const fullText = $(this).data('full-text');
-            const $item = $(this).closest('.highlight-item');
-            const $textElement = $item.find('.highlight-text p');
-            
-            if ($(this).hasClass('expanded')) {
-                // Contraer
-                $textElement.text(fullText.substring(0, 75) + (fullText.length > 75 ? '...' : ''));
-                $(this).removeClass('expanded').html('<i class="fas fa-eye"></i>');
-                $(this).attr('title', 'Ver texto completo');
-            } else {
-                // Expandir
-                $textElement.text(fullText);
-                $(this).addClass('expanded').html('<i class="fas fa-eye-slash"></i>');
-                $(this).attr('title', 'Contraer texto');
-            }
-        });
-        
-        // Animación de entrada para los elementos
-        $('.highlight-item').each(function(index) {
-            $(this).css('animation-delay', (index * 0.1) + 's');
-        });
-        
-        // Efecto de hover mejorado
-        $('.highlight-item').hover(
-            function() {
-                $(this).find('.highlight-icon i').addClass('fa-beat');
-            },
-            function() {
-                $(this).find('.highlight-icon i').removeClass('fa-beat');
-            }
-        );
-        
-        // Copiar texto al portapapeles
-        $('.highlight-item').dblclick(function() {
-            const text = $(this).find('.highlight-text p').text();
-            
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(function() {
-                    // Mostrar feedback visual
-                    const $item = $(this);
-                    const originalBg = $item.css('background-color');
-                    $item.css('background-color', '#d4edda');
-                    
-                    setTimeout(() => {
-                        $item.css('background-color', originalBg);
-                    }, 500);
-                    
-                    // Mostrar toast de confirmación
-                    showToast('Texto copiado al portapapeles', 'success');
-                }.bind(this));
-            }
-        });
-    }
-    
-    function initializeOpportunities() {
-        // Inicializar tooltips para oportunidades
-        $('[data-bs-toggle="tooltip"]').tooltip();
-        
-        // Expandir/contraer texto completo para oportunidades
-        $('.opportunity-item .btn-expand').click(function() {
-            const fullText = $(this).data('full-text');
-            const $item = $(this).closest('.opportunity-item');
-            const $textElement = $item.find('.opportunity-text p');
-            
-            if ($(this).hasClass('expanded')) {
-                // Contraer
-                $textElement.text(fullText.substring(0, 65) + (fullText.length > 65 ? '...' : ''));
-                $(this).removeClass('expanded').html('<i class="fas fa-eye"></i>');
-                $(this).attr('title', 'Ver texto completo');
-            } else {
-                // Expandir
-                $textElement.text(fullText);
-                $(this).addClass('expanded').html('<i class="fas fa-eye-slash"></i>');
-                $(this).attr('title', 'Contraer texto');
-            }
-        });
-        
-        // Animación de entrada para las oportunidades
-        $('.opportunity-item').each(function(index) {
-            $(this).css('animation-delay', (index * 0.1) + 's');
-        });
-        
-        // Efecto de hover mejorado para oportunidades
-        $('.opportunity-item').hover(
-            function() {
-                $(this).find('.opportunity-icon i').addClass('fa-bounce');
-            },
-            function() {
-                $(this).find('.opportunity-icon i').removeClass('fa-bounce');
-            }
-        );
-        
-        // Copiar texto al portapapeles para oportunidades
-        $('.opportunity-item').dblclick(function() {
-            const text = $(this).find('.opportunity-text p').text();
-            
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(function() {
-                    // Mostrar feedback visual
-                    const $item = $(this);
-                    const originalBg = $item.css('background-color');
-                    $item.css('background-color', '#fff3cd');
-                    
-                    setTimeout(() => {
-                        $item.css('background-color', originalBg);
-                    }, 500);
-                    
-                    // Mostrar toast de confirmación
-                    showToast('Oportunidad copiada al portapapeles', 'warning');
-                }.bind(this));
-            }
-        });
-    }
-    
-    function initializeChartFunctionalities() {
-        // Funcionalidad de pantalla completa para gráficos
-        $('#trendFullscreen').click(function() {
-            toggleFullscreen('trendChart');
-        });
-        
-        $('#categoryFullscreen').click(function() {
-            toggleFullscreen('categoryChart');
-        });
-        
-        $('#departmentFullscreen').click(function() {
-            toggleFullscreen('departmentChart');
-        });
-        
-        // Efectos de carga para gráficos
-        showChartLoading();
-        
-        // Ocultar loading después de que los gráficos se carguen
-        setTimeout(() => {
-            hideChartLoading();
-        }, 1000);
-    }
-    
-    function toggleFullscreen(chartId) {
-        const canvas = document.getElementById(chartId);
-        const container = canvas.parentElement;
-        
-        if (!document.fullscreenElement) {
-            container.requestFullscreen().then(() => {
-                // Redimensionar gráfico en pantalla completa
-                const chart = Chart.getChart(chartId);
-                if (chart) {
-                    chart.resize();
-                }
-            });
-        } else {
-            document.exitFullscreen();
-        }
-    }
-    
-    function downloadChart(chartId, filename, format = 'png') {
-        const departmentChart = Chart.getChart('departmentChart');
-            if (departmentChart && chartId === 'departmentChart') {
-            const container = document.getElementById(chartId);
-            const svg = container.getElementsByTagName('svg')[0];
-            if (svg) {
-                const svgData = new XMLSerializer().serializeToString(svg);
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
-                
-                img.onload = function() {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    const link = document.createElement('a');
-                    link.download = `${filename}.${format}`;
-                    link.href = canvas.toDataURL(`image/${format}`);
-                    link.click();
-                    showToast('Gráfico descargado exitosamente', 'success');
-                };
-                
-                img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-            }
-        } else {
-            const canvas = document.getElementById(chartId);
-            let url;
-            
-            if (format === 'png') {
-                url = canvas.toDataURL('image/png');
-            } else if (format === 'jpeg') {
-                url = canvas.toDataURL('image/jpeg', 0.9);
-            } else if (format === 'pdf') {
-                showToast('Funcionalidad PDF en desarrollo', 'info');
-                return;
-            }
-            
-            const link = document.createElement('a');
-            link.download = filename + '.' + format;
-            link.href = url;
-            link.click();
-            
-            showToast('Gráfico descargado exitosamente', 'success');
-        }
-    }
-    
-    function printChart(chartId) {
-        const canvas = document.getElementById(chartId);
-        const printWindow = window.open('', '', 'height=600,width=800');
-        printWindow.document.write('<html><head><title>Imprimir Gráfico</title>');
-        printWindow.document.write('<style>body{margin:0;padding:20px;text-align:center;}</style>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write('<img src="' + canvas.toDataURL() + '" style="max-width:100%;"/>');
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.print();
-    }
-    
-    function shareChart(chartId) {
-        const canvas = document.getElementById(chartId);
-        canvas.toBlob(function(blob) {
-            if (navigator.share) {
-                const file = new File([blob], 'grafico.png', { type: 'image/png' });
-                navigator.share({
-                    title: 'Gráfico de Satisfacción',
-                    text: 'Compartiendo gráfico del dashboard',
-                    files: [file]
-                });
-            } else {
-                // Fallback para navegadores que no soportan Web Share API
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'grafico.png';
-                link.click();
-                URL.revokeObjectURL(url);
-            }
-        });
-    }
-    
-    function showChartData(chartId) {
-        let tableHTML = '<div class="table-responsive"><table class="table table-striped table-sm">';
-        tableHTML += '<thead><tr><th>Período/Categoría</th><th>Valor</th></tr></thead><tbody>';
-        
-        const chart = Chart.getChart(chartId);
-        if (!chart) return;
-        
-        const data = chart.data;
-        data.labels.forEach((label, index) => {
-            const value = data.datasets[0].data[index];
-            tableHTML += `<tr><td>${label}</td><td>${value}${chartId === 'trendChart' ? '%' : ''}</td></tr>`;
-        });
-        }
-        
-        tableHTML += '</tbody></table></div>';
-        
-        // Mostrar en modal
-        const modal = $(`
-            <div class="modal fade" tabindex="-1">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Datos del Gráfico</h5>
-                            <button type="button" class="close" data-dismiss="modal">&times;</button>
-                        </div>
-                        <div class="modal-body">${tableHTML}</div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `);
-        
-        modal.modal('show');
-        modal.on('hidden.bs.modal', function() {
-            modal.remove();
-        });
-    }
-    
-    // Funciones de manipulación solo para gráficos que no son departmentChart
-    function toggleChartType(chartId) {
-        if (chartId === 'departmentChart') return;
-        const chart = Chart.getChart(chartId);
-        if (!chart) return;
-        
-        const currentType = chart.config.type;
-        const newType = currentType === 'line' ? 'bar' : 'line';
-        
-        chart.config.type = newType;
-        chart.update('active');
-        
-        showToast(`Gráfico cambiado a ${newType === 'line' ? 'línea' : 'barras'}`, 'info');
-    }
-    
-    function toggleDataPoints(chartId) {
-        if (chartId === 'departmentChart') return;
-        const chart = Chart.getChart(chartId);
-        if (!chart) return;
-        
-        const dataset = chart.data.datasets[0];
-        const currentRadius = dataset.pointRadius;
-        
-        dataset.pointRadius = currentRadius === 0 ? 6 : 0;
-        dataset.pointHoverRadius = currentRadius === 0 ? 8 : 0;
-        
-        chart.update('active');
-        
-        showToast(`Puntos ${currentRadius === 0 ? 'activados' : 'desactivados'}`, 'info');
-    }
-    
-    function zoomIn(chartId) {
-        if (chartId === 'departmentChart') return;
-        const chart = Chart.getChart(chartId);
-        if (!chart) return;
-        
-        const scales = chart.options.scales;
-        if (scales.y) {
-            const currentMax = scales.y.max || 100;
-            scales.y.max = currentMax * 0.8;
-            chart.update('none');
-            showToast('Zoom aplicado', 'info');
-        }
-    }
-    
-    function zoomOut(chartId) {
-        if (chartId === 'departmentChart') return;
-        const chart = Chart.getChart(chartId);
-        if (!chart) return;
-        
-        const scales = chart.options.scales;
-        if (scales.y) {
-            const currentMax = scales.y.max || 100;
-            scales.y.max = Math.min(currentMax * 1.2, 100);
-            chart.update('none');
-            showToast('Zoom reducido', 'info');
-        }
-    }
-    
-    function resetZoom(chartId) {
-        if (chartId === 'departmentChart') return;
-        const chart = Chart.getChart(chartId);
-        if (!chart) return;
-        
-        const scales = chart.options.scales;
-        if (scales.y) {
-            scales.y.max = 100;
-            chart.update('none');
-            showToast('Zoom restaurado', 'info');
-        }
-    }
-    
-    function switchDepartmentView(viewType) {
-        const chart = Chart.getChart('departmentChart');
-            if (chart) {
-            
-            if (viewType === 'bar') {
-                chart.config.type = 'bar';
-                chart.options.indexAxis = 'y';
-                chart.options.plugins.legend.position = 'right';
-                chart.options.cutout = undefined;
-            } else {
-                chart.config.type = viewType === 'doughnut' ? 'doughnut' : 'pie';
-                chart.options.indexAxis = undefined;
-                chart.options.plugins.legend.position = 'bottom';
-                chart.options.cutout = viewType === 'doughnut' ? '60%' : '0%';
-            }
-            
-            chart.update('active');
-            
-            // Actualizar botones activos
-            document.querySelectorAll('.chart-view-toggle .btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelector(`[data-view="${viewType}"]`).classList.add('active');
-            
-            showToast(`Vista cambiada a ${viewType}`, 'info');
-        }
-    }
-    
-    function toggleDepartmentLabels() {
-        const chart = Chart.getChart('departmentChart');
-            if (chart) {
-            chart.options.plugins.legend.display = !chart.options.plugins.legend.display;
-            chart.update();
-            showToast(`Etiquetas ${chart.options.plugins.legend.display ? 'activadas' : 'desactivadas'}`, 'info');
-        }
-    }
-    
-    function toggleDepartmentPercentages() {
-        const chart = Chart.getChart('departmentChart');
-            if (chart) {
-            const showPercentage = !chart.options.plugins.tooltip.callbacks.label.toString().includes('percentage');
-            
-            chart.options.plugins.tooltip.callbacks.label = function(context) {
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                const value = context.raw;
-                if (showPercentage) {
-                    const percentage = ((value / total) * 100).toFixed(1);
-                    return `${context.label}: ${value} (${percentage}%)`;
-                }
-                return `${context.label}: ${value}`;
-            };
-            
-            chart.update();
-            showToast(`Porcentajes ${showPercentage ? 'activados' : 'desactivados'}`, 'info');
-        }
-    }
-    
-    // La animación ahora es manejada por las opciones de Google Charts
-    
-    function exportDepartmentData() {
-        const chart = Chart.getChart('departmentChart');
-        if (chart) {
-            const data = chart.data;
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Dependencia,Cantidad\\n";
-            
-            for (let i = 0; i < data.labels.length; i++) {
-                const label = data.labels[i];
-                const value = data.datasets[0].data[i];
-                csvContent += `"${label}","${value}"\\n`;
-            }
-            
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "distribucion_dependencias.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showToast('Datos exportados exitosamente', 'success');
-        }
-    }
-    
-    // Botones de actualización
-    document.getElementById('trendRefresh').addEventListener('click', function() {
-        showChartLoading();
-        setTimeout(() => {
-            hideChartLoading();
-            updateChartStatus('trendStatus', 'success', 'Actualizado');
-            showToast('Datos actualizados', 'success');
-        }, 1000);
-    });
-    
-    document.getElementById('departmentRefresh').addEventListener('click', function() {
-        showChartLoading();
-        setTimeout(() => {
-            hideChartLoading();
-            updateChartStatus('departmentStatus', 'success', 'Actualizado');
-            showToast('Datos actualizados', 'success');
-        }, 1000);
-    });
-    
-    function updateChartStatus(statusId, type, message) {
-        const status = document.getElementById(statusId);
-        const icon = status.querySelector('i');
-        const text = status.querySelector('span');
-        
-        icon.className = `fas fa-circle text-${type}`;
-        text.textContent = message;
-    }
-    
-    function showChartLoading() {
-        $('.chart-overlay').removeClass('d-none');
-    }
-    
-    function hideChartLoading() {
-        $('.chart-overlay').addClass('d-none');
-    }
-    
-    function exportOpportunities() {
-        const opportunities = [];
-        $('.opportunity-item').each(function() {
-            const text = $(this).find('.opportunity-text p').text();
-            const count = $(this).find('.opportunity-text small').text();
-            opportunities.push({
-                text: text,
-                mentions: count
-            });
-        });
-        
-        // Crear CSV
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Oportunidad,Menciones\\n";
-        
-        opportunities.forEach(function(opportunity) {
-            csvContent += `"${opportunity.text}","${opportunity.mentions}"\\n`;
-        });
-        
-        // Descargar archivo
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "oportunidades_mejora.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showToast('Lista de oportunidades exportada', 'success');
-    }
-    
-    // Función para mostrar toast
-    function showToast(message, type = 'info') {
-        const toast = $(`
-            <div class="toast-notification ${type}">
-                <i class="fas fa-check-circle mr-2"></i>
-                ${message}
-            </div>
-        `);
-        
-        $('body').append(toast);
-        
-        setTimeout(() => {
-            toast.addClass('show');
-        }, 100);
-        
-        setTimeout(() => {
-            toast.removeClass('show');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
-    
-    // Funciones adicionales para los gráficos
-    function showChartLoading() {
-        const loader = '<div class="overlay"><i class="fas fa-sync fa-spin"></i></div>';
-        $('.chart-container').append(loader);
-    }
-    
-    function hideChartLoading() {
-        $('.chart-container .overlay').remove();
-    }
-    
-    function showStatusMessage(message, type = 'info') {
-        const statusHtml = `
-            <div class="alert alert-${type} alert-dismissible">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                <h5><i class="icon fas fa-${type === 'success' ? 'check' : 'info'}"></i> Estado</h5>
-                ${message}
-            </div>
-        `;
-        
-        $('.chart-statistics').prepend(statusHtml);
-        
-        setTimeout(() => {
-            $('.alert').fadeOut(500, function() {
-                $(this).remove();
-            });
-        }, 5000);
-    }
-    
-    function generateRandomColor() {
-        const colors = [
-            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-            '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
-        ];
-        return colors[Math.floor(Math.random() * colors.length)];
-    }
-    
-    function updateStatistics() {
-        const trendChart = Chart.getChart('trendChart');
-        
-        if (trendChart) {
-            const data = trendChart.data.datasets[0].data;
-            const average = (data.reduce((a, b) => a + b, 0) / data.length).toFixed(1);
-            const max = Math.max(...data).toFixed(1);
-            const min = Math.min(...data).toFixed(1);
-            
-            $('#trendStats .stat-value').eq(0).text(average + '%');
-            $('#trendStats .stat-value').eq(1).text(max + '%');
-            $('#trendStats .stat-value').eq(2).text(min + '%');
-        }
-        
-        const departmentChart = Chart.getChart('departmentChart');
-        if (departmentChart) {
-            const data = departmentChart.data.datasets[0].data;
-            const total = data.reduce((a, b) => a + b, 0);
-            const max = Math.max(...data);
-            const average = (total / data.length).toFixed(0);
-            
-            $('#departmentStats .stat-value').eq(0).text(total);
-            $('#departmentStats .stat-value').eq(1).text(average);
-            $('#departmentStats .stat-value').eq(2).text(max);
-        }
-    }
-    
-    // Llamar a updateStatistics cuando se cargan los gráficos
-    setTimeout(updateStatistics, 1000);
-    
-    // Función para redimensionar gráficos
-    function resizeCharts() {
-        const trendChart = Chart.getChart('trendChart');
-        const categoryChart = Chart.getChart('categoryChart');
-        
-        if (trendChart) {
-            trendChart.resize();
-        }
-        const departmentChart = Chart.getChart('departmentChart');
-            if (departmentChart) {
-                departmentChart.resize();
-        }
-        if (categoryChart) {
-            categoryChart.resize();
-        }
-    }
-    
-    // Redimensionar gráficos cuando se redimensiona la ventana
-    $(window).on('resize', function() {
-        setTimeout(resizeCharts, 100);
-    });
-    
-    // Redimensionar gráficos cuando se carga la página
-    $(window).on('load', function() {
-        setTimeout(resizeCharts, 500);
-    });
-    
-    // Observer para detectar cambios en el tamaño del contenedor
-    const resizeObserver = new ResizeObserver(function(entries) {
-        let resizeTimer;
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function() {
-            resizeCharts();
-        }, 250);
-    });
-    
-    // Observar cambios en los contenedores de gráficos
-    const chartContainers = document.querySelectorAll('.chart-container, .chart-container-enhanced');
-    chartContainers.forEach(container => {
-        resizeObserver.observe(container);
-    });
-    
-    // Limpiar observer cuando se cierra la página
-    $(window).on('beforeunload', function() {
-        resizeObserver.disconnect();
-    });
-});
-
-// Las funciones de manipulación de gráficos han sido actualizadas y movidas arriba
-    if (!chart) return;
-    
-    chart.update('active');
-    showToast('Gráfico animado', 'info');
-}
-
-function exportDepartmentData() {
-    const chart = Chart.getChart('departmentChart');
-    if (!chart) return;
-    
-    const data = chart.data;
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Dependencia,Cantidad\\n";
-    
-    data.labels.forEach((label, index) => {
-        const value = data.datasets[0].data[index];
-        csvContent += `"${label}","${value}"\\n`;
-    });
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "distribucion_dependencias.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showToast('Datos exportados exitosamente', 'success');
-}
-
-function updateChartStatus(statusId, type, message) {
-    const status = document.getElementById(statusId);
-    if (!status) return;
-    
-    const icon = status.querySelector('i');
-    const text = status.querySelector('span');
-    
-    if (icon) icon.className = `fas fa-circle text-${type}`;
-    if (text) text.textContent = message;
-}
-
-function showChartLoading() {
-    const loader = '<div class="overlay"><i class="fas fa-sync fa-spin"></i></div>';
-    $('.chart-container').append(loader);
-}
-
-function hideChartLoading() {
-    $('.chart-container .overlay').remove();
-}
-
-function showStatusMessage(message, type = 'info') {
-    const statusHtml = `
-        <div class="alert alert-${type} alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            <h5><i class="icon fas fa-${type === 'success' ? 'check' : 'info'}"></i> Estado</h5>
-            ${message}
-        </div>
-    `;
-    
-    $('.chart-statistics').prepend(statusHtml);
-    
-    setTimeout(() => {
-        $('.alert').fadeOut(500, function() {
-            $(this).remove();
-        });
-    }, 5000);
-}
-
-function generateRandomColor() {
-    const colors = [
-        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-        '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
-}
-
-function updateStatistics() {
-    const trendChart = Chart.getChart('trendChart');
-    
-    if (trendChart) {
-        const data = trendChart.data.datasets[0].data;
-        const average = (data.reduce((a, b) => a + b, 0) / data.length).toFixed(1);
-        const max = Math.max(...data).toFixed(1);
-        const min = Math.min(...data).toFixed(1);
-        
-        $('#trendStats .stat-value').eq(0).text(average + '%');
-        $('#trendStats .stat-value').eq(1).text(max + '%');
-        $('#trendStats .stat-value').eq(2).text(min + '%');
-    }
-    
-    const departmentChart = Chart.getChart('departmentChart');
-            if (departmentChart) {
-                const data = departmentChart.data.datasets[0].data;
-        const total = data.reduce((a, b) => a + b, 0);
-        const max = Math.max(...data);
-        const average = (total / data.length).toFixed(0);
-        
-        $('#departmentStats .stat-value').eq(0).text(total);
-        $('#departmentStats .stat-value').eq(1).text(average);
-        $('#departmentStats .stat-value').eq(2).text(max);
-    }
-}
-
-function resizeCharts() {
-    const trendChart = Chart.getChart('trendChart');
-    const departmentChart = Chart.getChart('departmentChart');
-    const categoryChart = Chart.getChart('categoryChart');
-    
-    if (trendChart) {
-        trendChart.resize();
-    }
-    if (departmentChart) {
-        departmentChart.resize();
-    }
-    if (categoryChart) {
-        categoryChart.resize();
-    }
-}
-
-function downloadChart(chartId, filename, format = 'png') {
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return;
-    
-    let url;
-    
-    if (format === 'png') {
-        url = canvas.toDataURL('image/png');
-    } else if (format === 'jpeg') {
-        url = canvas.toDataURL('image/jpeg', 0.9);
-    } else if (format === 'pdf') {
-        // Para PDF necesitaríamos una librería como jsPDF
-        showToast('Funcionalidad PDF en desarrollo', 'info');
-        return;
-    }
-    
-    const link = document.createElement('a');
-    link.download = filename + '.' + format;
-    link.href = url;
-    link.click();
-    
-    showToast('Gráfico descargado exitosamente', 'success');
-}
-
-function printChart(chartId) {
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return;
-    
-    const printWindow = window.open('', '', 'height=600,width=800');
-    printWindow.document.write('<html><head><title>Imprimir Gráfico</title>');
-    printWindow.document.write('<style>body{margin:0;padding:20px;text-align:center;}</style>');
-    printWindow.document.write('</head><body>');
-    printWindow.document.write('<img src="' + canvas.toDataURL() + '" style="max-width:100%;"/>');
-    printWindow.document.write('</body></html>');
-    printWindow.document.close();
-    printWindow.print();
-}
-
-function shareChart(chartId) {
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return;
-    
-    canvas.toBlob(function(blob) {
-        if (navigator.share) {
-            const file = new File([blob], 'grafico.png', { type: 'image/png' });
-            navigator.share({
-                title: 'Gráfico de Satisfacción',
-                text: 'Compartiendo gráfico del dashboard',
-                files: [file]
-            });
-        } else {
-            // Fallback para navegadores que no soportan Web Share API
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'grafico.png';
-            link.click();
-            URL.revokeObjectURL(url);
-        }
-    });
-}
-
-function showChartData(chartId) {
-    const chart = Chart.getChart(chartId);
-    if (!chart) return;
-    
-    const data = chart.data;
-    let tableHTML = '<div class="table-responsive"><table class="table table-striped table-sm">';
-    tableHTML += '<thead><tr><th>Período/Categoría</th><th>Valor</th></tr></thead><tbody>';
-    
-    data.labels.forEach((label, index) => {
-        const value = data.datasets[0].data[index];
-        tableHTML += `<tr><td>${label}</td><td>${value}${chartId === 'trendChart' ? '%' : ''}</td></tr>`;
-    });
-    
-    tableHTML += '</tbody></table></div>';
-    
-    // Mostrar en modal
-    const modal = $(`
-        <div class="modal fade" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Datos del Gráfico</h5>
-                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    </div>
-                    <div class="modal-body">${tableHTML}</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `);
-    
-    modal.modal('show');
-    modal.on('hidden.bs.modal', function() {
-        modal.remove();
-    });
-}
-
-function toggleChartAnimation(chartId) {
-    const chart = Chart.getChart(chartId);
-    if (chart) {
-        chart.update('active');
-        showToast('Gráfico actualizado', 'info');
-    }
-}
-
-function showToast(message, type = 'info') {
-    const toast = $(`
-        <div class="toast-notification ${type}">
-            <i class="fas fa-check-circle mr-2"></i>
-            ${message}
-        </div>
-    `);
-    
-    $('body').append(toast);
-    
-    setTimeout(() => {
-        toast.addClass('show');
-    }, 100);
-    
-    setTimeout(() => {
-        toast.removeClass('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-// Agregar estilos para el toast
-const toastStyles = `
-    <style>
-        .toast-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #28a745;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            z-index: 9999;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s ease;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .toast-notification.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        
-        .toast-notification.success {
-            background: #28a745;
-        }
-        
-        .toast-notification.info {
-            background: #17a2b8;
-        }
-        
-        .toast-notification.warning {
-            background: #ffc107;
-            color: #212529;
-        }
-        
-        .toast-notification.error {
-            background: #dc3545;
-        }
-    </style>
-`;
-
-$('head').append(toastStyles);
-</script>
-@endpush

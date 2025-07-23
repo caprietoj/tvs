@@ -189,7 +189,6 @@
                         <table class="table table-striped table-bordered" id="resultsTable">
                             <thead>
                                 <tr>
-                                    <th>Fecha</th>
                                     <th>Dependencia</th>
                                     <th>Tiempos Respuesta</th>
                                     <th>Efectividad</th>
@@ -201,9 +200,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($results as $result)
+                                @foreach($results->take(10) as $result)
                                     <tr>
-                                        <td>{{ $result->response_timestamp->format('d/m/Y H:i') }}</td>
                                         <td>{{ $result->dependencia }}</td>
                                         <td>
                                             <span class="badge badge-{{ $result->tiempos_respuesta == 'Excelente' ? 'success' : ($result->tiempos_respuesta == 'Buena' ? 'primary' : 'warning') }}">
@@ -245,6 +243,46 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <!-- Paginación manual -->
+                    <div class="card-footer clearfix">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="dataTables_info">
+                                    @php
+                                        $currentPage = request('page', 1);
+                                        $perPage = 10;
+                                        $total = $allResults->count();
+                                        $start = (($currentPage - 1) * $perPage) + 1;
+                                        $end = min($currentPage * $perPage, $total);
+                                    @endphp
+                                    Mostrando {{ $start }} a {{ $end }} de {{ $total }} registros
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <ul class="pagination pagination-sm m-0 float-right">
+                                    @php
+                                        $totalPages = ceil($allResults->count() / 10);
+                                        $currentPage = request('page', 1);
+                                    @endphp
+                                    
+                                    <li class="page-item {{ $currentPage == 1 ? 'disabled' : '' }}">
+                                        <a class="page-link" href="?page={{ $currentPage - 1 }}">«</a>
+                                    </li>
+                                    
+                                    @for($i = 1; $i <= $totalPages; $i++)
+                                        <li class="page-item {{ $currentPage == $i ? 'active' : '' }}">
+                                            <a class="page-link" href="?page={{ $i }}">{{ $i }}</a>
+                                        </li>
+                                    @endfor
+                                    
+                                    <li class="page-item {{ $currentPage == $totalPages ? 'disabled' : '' }}">
+                                        <a class="page-link" href="?page={{ $currentPage + 1 }}">»</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -296,15 +334,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 $(document).ready(function() {
-    // Inicializar DataTable
-    $('#resultsTable').DataTable({
-        "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
-        },
-        "order": [[ 0, "desc" ]],
-        "pageLength": 25
-    });
-
     // Crear gráficos iniciales
     createCharts();
 

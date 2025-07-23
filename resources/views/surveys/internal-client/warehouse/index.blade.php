@@ -1,742 +1,1041 @@
 @extends('adminlte::page')
 
-@section('title', 'Dashboard - Encuesta Cliente Interno Almacén')
+@push('css')
+<style>
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.small-box {
+    border-radius: 8px;
+    transition: transform 0.2s;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.small-box:hover {
+    transform: translateY(-1px);
+}
+
+.progress {
+    height: 6px;
+    border-radius: 3px;
+    margin-top: 8px;
+}
+
+.progress-bar {
+    border-radius: 3px;
+}
+
+.card {
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.btn {
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.highlight-item, .improvement-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.highlight-icon, .improvement-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    background: rgba(255,255,255,0.1);
+}
+
+.highlight-content, .improvement-content {
+    flex: 1;
+}
+
+.highlight-content h5, .improvement-content h5 {
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+}
+
+.progress-sm {
+    height: 8px;
+    margin: 8px 0;
+}
+
+.alert-sm {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 0.875rem;
+}
+
+.badge-lg {
+    padding: 8px 12px;
+    font-size: 0.875rem;
+}
+
+/* Estilos para paginadores */
+.highlight-item, .improvement-item {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.pagination-controls {
+    background-color: rgba(0,0,0,0.05);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-top: 15px;
+}
+
+.btn-outline-success:disabled,
+.btn-outline-warning:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-outline-success:hover:not(:disabled),
+.btn-outline-warning:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 768px) {
+    .small-box {
+        margin-bottom: 15px;
+    }
+    
+    .pagination-controls .d-flex {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .pagination-controls .btn {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+    }
+}
+</style>
+@endpush
+
+@push('js')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Esperar a que Chart.js esté completamente cargado
+window.addEventListener('load', function() {
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js no está cargado');
+        return;
+    }
+
+    // Gráfico de tendencia
+    const trendData = {!! json_encode($dashboardData['trend_data'] ?? ['labels' => [], 'values' => []]) !!};
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    
+    window.trendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: trendData.labels,
+            datasets: [{
+                label: 'Satisfacción General (%)',
+                data: trendData.values,
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.1,
+                pointBackgroundColor: '#007bff',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: '#0056b3',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        padding: 10,
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            }
+        }
+    });
+    
+    // Calcular y mostrar estadísticas del gráfico de tendencia
+    if (trendData.values && trendData.values.length > 0) {
+        const values = trendData.values.filter(val => val !== null && val !== undefined);
+        if (values.length > 0) {
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            const max = Math.max(...values);
+            const min = Math.min(...values);
+            
+            document.getElementById('trendAvg').textContent = `Promedio: ${avg.toFixed(1)}%`;
+            document.getElementById('trendMax').textContent = `Máximo: ${max.toFixed(1)}%`;
+            document.getElementById('trendMin').textContent = `Mínimo: ${min.toFixed(1)}%`;
+        }
+    }
+    
+    // Gráfico de categorías
+    const categoryData = {!! json_encode($chartData ?? []) !!};
+    const categoryLabels = categoryData.map(item => item.name);
+    const categoryValues = categoryData.map(item => {
+        // Usar el promedio ya calculado y convertir a porcentaje
+        const avg = (item.average || 0) * 25;
+        return avg.toFixed(1);
+    });
+    
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    window.categoryChart = new Chart(categoryCtx, {
+        type: 'bar',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                label: 'Satisfacción (%)',
+                data: categoryValues,
+                backgroundColor: [
+                    '#007bff', '#28a745', '#ffc107', '#dc3545',
+                    '#6f42c1', '#17a2b8', '#fd7e14', '#20c997'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Gráfico de dependencias
+    const departmentData = {!! json_encode($dependenciesData ?? []) !!};
+    
+    // Verificar si hay datos
+    if (Object.keys(departmentData).length === 0) {
+        console.log('No hay datos de dependencias disponibles');
+        // Ocultar el canvas y mostrar mensaje
+        const depCanvas = document.getElementById('departmentChart');
+        const depContainer = depCanvas.parentElement;
+        depContainer.innerHTML = '<div class="text-center text-muted"><i class="fas fa-info-circle fa-2x mb-3"></i><p>No hay datos de dependencias disponibles</p></div>';
+    } else {
+        // Extraer solo los conteos (no la satisfacción)
+        const depLabels = Object.keys(departmentData);
+        const depValues = Object.values(departmentData).map(item => {
+            // Si el valor es un objeto con 'count', usar eso; si no, usar el valor directamente
+            return typeof item === 'object' && item.count ? item.count : (typeof item === 'number' ? item : 0);
+        });
+        
+        console.log('Datos de dependencias:', { labels: depLabels, values: depValues });
+    
+        const depCtx = document.getElementById('departmentChart').getContext('2d');
+        window.departmentChart = new Chart(depCtx, {
+            type: 'doughnut',
+            data: {
+                labels: depLabels,
+                datasets: [{
+                    data: depValues,
+                    backgroundColor: [
+                        '#007bff', '#28a745', '#ffc107', '#dc3545',
+                        '#6f42c1', '#17a2b8', '#fd7e14', '#20c997',
+                        '#6c757d', '#343a40'
+                    ],
+                    borderWidth: 1,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '50%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 10
+                            },
+                            padding: 8,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        cornerRadius: 4,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const value = context.raw;
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${context.label}: ${value} respuestas (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 300
+                }
+            }
+        });
+    }
+});
+
+function toggleChartAnimation(chartId) {
+    const chart = Chart.getChart(chartId);
+    if (chart) {
+        chart.update('active');
+    }
+}
+
+// Variables para paginación
+let highlightsPage = 0;
+let issuesPage = 0;
+const itemsPerPage = 3;
+
+// Función para navegar entre aspectos destacados
+function navigateHighlights(direction) {
+    if (!window.highlightsData) return;
+    
+    const totalItems = window.highlightsData.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    highlightsPage += direction;
+    
+    // Verificar límites
+    if (highlightsPage < 0) highlightsPage = 0;
+    if (highlightsPage >= totalPages) highlightsPage = totalPages - 1;
+    
+    updateHighlightsDisplay();
+}
+
+// Función para navegar entre áreas de mejora
+function navigateIssues(direction) {
+    if (!window.issuesData) return;
+    
+    const totalItems = window.issuesData.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    issuesPage += direction;
+    
+    // Verificar límites
+    if (issuesPage < 0) issuesPage = 0;
+    if (issuesPage >= totalPages) issuesPage = totalPages - 1;
+    
+    updateIssuesDisplay();
+}
+
+// Actualizar la visualización de aspectos destacados
+function updateHighlightsDisplay() {
+    if (!window.highlightsData) return;
+    
+    const container = document.getElementById('highlights-container');
+    const startIndex = highlightsPage * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, window.highlightsData.length);
+    const pageData = window.highlightsData.slice(startIndex, endIndex);
+    
+    // Limpiar contenedor
+    container.innerHTML = '';
+    
+    // Agregar elementos
+    pageData.forEach((highlight, index) => {
+        const globalIndex = startIndex + index;
+        const itemHTML = `
+            <div class="highlight-item" data-highlight-index="${globalIndex}">
+                <div class="highlight-icon">
+                    <i class="fas fa-star text-warning"></i>
+                </div>
+                <div class="highlight-content">
+                    <h5>Aspecto Destacado ${globalIndex + 1}</h5>
+                    <p class="text-muted mb-1">"${highlight.text}"</p>
+                    <small class="text-success">
+                        <i class="fas fa-users mr-1"></i>
+                        Mencionado ${highlight.count} vez${highlight.count > 1 ? 'es' : ''}
+                    </small>
+                </div>
+            </div>
+            ${index < pageData.length - 1 ? '<hr class="my-2">' : ''}
+        `;
+        container.innerHTML += itemHTML;
+    });
+    
+    // Actualizar paginador
+    const totalPages = Math.ceil(window.highlightsData.length / itemsPerPage);
+    document.getElementById('highlights-current').textContent = `${startIndex + 1}-${endIndex}`;
+    document.getElementById('prev-highlights').disabled = highlightsPage === 0;
+    document.getElementById('next-highlights').disabled = highlightsPage === totalPages - 1;
+}
+
+// Actualizar la visualización de áreas de mejora
+function updateIssuesDisplay() {
+    if (!window.issuesData) return;
+    
+    const container = document.getElementById('issues-container');
+    const startIndex = issuesPage * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, window.issuesData.length);
+    const pageData = window.issuesData.slice(startIndex, endIndex);
+    
+    // Limpiar contenedor
+    container.innerHTML = '';
+    
+    // Agregar elementos
+    pageData.forEach((issue, index) => {
+        const globalIndex = startIndex + index;
+        const itemHTML = `
+            <div class="improvement-item" data-issue-index="${globalIndex}">
+                <div class="improvement-icon">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                </div>
+                <div class="improvement-content">
+                    <h5>Área de Mejora ${globalIndex + 1}</h5>
+                    <p class="text-muted mb-1">"${issue.text}"</p>
+                    <small class="text-warning">
+                        <i class="fas fa-users mr-1"></i>
+                        Mencionado ${issue.count} vez${issue.count > 1 ? 'es' : ''}
+                    </small>
+                </div>
+            </div>
+            ${index < pageData.length - 1 ? '<hr class="my-2">' : ''}
+        `;
+        container.innerHTML += itemHTML;
+    });
+    
+    // Actualizar paginador
+    const totalPages = Math.ceil(window.issuesData.length / itemsPerPage);
+    document.getElementById('issues-current').textContent = `${startIndex + 1}-${endIndex}`;
+    document.getElementById('prev-issues').disabled = issuesPage === 0;
+    document.getElementById('next-issues').disabled = issuesPage === totalPages - 1;
+}
+</script>
+@endpush
+
+@section('title', 'Encuesta Almacén')
 
 @section('content_header')
-    <div class="row">
-        <div class="col-sm-6">
-            <h1>
-                <i class="fas fa-warehouse text-primary"></i>
-                Dashboard - Encuesta Cliente Interno Almacén
-            </h1>
-        </div>
-        <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-                <li class="breadcrumb-item"><a href="{{ url('/') }}">Inicio</a></li>
-                <li class="breadcrumb-item"><a href="#">Encuestas</a></li>
-                <li class="breadcrumb-item active">Almacén</li>
-            </ol>
+    <div class="d-flex justify-content-between align-items-center">
+        <h1><i class="fas fa-warehouse mr-2"></i>Dashboard de Almacén</h1>
+        <div>
+            <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="btn btn-success">
+                <i class="fas fa-upload mr-1"></i>Subir Encuesta
+            </a>
+            @if($selectedPeriod ?? null)
+                <a href="{{ route('surveys.internal-client.warehouse.export', ['period' => $selectedPeriod]) }}" class="btn btn-info">
+                    <i class="fas fa-download mr-1"></i>Exportar
+                </a>
+            @endif
         </div>
     </div>
 @stop
 
 @section('content')
 <div class="container-fluid">
-    @if(!$hasData)
-        <!-- Mensaje cuando no hay datos -->
-        <div class="alert alert-warning alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            <h5><i class="icon fas fa-exclamation-triangle"></i> Sin datos</h5>
-            {{ $message }}
+    <!-- Alert de información -->
+    <div class="alert alert-info alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        <h5><i class="icon fas fa-info"></i> Información del Dashboard</h5>
+        Este dashboard presenta el análisis estadístico de la satisfacción del personal interno con los servicios del área de Almacén.
+        <br><strong>Último período evaluado:</strong> {{ $selectedPeriod ?? 'Sin datos' }}
+        <br><strong>Sistema de calificación:</strong> 
+        <span class="badge badge-danger">25% = Deficiente</span>
+        <span class="badge badge-warning">50% = Regular</span>
+        <span class="badge badge-info">75% = Bueno</span>
+        <span class="badge badge-success">100% = Excelente</span>
+        @if(isset($latestStats['satisfaction_average']) && $latestStats['satisfaction_average'] <= 50)
+            <br><div class="mt-2">
+                <i class="fas fa-exclamation-triangle text-warning"></i>
+                <strong>Nota:</strong> El nivel actual de satisfacción ({{ number_format($latestStats['satisfaction_average'], 1) }}%) indica áreas importantes de mejora.
+            </div>
+        @endif
+    </div>
+
+    <!-- KPIs Principales -->
+    <div class="row">
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>{{ $totalResponses ?? 0 }}/100</h3>
+                    <p>Respuestas vs Esperadas</p>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: {{ $totalResponses > 0 ? (($totalResponses / 100) * 100) : 0 }}%"></div>
+                    </div>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <div class="small-box-footer">
+                    &nbsp;
+                </div>
+            </div>
         </div>
         
-        <div class="row">
-            <div class="col-12">
-                <div class="card card-primary">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-upload"></i>
-                            Subir Primera Encuesta
-                        </h3>
-                    </div>
-                    <div class="card-body text-center">
-                        <p class="lead">Para comenzar a visualizar los análisis estadísticos, sube el primer archivo de resultados de la encuesta.</p>
-                        <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="btn btn-primary btn-md">
-                            <i class="fas fa-upload mr-2"></i>
-                            Subir Archivo Excel
-                        </a>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>
+                        @if(($totalResponses ?? 0) > 0 && isset($latestStats['satisfaction_average']))
+                            {{ number_format($latestStats['satisfaction_average'], 1) }}<sup style="font-size: 20px">%</sup>
+                        @else
+                            0<sup style="font-size: 20px">%</sup>
+                        @endif
+                    </h3>
+                    <p>Satisfacción General</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="small-box-footer">
+                    &nbsp;
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h3>{{ count($dependenciesData ?? []) }}</h3>
+                    <p>Dependencias Evaluadas</p>
+                    @if(!empty($dependenciesData))
+                        @php
+                            // Buscar dependencias con mejor y peor satisfacción
+                            $bestDep = null;
+                            $worstDep = null;
+                            $bestSatisfaction = -1;
+                            $worstSatisfaction = 999;
+                            
+                            foreach($dependenciesData as $depName => $data) {
+                                $satisfaction = is_array($data) && isset($data['satisfaction']) ? $data['satisfaction'] : 0;
+                                
+                                if ($satisfaction > $bestSatisfaction) {
+                                    $bestSatisfaction = $satisfaction;
+                                    $bestDep = $depName;
+                                }
+                                
+                                if ($satisfaction < $worstSatisfaction) {
+                                    $worstSatisfaction = $satisfaction;
+                                    $worstDep = $depName;
+                                }
+                            }
+                        @endphp
+                        @if($bestDep && $worstDep)
+                            <small class="text-white">
+                                <strong>Mejor:</strong> {{ $bestDep }}<br>
+                                <strong>Menor:</strong> {{ $worstDep }}
+                            </small>
+                        @endif
+                    @endif
+                </div>
+                <div class="icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="small-box-footer">
+                    &nbsp;
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>{{ $selectedPeriod ?? 'N/A' }}</h3>
+                    <p>Último Período</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="small-box-footer">
+                    Subir nueva encuesta <i class="fas fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Análisis por Categorías -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        Análisis de Satisfacción por Categoría - {{ $selectedPeriod ?? 'Sin período' }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach($chartData ?? [] as $category)
+                        @php
+                            // Usar el promedio ya calculado en el controlador
+                            $average = $category['average'] ?? 0;
+                            $percentage = round($average * 25, 1); // Convertir de escala 1-4 a porcentaje
+                            $colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary', 'dark'];
+                            $icons = ['fas fa-boxes', 'fas fa-truck', 'fas fa-clipboard-list', 'fas fa-clock', 'fas fa-users', 'fas fa-tools', 'fas fa-chart-bar'];
+                            $colorIndex = $loop->index % count($colors);
+                        @endphp
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-{{ $colors[$colorIndex] }}">
+                                    <i class="{{ $icons[$colorIndex] ?? 'fas fa-chart-bar' }}"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">{{ $category['name'] }}</span>
+                                    <span class="info-box-number">{{ $percentage }}%</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-{{ $colors[$colorIndex] }}" 
+                                             style="width: {{ $percentage }}%"></div>
+                                    </div>
+                                    <span class="progress-description">
+                                        Promedio: {{ number_format($average, 1) }}/4.0 ({{ array_sum($category['data'] ?? []) }} evaluaciones)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                        
+                        @if(empty($chartData))
+                        <div class="col-12">
+                            <div class="alert alert-warning text-center">
+                                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                                <h4>No hay datos disponibles</h4>
+                                <p>No se encontraron datos para mostrar. Por favor, cargue algunas encuestas primero.</p>
+                                <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="btn btn-warning">
+                                    <i class="fas fa-upload mr-1"></i>Cargar Primera Encuesta
+                                </a>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
-    @else
-        <!-- Dashboard con datos -->
-        <div class="alert alert-info alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            <h5><i class="icon fas fa-info"></i> Información</h5>
-            Este dashboard presenta el análisis estadístico de la satisfacción del personal interno con los servicios del área de Almacén.
-            <strong>Último período evaluado:</strong> {{ $latestPeriod }}
-        </div>
+    </div>
 
-        <!-- KPIs Principales -->
-        <div class="row">
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-info">
-                    <div class="inner">
-                        <h3>{{ $latestStats['total_responses'] }}/{{ $latestStats['expected_responses'] ?? 50 }}</h3>
-                        <p>Respuestas vs Esperadas</p>
-                        <div class="progress">
-                            <div class="progress-bar" style="width: {{ ($latestStats['total_responses'] / ($latestStats['expected_responses'] ?? 50)) * 100 }}%"></div>
+    <!-- Gráficos de Análisis -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        Evolución de Satisfacción (Últimos 6 meses)
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool text-white" data-card-widget="collapse" title="Colapsar">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="trendChart" width="600" height="280"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="chart-info">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Datos de los últimos 6 períodos
+                            </small>
+                            <div class="chart-stats mt-1">
+                                <span class="badge badge-primary" id="trendAvg">Promedio: --</span>
+                                <span class="badge badge-success" id="trendMax">Máximo: --</span>
+                                <span class="badge badge-warning" id="trendMin">Mínimo: --</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="icon">
-                        <i class="fas fa-chart-pie"></i>
-                    </div>
-                    <a href="#" class="small-box-footer">
-                        Ver detalles <i class="fas fa-arrow-circle-right"></i>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-success">
-                    <div class="inner">
-                        <h3>{{ $latestStats['satisfaction_average'] }}<sup style="font-size: 20px">%</sup></h3>
-                        <p>Satisfacción General</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <a href="#" class="small-box-footer">
-                        Ver análisis <i class="fas fa-arrow-circle-right"></i>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-warning">
-                    <div class="inner">
-                        <h3>{{ count($latestStats['by_dependencia']) }}</h3>
-                        <p>Dependencias Evaluadas</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-building"></i>
-                    </div>
-                    <a href="#" class="small-box-footer">
-                        Ver distribución <i class="fas fa-arrow-circle-right"></i>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-danger">
-                    <div class="inner">
-                        <h3>{{ $latestPeriod }}</h3>
-                        <p>Último Período</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="small-box-footer">
-                        Subir nueva encuesta <i class="fas fa-arrow-circle-right"></i>
-                    </a>
                 </div>
             </div>
         </div>
-
-        <!-- Análisis por Categorías -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-chart-bar"></i>
-                            Análisis de Satisfacción por Categoría - {{ $latestPeriod }}
-                        </h3>
+        
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <div class="card-header bg-gradient-info text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-chart-bar mr-2"></i>
+                        Comparación por Categorías (Promedio General)
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool text-white" data-card-widget="collapse" title="Colapsar">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button type="button" class="btn btn-tool text-white" id="categoryFullscreen" title="Pantalla completa">
+                            <i class="fas fa-expand"></i>
+                        </button>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            @foreach([
-                                'experiencia' => ['label' => 'Experiencia General', 'icon' => 'fas fa-star', 'color' => 'primary'],
-                                'tiempos' => ['label' => 'Tiempos de Atención', 'icon' => 'fas fa-clock', 'color' => 'success'],
-                                'oportunidad' => ['label' => 'Resolución Oportuna', 'icon' => 'fas fa-check-circle', 'color' => 'info'],
-                                'disponibilidad' => ['label' => 'Disponibilidad Materiales', 'icon' => 'fas fa-boxes', 'color' => 'warning'],
-                                'servicio_persona' => ['label' => 'Atención Personal', 'icon' => 'fas fa-user-tie', 'color' => 'secondary'],
-                                'calidad_materiales' => ['label' => 'Calidad Materiales', 'icon' => 'fas fa-quality', 'color' => 'dark'],
-                                'cotizaciones' => ['label' => 'Opciones Cotizaciones', 'icon' => 'fas fa-file-invoice', 'color' => 'purple'],
-                                'proveedores' => ['label' => 'Cumplimiento Proveedores', 'icon' => 'fas fa-handshake', 'color' => 'indigo']
-                            ] as $key => $config)
-                            @php
-                                $stats = $latestStats['by_question'][$key];
-                                $percentage = isset($stats['si']) ? $stats['si'] : 
-                                    ($stats['excelente'] * 1 + $stats['bueno'] * 0.75 + $stats['regular'] * 0.5 + $stats['deficiente'] * 0.25);
-                            @endphp
-                            <div class="col-md-6 col-lg-3 mb-3">
-                                <div class="info-box">
-                                    <span class="info-box-icon bg-{{ $config['color'] }}">
-                                        <i class="{{ $config['icon'] }}"></i>
-                                    </span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">{{ $config['label'] }}</span>
-                                        <span class="info-box-number">{{ round($percentage, 1) }}%</span>
-                                        <div class="progress">
-                                            <div class="progress-bar bg-{{ $config['color'] }}" 
-                                                 style="width: {{ $percentage }}%"></div>
-                                        </div>
-                                        <span class="progress-description">
-                                            Promedio: {{ $stats['average_score'] }}/4.0
-                                        </span>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="categoryChart" width="600" height="280"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Porcentaje de satisfacción por área
+                        </small>
+                        <button class="btn btn-sm btn-outline-info" onclick="toggleChartAnimation('categoryChart')">
+                            <i class="fas fa-play mr-1"></i>
+                            Animar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución por Dependencias -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-building mr-2"></i>
+                        Distribución por Dependencias
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool text-white" data-card-widget="collapse" title="Colapsar">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="departmentChart" width="400" height="220"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div class="chart-info">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                {{ count($dependenciesData ?? []) }} dependencias participantes
+                            </small>
+                            <div class="chart-stats mt-1">
+                                @php
+                                    $totalResponses = 0;
+                                    $depCount = 0;
+                                    foreach($dependenciesData ?? [] as $dep => $data) {
+                                        if (is_array($data) && isset($data['count'])) {
+                                            $totalResponses += $data['count'];
+                                            $depCount++;
+                                        } elseif (is_numeric($data)) {
+                                            $totalResponses += $data;
+                                            $depCount++;
+                                        }
+                                    }
+                                    $avgResponses = $depCount > 0 ? number_format($totalResponses / $depCount, 1) : 0;
+                                @endphp
+                                <span class="badge badge-secondary" id="departmentTotal">Total: {{ $totalResponses }}</span>
+                                <span class="badge badge-info" id="departmentAvg">Promedio: {{ $avgResponses }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card highlights-card">
+                <div class="card-header bg-gradient-success text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-thumbs-up mr-2"></i>
+                        Aspectos Más Destacados
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool text-white" data-card-widget="collapse" title="Colapsar">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if(!empty($chartData))
+                        @php
+                            // Obtener aspectos destacados de los datos reales
+                            $highlights = $latestStats['top_highlights'] ?? [];
+                            $bestCategory = collect($chartData)->sortByDesc(function($category) {
+                                return $category['average'] ?? 0;
+                            })->first();
+                            $bestAvg = ($bestCategory['average'] ?? 0) * 25;
+                        @endphp
+                        
+                        @if(!empty($highlights))
+                            <!-- Aspectos destacados de las encuestas -->
+                            <div id="highlights-container">
+                                @foreach(array_slice($highlights, 0, 3) as $index => $highlight)
+                                <div class="highlight-item" data-highlight-index="{{ $index }}">
+                                    <div class="highlight-icon">
+                                        <i class="fas fa-star text-warning"></i>
+                                    </div>
+                                    <div class="highlight-content">
+                                        <h5>Aspecto Destacado {{ $index + 1 }}</h5>
+                                        <p class="text-muted mb-1">"{{ $highlight['text'] }}"</p>
+                                        <small class="text-success">
+                                            <i class="fas fa-users mr-1"></i>
+                                            Mencionado {{ $highlight['count'] }} vez{{ $highlight['count'] > 1 ? 'es' : '' }}
+                                        </small>
                                     </div>
                                 </div>
+                                @if(!$loop->last)<hr class="my-2">@endif
+                                @endforeach
                             </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Gráficos de Análisis -->
-        <div class="row">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-chart-line"></i>
-                            Evolución de Satisfacción
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="satisfactionTrendChart" style="height: 250px;"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-pie-chart"></i>
-                            Distribución por Dependencia
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="dependencyChart" style="height: 250px;"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Análisis Detallado por Preguntas -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-chart-bar"></i>
-                            Análisis Detallado por Pregunta
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="questionAnalysisChart" style="height: 350px;"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Aspectos Destacados y Oportunidades de Mejora -->
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card card-success">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-thumbs-up"></i>
-                            Aspectos Más Destacados
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        @forelse($latestStats['top_highlights'] as $highlight)
-                        <div class="d-flex justify-content-between align-items-center mb-1 p-2 bg-light rounded">
-                            <span class="text-sm">{{ $highlight['text'] }}</span>
-                            <span class="badge badge-success">{{ $highlight['count'] }}</span>
-                        </div>
-                        @empty
-                        <p class="text-muted text-sm">No hay aspectos destacados registrados.</p>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6">
-                <div class="card card-warning">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-tools"></i>
-                            Principales Oportunidades de Mejora
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        @forelse($latestStats['top_issues'] as $issue)
-                        <div class="d-flex justify-content-between align-items-center mb-1 p-2 bg-light rounded">
-                            <span class="text-sm">{{ $issue['text'] }}</span>
-                            <span class="badge badge-warning">{{ $issue['count'] }}</span>
-                        </div>
-                        @empty
-                        <p class="text-muted text-sm">No hay oportunidades de mejora registradas.</p>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Acciones Principales -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-cogs"></i>
-                            Acciones Disponibles
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <a href="{{ route('surveys.internal-client.warehouse.upload') }}" 
-                                       class="btn btn-success btn-md btn-block">
-                                        <i class="fas fa-upload mr-2"></i>
-                                        Subir Nueva Encuesta
-                                    </a>
-                                    <small class="text-muted">Sube resultados de encuesta en Excel</small>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <a href="{{ route('surveys.internal-client.warehouse.export') }}" 
-                                       class="btn btn-primary btn-md btn-block">
-                                        <i class="fas fa-download mr-2"></i>
-                                        Exportar Datos
-                                    </a>
-                                    <small class="text-muted">Descarga datos en Excel</small>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <button class="btn btn-warning btn-md btn-block" onclick="printDashboard()">
-                                        <i class="fas fa-print mr-2"></i>
-                                        Imprimir Reporte
+                            
+                            @if(count($highlights) > 3)
+                            <!-- Paginador para aspectos destacados -->
+                            <div class="pagination-controls" id="highlights-pagination">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <button class="btn btn-sm btn-outline-success" id="prev-highlights" onclick="navigateHighlights(-1)" disabled>
+                                        <i class="fas fa-chevron-left"></i> Anterior
                                     </button>
-                                    <small class="text-muted">Genera reporte imprimible</small>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <button class="btn btn-info btn-md btn-block" onclick="refreshData()">
-                                        <i class="fas fa-sync mr-2"></i>
-                                        Actualizar Datos
+                                    <small class="text-muted font-weight-bold">
+                                        <span id="highlights-current">1-3</span> de {{ count($highlights) }} aspectos
+                                    </small>
+                                    <button class="btn btn-sm btn-outline-success" id="next-highlights" onclick="navigateHighlights(1)">
+                                        Siguiente <i class="fas fa-chevron-right"></i>
                                     </button>
-                                    <small class="text-muted">Recarga la información</small>
                                 </div>
                             </div>
+                            
+                            <!-- Datos para JavaScript -->
+                            <script type="text/javascript">
+                                window.highlightsData = {!! json_encode($highlights) !!};
+                            </script>
+                            @endif
+                        @else
+                            <!-- Mostrar mejor categoría si no hay aspectos destacados específicos -->
+                            <div class="highlight-item">
+                                <div class="highlight-icon">
+                                    <i class="fas fa-trophy text-warning"></i>
+                                </div>
+                                <div class="highlight-content">
+                                    <h5>{{ $bestCategory['name'] ?? 'N/A' }}</h5>
+                                    <p class="text-muted mb-1">Categoría con mejor desempeño</p>
+                                    <div class="progress progress-sm">
+                                        <div class="progress-bar bg-success" style="width: {{ round($bestAvg, 1) }}%"></div>
+                                    </div>
+                                    <small class="text-success font-weight-bold">{{ round($bestAvg, 1) }}% de satisfacción</small>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-3">
+                            
+                            <div class="text-center">
+                                <div class="alert alert-info alert-sm mb-2">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <strong>Sin comentarios específicos</strong>
+                                </div>
+                                <small class="text-muted">No se encontraron aspectos destacados específicos en las respuestas</small>
+                            </div>
+                        @endif
+                    @else
+                        <div class="text-center text-muted">
+                            <i class="fas fa-info-circle fa-2x mb-3"></i>
+                            <p>No hay datos para mostrar aspectos destacados.</p>
+                            <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="btn btn-success btn-sm">
+                                <i class="fas fa-upload mr-1"></i>Cargar Primera Encuesta
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-gradient-warning text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Áreas de Mejora
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool text-white" data-card-widget="collapse" title="Colapsar">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if(!empty($chartData))
+                        @php
+                            // Obtener oportunidades de mejora de los datos reales
+                            $issues = $latestStats['top_issues'] ?? [];
+                            $worstCategory = collect($chartData)->sortBy(function($category) {
+                                return $category['average'] ?? 0;
+                            })->first();
+                            $worstAvg = ($worstCategory['average'] ?? 0) * 25;
+                            $generalSatisfaction = $latestStats['satisfaction_average'] ?? 0;
+                        @endphp
+                        
+                        @if(!empty($issues))
+                            <!-- Oportunidades de mejora de las encuestas -->
+                            <div id="issues-container">
+                                @foreach(array_slice($issues, 0, 3) as $index => $issue)
+                                <div class="improvement-item" data-issue-index="{{ $index }}">
+                                    <div class="improvement-icon">
+                                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                                    </div>
+                                    <div class="improvement-content">
+                                        <h5>Área de Mejora {{ $index + 1 }}</h5>
+                                        <p class="text-muted mb-1">"{{ $issue['text'] }}"</p>
+                                        <small class="text-warning">
+                                            <i class="fas fa-users mr-1"></i>
+                                            Mencionado {{ $issue['count'] }} vez{{ $issue['count'] > 1 ? 'es' : '' }}
+                                        </small>
+                                    </div>
+                                </div>
+                                @if(!$loop->last)<hr class="my-2">@endif
+                                @endforeach
+                            </div>
+                            
+                            @if(count($issues) > 3)
+                            <!-- Paginador para áreas de mejora -->
+                            <div class="pagination-controls" id="issues-pagination">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <button class="btn btn-sm btn-outline-warning" id="prev-issues" onclick="navigateIssues(-1)" disabled>
+                                        <i class="fas fa-chevron-left"></i> Anterior
+                                    </button>
+                                    <small class="text-muted font-weight-bold">
+                                        <span id="issues-current">1-3</span> de {{ count($issues) }} áreas
+                                    </small>
+                                    <button class="btn btn-sm btn-outline-warning" id="next-issues" onclick="navigateIssues(1)">
+                                        Siguiente <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Datos para JavaScript -->
+                            <script type="text/javascript">
+                                window.issuesData = {!! json_encode($issues) !!};
+                            </script>
+                            @endif
+                        @else
+                            <!-- Mostrar peor categoría si no hay oportunidades específicas -->
+                            <div class="improvement-item">
+                                <div class="improvement-icon">
+                                    <i class="fas fa-arrow-up text-warning"></i>
+                                </div>
+                                <div class="improvement-content">
+                                    <h5>{{ $worstCategory['name'] ?? 'N/A' }}</h5>
+                                    <p class="text-muted mb-1">Categoría con menor puntuación</p>
+                                    <div class="progress progress-sm">
+                                        <div class="progress-bar bg-warning" style="width: {{ round($worstAvg, 1) }}%"></div>
+                                    </div>
+                                    <small class="text-warning font-weight-bold">{{ round($worstAvg, 1) }}% de satisfacción</small>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-3">
+                            
+                            <div class="text-center">
+                                <div class="alert alert-info alert-sm mb-2">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <strong>Sin comentarios específicos</strong>
+                                </div>
+                                <small class="text-muted">No se encontraron oportunidades de mejora específicas en las respuestas</small>
+                            </div>
+                        @endif
+                    @else
+                        <div class="text-center text-muted">
+                            <i class="fas fa-info-circle fa-2x mb-3"></i>
+                            <p>No hay datos para identificar áreas de mejora.</p>
+                            <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-upload mr-1"></i>Cargar Primera Encuesta
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cogs"></i>
+                        Acciones Rápidas
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="btn btn-success btn-block">
+                                <i class="fas fa-upload"></i>
+                                Cargar Nueva Encuesta
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            @if($selectedPeriod ?? null)
+                                <a href="{{ route('surveys.internal-client.warehouse.export', ['period' => $selectedPeriod]) }}" class="btn btn-primary btn-block">
+                                    <i class="fas fa-download"></i>
+                                    Exportar Datos
+                                </a>
+                            @else
+                                <button class="btn btn-secondary btn-block" disabled>
+                                    <i class="fas fa-download"></i>
+                                    Sin Datos para Exportar
+                                </button>
+                            @endif
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-warning btn-block" onclick="location.reload()">
+                                <i class="fas fa-sync"></i>
+                                Actualizar Dashboard
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    @endif
+    </div>
 </div>
-@stop
-
-@section('css')
-<style>
-    .text-sm {
-        font-size: 0.875rem;
-    }
-    
-    .row {
-        margin-bottom: 15px;
-    }
-    
-    .info-box {
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
-    }
-    
-    .info-box:hover {
-        transform: translateY(-1px);
-    }
-    
-    .card {
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-    }
-    
-    .small-box {
-        border-radius: 8px;
-        transition: transform 0.2s;
-    }
-    
-    .small-box:hover {
-        transform: translateY(-1px);
-    }
-    
-    .bg-light {
-        background-color: #f8f9fa !important;
-    }
-    
-    .progress {
-        height: 6px;
-        border-radius: 3px;
-    }
-    
-    .progress-bar {
-        border-radius: 3px;
-    }
-    
-    .btn {
-        border-radius: 20px;
-        padding: 8px 20px;
-        font-weight: 500;
-        font-size: 14px;
-    }
-    
-    .btn-md {
-        padding: 10px 24px;
-        font-size: 14px;
-    }
-    
-    .chart-container {
-        position: relative;
-        height: 300px;
-        margin: 15px 0;
-    }
-    
-    .highlight-item, .issue-item {
-        transition: all 0.3s ease;
-        border-left: 3px solid transparent;
-        padding: 8px 12px;
-        margin-bottom: 6px;
-        border-radius: 6px;
-    }
-    
-    .highlight-item:hover {
-        background-color: #d4edda !important;
-        border-left-color: #28a745;
-    }
-    
-    .issue-item:hover {
-        background-color: #fff3cd !important;
-        border-left-color: #ffc107;
-    }
-    
-    .badge {
-        font-size: 0.75em;
-        padding: 4px 8px;
-        border-radius: 12px;
-    }
-    
-    .card-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 8px 8px 0 0;
-        padding: 12px 20px;
-    }
-    
-    .card-success .card-header {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-    }
-    
-    .card-warning .card-header {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    }
-    
-    .card-primary .card-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    @media (max-width: 768px) {
-        .btn-md {
-            padding: 8px 16px;
-            font-size: 13px;
-        }
-        
-        .card-body {
-            padding: 15px;
-        }
-        
-        .small-box {
-            margin-bottom: 15px;
-        }
-        
-        canvas {
-            max-height: 200px !important;
-        }
-    }
-    
-    @media print {
-        .btn, .card-tools {
-            display: none !important;
-        }
-        
-        .card {
-            border: 1px solid #ddd !important;
-            box-shadow: none !important;
-        }
-        
-        canvas {
-            max-height: 300px !important;
-        }
-    }
-</style>
-@stop
-
-@section('js')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    @if($hasData)
-    // Datos para los gráficos
-    const historicalData = @json($historicalData);
-    const dependencyData = @json($latestStats['by_dependencia']);
-    const questionData = @json($latestStats['by_question']);
-    
-    // Configuración global de Chart.js
-    Chart.defaults.font.family = 'Arial, sans-serif';
-    Chart.defaults.font.size = 11;
-    Chart.defaults.color = '#495057';
-    Chart.defaults.elements.point.radius = 4;
-    Chart.defaults.elements.point.hoverRadius = 6;
-    
-    // Gráfico de tendencia de satisfacción
-    const trendCtx = document.getElementById('satisfactionTrendChart').getContext('2d');
-    new Chart(trendCtx, {
-        type: 'line',
-        data: {
-            labels: historicalData.map(d => d.survey_period),
-            datasets: [{
-                label: 'Satisfacción General (%)',
-                data: historicalData.map(d => d.satisfaction_percentage),
-                borderColor: '#007bff',
-                backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                tension: 0.4,
-                fill: true,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#007bff',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Satisfacción: ' + context.parsed.y.toFixed(1) + '%';
-                        }
-                    }
-                }
-            }
-        }
-    });
-    
-    // Gráfico de distribución por dependencia
-    const depCtx = document.getElementById('dependencyChart').getContext('2d');
-    new Chart(depCtx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(dependencyData),
-            datasets: [{
-                data: Object.values(dependencyData).map(d => d.count),
-                backgroundColor: [
-                    '#007bff',
-                    '#28a745',
-                    '#ffc107',
-                    '#dc3545',
-                    '#6c757d'
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 15,
-                        usePointStyle: true,
-                        font: {
-                            size: 11
-                        }
-                    }
-                }
-            }
-        }
-    });
-    
-    // Gráfico de análisis por pregunta
-    const questionCtx = document.getElementById('questionAnalysisChart').getContext('2d');
-    const questionLabels = [
-        'Experiencia General',
-        'Tiempos de Atención',
-        'Resolución Oportuna',
-        'Disponibilidad Materiales',
-        'Atención Personal',
-        'Calidad Materiales',
-        'Opciones Cotizaciones',
-        'Cumplimiento Proveedores'
-    ];
-    
-    const questionKeys = Object.keys(questionData);
-    const excellentData = questionKeys.map(key => questionData[key].excelente || questionData[key].si || 0);
-    const goodData = questionKeys.map(key => questionData[key].bueno || 0);
-    const regularData = questionKeys.map(key => questionData[key].regular || 0);
-    const deficientData = questionKeys.map(key => questionData[key].deficiente || questionData[key].no || 0);
-    
-    new Chart(questionCtx, {
-        type: 'bar',
-        data: {
-            labels: questionLabels,
-            datasets: [
-                {
-                    label: 'Excelente/Sí',
-                    data: excellentData,
-                    backgroundColor: '#28a745',
-                    borderRadius: 4
-                },
-                {
-                    label: 'Bueno',
-                    data: goodData,
-                    backgroundColor: '#17a2b8',
-                    borderRadius: 4
-                },
-                {
-                    label: 'Regular',
-                    data: regularData,
-                    backgroundColor: '#ffc107',
-                    borderRadius: 4
-                },
-                {
-                    label: 'Deficiente/No',
-                    data: deficientData,
-                    backgroundColor: '#dc3545',
-                    borderRadius: 4
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    stacked: true,
-                    ticks: {
-                        maxRotation: 45,
-                        font: {
-                            size: 9
-                        }
-                    }
-                },
-                y: {
-                    stacked: true,
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        padding: 15,
-                        usePointStyle: true,
-                        font: {
-                            size: 11
-                        }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
-                        }
-                    }
-                }
-            }
-        }
-    });
-    
-    // Animación de números
-    function animateNumbers() {
-        $('.info-box-number').each(function() {
-            const $this = $(this);
-            const number = parseFloat($this.text());
-            const suffix = $this.text().includes('%') ? '%' : '';
-            
-            if (!isNaN(number)) {
-                $this.prop('Counter', 0).animate({
-                    Counter: number
-                }, {
-                    duration: 1000,
-                    easing: 'swing',
-                    step: function() {
-                        const displayValue = number % 1 === 0 ? Math.floor(this.Counter) : this.Counter.toFixed(1);
-                        $this.text(displayValue + suffix);
-                    }
-                });
-            }
-        });
-    }
-    
-    // Ejecutar animaciones
-    setTimeout(animateNumbers, 500);
-    @endif
-    
-    // Funciones utilitarias
-    function printDashboard() {
-        window.print();
-    }
-    
-    function refreshData() {
-        location.reload();
-    }
-    
-    // Mostrar toast de notificación
-    function showToast(message, type = 'info') {
-        const toast = $(`
-            <div class="toast-notification ${type}" style="
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${type === 'success' ? '#28a745' : '#17a2b8'};
-                color: white;
-                padding: 15px 20px;
-                border-radius: 5px;
-                z-index: 9999;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-            ">
-                <i class="fas fa-check-circle mr-2"></i>
-                ${message}
-            </div>
-        `);
-        
-        $('body').append(toast);
-        
-        setTimeout(() => {
-            toast.css('opacity', '1');
-        }, 100);
-        
-        setTimeout(() => {
-            toast.css('opacity', '0');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
-    
-    console.log('Dashboard de Encuesta de Almacén cargado correctamente');
-</script>
 @stop

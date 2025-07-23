@@ -24,26 +24,44 @@ class SystemsSurveyController extends Controller
             // Obtener datos para el dashboard
             $dashboardData = $this->getDashboardData();
             
+            // Crear selectedPeriod en formato numérico
+            $selectedPeriod = 'N/A';
+            if (!empty($latestData) && isset($latestData['last_period']) && $latestData['last_period'] !== 'N/A') {
+                // Buscar el último período con datos
+                $lastPeriod = SystemsSurveyResult::orderBy('survey_year', 'desc')
+                    ->orderBy('survey_month', 'desc')
+                    ->first();
+                    
+                if ($lastPeriod) {
+                    $selectedPeriod = $lastPeriod->survey_year . '-' . str_pad($lastPeriod->survey_month, 2, '0', STR_PAD_LEFT);
+                }
+            }
+            
             // Verificar que los datos existen
             if (empty($latestData) || empty($dashboardData)) {
                 // Datos por defecto si no hay información
                 $latestData = [
-                    'total_respuestas' => 0,
-                    'satisfaccion_general' => 0,
-                    'ultimo_periodo' => 'N/A',
-                    'estadisticas_por_categoria' => [],
-                    'dependencias' => []
+                    'total_responses' => 0,
+                    'average_satisfaction' => 0,
+                    'last_period' => 'N/A',
+                    'category_stats' => [],
+                    'departments' => []
                 ];
                 
                 $dashboardData = [
                     'trend_data' => ['labels' => [], 'values' => []],
                     'category_comparison' => ['labels' => [], 'values' => []],
+                    'department_comparison' => ['labels' => [], 'values' => []],
                     'top_issues' => [],
-                    'top_highlights' => []
+                    'top_highlights' => [],
+                    'total_responses' => 0,
+                    'average_satisfaction' => 0,
+                    'total_categories' => 5,
+                    'total_departments' => 0
                 ];
             }
             
-            return view('surveys.internal-client.systems.index', compact('latestData', 'dashboardData'));
+            return view('surveys.internal-client.systems.index', compact('latestData', 'dashboardData', 'selectedPeriod'));
             
         } catch (\Exception $e) {
             // Log del error para debugging
@@ -51,21 +69,28 @@ class SystemsSurveyController extends Controller
             
             // Datos por defecto en caso de error
             $latestData = [
-                'total_respuestas' => 0,
-                'satisfaccion_general' => 0,
-                'ultimo_periodo' => 'N/A',
-                'estadisticas_por_categoria' => [],
-                'dependencias' => []
+                'total_responses' => 0,
+                'average_satisfaction' => 0,
+                'last_period' => 'N/A',
+                'category_stats' => [],
+                'departments' => []
             ];
             
             $dashboardData = [
                 'trend_data' => ['labels' => [], 'values' => []],
                 'category_comparison' => ['labels' => [], 'values' => []],
+                'department_comparison' => ['labels' => [], 'values' => []],
                 'top_issues' => [],
-                'top_highlights' => []
+                'top_highlights' => [],
+                'total_responses' => 0,
+                'average_satisfaction' => 0,
+                'total_categories' => 5,
+                'total_departments' => 0
             ];
             
-            return view('surveys.internal-client.systems.index', compact('latestData', 'dashboardData'));
+            $selectedPeriod = 'N/A';
+            
+            return view('surveys.internal-client.systems.index', compact('latestData', 'dashboardData', 'selectedPeriod'));
         }
     }
 
@@ -79,11 +104,11 @@ class SystemsSurveyController extends Controller
 
             if (!$lastPeriod) {
                 return [
-                    'total_respuestas' => 0,
-                    'satisfaccion_general' => 0,
-                    'ultimo_periodo' => 'N/A',
-                    'estadisticas_por_categoria' => [],
-                    'dependencias' => []
+                    'total_responses' => 0,
+                    'average_satisfaction' => 0,
+                    'last_period' => 'N/A',
+                    'category_stats' => [],
+                    'departments' => []
                 ];
             }
 
@@ -95,24 +120,24 @@ class SystemsSurveyController extends Controller
             // Calcular estadísticas
             $totalResponses = $results->count();
             $avgSatisfaction = $this->calculateAverageSatisfaction($results);
-            $categoryStats = $this->getCategoryStatistics($results);
+            $categoryStats = $this->getCategoryComparisonData();
             $departmentDist = $this->getDepartmentDistribution($results);
 
             return [
-                'total_respuestas' => $totalResponses,
-                'satisfaccion_general' => $avgSatisfaction,
-                'ultimo_periodo' => $lastPeriod->getMonthName() . ' ' . $lastPeriod->survey_year,
-                'estadisticas_por_categoria' => $categoryStats,
-                'dependencias' => $departmentDist
+                'total_responses' => $totalResponses,
+                'average_satisfaction' => $avgSatisfaction,
+                'last_period' => $lastPeriod->getMonthName() . ' ' . $lastPeriod->survey_year,
+                'category_stats' => $categoryStats,
+                'departments' => $departmentDist
             ];
         } catch (\Exception $e) {
             Log::error('Error en getLatestStatistics: ' . $e->getMessage());
             return [
-                'total_respuestas' => 0,
-                'satisfaccion_general' => 0,
-                'ultimo_periodo' => 'N/A',
-                'estadisticas_por_categoria' => [],
-                'dependencias' => []
+                'total_responses' => 0,
+                'average_satisfaction' => 0,
+                'last_period' => 'N/A',
+                'category_stats' => [],
+                'departments' => []
             ];
         }
     }
@@ -123,51 +148,64 @@ class SystemsSurveyController extends Controller
             // Obtener datos para gráficos del dashboard
             $trendData = $this->getOverallTrendData();
             $categoryComparison = $this->getCategoryComparisonData();
-            $topIssues = $this->getTopIssuesData();
-            $topHighlights = $this->getTopHighlightsData();
+            $topHighlightsData = $this->getTopHighlightsData();
+            $topIssuesData = $this->getTopIssuesData();
+            
+            // Obtener datos estadísticos adicionales
+            $totalResponses = SystemsSurveyResult::count();
+            $avgSatisfaction = $this->calculateAverageSatisfaction(SystemsSurveyResult::all());
+            $totalDepartments = SystemsSurveyResult::distinct('dependencia')->count();
 
             return [
-                'trend_data' => $trendData ?? ['labels' => [], 'values' => []],
-                'category_comparison' => $categoryComparison ?? ['labels' => [], 'values' => []],
-                'top_issues' => $topIssues ?? [],
-                'top_highlights' => $topHighlights ?? []
+                'trend_data' => $trendData ?: ['labels' => [], 'values' => []],
+                'category_comparison' => $categoryComparison ?: ['labels' => [], 'values' => []],
+                'department_comparison' => $categoryComparison ?: ['labels' => [], 'values' => []],
+                'top_issues' => $topIssuesData ? $topIssuesData->toArray() : [],
+                'top_highlights' => $topHighlightsData ? $topHighlightsData->toArray() : [],
+                'total_responses' => $totalResponses,
+                'average_satisfaction' => $avgSatisfaction,
+                'total_categories' => 5, // Número fijo de categorías que manejamos
+                'total_departments' => $totalDepartments
             ];
         } catch (\Exception $e) {
-            Log::error('Error en getDashboardData: ' . $e->getMessage());
             return [
                 'trend_data' => ['labels' => [], 'values' => []],
                 'category_comparison' => ['labels' => [], 'values' => []],
+                'department_comparison' => ['labels' => [], 'values' => []],
                 'top_issues' => [],
-                'top_highlights' => []
+                'top_highlights' => [],
+                'total_responses' => 0,
+                'average_satisfaction' => 0,
+                'total_categories' => 5,
+                'total_departments' => 0
             ];
         }
     }
 
-    private function getCategoryStatistics($results)
+    private function getCategoryComparisonData()
     {
         $categories = [
             'tiempos_respuesta' => ['label' => 'Tiempos de Respuesta', 'icon' => 'fas fa-clock', 'color' => 'primary'],
-            'efectividad_tecnica' => ['label' => 'Efectividad Técnica', 'icon' => 'fas fa-tools', 'color' => 'success'],
-            'profesionalismo' => ['label' => 'Profesionalismo', 'icon' => 'fas fa-user-tie', 'color' => 'info'],
             'estado_equipos' => ['label' => 'Estado de Equipos', 'icon' => 'fas fa-laptop', 'color' => 'warning'],
             'apoyo_usabilidad' => ['label' => 'Apoyo en Usabilidad', 'icon' => 'fas fa-graduation-cap', 'color' => 'secondary'],
-            'calidad_internet' => ['label' => 'Calidad Internet', 'icon' => 'fas fa-wifi', 'color' => 'danger'],
-            'intervencion_eventos' => ['label' => 'Intervención en Eventos', 'icon' => 'fas fa-calendar-alt', 'color' => 'dark']
+            'calidad_internet' => ['label' => 'Calidad Internet', 'icon' => 'fas fa-wifi', 'color' => 'info'],
+            'intervencion_eventos' => ['label' => 'Intervención en Eventos', 'icon' => 'fas fa-calendar', 'color' => 'success']
         ];
 
         $scaleMapping = [
-            'Excelente' => 5, 'Muy efectiva' => 5, 'Buena' => 4, 'Bueno' => 4, 
-            'Efectiva' => 4, 'Regular' => 3, 'Malo' => 2, 'Deficiente' => 1
+            'Excelente' => 5, 'Bueno' => 4, 'Regular' => 3, 'Malo' => 2, 'Deficiente' => 1
         ];
 
-        $categoryStats = [];
+        try {
+            $results = SystemsSurveyResult::all();
+            $categoryStats = [];
 
-        foreach ($categories as $field => $info) {
-            $values = [];
-            $distribution = [];
+            foreach ($categories as $field => $info) {
+                $values = [];
+                $distribution = [];
 
-            foreach ($results as $result) {
-                $value = $result->$field;
+                foreach ($results as $result) {
+                    $value = $result->$field;
                 if (isset($scaleMapping[$value])) {
                     $values[] = $scaleMapping[$value];
                 }
@@ -191,7 +229,15 @@ class SystemsSurveyController extends Controller
             }
         }
 
-        return $categoryStats;
+        return [
+            'labels' => array_column($categoryStats, 'label'),
+            'values' => array_column($categoryStats, 'porcentaje'),
+            'details' => $categoryStats
+        ];
+        
+        } catch (\Exception $e) {
+            return ['labels' => [], 'values' => [], 'details' => []];
+        }
     }
 
     private function getDepartmentDistribution($results)
@@ -238,12 +284,6 @@ class SystemsSurveyController extends Controller
         return ['labels' => $labels, 'values' => $values];
     }
 
-    private function getCategoryComparisonData()
-    {
-        $allResults = SystemsSurveyResult::all();
-        return $this->getCategoryData($allResults);
-    }
-
     private function getTopIssuesData()
     {
         return SystemsSurveyResult::selectRaw('oportunidades_mejora, COUNT(*) as count')
@@ -276,27 +316,33 @@ class SystemsSurveyController extends Controller
 
     public function processUpload(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'survey_file' => 'required|file|mimes:xlsx,xls,csv',
-            'survey_year' => 'required|integer|min:2020|max:' . (date('Y') + 1),
-            'survey_month' => 'required|integer|min:1|max:12'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error en los datos enviados',
-                'errors' => $validator->errors()
-            ]);
-        }
-
         try {
+            // Validar la entrada
+            $validated = $request->validate([
+                'survey_file' => 'required|mimes:xlsx,xls',
+                'survey_year' => 'required|integer|min:2020|max:' . (date('Y') + 1),
+                'survey_month' => 'required|integer|min:1|max:12'
+            ]);
+
             $file = $request->file('survey_file');
             $year = $request->input('survey_year');
             $month = $request->input('survey_month');
             
-            // Leer archivo Excel usando Laravel Excel
-            $data = Excel::toArray(new SurveyImport, $file);
+            Log::info('Procesando archivo de sistemas', [
+                'year' => $year,
+                'month' => $month,
+                'filename' => $file->getClientOriginalName()
+            ]);
+            
+            // Verificar que el archivo se subió correctamente
+            if (!$file || !$file->isValid()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El archivo no es válido'
+                ], 422);
+            }
+            
+            $data = Excel::toArray([], $file);
             
             // Obtener la primera hoja
             $sheetData = $data[0] ?? [];
@@ -306,17 +352,25 @@ class SystemsSurveyController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'El archivo no contiene suficientes datos'
-                ]);
+                ], 422);
             }
+            
+            Log::info('Archivo leído correctamente', ['rows' => count($sheetData)]);
             
             // Procesar datos
             $processedData = $this->processSurveyData($sheetData, $year, $month);
             
+            Log::info('Datos procesados', ['count' => count($processedData)]);
+            
             // Guardar en base de datos
             $this->saveSurveyData($processedData, $year, $month);
             
+            Log::info('Datos guardados en base de datos');
+            
             // Generar análisis estadístico
             $analysis = $this->generateStatisticalAnalysis($processedData);
+            
+            Log::info('Análisis generado');
             
             return response()->json([
                 'success' => true,
@@ -325,11 +379,25 @@ class SystemsSurveyController extends Controller
                 'analysis' => $analysis
             ]);
             
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Error de validación en sistemas', ['errors' => $e->errors()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación: ' . implode(', ', array_map(function($field_errors) {
+                    return implode(', ', $field_errors);
+                }, $e->errors()))
+            ], 422);
         } catch (\Exception $e) {
+            Log::error('Error procesando encuesta de sistemas', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al procesar el archivo: ' . $e->getMessage()
-            ]);
+            ], 500);
         }
     }
 
@@ -628,24 +696,30 @@ class SystemsSurveyController extends Controller
             $query->where('dependencia', $request->department);
         }
 
-        $results = $query->orderBy('response_timestamp', 'desc')->get();
+        // Obtener resultados con paginación
+        $page = $request->get('page', 1);
+        $perPage = 10;
+        $offset = ($page - 1) * $perPage;
+        
+        $allResults = $query->orderBy('dependencia', 'asc')->get();
+        $results = $allResults->slice($offset, $perPage);
 
         // Obtener datos para filtros
         $years = SystemsSurveyResult::distinct()->pluck('survey_year')->sort()->values();
         $departments = SystemsSurveyResult::distinct()->pluck('dependencia')->sort()->values();
 
         // Calcular estadísticas
-        $totalResponses = $results->count();
-        $avgSatisfaction = $this->calculateAverageSatisfaction($results);
+        $totalResponses = $allResults->count();
+        $avgSatisfaction = $this->calculateAverageSatisfaction($allResults);
         $totalDepartments = $departments->count();
         $lastPeriod = $this->getLastPeriod();
 
-        // Datos para gráficos
+        // Datos para gráficos  
         $trendData = $this->getTrendData($request);
-        $categoryData = $this->getCategoryData($results);
+        $categoryData = $this->getCategoryData($allResults);
 
         return view('surveys.internal-client.systems.results', compact(
-            'results', 'years', 'departments', 'totalResponses', 
+            'results', 'allResults', 'years', 'departments', 'totalResponses', 
             'avgSatisfaction', 'totalDepartments', 'lastPeriod',
             'trendData', 'categoryData'
         ));

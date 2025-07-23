@@ -24,7 +24,12 @@ class WarehouseSurveyController extends Controller
         if (!$latestPeriod) {
             return view('surveys.internal-client.warehouse.index', [
                 'hasData' => false,
-                'message' => 'No hay datos de encuestas disponibles. Por favor, sube el primer archivo de resultados.'
+                'message' => 'No hay datos de encuestas disponibles. Por favor, sube el primer archivo de resultados.',
+                'totalResponses' => 0,
+                'selectedPeriod' => null,
+                'chartData' => [],
+                'dependenciesData' => [],
+                'dashboardData' => ['trend_data' => ['labels' => [], 'values' => []]]
             ]);
         }
 
@@ -34,11 +39,20 @@ class WarehouseSurveyController extends Controller
         // Obtener evolución histórica (últimos 12 meses)
         $historicalData = $this->getHistoricalData();
         
+        // Preparar datos para la vista
+        $chartData = $this->prepareChartData($latestStats);
+        $dependenciesData = $latestStats['by_dependencia'] ?? [];
+        $dashboardData = $this->prepareDashboardData($historicalData);
+        
         return view('surveys.internal-client.warehouse.index', [
             'hasData' => true,
-            'latestPeriod' => $latestPeriod->survey_period,
+            'selectedPeriod' => $latestPeriod->survey_period,
             'latestStats' => $latestStats,
-            'historicalData' => $historicalData
+            'historicalData' => $historicalData,
+            'totalResponses' => $latestStats['total_responses'] ?? 0,
+            'chartData' => $chartData,
+            'dependenciesData' => $dependenciesData,
+            'dashboardData' => $dashboardData
         ]);
     }
 
@@ -268,40 +282,48 @@ class WarehouseSurveyController extends Controller
         ];
 
         // Aspectos destacados más mencionados
-        $stats['top_highlights'] = $responses->whereNotNull('aspectos_destacados')
-            ->pluck('aspectos_destacados')
-            ->filter()
-            ->groupBy(function ($item) {
-                return strtolower(trim($item));
+        $highlightsGrouped = $responses->whereNotNull('aspectos_destacados')
+            ->filter(function($response) {
+                return !empty(trim($response->aspectos_destacados));
+            })
+            ->groupBy(function ($response) {
+                return strtolower(trim($response->aspectos_destacados));
             })
             ->map(function ($group) {
+                $dependencias = $group->pluck('dependencia')->unique()->values()->toArray();
                 return [
-                    'text' => $group->first(),
-                    'count' => $group->count()
+                    'text' => $group->first()->aspectos_destacados,
+                    'count' => $group->count(),
+                    'dependencias' => $dependencias
                 ];
             })
             ->sortByDesc('count')
             ->take(10)
-            ->values()
-            ->toArray();
+            ->values();
+        
+        $stats['top_highlights'] = $highlightsGrouped->toArray();
 
         // Oportunidades de mejora más mencionadas
-        $stats['top_issues'] = $responses->whereNotNull('oportunidades_mejora')
-            ->pluck('oportunidades_mejora')
-            ->filter()
-            ->groupBy(function ($item) {
-                return strtolower(trim($item));
+        $issuesGrouped = $responses->whereNotNull('oportunidades_mejora')
+            ->filter(function($response) {
+                return !empty(trim($response->oportunidades_mejora));
+            })
+            ->groupBy(function ($response) {
+                return strtolower(trim($response->oportunidades_mejora));
             })
             ->map(function ($group) {
+                $dependencias = $group->pluck('dependencia')->unique()->values()->toArray();
                 return [
-                    'text' => $group->first(),
-                    'count' => $group->count()
+                    'text' => $group->first()->oportunidades_mejora,
+                    'count' => $group->count(),
+                    'dependencias' => $dependencias
                 ];
             })
             ->sortByDesc('count')
             ->take(10)
-            ->values()
-            ->toArray();
+            ->values();
+        
+        $stats['top_issues'] = $issuesGrouped->toArray();
 
         return $stats;
     }
@@ -452,5 +474,97 @@ class WarehouseSurveyController extends Controller
         $writer->save($tempFile);
         
         return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Preparar datos para el gráfico de la vista
+     */
+    private function prepareChartData($stats)
+    {
+        if (!$stats || !isset($stats['by_question'])) {
+            return [];
+        }
+
+        $chartData = [];
+        
+        // Mapear las estadísticas por pregunta a formato esperado por la vista
+        if (isset($stats['by_question']['experiencia'])) {
+            $chartData[] = [
+                'name' => 'Experiencia General',
+                'label' => 'Experiencia General',
+                'data' => [
+                    $stats['by_question']['experiencia']['excelente'] ?? 0,
+                    $stats['by_question']['experiencia']['bueno'] ?? 0,
+                    $stats['by_question']['experiencia']['regular'] ?? 0,
+                    $stats['by_question']['experiencia']['deficiente'] ?? 0
+                ],
+                'average' => $stats['by_question']['experiencia']['average_score'] ?? 0
+            ];
+        }
+
+        if (isset($stats['by_question']['tiempos'])) {
+            $chartData[] = [
+                'name' => 'Tiempos de Respuesta',
+                'label' => 'Tiempos de Respuesta',
+                'data' => [
+                    $stats['by_question']['tiempos']['excelente'] ?? 0,
+                    $stats['by_question']['tiempos']['bueno'] ?? 0,
+                    $stats['by_question']['tiempos']['regular'] ?? 0,
+                    $stats['by_question']['tiempos']['deficiente'] ?? 0
+                ],
+                'average' => $stats['by_question']['tiempos']['average_score'] ?? 0
+            ];
+        }
+
+        if (isset($stats['by_question']['servicio_persona'])) {
+            $chartData[] = [
+                'name' => 'Servicio Personal',
+                'label' => 'Servicio Personal',
+                'data' => [
+                    $stats['by_question']['servicio_persona']['excelente'] ?? 0,
+                    $stats['by_question']['servicio_persona']['bueno'] ?? 0,
+                    $stats['by_question']['servicio_persona']['regular'] ?? 0,
+                    $stats['by_question']['servicio_persona']['deficiente'] ?? 0
+                ],
+                'average' => $stats['by_question']['servicio_persona']['average_score'] ?? 0
+            ];
+        }
+
+        if (isset($stats['by_question']['calidad_materiales'])) {
+            $chartData[] = [
+                'name' => 'Calidad Materiales',
+                'label' => 'Calidad Materiales',
+                'data' => [
+                    $stats['by_question']['calidad_materiales']['excelente'] ?? 0,
+                    $stats['by_question']['calidad_materiales']['bueno'] ?? 0,
+                    $stats['by_question']['calidad_materiales']['regular'] ?? 0,
+                    $stats['by_question']['calidad_materiales']['deficiente'] ?? 0
+                ],
+                'average' => $stats['by_question']['calidad_materiales']['average_score'] ?? 0
+            ];
+        }
+
+        return $chartData;
+    }
+
+    /**
+     * Preparar datos del dashboard para la vista
+     */
+    private function prepareDashboardData($historicalData)
+    {
+        $labels = [];
+        $values = [];
+        
+        foreach ($historicalData as $data) {
+            $labels[] = $data->survey_period;
+            $values[] = round($data->satisfaction_percentage, 1);
+        }
+        
+        return [
+            'trend_data' => [
+                'labels' => $labels,
+                'values' => $values
+            ]
+        ];
     }
 }

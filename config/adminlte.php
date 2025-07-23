@@ -414,9 +414,9 @@ return [
                     'submenu' => [
                         [
                             'text' => 'Cafetería y Transporte',
-                            'url'  => 'surveys/parents-students/transport',
-                            'icon' => 'fas fa-school',
-                            'active' => ['surveys/parents-students/transport*'],
+                            'url'  => 'surveys/parent-student',
+                            'icon' => 'fas fa-utensils',
+                            'active' => ['surveys/parent-student*'],
                         ],
                     ],
                 ],
@@ -838,13 +838,13 @@ return [
             ],
            
         ],
-        // [
-        //     'text' => 'Presupuesto',
-        //     'url'  => 'presupuesto',
-        //     'icon' => 'fas fa-calculator',
-        //     //'can'  => 'view.budget',
-        //     'active' => ['presupuesto'],
-        // ],
+         [
+             'text' => 'Presupuesto',
+             'url'  => 'presupuesto',
+             'icon' => 'fas fa-calculator',
+             //'can'  => 'view.budget',
+             'active' => ['presupuesto'],
+         ],
         [
             'text' => 'Perfil',
             'url' => 'admin/settings',

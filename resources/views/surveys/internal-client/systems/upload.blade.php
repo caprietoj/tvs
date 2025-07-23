@@ -468,7 +468,7 @@ function createCharts(analysis) {
     
     const ctx3 = document.getElementById('platformChart').getContext('2d');
     new Chart(ctx3, {
-        type: 'horizontalBar',
+        type: 'bar',
         data: {
             labels: platformLabels,
             datasets: [{
@@ -478,7 +478,8 @@ function createCharts(analysis) {
             }]
         },
         options: {
-            responsive: true
+            responsive: true,
+            indexAxis: 'y'
         }
     });
 }

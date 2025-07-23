@@ -317,7 +317,7 @@ class TransportController extends Controller
                 ->with('error', 'Debe seleccionar dos períodos para comparar.');
         }
 
-        $comparisonData = $this->buildComparisonData($period1, $period2, $dependency);
+        $comparisonData = $this->buildComparisonData($period1, $period2, $dependency, $service);
         
         // Obtener períodos disponibles para la vista
         $periods = DB::table('complementary_services_surveys')
@@ -329,25 +329,67 @@ class TransportController extends Controller
         return view('surveys.complementary-services.transport.comparison', compact('comparisonData', 'periods'));
     }
 
-    private function buildComparisonData($period1, $period2, $dependency = 'all')
+    private function buildComparisonData($period1, $period2, $dependency = 'all', $service = 'both')
     {
         $data1 = $this->getPeriodData($period1, $dependency);
         $data2 = $this->getPeriodData($period2, $dependency);
 
-        $cafeteriaMetrics1 = $this->calculateSinglePeriodCafeteriaMetrics($data1);
-        $cafeteriaMetrics2 = $this->calculateSinglePeriodCafeteriaMetrics($data2);
+        // Inicializar métricas vacías
+        $cafeteriaMetrics1 = [
+            'calidad_sabor' => 0,
+            'porcion_satisfaccion' => 0,
+            'menu_calidad' => 0,
+            'variedad_menu' => 0,
+            'temperatura_adecuada' => 0,
+            'limpieza_comedor' => 0,
+            'trato_personal' => 0,
+            'total_respuestas' => 0,
+            'total_usuarios' => 0,
+            'aspectos_positivos' => [],
+            'oportunidades_mejora' => []
+        ];
+        $cafeteriaMetrics2 = $cafeteriaMetrics1;
         
-        $transportMetrics1 = $this->calculateSinglePeriodTransportMetrics($data1);
-        $transportMetrics2 = $this->calculateSinglePeriodTransportMetrics($data2);
+        $transportMetrics1 = [
+            'puntualidad' => 0,
+            'limpieza_vehiculo' => 0,
+            'trato_personal' => 0,
+            'comunicacion' => 0,
+            'total_respuestas' => 0,
+            'total_usuarios' => 0,
+            'aspectos_positivos' => [],
+            'oportunidades_mejora' => []
+        ];
+        $transportMetrics2 = $transportMetrics1;
 
-        // Calcular diferencias y tendencias
-        $cafeteriaDifferences = $this->calculateDifferences($cafeteriaMetrics1, $cafeteriaMetrics2);
-        $transportDifferences = $this->calculateDifferences($transportMetrics1, $transportMetrics2);
+        // Aplicar filtro de servicio según la selección
+        if ($service === 'both' || $service === 'cafeteria') {
+            $cafeteriaMetrics1 = $this->calculateSinglePeriodCafeteriaMetrics($data1);
+            $cafeteriaMetrics2 = $this->calculateSinglePeriodCafeteriaMetrics($data2);
+        }
+
+        if ($service === 'both' || $service === 'transport') {
+            $transportMetrics1 = $this->calculateSinglePeriodTransportMetrics($data1);
+            $transportMetrics2 = $this->calculateSinglePeriodTransportMetrics($data2);
+        }
+
+        // Calcular diferencias y tendencias solo para los servicios seleccionados
+        $cafeteriaDifferences = [];
+        $transportDifferences = [];
+
+        if ($service === 'both' || $service === 'cafeteria') {
+            $cafeteriaDifferences = $this->calculateDifferences($cafeteriaMetrics1, $cafeteriaMetrics2);
+        }
+
+        if ($service === 'both' || $service === 'transport') {
+            $transportDifferences = $this->calculateDifferences($transportMetrics1, $transportMetrics2);
+        }
 
         return [
             'period1' => $period1,
             'period2' => $period2,
             'dependency' => $dependency,
+            'service' => $service,
             'responses_period1' => $data1->count(),
             'responses_period2' => $data2->count(),
             'cafeteria_period1' => $cafeteriaMetrics1,

@@ -36,6 +36,7 @@ class NursingSurveyController extends Controller
 
         $chartData = NursingSurveyResponse::getChartData($selectedPeriod);
         $dependencyAnalysis = NursingSurveyResponse::getAnalysisByDependency($selectedPeriod);
+        $trendData = NursingSurveyResponse::getTrendData();
         
         // Asegurar que chartData tenga estructura por defecto si está vacío
         if (empty($chartData)) {
@@ -55,10 +56,13 @@ class NursingSurveyController extends Controller
             return $query->where('survey_period', $selectedPeriod);
         })->with('uploader')->orderBy('timestamp', 'desc')->paginate(10);
 
-        return view('surveys.internal-client.cafeteria.index', [
+        return view('surveys.internal-client.enfermeria.index', [
             'totalResponses' => $totalResponses,
             'chartData' => $chartData,
-            'dependencyAnalysis' => $dependencyAnalysis,
+            'dependenciesData' => $dependencyAnalysis,
+            'dashboardData' => [
+                'trend_data' => $trendData
+            ],
             'availablePeriods' => $availablePeriods,
             'selectedPeriod' => $selectedPeriod,
             'responses' => $responses
@@ -70,7 +74,7 @@ class NursingSurveyController extends Controller
      */
     public function upload()
     {
-        return view('surveys.internal-client.cafeteria.upload');
+        return view('surveys.internal-client.enfermeria.upload');
     }
 
     /**
@@ -287,6 +291,38 @@ class NursingSurveyController extends Controller
         }, 200, [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    /**
+     * Mostrar resultados detallados de las encuestas
+     */
+    public function results(Request $request)
+    {
+        $selectedPeriod = $request->get('period');
+        $availablePeriods = NursingSurveyResponse::getAvailablePeriods();
+        
+        if (!$selectedPeriod && $availablePeriods->isNotEmpty()) {
+            $selectedPeriod = $availablePeriods->first();
+        }
+
+        $totalResponses = NursingSurveyResponse::when($selectedPeriod, function($query) use ($selectedPeriod) {
+            return $query->where('survey_period', $selectedPeriod);
+        })->count();
+
+        $chartData = NursingSurveyResponse::getChartData($selectedPeriod);
+        $dependencyAnalysis = NursingSurveyResponse::getAnalysisByDependency($selectedPeriod);
+        $trendData = NursingSurveyResponse::getTrendData();
+        
+        return view('surveys.internal-client.enfermeria.results', [
+            'totalResponses' => $totalResponses,
+            'chartData' => $chartData,
+            'dependenciesData' => $dependencyAnalysis,
+            'dashboardData' => [
+                'trend_data' => $trendData
+            ],
+            'selectedPeriod' => $selectedPeriod,
+            'availablePeriods' => $availablePeriods
         ]);
     }
 }

@@ -199,59 +199,70 @@
 @section('css')
 <style>
     .card {
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+        border: none;
     }
     
     .alert {
-        border-radius: 10px;
+        border: none;
+        border-radius: 0.375rem;
     }
     
     .custom-file-label::after {
         content: "Buscar";
     }
     
-    .form-control:focus {
-        border-color: #007bff;
-        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    .btn {
+        border-radius: 0.375rem;
+    }
+    
+    .form-control {
+        border-radius: 0.375rem;
+    }
+    
+    .input-group-text {
+        border-radius: 0 0.375rem 0.375rem 0;
     }
 </style>
-@endsection
+@stop
 
 @section('js')
 <script>
-    // Actualizar nombre del archivo seleccionado
-    document.getElementById('survey_file').addEventListener('change', function(e) {
-        const fileName = e.target.files[0]?.name || 'Seleccionar archivo...';
-        document.querySelector('.custom-file-label').textContent = fileName;
+$(document).ready(function() {
+    // Custom file input
+    $('.custom-file-input').on('change', function() {
+        let fileName = $(this).val().split('\\').pop();
+        $(this).next('.custom-file-label').addClass("selected").html(fileName);
     });
     
-    // Validación del formulario
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const fileInput = document.getElementById('survey_file');
-        const yearSelect = document.getElementById('survey_year');
-        const monthSelect = document.getElementById('survey_month');
+    // Form validation
+    $('form').on('submit', function(e) {
+        let isValid = true;
+        let errorMessage = '';
         
-        if (!fileInput.value || !yearSelect.value || !monthSelect.value) {
-            e.preventDefault();
-            alert('Por favor, complete todos los campos obligatorios.');
-            return false;
+        // Check file
+        if (!$('#survey_file').val()) {
+            isValid = false;
+            errorMessage += 'Por favor seleccione un archivo.\n';
         }
         
-        // Validar tamaño del archivo (10MB)
-        if (fileInput.files[0] && fileInput.files[0].size > 10 * 1024 * 1024) {
-            e.preventDefault();
-            alert('El archivo es demasiado grande. Máximo 10MB.');
-            return false;
+        // Check year
+        if (!$('#survey_year').val()) {
+            isValid = false;
+            errorMessage += 'Por favor seleccione un año.\n';
         }
         
-        // Confirmar subida
-        if (!confirm('¿Está seguro de que desea subir este archivo? Los datos existentes del mismo período serán reemplazados.')) {
+        // Check month
+        if (!$('#survey_month').val()) {
+            isValid = false;
+            errorMessage += 'Por favor seleccione un mes.\n';
+        }
+        
+        if (!isValid) {
             e.preventDefault();
-            return false;
+            alert(errorMessage);
         }
     });
-    
-    console.log('Formulario de subida de encuesta de enfermería cargado correctamente');
+});
 </script>
 @stop

@@ -222,15 +222,15 @@
                         
                         <!-- Padres y Estudiantes - Cafetería y Transporte -->
                         <div class="col-md-3 col-sm-6 mb-3">
-                            <a href="{{ route('surveys.parents-students.transport') }}" class="quick-access-card">
+                            <a href="{{ route('surveys.parent-student.index') }}" class="quick-access-card">
                                 <div class="quick-access-item">
                                     <div class="icon-wrapper">
+                                        <i class="fas fa-users"></i>
                                         <i class="fas fa-utensils"></i>
-                                        <i class="fas fa-school"></i>
                                     </div>
                                     <div class="content">
                                         <h6>Padres - Cafetería y Transporte</h6>
-                                        <p>Opiniones de padres y estudiantes</p>
+                                        <p>Análisis completo de satisfacción</p>
                                     </div>
                                 </div>
                             </a>

@@ -887,6 +887,9 @@ Route::get('/debug-permissions', function () {
     return response()->json($data, 200, [], JSON_PRETTY_PRINT);
 })->middleware('auth');
 
+// Ruta de diagnóstico para grados
+Route::get('/debug-grades', [App\Http\Controllers\DiagnosticController::class, 'diagnoseGrades'])->middleware('auth');
+
 // Ruta temporal de prueba para evaluaciones SIN autenticación
 Route::get('/test-evaluations-view', function() {
     // Simular datos para la vista
@@ -940,6 +943,7 @@ Route::middleware(['auth', 'admin.role'])->prefix('surveys')->name('surveys.')->
         Route::get('/enfermeria', [App\Http\Controllers\NursingSurveyController::class, 'index'])->name('enfermeria');
         Route::get('/enfermeria/upload', [App\Http\Controllers\NursingSurveyController::class, 'upload'])->name('enfermeria.upload');
         Route::post('/enfermeria/process-upload', [App\Http\Controllers\NursingSurveyController::class, 'processUpload'])->name('enfermeria.process-upload');
+        Route::get('/enfermeria/results', [App\Http\Controllers\NursingSurveyController::class, 'results'])->name('enfermeria.results');
         Route::get('/enfermeria/export', [App\Http\Controllers\NursingSurveyController::class, 'export'])->name('enfermeria.export');
         
         Route::get('/systems', [App\Http\Controllers\SurveySistemas\SystemsSurveyController::class, 'index'])->name('systems');
@@ -965,10 +969,15 @@ Route::middleware(['auth', 'admin.role'])->prefix('surveys')->name('surveys.')->
         });
     });
     
-    // Padres de Familia y/o Estudiantes
-    Route::prefix('parents-students')->name('parents-students.')->group(function () {
-        Route::get('/transport', function () {
-            return view('surveys.parents-students.transport.index');
-        })->name('transport');
+    // Encuestas Padres de Familia - Cafetería y Transporte
+    Route::prefix('parent-student')->name('parent-student.')->group(function () {
+        Route::get('/', [App\Http\Controllers\ParentStudentSurveyController::class, 'index'])->name('index');
+        Route::get('/upload', [App\Http\Controllers\ParentStudentSurveyController::class, 'upload'])->name('upload');
+        Route::post('/upload', [App\Http\Controllers\ParentStudentSurveyController::class, 'processUpload'])->name('upload.process');
+        Route::get('/analysis', [App\Http\Controllers\ParentStudentSurveyController::class, 'analysis'])->name('analysis');
+        Route::get('/comparison', [App\Http\Controllers\ParentStudentSurveyController::class, 'comparison'])->name('comparison');
+        Route::post('/comparison', [App\Http\Controllers\ParentStudentSurveyController::class, 'comparison'])->name('generate-comparison');
+        Route::get('/report', [App\Http\Controllers\ParentStudentSurveyController::class, 'generateReport'])->name('report');
+        Route::get('/export', [App\Http\Controllers\ParentStudentSurveyController::class, 'exportData'])->name('export');
     });
 });

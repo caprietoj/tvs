@@ -93,28 +93,16 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <a href="{{ route('surveys.complementary-services.transport.upload') }}" class="btn btn-success btn-block">
                                     <i class="fas fa-upload"></i>
                                     Cargar Nueva Encuesta
                                 </a>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <button type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#compareModal">
                                     <i class="fas fa-chart-bar"></i>
                                     Comparar Períodos
-                                </button>
-                            </div>
-                            <div class="col-md-3">
-                                <button type="button" class="btn btn-info btn-block" onclick="generateReport()">
-                                    <i class="fas fa-file-pdf"></i>
-                                    Generar Reporte
-                                </button>
-                            </div>
-                            <div class="col-md-3">
-                                <button type="button" class="btn btn-warning btn-block" onclick="exportData()">
-                                    <i class="fas fa-download"></i>
-                                    Exportar Datos
                                 </button>
                             </div>
                         </div>
@@ -128,12 +116,10 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info">
                     <div class="inner">
-                        <h3>{{ $dashboardData['total_responses'] }}/{{ $dashboardData['expected_responses'] ?? 'N/A' }}</h3>
+                        <h3>{{ $dashboardData['total_responses'] }}/100</h3>
                         <p>Respuestas Obtenidas/Esperadas</p>
                         <small>Período: {{ $dashboardData['latest_period'] }} 
-                            @if(isset($dashboardData['expected_responses']) && $dashboardData['expected_responses'] > 0)
-                                ({{ round(($dashboardData['total_responses'] / $dashboardData['expected_responses']) * 100, 1) }}%)
-                            @endif
+                            ({{ round(($dashboardData['total_responses'] / 100) * 100, 1) }}%)
                         </small>
                     </div>
                     <div class="icon">

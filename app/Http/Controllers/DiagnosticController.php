@@ -97,4 +97,94 @@ class DiagnosticController extends Controller
         
         return back()->with('success', 'Se ha limpiado la caché de rutas y configuración. Intente enviar el formulario nuevamente.');
     }
+
+    public function diagnoseGrades()
+    {
+        // Agregar imports necesarios
+        $parentStudentSurvey = new \App\Models\ParentStudentSurvey();
+        
+        // Obtener una muestra de grados únicos
+        $grades = \Illuminate\Support\Facades\DB::table('parent_student_surveys')
+            ->select('student_grade')
+            ->distinct()
+            ->whereNotNull('student_grade')
+            ->orderBy('student_grade')
+            ->limit(20)
+            ->get();
+
+        $result = [
+            'total_unique_grades' => $grades->count(),
+            'sample_grades' => $grades->pluck('student_grade')->toArray(),
+            'grade_filter_test' => []
+        ];
+
+        // Probar cada tipo de filtro
+        $filters = ['Preescolar', 'Primaria', 'Secundaria', 'Bachillerato'];
+        
+        foreach ($filters as $filter) {
+            $count = \App\Models\ParentStudentSurvey::where(function($query) use ($filter) {
+                switch ($filter) {
+                    case 'Preescolar':
+                        $query->where(function($q) {
+                            $q->where('student_grade', 'like', '%preescolar%')
+                              ->orWhere('student_grade', 'like', '%prejardín%')
+                              ->orWhere('student_grade', 'like', '%jardín%')
+                              ->orWhere('student_grade', 'like', '%transición%')
+                              ->orWhere('student_grade', 'like', '%kinder%')
+                              ->orWhere('student_grade', 'like', '%pre-jardín%')
+                              ->orWhere('student_grade', 'like', '%pre jardín%');
+                        });
+                        break;
+                        
+                    case 'Primaria':
+                        $query->where(function($q) {
+                            $q->where('student_grade', 'like', '%primaria%')
+                              ->orWhere('student_grade', 'like', '%1°%')
+                              ->orWhere('student_grade', 'like', '%2°%')
+                              ->orWhere('student_grade', 'like', '%3°%')
+                              ->orWhere('student_grade', 'like', '%4°%')
+                              ->orWhere('student_grade', 'like', '%5°%')
+                              ->orWhere('student_grade', 'like', '%primero%')
+                              ->orWhere('student_grade', 'like', '%segundo%')
+                              ->orWhere('student_grade', 'like', '%tercero%')
+                              ->orWhere('student_grade', 'like', '%cuarto%')
+                              ->orWhere('student_grade', 'like', '%quinto%');
+                        });
+                        break;
+                        
+                    case 'Secundaria':
+                        $query->where(function($q) {
+                            $q->where('student_grade', 'like', '%secundaria%')
+                              ->orWhere('student_grade', 'like', '%6°%')
+                              ->orWhere('student_grade', 'like', '%7°%')
+                              ->orWhere('student_grade', 'like', '%8°%')
+                              ->orWhere('student_grade', 'like', '%9°%')
+                              ->orWhere('student_grade', 'like', '%sexto%')
+                              ->orWhere('student_grade', 'like', '%séptimo%')
+                              ->orWhere('student_grade', 'like', '%septimo%')
+                              ->orWhere('student_grade', 'like', '%octavo%')
+                              ->orWhere('student_grade', 'like', '%noveno%');
+                        });
+                        break;
+                        
+                    case 'Bachillerato':
+                        $query->where(function($q) {
+                            $q->where('student_grade', 'like', '%bachillerato%')
+                              ->orWhere('student_grade', 'like', '%10°%')
+                              ->orWhere('student_grade', 'like', '%11°%')
+                              ->orWhere('student_grade', 'like', '%décimo%')
+                              ->orWhere('student_grade', 'like', '%decimo%')
+                              ->orWhere('student_grade', 'like', '%undécimo%')
+                              ->orWhere('student_grade', 'like', '%undecimo%')
+                              ->orWhere('student_grade', 'like', '%once%');
+                        });
+                        break;
+                }
+            })->count();
+            
+            $result['grade_filter_test'][$filter] = $count;
+        }
+
+        return response()->json($result, 200, [], JSON_PRETTY_PRINT);
+    }
 }
