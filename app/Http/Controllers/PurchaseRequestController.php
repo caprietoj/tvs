@@ -30,6 +30,9 @@ class PurchaseRequestController extends Controller
      */
     private function sendDifferentiatedEmails(PurchaseRequest $purchaseRequest)
     {
+        // Cargar la relación user si no está cargada
+        $purchaseRequest->load('user');
+        
         try {
             // Email para el usuario solicitante (sin botón)
             $userEmail = \App\Services\EmailTestModeService::interceptEmail(auth()->user()->email);
@@ -62,6 +65,9 @@ class PurchaseRequestController extends Controller
      */
     private function sendMaterialsApprovalEmails(PurchaseRequest $purchaseRequest)
     {
+        // Cargar la relación user si no está cargada
+        $purchaseRequest->load('user');
+        
         $sectionClassifier = new SectionClassifierService();
         $approvalEmails = $sectionClassifier->getMaterialsApprovalEmails($purchaseRequest->section);
         
@@ -97,6 +103,9 @@ class PurchaseRequestController extends Controller
      */
     private function sendNoQuotationServiceEmails(PurchaseRequest $purchaseRequest)
     {
+        // Cargar la relación user si no está cargada
+        $purchaseRequest->load('user');
+        
         try {
             // 1. Email de confirmación al usuario solicitante
             $userEmail = \App\Services\EmailTestModeService::interceptEmail(auth()->user()->email);

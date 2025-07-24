@@ -316,7 +316,7 @@
                         <div class="info-label">
                             <span class="icon">👤</span> Solicitante
                         </div>
-                        <div class="info-value">{{ $purchaseRequest->requester ?? $purchaseRequest->user->name }}</div>
+                        <div class="info-value">{{ $purchaseRequest->requester ?? ($purchaseRequest->user ? $purchaseRequest->user->name : 'N/A') }}</div>
                     </div>
                     
                     <div class="info-row">
@@ -330,7 +330,7 @@
                         <div class="info-label">
                             <span class="icon">👨‍💼</span> Creado por
                         </div>
-                        <div class="info-value">{{ $purchaseRequest->user->name }}</div>
+                        <div class="info-value">{{ $purchaseRequest->user ? $purchaseRequest->user->name : 'N/A' }}</div>
                     </div>
                     
                     <div class="info-row">
@@ -344,9 +344,9 @@
                                 {{ $purchaseRequest->department->name }}
                             @elseif(isset($purchaseRequest->department_name))
                                 {{ $purchaseRequest->department_name }}
-                            @elseif(isset($purchaseRequest->user) && isset($purchaseRequest->user->department))
+                            @elseif($purchaseRequest->user && $purchaseRequest->user->department)
                                 {{ $purchaseRequest->user->department->name }}
-                            @elseif(isset($purchaseRequest->user) && isset($purchaseRequest->user->department_id))
+                            @elseif($purchaseRequest->user && $purchaseRequest->user->department_id)
                                 {{ \App\Models\Department::find($purchaseRequest->user->department_id)->name ?? 'N/A' }}
                             @else
                                 <span style="color:#999;">No especificado</span>
