@@ -1,6 +1,11 @@
 @extends('adminlte::page')
 
 @push('css')
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
+
 <style>
 .chart-container {
     position: relative;
@@ -121,6 +126,57 @@
         font-size: 0.8rem;
         padding: 4px 8px;
     }
+}
+
+/* Estilos para DataTables */
+#surveyResponsesTable {
+    font-size: 13px;
+}
+
+#surveyResponsesTable th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    padding: 8px 4px;
+    font-size: 12px;
+}
+
+#surveyResponsesTable td {
+    vertical-align: middle;
+    padding: 6px 4px;
+    text-align: center;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    padding: 5px 15px;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    border-radius: 15px;
+    border: 1px solid #ddd;
+    padding: 2px 8px;
+}
+
+.table-responsive {
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+#surveyResponsesTable_wrapper .row {
+    margin: 0;
+}
+
+.dataTables_info {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.dataTables_paginate .paginate_button {
+    border-radius: 15px !important;
+    margin: 0 2px;
 }
 </style>
 @endpush
@@ -455,6 +511,53 @@ function updateIssuesDisplay() {
     document.getElementById('prev-issues').disabled = issuesPage === 0;
     document.getElementById('next-issues').disabled = issuesPage === totalPages - 1;
 }
+</script>
+
+<!-- DataTables JavaScript -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Inicializar DataTable
+    $('#surveyResponsesTable').DataTable({
+        responsive: true,
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+        },
+        pageLength: 10,
+        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]],
+        order: [[0, 'desc']], // Ordenar por fecha descendente
+        columnDefs: [
+            {
+                targets: [0], // Columna de fecha
+                type: 'date',
+                render: function(data, type, row) {
+                    return data || 'N/A';
+                }
+            },
+            {
+                targets: [1], // Columna de dependencia
+                searchable: true
+            }
+        ],
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+             '<"row"<"col-sm-12"tr>>' +
+             '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>'
+    });
+
+    // Tooltip para celdas truncadas
+    $('#surveyResponsesTable').on('mouseenter', 'td', function() {
+        var $this = $(this);
+        if (this.offsetWidth < this.scrollWidth && !$this.attr('title')) {
+            $this.attr('title', $this.text());
+        }
+    });
+});
 </script>
 @endpush
 
@@ -987,6 +1090,72 @@ function updateIssuesDisplay() {
                             <p>No hay datos para identificar áreas de mejora.</p>
                             <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="btn btn-warning btn-sm">
                                 <i class="fas fa-upload mr-1"></i>Cargar Primera Encuesta
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Respuestas del Cuestionario -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-table mr-2"></i>
+                        Respuestas Detalladas del Cuestionario
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool text-white" data-card-widget="collapse" title="Colapsar">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if(!empty($surveyResponses) && $surveyResponses->count() > 0)
+                        <div class="table-responsive">
+                            <table id="surveyResponsesTable" class="table table-bordered table-striped table-hover">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th style="width: 80px;">Fecha</th>
+                                        <th style="width: 100px;">Dependencia</th>
+                                        <th style="width: 120px;">Experiencia General</th>
+                                        <th style="width: 120px;">Tiempos de Entrega</th>
+                                        <th style="width: 120px;">Requerimiento Oportuno</th>
+                                        <th style="width: 120px;">Materiales Disponibles</th>
+                                        <th style="width: 120px;">Servicio Personal</th>
+                                        <th style="width: 120px;">Calidad Materiales</th>
+                                        <th style="width: 120px;">Opciones Cotizaciones</th>
+                                        <th style="width: 120px;">Proveedores Cumplen</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($surveyResponses as $response)
+                                    <tr>
+                                        <td>{{ $response->timestamp ? $response->timestamp->format('d/m/Y') : 'N/A' }}</td>
+                                        <td>{{ $response->dependencia ?? 'N/A' }}</td>
+                                        <td>{{ $response->califica_experiencia ?? 'N/A' }}</td>
+                                        <td>{{ $response->califica_tiempos ?? 'N/A' }}</td>
+                                        <td>{{ $response->requerimiento_oportuno ?? 'N/A' }}</td>
+                                        <td>{{ $response->materiales_disponibles ?? 'N/A' }}</td>
+                                        <td>{{ $response->califica_servicio_persona ?? 'N/A' }}</td>
+                                        <td>{{ $response->califica_calidad_materiales ?? 'N/A' }}</td>
+                                        <td>{{ $response->opciones_cotizaciones ?? 'N/A' }}</td>
+                                        <td>{{ $response->proveedores_cumplen ?? 'N/A' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center text-muted">
+                            <i class="fas fa-table fa-3x mb-3"></i>
+                            <h5>No hay respuestas disponibles</h5>
+                            <p>No se encontraron respuestas del cuestionario para mostrar.</p>
+                            <a href="{{ route('surveys.internal-client.warehouse.upload') }}" class="btn btn-info">
+                                <i class="fas fa-upload mr-1"></i>Cargar Encuestas
                             </a>
                         </div>
                     @endif

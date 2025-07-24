@@ -29,7 +29,8 @@ class WarehouseSurveyController extends Controller
                 'selectedPeriod' => null,
                 'chartData' => [],
                 'dependenciesData' => [],
-                'dashboardData' => ['trend_data' => ['labels' => [], 'values' => []]]
+                'dashboardData' => ['trend_data' => ['labels' => [], 'values' => []]],
+                'surveyResponses' => collect([])
             ]);
         }
 
@@ -44,6 +45,11 @@ class WarehouseSurveyController extends Controller
         $dependenciesData = $latestStats['by_dependencia'] ?? [];
         $dashboardData = $this->prepareDashboardData($historicalData);
         
+        // Obtener todas las respuestas del período más reciente para la tabla
+        $surveyResponses = WarehouseSurveyResponse::where('survey_period', $latestPeriod->survey_period)
+            ->orderBy('timestamp', 'desc')
+            ->get();
+        
         return view('surveys.internal-client.warehouse.index', [
             'hasData' => true,
             'selectedPeriod' => $latestPeriod->survey_period,
@@ -52,7 +58,8 @@ class WarehouseSurveyController extends Controller
             'totalResponses' => $latestStats['total_responses'] ?? 0,
             'chartData' => $chartData,
             'dependenciesData' => $dependenciesData,
-            'dashboardData' => $dashboardData
+            'dashboardData' => $dashboardData,
+            'surveyResponses' => $surveyResponses
         ]);
     }
 
@@ -228,6 +235,46 @@ class WarehouseSurveyController extends Controller
         if (empty($text) || strtolower(trim($text)) === 'n/a') {
             return null;
         }
+        
+        // Limpiar caracteres extraños y normalizar texto
+        $text = trim($text);
+        
+        // Convertir a UTF-8 si no lo es
+        if (!mb_check_encoding($text, 'UTF-8')) {
+            $text = mb_convert_encoding($text, 'UTF-8', 'auto');
+        }
+        
+        // Reemplazar caracteres problemáticos comunes de Excel
+        $replacements = [
+            '�' => '',              // Carácter de reemplazo
+            'ó' => 'ó',            // ó mal codificada
+            'á' => 'á',            // á mal codificada  
+            'é' => 'é',            // é mal codificada
+            'í' => 'í',            // í mal codificada
+            'ú' => 'ú',            // ú mal codificada
+            'ñ' => 'ñ',            // ñ mal codificada
+            'ü' => 'ü',            // ü mal codificada
+            'Ó' => 'Ó',            // Ó mal codificada
+            'Á' => 'Á',            // Á mal codificada
+            'É' => 'É',            // É mal codificada
+            'Í' => 'Í',            // Í mal codificada
+            'Ú' => 'Ú',            // Ú mal codificada
+            'Ñ' => 'Ñ',            // Ñ mal codificada
+        ];
+        
+        foreach ($replacements as $search => $replace) {
+            $text = str_replace($search, $replace, $text);
+        }
+        
+        // Limpiar caracteres de control y espacios múltiples
+        $text = preg_replace('/[\x00-\x1F\x7F]/', '', $text);
+        $text = preg_replace('/\s+/', ' ', $text);
+        
+        // Limpiar comillas y caracteres especiales usando códigos de carácter
+        $text = str_replace(['"', '"'], '"', $text);        // Comillas curvadas
+        $text = str_replace(['…'], '...', $text);            // Puntos suspensivos
+        $text = str_replace(chr(8216), "'", $text);          // Apostrofe izquierdo
+        $text = str_replace(chr(8217), "'", $text);          // Apostrofe derecho
         
         return trim($text);
     }

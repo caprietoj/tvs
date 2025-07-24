@@ -1,6 +1,11 @@
 @extends('adminlte::page')
 
 @push('css')
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
+
 <style>
 .chart-container {
     position: relative;
@@ -109,6 +114,57 @@
 .priority-badge {
     font-size: 0.75rem;
     padding: 4px 8px;
+}
+
+/* Estilos para DataTables */
+#nursingSurveyTable {
+    font-size: 13px;
+}
+
+#nursingSurveyTable th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    padding: 8px 4px;
+    font-size: 12px;
+}
+
+#nursingSurveyTable td {
+    vertical-align: middle;
+    padding: 6px 4px;
+    text-align: center;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    padding: 5px 15px;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    border-radius: 15px;
+    border: 1px solid #ddd;
+    padding: 2px 8px;
+}
+
+.table-responsive {
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+#nursingSurveyTable_wrapper .row {
+    margin: 0;
+}
+
+.dataTables_info {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.dataTables_paginate .paginate_button {
+    border-radius: 15px !important;
+    margin: 0 2px;
 }
 </style>
 @endpush
@@ -385,6 +441,82 @@ function toggleChartAnimation(chartId) {
         chart.update('active');
     }
 }
+</script>
+
+<!-- DataTables JavaScript -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Verificar que jQuery y DataTables estén cargados
+    if (typeof $ === 'undefined') {
+        console.error('jQuery no está cargado');
+        return;
+    }
+    
+    if (!$.fn.DataTable) {
+        console.error('DataTables no está cargado');
+        return;
+    }
+    
+    // Verificar que la tabla existe
+    var table = $('#nursingSurveyTable');
+    if (table.length === 0) {
+        console.error('Tabla #nursingSurveyTable no encontrada');
+        return;
+    }
+    
+    console.log('Inicializando DataTable...');
+    
+    // Inicializar DataTable
+    try {
+        $('#nursingSurveyTable').DataTable({
+            responsive: true,
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+            },
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+            order: [[0, 'desc']], // Ordenar por fecha descendente
+            columnDefs: [
+                {
+                    targets: [0], // Columna de fecha
+                    type: 'date',
+                    render: function(data, type, row) {
+                        return data || 'N/A';
+                    }
+                },
+                {
+                    targets: [1], // Columna de dependencia
+                    searchable: true
+                }
+            ],
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                 '<"row"<"col-sm-12"tr>>' +
+                 '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>'
+        });
+        
+        console.log('DataTable inicializado correctamente');
+        
+    } catch (error) {
+        console.error('Error al inicializar DataTable:', error);
+        // Si DataTable falla, al menos mantener la tabla básica funcional
+        console.log('Aplicando estilos básicos a la tabla...');
+    }
+
+    // Tooltip para celdas truncadas
+    $('#nursingSurveyTable').on('mouseenter', 'td', function() {
+        var $this = $(this);
+        if (this.offsetWidth < this.scrollWidth && !$this.attr('title')) {
+            $this.attr('title', $this.text());
+        }
+    });
+});
 </script>
 @endpush
 
@@ -890,6 +1022,110 @@ function toggleChartAnimation(chartId) {
                         <div class="text-center text-muted">
                             <i class="fas fa-check-circle mb-2"></i>
                             <p>No hay datos para identificar áreas de mejora</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Respuestas del Cuestionario -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-table mr-2"></i>
+                        Respuestas Detalladas del Cuestionario de Enfermería
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool text-white" data-card-widget="collapse" title="Colapsar">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @php
+                        // Funciones helper para limpiar texto - definidas una sola vez
+                        if (!function_exists('cleanNursingText')) {
+                            function cleanNursingText($text) {
+                                if (empty($text) || $text === null) {
+                                    return 'N/A';
+                                }
+                                // Eliminar tags HTML
+                                $text = strip_tags($text);
+                                // Decodificar entidades HTML
+                                $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                                // Eliminar caracteres problemáticos
+                                $text = preg_replace('/[<>&"\']/', '', $text);
+                                // Eliminar caracteres de control y espacios extras
+                                $text = preg_replace('/\s+/', ' ', $text);
+                                $text = trim($text);
+                                // Si queda vacío después de limpiar, retornar N/A
+                                return empty($text) ? 'N/A' : $text;
+                            }
+                        }
+                        
+                        if (!function_exists('cleanNursingComment')) {
+                            function cleanNursingComment($text) {
+                                if (empty($text) || $text === null) {
+                                    return 'Sin comentarios';
+                                }
+                                // Eliminar tags HTML
+                                $text = strip_tags($text);
+                                // Decodificar entidades HTML
+                                $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                                // Eliminar caracteres problemáticos específicos
+                                $text = preg_replace('/[<>&"\']/', '', $text);
+                                // Eliminar saltos de línea y espacios extras
+                                $text = preg_replace('/\s+/', ' ', $text);
+                                $text = trim($text);
+                                // Si queda vacío después de limpiar, retornar mensaje por defecto
+                                return empty($text) ? 'Sin comentarios' : $text;
+                            }
+                        }
+                    @endphp
+                    @if(!empty($responses) && $responses->count() > 0)
+                        <div class="table-responsive">
+                            <table id="nursingSurveyTable" class="table table-bordered table-striped table-hover">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th style="width: 80px;">Fecha</th>
+                                        <th style="width: 100px;">Dependencia</th>
+                                        <th style="width: 150px;">Experiencia</th>
+                                        <th style="width: 150px;">Presentación</th>
+                                        <th style="width: 150px;">Disponibilidad</th>
+                                        <th style="width: 150px;">Profesionalismo</th>
+                                        <th style="width: 150px;">Respuesta Efectiva</th>
+                                        <th style="width: 150px;">Limpieza</th>
+                                        <th style="width: 150px;">Reportes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($responses as $response)
+                                    <tr>
+                                        <td>{{ $response->timestamp ? $response->timestamp->format('d/m/Y') : 'N/A' }}</td>
+                                        <td>{{ cleanNursingText($response->dependencia) }}</td>
+                                        <td>{{ cleanNursingText($response->experiencia_enfermeria) }}</td>
+                                        <td>{{ cleanNursingText($response->presentacion_personal) }}</td>
+                                        <td>{{ cleanNursingText($response->disponibilidad_personal) }}</td>
+                                        <td>{{ cleanNursingText($response->profesionalismo) }}</td>
+                                        <td>{{ cleanNursingText($response->respuesta_efectiva) }}</td>
+                                        <td>{{ cleanNursingText($response->limpieza_orden) }}</td>
+                                        <td>{{ cleanNursingText($response->reportes_oportunos) }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center text-muted">
+                            <i class="fas fa-table fa-3x mb-3"></i>
+                            <h5>No hay respuestas disponibles</h5>
+                            <p>No se encontraron respuestas del cuestionario para mostrar.</p>
+                            <a href="{{ route('surveys.internal-client.enfermeria.upload') }}" class="btn btn-info">
+                                <i class="fas fa-upload mr-1"></i>Cargar Encuestas
+                            </a>
                         </div>
                     @endif
                 </div>

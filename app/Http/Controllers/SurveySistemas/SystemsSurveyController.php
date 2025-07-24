@@ -61,7 +61,10 @@ class SystemsSurveyController extends Controller
                 ];
             }
             
-            return view('surveys.internal-client.systems.index', compact('latestData', 'dashboardData', 'selectedPeriod'));
+            // Obtener todas las respuestas para la tabla
+            $responses = SystemsSurveyResult::orderBy('response_timestamp', 'desc')->get();
+            
+            return view('surveys.internal-client.systems.index', compact('latestData', 'dashboardData', 'selectedPeriod', 'responses'));
             
         } catch (\Exception $e) {
             // Log del error para debugging
@@ -90,7 +93,10 @@ class SystemsSurveyController extends Controller
             
             $selectedPeriod = 'N/A';
             
-            return view('surveys.internal-client.systems.index', compact('latestData', 'dashboardData', 'selectedPeriod'));
+            // Obtener todas las respuestas para la tabla
+            $responses = SystemsSurveyResult::orderBy('response_timestamp', 'desc')->get();
+            
+            return view('surveys.internal-client.systems.index', compact('latestData', 'dashboardData', 'selectedPeriod', 'responses'));
         }
     }
 
