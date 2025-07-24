@@ -483,26 +483,13 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="form-group">
                                 <label for="service">Servicio:</label>
                                 <select class="form-control" id="service" name="service">
                                     <option value="both">Ambos servicios</option>
                                     <option value="cafeteria">Solo Cafetería</option>
                                     <option value="transport">Solo Transporte</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="grade">Grado:</label>
-                                <select class="form-control" id="grade" name="grade">
-                                    <option value="all">Todos los grados</option>
-                                    @if(isset($dashboardData['grades']))
-                                        @foreach(array_keys($dashboardData['grades']) as $grade)
-                                            <option value="{{ $grade }}">{{ $grade }}</option>
-                                        @endforeach
-                                    @endif
                                 </select>
                             </div>
                         </div>
