@@ -116,10 +116,15 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info">
                     <div class="inner">
-                        <h3>{{ $dashboardData['total_responses'] }}/2013</h3>
+                        @php
+                            $totalResponses = ($dashboardData['cafeteria_users'] ?? 0) + ($dashboardData['transport_users'] ?? 0);
+                            $expectedResponses = 213;
+                            $percentage = $expectedResponses > 0 ? round(($totalResponses / $expectedResponses) * 100, 1) : 0;
+                        @endphp
+                        <h3>{{ $totalResponses }}/{{ $expectedResponses }}</h3>
                         <p>Respuestas Obtenidas/Esperadas</p>
                         <small>Período: {{ $dashboardData['latest_period'] }} 
-                            ({{ round(($dashboardData['total_responses'] / 2013) * 100, 1) }}%)
+                            ({{ $percentage }}%)
                         </small>
                     </div>
                     <div class="icon">
@@ -205,13 +210,21 @@
                                         </span>
                                         <div class="info-box-content">
                                             <span class="info-box-text">{{ $config['label'] }}</span>
-                                            <span class="info-box-number">{{ $dashboardData['cafeteria'][$key] ?? 0 }}%</span>
+                                            @php
+                                                $percentage = $dashboardData['cafeteria'][$key] ?? 0;
+                                                $totalResponses = $dashboardData['cafeteria']['total_respuestas'] ?? 0;
+                                            @endphp
+                                            <span class="info-box-number">{{ $percentage }}%</span>
                                             <div class="progress">
                                                 <div class="progress-bar bg-{{ $config['color'] }}" 
-                                                     style="width: {{ $dashboardData['cafeteria'][$key] ?? 0 }}%"></div>
+                                                     style="width: {{ $percentage }}%"></div>
                                             </div>
                                             <span class="progress-description">
-                                                Satisfacción en {{ strtolower($config['label']) }}
+                                                @if($totalResponses > 0 && $totalResponses < 5)
+                                                    Basado en {{ $totalResponses }} {{ $totalResponses == 1 ? 'respuesta' : 'respuestas' }}
+                                                @else
+                                                    Satisfacción en {{ strtolower($config['label']) }}
+                                                @endif
                                             </span>
                                         </div>
                                     </div>
@@ -226,7 +239,7 @@
                                         <h4 class="card-title">Indicadores de Cafetería - {{ $dashboardData['latest_period'] }}</h4>
                                     </div>
                                     <div class="card-body">
-                                        <canvas id="cafeteriaChart" height="100"></canvas>
+                                        <canvas id="cafeteriaChart" height="200"></canvas>
                                     </div>
                                 </div>
                             </div>
@@ -306,13 +319,21 @@
                                         </span>
                                         <div class="info-box-content">
                                             <span class="info-box-text">{{ $config['label'] }}</span>
-                                            <span class="info-box-number">{{ $dashboardData['transport'][$key] ?? 0 }}%</span>
+                                            @php
+                                                $percentage = $dashboardData['transport'][$key] ?? 0;
+                                                $totalResponses = $dashboardData['transport']['total_respuestas'] ?? 0;
+                                            @endphp
+                                            <span class="info-box-number">{{ $percentage }}%</span>
                                             <div class="progress">
                                                 <div class="progress-bar bg-{{ $config['color'] }}" 
-                                                     style="width: {{ $dashboardData['transport'][$key] ?? 0 }}%"></div>
+                                                     style="width: {{ $percentage }}%"></div>
                                             </div>
                                             <span class="progress-description">
-                                                Satisfacción en {{ strtolower($config['label']) }}
+                                                @if($totalResponses > 0 && $totalResponses < 5)
+                                                    Basado en {{ $totalResponses }} {{ $totalResponses == 1 ? 'respuesta' : 'respuestas' }}
+                                                @else
+                                                    Satisfacción en {{ strtolower($config['label']) }}
+                                                @endif
                                             </span>
                                         </div>
                                     </div>
@@ -327,7 +348,7 @@
                                         <h4 class="card-title">Indicadores de Transporte - {{ $dashboardData['latest_period'] }}</h4>
                                     </div>
                                     <div class="card-body">
-                                        <canvas id="transportChart" height="100"></canvas>
+                                        <canvas id="transportChart" height="200"></canvas>
                                     </div>
                                 </div>
                             </div>
@@ -501,40 +522,63 @@
 
 <!-- Modal para Aspectos Destacados -->
 <div class="modal fade" id="bestMetricsModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h4 class="modal-title">
+                <h5 class="modal-title">
                     <i class="fas fa-trophy"></i>
                     Aspectos Destacados
-                </h4>
+                </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-success">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Criterio de Excelencia:</strong> Se consideran destacados los indicadores con puntuación igual o superior al 80%.
-                </div>
+                <p class="text-muted mb-3">Indicadores con puntuación igual o superior al 80%</p>
                 
-                <div id="bestMetricsContent">
-                    <!-- El contenido se llenará dinámicamente con JavaScript -->
-                </div>
-                
-                <div id="noMetricsMessage" class="text-center" style="display: none;">
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                        <h5>No hay métricas destacadas</h5>
-                        <p>No se encontraron indicadores con puntuación superior al 80% en este período.</p>
-                    </div>
+                <div class="row">
+                    @php
+                        $destacados = [];
+                        // Cafetería
+                        foreach(['calidad_sabor', 'porcion_satisfaccion', 'menu_calidad', 'variedad_menu', 'temperatura_adecuada', 'limpieza_comedor', 'trato_personal'] as $metric) {
+                            $value = $dashboardData['cafeteria'][$metric] ?? 0;
+                            if($value >= 80) {
+                                $destacados[] = ['servicio' => 'Cafetería', 'metrica' => ucwords(str_replace('_', ' ', $metric)), 'valor' => $value];
+                            }
+                        }
+                        // Transporte
+                        foreach(['puntualidad', 'limpieza_vehiculo', 'trato_personal', 'comunicacion'] as $metric) {
+                            $value = $dashboardData['transport'][$metric] ?? 0;
+                            if($value >= 80) {
+                                $destacados[] = ['servicio' => 'Transporte', 'metrica' => ucwords(str_replace('_', ' ', $metric)), 'valor' => $value];
+                            }
+                        }
+                    @endphp
+                    
+                    @if(count($destacados) > 0)
+                        @foreach($destacados as $destacado)
+                            <div class="col-md-6 mb-2">
+                                <div class="card border-success">
+                                    <div class="card-body p-3">
+                                        <h6 class="card-title text-success mb-1">{{ $destacado['metrica'] }}</h6>
+                                        <p class="card-text mb-1">
+                                            <small class="text-muted">{{ $destacado['servicio'] }}</small>
+                                        </p>
+                                        <h4 class="text-success mb-0">{{ $destacado['valor'] }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="col-12 text-center">
+                            <i class="fas fa-info-circle text-muted mb-2" style="font-size: 2rem;"></i>
+                            <p class="text-muted">No hay indicadores que superen el 80% en este período</p>
+                        </div>
+                    @endif
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    <i class="fas fa-times"></i>
-                    Cerrar
-                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -542,41 +586,64 @@
 
 <!-- Modal de Oportunidades de Mejora -->
 <div class="modal fade" id="improvementAreasModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header bg-warning text-dark">
-                <h4 class="modal-title">
+                <h5 class="modal-title">
                     <i class="fas fa-exclamation-triangle"></i>
                     Oportunidades de Mejora
-                </h4>
+                </h5>
                 <button type="button" class="close" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Criterio de Mejora:</strong> Se consideran áreas de mejora los indicadores con puntuación inferior al 70%.
-                </div>
+                <p class="text-muted mb-3">Indicadores con puntuación inferior al 70%</p>
                 
-                <div id="improvementAreasContent">
-                    <!-- El contenido se llenará dinámicamente con JavaScript -->
-                </div>
-                
-                <div id="noImprovementMessage" class="text-center" style="display: none;">
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle fa-2x mb-3 text-success"></i>
-                        <h5>¡Excelente rendimiento!</h5>
-                        <p>No se encontraron indicadores con puntuación inferior al 70% en este período.</p>
-                        <p class="mb-0"><strong>¡Felicitaciones por mantener altos estándares de calidad!</strong></p>
-                    </div>
+                <div class="row">
+                    @php
+                        $mejoras = [];
+                        // Cafetería
+                        foreach(['calidad_sabor', 'porcion_satisfaccion', 'menu_calidad', 'variedad_menu', 'temperatura_adecuada', 'limpieza_comedor', 'trato_personal'] as $metric) {
+                            $value = $dashboardData['cafeteria'][$metric] ?? 0;
+                            if($value < 70 && $value > 0) {
+                                $mejoras[] = ['servicio' => 'Cafetería', 'metrica' => ucwords(str_replace('_', ' ', $metric)), 'valor' => $value];
+                            }
+                        }
+                        // Transporte
+                        foreach(['puntualidad', 'limpieza_vehiculo', 'trato_personal', 'comunicacion'] as $metric) {
+                            $value = $dashboardData['transport'][$metric] ?? 0;
+                            if($value < 70 && $value > 0) {
+                                $mejoras[] = ['servicio' => 'Transporte', 'metrica' => ucwords(str_replace('_', ' ', $metric)), 'valor' => $value];
+                            }
+                        }
+                    @endphp
+                    
+                    @if(count($mejoras) > 0)
+                        @foreach($mejoras as $mejora)
+                            <div class="col-md-6 mb-2">
+                                <div class="card border-warning">
+                                    <div class="card-body p-3">
+                                        <h6 class="card-title text-warning mb-1">{{ $mejora['metrica'] }}</h6>
+                                        <p class="card-text mb-1">
+                                            <small class="text-muted">{{ $mejora['servicio'] }}</small>
+                                        </p>
+                                        <h4 class="text-warning mb-0">{{ $mejora['valor'] }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="col-12 text-center">
+                            <i class="fas fa-check-circle text-success mb-2" style="font-size: 2rem;"></i>
+                            <h5 class="text-success">¡Excelente rendimiento!</h5>
+                            <p class="text-muted">No se encontraron indicadores con puntuación inferior al 70%</p>
+                        </div>
+                    @endif
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    <i class="fas fa-times"></i>
-                    Cerrar
-                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -587,38 +654,49 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
-                <h4 class="modal-title">
+                <h5 class="modal-title">
                     <i class="fas fa-comments"></i>
                     Comentarios Positivos
-                </h4>
+                </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Comentarios Destacados:</strong> Lo que más valoran los padres de familia sobre los servicios.
-                </div>
+                <p class="text-muted mb-3">Lo que más valoran los padres de familia sobre los servicios</p>
                 
-                <div id="positiveCommentsContent">
-                    <!-- El contenido se llenará dinámicamente con JavaScript -->
-                </div>
+                @php
+                    $comentariosPositivos = [];
+                    // Obtener comentarios de transporte
+                    $transportUsers = collect($dashboardData['transport_data'] ?? []);
+                    foreach($transportUsers as $user) {
+                        if(!empty($user->vehicle_cleanliness) && strlen($user->vehicle_cleanliness) > 20) {
+                            $comentariosPositivos[] = ['servicio' => 'Transporte - Limpieza', 'comentario' => $user->vehicle_cleanliness];
+                        }
+                        if(!empty($user->staff_treatment_transport) && strlen($user->staff_treatment_transport) > 20) {
+                            $comentariosPositivos[] = ['servicio' => 'Transporte - Trato', 'comentario' => $user->staff_treatment_transport];
+                        }
+                    }
+                    // Limitar a los primeros 5 comentarios
+                    $comentariosPositivos = array_slice($comentariosPositivos, 0, 5);
+                @endphp
                 
-                <div id="noCommentsMessage" class="text-center" style="display: none;">
-                    <div class="alert alert-warning">
-                        <i class="fas fa-comment-slash fa-2x mb-3 text-muted"></i>
-                        <h5>Sin comentarios disponibles</h5>
-                        <p>No se encontraron comentarios positivos en este período.</p>
-                        <p class="mb-0"><small class="text-muted">Los comentarios aparecerán aquí una vez que se recopilen las respuestas.</small></p>
+                @if(count($comentariosPositivos) > 0)
+                    @foreach($comentariosPositivos as $index => $comentario)
+                        <div class="mb-3 pb-3 @if($index < count($comentariosPositivos) - 1) border-bottom @endif">
+                            <h6 class="text-info mb-1">{{ $comentario['servicio'] }}</h6>
+                            <p class="mb-0">"{{ Str::limit($comentario['comentario'], 150) }}"</p>
+                        </div>
+                    @endforeach
+                @else
+                    <div class="text-center">
+                        <i class="fas fa-comment-slash text-muted mb-2" style="font-size: 2rem;"></i>
+                        <p class="text-muted">No hay comentarios disponibles en este período</p>
                     </div>
-                </div>
+                @endif
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    <i class="fas fa-times"></i>
-                    Cerrar
-                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -629,38 +707,52 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h4 class="modal-title">
+                <h5 class="modal-title">
                     <i class="fas fa-lightbulb"></i>
                     Sugerencias de Mejora
-                </h4>
+                </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-danger">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Ideas de Mejora:</strong> Sugerencias valiosas de los padres de familia para optimizar nuestros servicios.
-                </div>
+                <p class="text-muted mb-3">Ideas y sugerencias de los padres de familia para optimizar los servicios</p>
                 
-                <div id="improvementSuggestionsContent">
-                    <!-- El contenido se llenará dinámicamente con JavaScript -->
-                </div>
+                @php
+                    $sugerencias = [];
+                    // Obtener sugerencias de transporte
+                    $transportUsers = collect($dashboardData['transport_data'] ?? []);
+                    foreach($transportUsers as $user) {
+                        if(!empty($user->staff_treatment_transport) && strlen($user->staff_treatment_transport) > 15) {
+                            // Buscar sugerencias (que contengan palabras como "deberían", "podrían", "sería bueno", etc.)
+                            if(stripos($user->staff_treatment_transport, 'debería') !== false || 
+                               stripos($user->staff_treatment_transport, 'podría') !== false ||
+                               stripos($user->staff_treatment_transport, 'sería') !== false ||
+                               stripos($user->staff_treatment_transport, 'idealmente') !== false) {
+                                $sugerencias[] = ['servicio' => 'Transporte', 'sugerencia' => $user->staff_treatment_transport];
+                            }
+                        }
+                    }
+                    // Limitar a las primeras 5 sugerencias
+                    $sugerencias = array_slice($sugerencias, 0, 5);
+                @endphp
                 
-                <div id="noSuggestionsMessage" class="text-center" style="display: none;">
-                    <div class="alert alert-warning">
-                        <i class="fas fa-lightbulb fa-2x mb-3 text-muted"></i>
-                        <h5>Sin sugerencias registradas</h5>
-                        <p>No se encontraron sugerencias de mejora en este período.</p>
-                        <p class="mb-0"><small class="text-muted">Las sugerencias aparecerán aquí una vez que se recopilen las respuestas.</small></p>
+                @if(count($sugerencias) > 0)
+                    @foreach($sugerencias as $index => $sugerencia)
+                        <div class="mb-3 pb-3 @if($index < count($sugerencias) - 1) border-bottom @endif">
+                            <h6 class="text-danger mb-1">{{ $sugerencia['servicio'] }}</h6>
+                            <p class="mb-0">"{{ Str::limit($sugerencia['sugerencia'], 200) }}"</p>
+                        </div>
+                    @endforeach
+                @else
+                    <div class="text-center">
+                        <i class="fas fa-lightbulb text-muted mb-2" style="font-size: 2rem;"></i>
+                        <p class="text-muted">No hay sugerencias específicas registradas en este período</p>
                     </div>
-                </div>
+                @endif
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    <i class="fas fa-times"></i>
-                    Cerrar
-                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -818,580 +910,15 @@
         max-width: 900px;
     }
     
-    /* Estilos específicos para el modal de aspectos destacados */
-    .best-metric-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border: 1px solid #dee2e6;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 15px;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .best-metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    
-    .best-metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: linear-gradient(to bottom, #28a745, #20c997);
-    }
-    
-    .metric-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-    
-    .metric-service {
-        font-size: 14px;
-        color: #6c757d;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .metric-medal {
-        font-size: 24px;
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-    }
-    
-    .metric-name {
-        font-size: 16px;
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 8px;
-    }
-    
-    .metric-value {
-        font-size: 28px;
-        font-weight: bold;
-        color: #28a745;
-        margin-bottom: 5px;
-    }
-    
-    .metric-rank {
-        font-size: 12px;
-        color: #6c757d;
-        font-style: italic;
-    }
-    
-    .highlights-summary {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-        border: 1px solid #2196f3;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-    
-    .summary-title {
-        color: #1976d2;
-        font-weight: 600;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .summary-stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 15px;
-    }
-    
-    .summary-stat {
-        text-align: center;
-        padding: 10px;
-        background: rgba(255, 255, 255, 0.7);
-        border-radius: 8px;
-    }
-    
-    .summary-stat-value {
-        font-size: 24px;
-        font-weight: bold;
-        color: #1976d2;
-        display: block;
-    }
-    
-    .summary-stat-label {
-        font-size: 12px;
-        color: #666;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .no-highlights-message {
-        text-align: center;
-        padding: 40px 20px;
-        color: #6c757d;
-    }
-    
-    .no-highlights-icon {
-        font-size: 48px;
-        color: #dee2e6;
-        margin-bottom: 15px;
-    }
-    
-    /* Estilos para Modal de Oportunidades de Mejora */
-    #improvementAreasModal .modal-header.bg-warning {
-        background-color: #ffc107 !important;
-        border-bottom: 1px solid #dee2e6;
-    }
-    
-    #improvementAreasModal .card.border-warning {
-        border-color: #ffc107 !important;
-        box-shadow: 0 2px 4px rgba(255, 193, 7, 0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    #improvementAreasModal .card.border-warning:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(255, 193, 7, 0.2);
-    }
-    
-    #improvementAreasModal .card-header.bg-warning {
-        background-color: #ffc107 !important;
-        border-bottom: 1px solid #e0a800;
-    }
-    
-    #improvementAreasModal .badge-warning {
-        background-color: #ffc107;
-        color: #212529;
-        font-weight: 600;
-        padding: 0.5em 0.75em;
-        border-radius: 0.5rem;
-    }
-    
-    #improvementAreasModal .list-unstyled li {
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #f8f9fa;
-    }
-    
-    #improvementAreasModal .list-unstyled li:last-child {
-        border-bottom: none;
-    }
-    
-    #improvementAreasModal .fa-chevron-right {
-        font-size: 0.8rem;
-    }
-    
-    #improvementAreasModal .alert-success {
-        border-color: #28a745;
-        background-color: #d4edda;
-        color: #155724;
-    }
-    
-    #improvementAreasModal .alert-warning {
-        border-color: #ffc107;
-        background-color: #fff3cd;
-        color: #856404;
-    }
-    
-    #improvementAreasModal .modal-footer .btn-warning {
-        background-color: #ffc107;
-        border-color: #ffc107;
-        color: #212529;
-    }
-    
-    #improvementAreasModal .modal-footer .btn-warning:hover {
-        background-color: #e0a800;
-        border-color: #d39e00;
-        color: #212529;
-    }
-    
-    /* Estilos para Modal de Comentarios Positivos */
-    #positiveCommentsModal .modal-header.bg-info {
-        background-color: #17a2b8 !important;
-        border-bottom: 1px solid #dee2e6;
-    }
-    
-    #positiveCommentsModal .card.border-info {
-        border-color: #17a2b8 !important;
-        box-shadow: 0 2px 4px rgba(23, 162, 184, 0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    #positiveCommentsModal .card.border-info:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
-    }
-    
-    #positiveCommentsModal .card-header.bg-info {
-        background-color: #17a2b8 !important;
-        border-bottom: 1px solid #138496;
-    }
-    
-    #positiveCommentsModal .badge-info {
-        background-color: #17a2b8;
-        color: white;
-        font-weight: 600;
-        padding: 0.4em 0.6em;
-        border-radius: 0.4rem;
-    }
-    
-    #positiveCommentsModal .badge-light {
-        background-color: #f8f9fa;
-        color: #17a2b8;
-        font-weight: 600;
-    }
-    
-    #positiveCommentsModal .comment-item {
-        padding: 1rem 0;
-    }
-    
-    #positiveCommentsModal .comment-item.border-bottom {
-        border-bottom: 1px solid #e9ecef !important;
-    }
-    
-    #positiveCommentsModal .blockquote {
-        border-left: 4px solid #17a2b8;
-        padding-left: 1rem;
-        margin-left: 0;
-        background-color: #f8f9fa;
-        border-radius: 0 0.5rem 0.5rem 0;
-        padding: 1rem;
-    }
-    
-    #positiveCommentsModal .blockquote p {
-        color: #495057;
-        font-size: 0.95rem;
-        line-height: 1.5;
-    }
-    
-    #positiveCommentsModal .blockquote-footer {
-        color: #6c757d;
-        font-size: 0.875rem;
-    }
-    
-    #positiveCommentsModal .btn-outline-info {
-        transition: all 0.3s ease;
-    }
-    
-    #positiveCommentsModal .btn-outline-info:hover,
-    #positiveCommentsModal .btn-info {
-        background-color: #17a2b8;
-        border-color: #17a2b8;
-        color: white;
-        transform: scale(1.05);
-    }
-    
-    #positiveCommentsModal .alert-light {
-        background-color: #f8f9fa;
-        border-color: #17a2b8;
-        color: #495057;
-    }
-    
-    #positiveCommentsModal .text-info {
-        color: #17a2b8 !important;
-        font-weight: 600;
-    }
-    
-    #positiveCommentsModal .modal-footer .btn-info {
-        background-color: #17a2b8;
-        border-color: #17a2b8;
-        color: white;
-    }
-    
-    #positiveCommentsModal .modal-footer .btn-info:hover {
-        background-color: #138496;
-        border-color: #117a8b;
-        color: white;
-    }
-    
-    #positiveCommentsModal .modal-footer .btn-success {
-        background-color: #28a745;
-        border-color: #28a745;
-    }
-    
-    #positiveCommentsModal .modal-footer .btn-success:hover {
-        background-color: #218838;
-        border-color: #1e7e34;
-    }
-    
-    /* Animación para el botón de like */
-    .like-count {
-        margin-left: 0.25rem;
-        transition: all 0.3s ease;
-    }
-    
-    /* Responsive design para comentarios */
+    /* Responsive design */
     @media (max-width: 768px) {
-        #positiveCommentsModal .comment-item .row {
-            flex-direction: column;
+        .small-box {
+            margin-bottom: 15px;
         }
         
-        #positiveCommentsModal .comment-item .col-md-4 {
-            margin-top: 1rem;
-            text-align: left !important;
-        }
-        
-        #positiveCommentsModal .blockquote {
-            padding: 0.75rem;
-        }
-        
-        #positiveCommentsModal .blockquote p {
-            font-size: 0.9rem;
-        }
-    }
-    
-    /* Estilos para Modal de Sugerencias de Mejora */
-    #improvementSuggestionsModal .modal-header.bg-danger {
-        background-color: #dc3545 !important;
-        border-bottom: 1px solid #dee2e6;
-    }
-    
-    #improvementSuggestionsModal .card.border-danger {
-        border-color: #dc3545 !important;
-        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    #improvementSuggestionsModal .card.border-danger:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
-    }
-    
-    #improvementSuggestionsModal .card-header.bg-danger {
-        background-color: #dc3545 !important;
-        border-bottom: 1px solid #c82333;
-    }
-    
-    #improvementSuggestionsModal .badge-danger {
-        background-color: #dc3545;
-        color: white;
-        font-weight: 600;
-        padding: 0.4em 0.6em;
-        border-radius: 0.4rem;
-    }
-    
-    #improvementSuggestionsModal .badge-light {
-        background-color: #f8f9fa;
-        color: #dc3545;
-        font-weight: 600;
-    }
-    
-    #improvementSuggestionsModal .suggestion-item {
-        padding: 1.5rem 0;
-        transition: all 0.3s ease;
-    }
-    
-    #improvementSuggestionsModal .suggestion-item:hover {
-        background-color: #fafafa;
-        border-radius: 0.5rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    
-    #improvementSuggestionsModal .suggestion-item.border-bottom {
-        border-bottom: 1px solid #e9ecef !important;
-    }
-    
-    #improvementSuggestionsModal .suggestion-header {
-        margin-bottom: 0.75rem;
-    }
-    
-    #improvementSuggestionsModal .suggestion-header .badge {
-        font-size: 0.75rem;
-        margin-right: 0.25rem;
-    }
-    
-    #improvementSuggestionsModal .blockquote-suggestion {
-        border-left: 4px solid #dc3545;
-        padding-left: 1rem;
-        margin-left: 0;
-        background-color: #fff5f5;
-        border-radius: 0 0.5rem 0.5rem 0;
-        padding: 1rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    #improvementSuggestionsModal .blockquote-suggestion p {
-        color: #495057;
-        font-size: 0.95rem;
-        line-height: 1.6;
-        margin-bottom: 0.5rem;
-        font-style: italic;
-    }
-    
-    #improvementSuggestionsModal .blockquote-footer {
-        color: #6c757d;
-        font-size: 0.875rem;
-        margin-bottom: 0;
-    }
-    
-    #improvementSuggestionsModal .suggestion-meta {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    #improvementSuggestionsModal .suggestion-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-    
-    #improvementSuggestionsModal .suggestion-actions .btn {
-        font-size: 0.8rem;
-        padding: 0.375rem 0.5rem;
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-    
-    #improvementSuggestionsModal .suggestion-actions .btn:hover {
-        transform: scale(1.05);
-    }
-    
-    #improvementSuggestionsModal .vote-count {
-        margin-left: 0.25rem;
-        font-weight: 600;
-    }
-    
-    #improvementSuggestionsModal .alert-light {
-        background-color: #f8f9fa;
-        border-color: #dc3545;
-        color: #495057;
-    }
-    
-    #improvementSuggestionsModal .text-danger {
-        color: #dc3545 !important;
-        font-weight: 600;
-    }
-    
-    #improvementSuggestionsModal .text-success {
-        color: #28a745 !important;
-        font-weight: 600;
-    }
-    
-    #improvementSuggestionsModal .text-warning {
-        color: #ffc107 !important;
-        font-weight: 600;
-    }
-    
-    #improvementSuggestionsModal .text-info {
-        color: #17a2b8 !important;
-        font-weight: 600;
-    }
-    
-    #improvementSuggestionsModal .modal-footer .btn-danger {
-        background-color: #dc3545;
-        border-color: #dc3545;
-        color: white;
-    }
-    
-    #improvementSuggestionsModal .modal-footer .btn-danger:hover {
-        background-color: #c82333;
-        border-color: #bd2130;
-        color: white;
-    }
-    
-    #improvementSuggestionsModal .modal-footer .btn-warning {
-        background-color: #ffc107;
-        border-color: #ffc107;
-        color: #212529;
-    }
-    
-    #improvementSuggestionsModal .modal-footer .btn-warning:hover {
-        background-color: #e0a800;
-        border-color: #d39e00;
-        color: #212529;
-    }
-    
-    #improvementSuggestionsModal .modal-footer .btn-success {
-        background-color: #28a745;
-        border-color: #28a745;
-    }
-    
-    #improvementSuggestionsModal .modal-footer .btn-success:hover {
-        background-color: #218838;
-        border-color: #1e7e34;
-    }
-    
-    /* Badges específicos para estados */
-    #improvementSuggestionsModal .badge-secondary {
-        background-color: #6c757d;
-        color: white;
-    }
-    
-    #improvementSuggestionsModal .badge-warning {
-        background-color: #ffc107;
-        color: #212529;
-    }
-    
-    #improvementSuggestionsModal .badge-info {
-        background-color: #17a2b8;
-        color: white;
-    }
-    
-    #improvementSuggestionsModal .badge-success {
-        background-color: #28a745;
-        color: white;
-    }
-    
-    #improvementSuggestionsModal .badge-dark {
-        background-color: #343a40;
-        color: white;
-    }
-    
-    /* Animaciones para interacciones */
-    #improvementSuggestionsModal .btn-success {
-        animation: pulse-success 0.3s ease;
-    }
-    
-    @keyframes pulse-success {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-    }
-    
-    /* Responsive design para sugerencias */
-    @media (max-width: 768px) {
-        #improvementSuggestionsModal .suggestion-item .row {
-            flex-direction: column;
-        }
-        
-        #improvementSuggestionsModal .suggestion-item .col-md-4 {
-            margin-top: 1rem;
-            text-align: left !important;
-        }
-        
-        #improvementSuggestionsModal .suggestion-actions {
-            flex-direction: row;
-            justify-content: space-between;
-        }
-        
-        #improvementSuggestionsModal .suggestion-actions .btn {
-            width: auto;
-            flex: 1;
-            margin: 0 0.125rem;
-        }
-        
-        #improvementSuggestionsModal .blockquote-suggestion {
-            padding: 0.75rem;
-        }
-        
-        #improvementSuggestionsModal .blockquote-suggestion p {
-            font-size: 0.9rem;
-        }
-        
-        #improvementSuggestionsModal .suggestion-header .badge {
-            font-size: 0.7rem;
-            margin-bottom: 0.25rem;
+        .btn {
+            padding: 8px 20px;
+            font-size: 14px;
         }
     }
 </style>
@@ -2801,6 +2328,23 @@ document.getElementById('period2').addEventListener('change', function() {
         option.disabled = option.value === selectedValue;
     }
 });
+
+// Funciones para los modales simplificados
+function showBestMetrics() {
+    $('#bestMetricsModal').modal('show');
+}
+
+function showImprovementAreas() {
+    $('#improvementAreasModal').modal('show');
+}
+
+function showPositiveComments() {
+    $('#positiveCommentsModal').modal('show');
+}
+
+function showImprovementComments() {
+    $('#improvementSuggestionsModal').modal('show');
+}
 @endif
 </script>
 @stop
