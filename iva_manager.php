@@ -248,8 +248,8 @@ function commandTest($options) {
             'email' => 'prueba' . rand(1000, 9999) . '@test.com',
             'direccion' => 'Dirección de prueba',
             'ciudad' => 'Bogotá',
-            'contacto' => 'Contacto de Prueba',
-            'estado' => 'activo'
+            'persona_contacto' => 'Contacto de Prueba',
+            'servicio_producto' => 'Productos de prueba'
         ]);
         
         // Crear solicitud de prueba

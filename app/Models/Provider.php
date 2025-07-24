@@ -18,7 +18,20 @@ class Provider extends Model
         'contacto',
         'email',
         'telefono',
-        'direccion'
+        'direccion',
+        'ciudad',
+        'persona_contacto',
+        'servicio_producto',
+        'market_segment',
+        'proveedor_critico',
+        'alto_riesgo',
+        'forma_pago',
+        'descuento',
+        'cobertura',
+        'referencias_comerciales',
+        'nivel_precios',
+        'valores_agregados',
+        'estado'
     ];
 
     // This accessor helps maintain compatibility with the purchase orders system
