@@ -439,10 +439,10 @@ class ApprovalController extends Controller
             // Calcular total para este proveedor
             $totalAmount = $providerSelections->sum('total_price');
             
-            // Calcular IVA si es necesario
+            // Calcular IVA correctamente - para selecciones mixtas asumimos que los precios ya incluyen IVA
             $includesIva = true;
-            $subtotal = $totalAmount / 1.19; // Asumir que el total ya incluye IVA
-            $ivaAmount = $totalAmount - $subtotal;
+            $subtotal = round($totalAmount / 1.19, 2); // Calcular subtotal sin IVA
+            $ivaAmount = round($totalAmount - $subtotal, 2); // Calcular IVA
             
             // Crear orden de compra individual para este proveedor
             $purchaseOrder = \App\Models\PurchaseOrder::create([
@@ -521,10 +521,19 @@ class ApprovalController extends Controller
         $totalAmount = $quotation->total_amount;
         $paymentTerms = $quotation->payment_terms ?? 'Contado';
         
-        // Calcular IVA si es necesario
-        $includesIva = true;
-        $subtotal = $totalAmount / 1.19; // Asumir que el total ya incluye IVA
-        $ivaAmount = $totalAmount - $subtotal;
+        // Calcular IVA correctamente
+        $includesIva = $quotation->includes_iva_19 ?? true; // Verificar si incluye IVA
+        
+        if ($includesIva) {
+            // Si el total ya incluye IVA, calcular subtotal e IVA
+            $subtotal = round($totalAmount / 1.19, 2);
+            $ivaAmount = round($totalAmount - $subtotal, 2);
+        } else {
+            // Si el total no incluye IVA, calcular IVA y nuevo total
+            $subtotal = $totalAmount;
+            $ivaAmount = round($totalAmount * 0.19, 2);
+            $totalAmount = $subtotal + $ivaAmount;
+        }
         
         // Crear la orden de compra
         $purchaseOrder = \App\Models\PurchaseOrder::create([
@@ -578,10 +587,11 @@ class ApprovalController extends Controller
             // Usar el presupuesto de la solicitud como monto total
             $totalAmount = $purchaseRequest->service_budget ?? 0;
             
-            // Calcular IVA si es necesario
-            $includesIva = true;
-            $subtotal = $totalAmount / 1.19;
-            $ivaAmount = $totalAmount - $subtotal;
+            // Calcular IVA correctamente - para servicios sin cotización asumimos que el presupuesto NO incluye IVA
+            $includesIva = true; // Queremos que la orden final incluya IVA
+            $subtotal = $totalAmount; // El presupuesto es el subtotal
+            $ivaAmount = round($totalAmount * 0.19, 2); // Calcular 19% de IVA
+            $totalAmount = $subtotal + $ivaAmount; // Total final con IVA
             
             // Crear la orden de compra
             $purchaseOrder = \App\Models\PurchaseOrder::create([

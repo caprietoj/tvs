@@ -433,12 +433,17 @@ class PerformanceEvaluationController extends Controller
         if ($request->has('complete_evaluation')) {
             $performanceEvaluation->completeSupervisorEvaluation();
             $message = 'Evaluación del supervisor completada exitosamente';
+            
+            return redirect()->route('performance-evaluations.show', $performanceEvaluation)
+                            ->with('success', $message)
+                            ->with('evaluation_completed', true)
+                            ->with('show_feedback_session_option', true);
         } else {
             $message = 'Evaluación del supervisor guardada como borrador';
+            
+            return redirect()->route('performance-evaluations.show', $performanceEvaluation)
+                            ->with('success', $message);
         }
-        
-        return redirect()->route('performance-evaluations.show', $performanceEvaluation)
-                        ->with('success', $message);
     }
 
     /**

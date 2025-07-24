@@ -153,6 +153,91 @@
         </div>
     </div>
 
+    <!-- Sesiones de Retroalimentación -->
+    @if($performanceEvaluation->status === 'supervisor_completed')
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-comments text-primary"></i> 
+                Sesiones de Retroalimentación
+            </h3>
+        </div>
+        <div class="card-body">
+            @php
+                $feedbackSessions = $performanceEvaluation->feedbackSessions()->latest('scheduled_datetime')->get();
+            @endphp
+            
+            @if($feedbackSessions->count() > 0)
+                <div class="row">
+                    @foreach($feedbackSessions as $session)
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-left-primary">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-calendar"></i> 
+                                            {{ $session->formatted_datetime }}
+                                        </h6>
+                                        @if($session->location)
+                                        <p class="text-muted mb-1">
+                                            <i class="fas fa-map-marker-alt"></i> {{ $session->location }}
+                                        </p>
+                                        @endif
+                                        @if($session->status === 'realizada')
+                                            <small class="text-muted">
+                                                Completada el {{ $session->completed_at->format('d/m/Y') }}
+                                            </small>
+                                        @endif
+                                    </div>
+                                    <span class="badge 
+                                        @if($session->status === 'programada') badge-warning
+                                        @elseif($session->status === 'realizada') badge-success
+                                        @else badge-secondary @endif
+                                    ">
+                                        {{ ucfirst($session->status) }}
+                                    </span>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{{ route('feedback-sessions.show', $session) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> Ver Detalles
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> No hay sesiones de retroalimentación programadas</h6>
+                    <p class="mb-2">Una sesión de retroalimentación permite:</p>
+                    <ul class="mb-3">
+                        <li>Discutir los resultados de la evaluación</li>
+                        <li>Identificar fortalezas y áreas de mejora</li>
+                        <li>Establecer metas para el próximo período</li>
+                        <li>Planificar el desarrollo profesional</li>
+                    </ul>
+                    
+                    @if(auth()->id() === $performanceEvaluation->evaluator_id || auth()->user()->hasRole('admin'))
+                    <a href="{{ route('feedback-sessions.create', $performanceEvaluation) }}" class="btn btn-success">
+                        <i class="fas fa-calendar-plus"></i> Programar Sesión de Retroalimentación
+                    </a>
+                    @endif
+                </div>
+            @endif
+            
+            @if($feedbackSessions->count() > 0 && (auth()->id() === $performanceEvaluation->evaluator_id || auth()->user()->hasRole('admin')))
+                <div class="text-center mt-3">
+                    <a href="{{ route('feedback-sessions.create', $performanceEvaluation) }}" class="btn btn-outline-success">
+                        <i class="fas fa-plus"></i> Programar Nueva Sesión
+                    </a>
+                </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <!-- Resumen de Puntuaciones -->
     @if($performanceEvaluation->objectives_self_score || $performanceEvaluation->objectives_supervisor_score)
     <div class="card">
@@ -380,4 +465,55 @@
         top: 0;
     }
 </style>
+@stop
+
+@section('js')
+<script>
+$(document).ready(function() {
+    // Verificar si hay mensaje de evaluación completada y mostrar modal
+    @if(session('evaluation_completed') && session('show_feedback_session_option'))
+        setTimeout(function() {
+            showFeedbackSessionModal();
+        }, 1500);
+    @endif
+});
+
+// Función para mostrar modal de programar sesión de retroalimentación
+function showFeedbackSessionModal() {
+    Swal.fire({
+        title: '¡Evaluación Completada!',
+        html: `
+            <div class="text-left">
+                <p class="mb-3">La evaluación del supervisor ha sido completada exitosamente.</p>
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-lightbulb"></i> ¿Desea programar una sesión de retroalimentación?</h6>
+                    <p class="mb-2">Una sesión de retroalimentación permite:</p>
+                    <ul class="text-left mb-0">
+                        <li>Discutir los resultados de la evaluación</li>
+                        <li>Identificar fortalezas y áreas de mejora</li>
+                        <li>Establecer metas para el próximo período</li>
+                        <li>Planificar el desarrollo profesional</li>
+                    </ul>
+                </div>
+                <p class="text-muted"><small>Puede programar la sesión ahora o hacerlo más tarde desde esta misma página.</small></p>
+            </div>
+        `,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-calendar-plus"></i> Programar Sesión',
+        cancelButtonText: 'Ahora No',
+        width: '600px',
+        customClass: {
+            htmlContainer: 'text-left'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Redirigir a la página de programar sesión
+            window.location.href = '{{ route("feedback-sessions.create", $performanceEvaluation) }}';
+        }
+    });
+}
+</script>
 @stop

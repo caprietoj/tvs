@@ -359,11 +359,11 @@
             <div class="totals-box">
                 <div class="total-row">
                     <span class="total-label">Subtotal:</span>
-                    <span class="total-value">${{ number_format($order->total_amount * 0.84, 2, ',', '.') }}</span>
+                    <span class="total-value">${{ number_format($order->subtotal ?? 0, 2, ',', '.') }}</span>
                 </div>
                 <div class="total-row">
                     <span class="total-label">IVA (19%):</span>
-                    <span class="total-value">${{ number_format($order->total_amount * 0.16, 2, ',', '.') }}</span>
+                    <span class="total-value">${{ number_format($order->iva_amount ?? 0, 2, ',', '.') }}</span>
                 </div>
                 <div class="total-row">
                     <span class="total-label font-bold">TOTAL:</span>

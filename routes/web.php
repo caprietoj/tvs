@@ -840,6 +840,17 @@ Route::middleware(['auth'])->prefix('performance-evaluations')->name('performanc
     Route::post('/{performanceEvaluation}/supervisor-evaluate', [App\Http\Controllers\PerformanceEvaluationController::class, 'storeSupervisorEvaluation'])->name('store-supervisor-evaluation');
 });
 
+// Rutas para sesiones de retroalimentación
+Route::middleware(['auth'])->prefix('feedback-sessions')->name('feedback-sessions.')->group(function () {
+    Route::get('/evaluation/{evaluation}/create', [App\Http\Controllers\FeedbackSessionController::class, 'create'])->name('create');
+    Route::post('/evaluation/{evaluation}', [App\Http\Controllers\FeedbackSessionController::class, 'store'])->name('store');
+    Route::get('/{feedbackSession}', [App\Http\Controllers\FeedbackSessionController::class, 'show'])->name('show');
+    Route::get('/{feedbackSession}/edit', [App\Http\Controllers\FeedbackSessionController::class, 'edit'])->name('edit');
+    Route::patch('/{feedbackSession}', [App\Http\Controllers\FeedbackSessionController::class, 'update'])->name('update');
+    Route::post('/{feedbackSession}/complete', [App\Http\Controllers\FeedbackSessionController::class, 'complete'])->name('complete');
+    Route::delete('/{feedbackSession}/cancel', [App\Http\Controllers\FeedbackSessionController::class, 'cancel'])->name('cancel');
+});
+
 // Rutas para selección mixta de proveedores
 Route::middleware('auth')->group(function () {
     Route::get('/purchase-requests/{purchaseRequest}/quotation-selections', [QuotationItemSelectionController::class, 'show'])

@@ -152,9 +152,22 @@ class PurchaseOrder extends Model
     {
         static::creating(function ($order) {
             if (!$order->order_number) {
-                $prefix = 'OC-';
-                $lastOrder = self::withTrashed()->latest('id')->first();
-                $nextId = $lastOrder ? intval(substr($lastOrder->order_number, 3)) + 1 : 1;
+                $prefix = 'ORD-';
+                
+                // Buscar el número más alto existente con formato ORD-XXXX
+                $lastOrder = self::withTrashed()
+                    ->where('order_number', 'LIKE', 'ORD-%')
+                    ->orderByRaw('CAST(SUBSTRING(order_number, 5) AS UNSIGNED) DESC')
+                    ->first();
+                
+                if ($lastOrder) {
+                    // Extraer el número del formato ORD-XXXX
+                    $lastNumber = intval(substr($lastOrder->order_number, 4));
+                    $nextId = $lastNumber + 1;
+                } else {
+                    $nextId = 1;
+                }
+                
                 $order->order_number = $prefix . str_pad($nextId, 4, '0', STR_PAD_LEFT);
             }
         });

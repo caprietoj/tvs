@@ -345,37 +345,57 @@
 $(document).ready(function() {
     // Confirmación antes de completar la evaluación
     $('button[name="complete_evaluation"]').on('click', function(e) {
-        if (!confirm('¿Está seguro de que desea completar la evaluación del supervisor? Una vez completada no podrá ser modificada.')) {
-            e.preventDefault();
-        }
+        e.preventDefault();
+        
+        Swal.fire({
+            title: '¿Completar Evaluación?',
+            text: '¿Está seguro de que desea completar la evaluación del supervisor? Una vez completada no podrá ser modificada.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, Completar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Validar campos antes de enviar
+                if (validateRequiredFields()) {
+                    $('#supervisorEvaluationForm')[0].submit();
+                }
+            }
+        });
     });
 
-    // Validar que todos los campos requeridos estén completos antes de completar
-    $('#supervisorEvaluationForm').on('submit', function(e) {
-        if ($('button[name="complete_evaluation"]:focus').length > 0) {
-            let incompleteFields = 0;
-            
-            // Verificar objetivos del supervisor
-            $('.objectives-score-supervisor').each(function() {
-                if ($(this).val() === '') {
-                    incompleteFields++;
-                }
-            });
-            
-            // Verificar competencias del supervisor
-            $('.competencies-score-supervisor').each(function() {
-                if ($(this).val() === '') {
-                    incompleteFields++;
-                }
-            });
-            
-            if (incompleteFields > 0) {
-                e.preventDefault();
-                alert('Por favor complete todos los campos requeridos antes de finalizar la evaluación. Faltan ' + incompleteFields + ' campos por completar.');
-                return false;
+    // Función para validar campos requeridos
+    function validateRequiredFields() {
+        let incompleteFields = 0;
+        
+        // Verificar objetivos del supervisor
+        $('.objectives-score-supervisor').each(function() {
+            if ($(this).val() === '') {
+                incompleteFields++;
             }
+        });
+        
+        // Verificar competencias del supervisor
+        $('.competencies-score-supervisor').each(function() {
+            if ($(this).val() === '') {
+                incompleteFields++;
+            }
+        });
+        
+        if (incompleteFields > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Campos Incompletos',
+                text: `Por favor complete todos los campos requeridos antes de finalizar la evaluación. Faltan ${incompleteFields} campos por completar.`,
+                confirmButtonColor: '#007bff'
+            });
+            return false;
         }
-    });
+        
+        return true;
+    }
     
     // Contador de caracteres para observaciones
     $('#supervisor_observations').on('input', function() {
@@ -390,7 +410,55 @@ $(document).ready(function() {
         
         $(this).next().text('Caracteres restantes: ' + remaining);
     });
+
+    // Verificar si hay mensaje de éxito y mostrar modal de programar sesión
+    @if(session('success') && session('evaluation_completed'))
+        setTimeout(function() {
+            showFeedbackSessionModal();
+        }, 1000);
+    @endif
 });
+
+// Función para mostrar modal de programar sesión de retroalimentación
+function showFeedbackSessionModal() {
+    Swal.fire({
+        title: '¡Evaluación Completada!',
+        html: `
+            <div class="text-left">
+                <p class="mb-3">La evaluación del supervisor ha sido completada exitosamente.</p>
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-lightbulb"></i> ¿Desea programar una sesión de retroalimentación?</h6>
+                    <p class="mb-2">Una sesión de retroalimentación permite:</p>
+                    <ul class="text-left mb-0">
+                        <li>Discutir los resultados de la evaluación</li>
+                        <li>Identificar fortalezas y áreas de mejora</li>
+                        <li>Establecer metas para el próximo período</li>
+                        <li>Planificar el desarrollo profesional</li>
+                    </ul>
+                </div>
+                <p class="text-muted"><small>Puede programar la sesión ahora o hacerlo más tarde desde la vista de la evaluación.</small></p>
+            </div>
+        `,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-calendar-plus"></i> Programar Sesión',
+        cancelButtonText: 'Ahora No',
+        width: '600px',
+        customClass: {
+            htmlContainer: 'text-left'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Redirigir a la página de programar sesión
+            window.location.href = '{{ route("feedback-sessions.create", ":evaluation_id") }}'.replace(':evaluation_id', '{{ $performanceEvaluation->id }}');
+        } else {
+            // Redirigir a la vista de la evaluación
+            window.location.href = '{{ route("performance-evaluations.show", $performanceEvaluation) }}';
+        }
+    });
+}
 </script>
 @stop
 

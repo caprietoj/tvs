@@ -64,6 +64,30 @@ class PerformanceEvaluation extends Model
     }
 
     /**
+     * Relación con las sesiones de retroalimentación
+     */
+    public function feedbackSessions()
+    {
+        return $this->hasMany(FeedbackSession::class);
+    }
+
+    /**
+     * Verificar si tiene sesiones de retroalimentación programadas
+     */
+    public function hasFeedbackSessions()
+    {
+        return $this->feedbackSessions()->exists();
+    }
+
+    /**
+     * Obtener la sesión de retroalimentación más reciente
+     */
+    public function getLatestFeedbackSession()
+    {
+        return $this->feedbackSessions()->latest('scheduled_datetime')->first();
+    }
+
+    /**
      * Obtener las preguntas de objetivos del cargo
      */
     public static function getObjectivesQuestions(): array
