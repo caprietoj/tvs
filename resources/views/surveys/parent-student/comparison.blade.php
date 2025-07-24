@@ -107,7 +107,7 @@
             'period2' => '2025-06',
             'responses_period1' => 45,
             'responses_period2' => 82,
-            'service' => 'both',
+            'service' => request('service', 'both'),
             
             // Datos detallados de cafetería por período
             'cafeteria_period1' => [
