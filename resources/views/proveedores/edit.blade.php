@@ -103,7 +103,7 @@
                                             <div class="form-group">
                                                 <label for="email">Email</label>
                                                 <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" 
-                                                       value="{{ old('email', $proveedor->email) }}" required>
+                                                       value="{{ old('email', $proveedor->email) }}">
                                                 @error('email')
                                                     <span class="invalid-feedback">{{ $message }}</span>
                                                 @enderror

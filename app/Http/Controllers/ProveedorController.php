@@ -31,7 +31,7 @@ class ProveedorController extends Controller
             'direccion' => 'required',
             'ciudad' => 'required',
             'telefono' => 'required',
-            'email' => 'required|email|unique:proveedors',
+            'email' => 'nullable|email',
             'persona_contacto' => 'required',
             'servicio_producto' => 'required',
             'proveedor_critico' => 'required|boolean',
@@ -132,7 +132,7 @@ class ProveedorController extends Controller
             'direccion' => 'required',
             'ciudad' => 'required',
             'telefono' => 'required',
-            'email' => 'required|email|unique:proveedors,email,' . $proveedor->id,
+            'email' => 'nullable|email',
             'persona_contacto' => 'required',
             'servicio_producto' => 'required',
             'proveedor_critico' => 'required|boolean',
@@ -371,8 +371,9 @@ class ProveedorController extends Controller
                         continue;
                     }
 
-                    if (empty($proveedorData['email']) || !filter_var($proveedorData['email'], FILTER_VALIDATE_EMAIL)) {
-                        $errors[] = "Fila " . ($index + 1) . ": Email inválido o faltante";
+                    // Validar email solo si no está vacío
+                    if (!empty($proveedorData['email']) && !filter_var($proveedorData['email'], FILTER_VALIDATE_EMAIL)) {
+                        $errors[] = "Fila " . ($index + 1) . ": Email inválido";
                         continue;
                     }
 
@@ -383,10 +384,13 @@ class ProveedorController extends Controller
                         continue;
                     }
 
-                    $existingEmail = Proveedor::where('email', $proveedorData['email'])->first();
-                    if ($existingEmail) {
-                        $errors[] = "Fila " . ($index + 1) . ": Ya existe un proveedor con email " . $proveedorData['email'];
-                        continue;
+                    // Solo verificar duplicado de email si el email no está vacío
+                    if (!empty($proveedorData['email'])) {
+                        $existingEmail = Proveedor::where('email', $proveedorData['email'])->first();
+                        if ($existingEmail) {
+                            $errors[] = "Fila " . ($index + 1) . ": Ya existe un proveedor con email " . $proveedorData['email'];
+                            continue;
+                        }
                     }
 
                     // Crear el proveedor

@@ -114,13 +114,13 @@
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-group">
-                                                <label for="email">Email <span class="text-danger">*</span></label>
+                                                <label for="email">Email</label>
                                                 <div class="input-group">
                                                     <div class="input-group-prepend">
                                                         <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                                                     </div>
                                                     <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" 
-                                                        value="{{ old('email') }}" placeholder="Ingrese el email" required>
+                                                        value="{{ old('email') }}" placeholder="Ingrese el email">
                                                 </div>
                                                 @error('email')
                                                     <span class="invalid-feedback">{{ $message }}</span>
