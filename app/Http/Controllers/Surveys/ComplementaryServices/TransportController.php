@@ -574,28 +574,50 @@ class TransportController extends Controller
 
     /**
      * Calcula las respuestas esperadas para un período
-     * Esto puede basarse en configuración, dependencias activas, o datos históricos
+     * Esto debe representar el total de usuarios únicos que usan al menos uno de los servicios
      */
     private function calculateExpectedResponses($period)
     {
-        // Ejemplo: calcular basado en dependencias o configuración
-        // Puedes ajustar esta lógica según tus necesidades específicas
+        // Obtener datos del período
+        $data = $this->getPeriodData($period);
         
-        // Opción 1: Número fijo configurado
-        $baseExpected = 100; // Número base esperado
+        if ($data->isEmpty()) {
+            return 100; // Valor por defecto si no hay datos
+        }
         
-        // Opción 2: Basado en dependencias activas
-        $activeDependencies = DB::table('complementary_services_surveys')
-            ->where('period', $period)
-            ->distinct('dependencia')
-            ->count('dependencia');
+        // Contar usuarios únicos de cafetería
+        $cafeteriaUsers = $data->filter(function ($item) {
+            return stripos($item->usa_cafeteria, 'Si.') !== false;
+        })->count();
         
-        // Estimar respuestas esperadas: 20-30 respuestas por dependencia
-        $estimatedPerDependency = 25;
-        $calculatedExpected = $activeDependencies * $estimatedPerDependency;
+        // Contar usuarios únicos de transporte
+        $transportUsers = $data->filter(function ($item) {
+            return stripos($item->usa_transporte, 'Si.') !== false;
+        })->count();
         
-        // Retornar el mayor entre el base y el calculado
-        return max($baseExpected, $calculatedExpected);
+        // Usuarios que usan ambos servicios
+        $bothUsers = $data->filter(function ($item) {
+            return stripos($item->usa_cafeteria, 'Si.') !== false && 
+                   stripos($item->usa_transporte, 'Si.') !== false;
+        })->count();
+        
+        // Total de usuarios únicos que usan al menos uno de los servicios
+        $uniqueServiceUsers = $cafeteriaUsers + $transportUsers - $bothUsers;
+        
+        // Las respuestas esperadas son los usuarios únicos que usan servicios
+        // Si no hay suficientes usuarios de servicios, usar el total de respuestas como base
+        if ($uniqueServiceUsers < 10) {
+            // Fallback: usar estimación basada en dependencias
+            $activeDependencies = DB::table('complementary_services_surveys')
+                ->where('period', $period)
+                ->distinct('dependencia')
+                ->count('dependencia');
+            
+            $estimatedPerDependency = 20;
+            return max($activeDependencies * $estimatedPerDependency, 50);
+        }
+        
+        return $uniqueServiceUsers;
     }
 
     public function export()

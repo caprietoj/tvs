@@ -137,7 +137,7 @@
                 <div class="small-box bg-success">
                     <div class="inner">
                         <h3>{{ $dashboardData['cafeteria_users'] }}</h3>
-                        <p>Usuarios Cafetería</p>
+                        <p>Respuestas Cafetería</p>
                         <small>{{ round(($dashboardData['cafeteria_users'] / $dashboardData['total_responses']) * 100, 1) }}% del total</small>
                     </div>
                     <div class="icon">
@@ -150,7 +150,7 @@
                 <div class="small-box bg-warning">
                     <div class="inner">
                         <h3>{{ $dashboardData['transport_users'] }}</h3>
-                        <p>Usuarios Transporte</p>
+                        <p>Respuestas Transporte</p>
                         <small>{{ round(($dashboardData['transport_users'] / $dashboardData['total_responses']) * 100, 1) }}% del total</small>
                     </div>
                     <div class="icon">

@@ -101,12 +101,17 @@
                                     <tr id="materialItem-1">
                                         <td>1</td>
                                         <td>
-                                            <select class="form-control form-control-sm select2" name="material_items[0][article]">
-                                                <option value="">Seleccione un producto...</option>
+                                            <input type="text" 
+                                                   class="form-control form-control-sm product-input" 
+                                                   name="material_items[0][article]"
+                                                   list="products-datalist-0"
+                                                   placeholder="Escriba para buscar producto..."
+                                                   autocomplete="off">
+                                            <datalist id="products-datalist-0">
                                                 @foreach($inventoryItems as $item)
-                                                    <option value="{{ $item->producto }}">{{ $item->producto }}</option>
+                                                    <option value="{{ $item->producto }}">
                                                 @endforeach
-                                            </select>
+                                            </datalist>
                                             <input type="hidden" name="material_items[0][item]" value="1">
                                         </td>
                                         <td>
@@ -168,7 +173,6 @@
 @stop
 
 @section('css')
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
     :root {
         --institutional-blue: #364E76;
@@ -199,47 +203,102 @@
         border-color: #2a3d5d;
     }
     
-    .select2-container--default .select2-selection--single {
-        height: 31px;
-        font-size: 0.875rem;
-        padding: 0.25rem;
+    /* Estilos para el sistema de datalist */
+    .product-input {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
     }
     
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 31px;
+    .product-input:focus {
+        border-color: #364E76;
+        box-shadow: 0 0 0 0.2rem rgba(54, 78, 118, 0.25);
+        outline: none;
+    }
+    
+    .product-input.valid-selection {
+        background-color: #d4edda;
+        border-color: #28a745;
+    }
+    
+    .product-input.invalid-selection {
+        background-color: #f8d7da;
+        border-color: #dc3545;
     }
 </style>
 @stop
 
 @section('js')
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    $(function() {
-        // Inicializar Select2 para los selectores de productos
-        $('.select2').select2({
-            placeholder: 'Seleccione un producto',
-            width: '100%'
+    $(document).ready(function() {
+        console.log('🚀 Sistema de autocompletado con datalist iniciado');
+        
+        // Lista de productos válidos para validación
+        const validProducts = [
+            @foreach($inventoryItems as $item)
+                "{{ addslashes($item->producto) }}",
+            @endforeach
+        ];
+        
+        console.log('📦 Total productos válidos:', validProducts.length);
+        
+        let itemCounter = 1;
+        
+        // Función para validar selección de producto
+        function validateProduct(input) {
+            const value = input.val().trim();
+            const isValid = validProducts.includes(value);
+            
+            input.removeClass('valid-selection invalid-selection');
+            
+            if (value === '') {
+                // Campo vacío, sin validación visual
+                return false;
+            } else if (isValid) {
+                input.addClass('valid-selection');
+                console.log('✅ Producto válido:', value);
+                return true;
+            } else {
+                input.addClass('invalid-selection');
+                console.log('❌ Producto no válido:', value);
+                return false;
+            }
+        }
+        
+        // Evento para validar productos en tiempo real
+        $(document).on('input change blur', '.product-input', function() {
+            validateProduct($(this));
         });
         
-        // Variables para contadores de filas
-        let materialItemCounter = 1;
+        // Función para crear datalist único
+        function createUniqueDatalist(index) {
+            const datalistId = `products-datalist-${index}`;
+            const options = validProducts.map(product => 
+                `<option value="${product}">`
+            ).join('');
+            
+            return `<datalist id="${datalistId}">${options}</datalist>`;
+        }
         
         // Función para agregar nuevo material
         $('#addMaterialItem').click(function() {
-            materialItemCounter++;
+            itemCounter++;
             const newIndex = $('#materialItemsBody tr').length;
+            const datalistId = `products-datalist-${newIndex}`;
             
-            // Obtener opciones de productos desde el primer select
-            const productOptions = $('select[name="material_items[0][article]"]').html();
+            console.log('➕ Agregando material #' + itemCounter);
             
             const newRow = `
-                <tr id="materialItem-${materialItemCounter}">
-                    <td>${materialItemCounter}</td>
+                <tr id="materialItem-${itemCounter}">
+                    <td>${itemCounter}</td>
                     <td>
-                        <select class="form-control form-control-sm select2-new" name="material_items[${newIndex}][article]">
-                            ${productOptions}
-                        </select>
-                        <input type="hidden" name="material_items[${newIndex}][item]" value="${materialItemCounter}">
+                        <input type="text" 
+                               class="form-control form-control-sm product-input" 
+                               name="material_items[${newIndex}][article]"
+                               list="${datalistId}"
+                               placeholder="Escriba para buscar producto..."
+                               autocomplete="off">
+                        ${createUniqueDatalist(newIndex)}
+                        <input type="hidden" name="material_items[${newIndex}][item]" value="${itemCounter}">
                     </td>
                     <td>
                         <input type="number" class="form-control form-control-sm" name="material_items[${newIndex}][quantity]" min="0">
@@ -254,28 +313,24 @@
                     </td>
                 </tr>
             `;
-            $('#materialItemsBody').append(newRow);
             
-            // Inicializar Select2 para el nuevo select
-            $('.select2-new').select2({
-                placeholder: 'Seleccione un producto',
-                width: '100%'
-            }).removeClass('select2-new');
+            $('#materialItemsBody').append(newRow);
+            console.log('✅ Material #' + itemCounter + ' agregado con datalist');
         });
         
-        // Evento para eliminar fila (delegación de eventos)
+        // Eliminar fila
         $(document).on('click', '.delete-row', function() {
-            // No permitir eliminar si solo queda una fila
-            const tableId = $(this).closest('table').attr('id');
-            const rowCount = $(this).closest('tbody').find('tr').length;
+            const rowCount = $('#materialItemsBody tr').length;
             
             if (rowCount > 1) {
                 $(this).closest('tr').remove();
                 
-                // Renumerar las filas visibles
+                // Renumerar filas
                 $('#materialItemsBody tr').each(function(index) {
                     $(this).find('td:first').text(index + 1);
                 });
+                
+                console.log('🗑️ Fila eliminada');
             } else {
                 alert('Debe mantener al menos un ítem en la tabla.');
             }
@@ -283,27 +338,48 @@
         
         // Validación del formulario
         $('#materialsForm').submit(function(e) {
-            let valid = false;
-            let hasMaterialItems = false;
+            let hasValidItems = false;
+            let hasInvalidItems = false;
             
-            // Verificar si hay ítems de materiales
-            $('input[name$="[quantity]"]').each(function() {
-                if ($(this).val() && parseInt($(this).val()) > 0) {
-                    hasMaterialItems = true;
-                    return false; // Romper el ciclo
+            $('.product-input').each(function() {
+                const productValue = $(this).val().trim();
+                const quantityInput = $(this).closest('tr').find('input[name*="[quantity]"]');
+                const quantity = parseInt(quantityInput.val()) || 0;
+                
+                if (productValue !== '') {
+                    const isValidProduct = validProducts.includes(productValue);
+                    
+                    if (!isValidProduct) {
+                        hasInvalidItems = true;
+                        $(this).addClass('invalid-selection');
+                        console.log('❌ Producto inválido:', productValue);
+                    } else if (quantity > 0) {
+                        hasValidItems = true;
+                        console.log('✅ Item válido:', productValue, 'Cantidad:', quantity);
+                    }
                 }
             });
             
-            valid = hasMaterialItems;
-            
-            if (!valid) {
+            if (hasInvalidItems) {
                 e.preventDefault();
-                alert('Debe ingresar al menos un ítem de materiales para procesar la solicitud.');
+                alert('Algunos productos seleccionados no son válidos. Por favor, elija productos de la lista de sugerencias.');
+                console.log('❌ Hay productos inválidos');
                 return false;
             }
             
+            if (!hasValidItems) {
+                e.preventDefault();
+                alert('Debe seleccionar al menos un producto válido y especificar una cantidad mayor a 0.');
+                console.log('❌ No hay items válidos');
+                return false;
+            }
+            
+            console.log('✅ Formulario válido, enviando...');
             return true;
         });
+        
+        // Validar el primer producto al cargar la página
+        validateProduct($('.product-input').first());
     });
 </script>
 @stop

@@ -116,10 +116,10 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info">
                     <div class="inner">
-                        <h3>{{ $dashboardData['total_responses'] }}/100</h3>
+                        <h3>{{ $dashboardData['total_responses'] }}/{{ $dashboardData['expected_responses'] }}</h3>
                         <p>Respuestas Obtenidas/Esperadas</p>
                         <small>Período: {{ $dashboardData['latest_period'] }} 
-                            ({{ round(($dashboardData['total_responses'] / 100) * 100, 1) }}%)
+                            ({{ round(($dashboardData['total_responses'] / $dashboardData['expected_responses']) * 100, 1) }}%)
                         </small>
                     </div>
                     <div class="icon">
@@ -132,7 +132,7 @@
                 <div class="small-box bg-success">
                     <div class="inner">
                         <h3>{{ $dashboardData['cafeteria_users'] }}</h3>
-                        <p>Usuarios Cafetería</p>
+                        <p>Respuestas Cafetería</p>
                         <small>{{ round(($dashboardData['cafeteria_users'] / $dashboardData['total_responses']) * 100, 1) }}% del total</small>
                     </div>
                     <div class="icon">
@@ -145,7 +145,7 @@
                 <div class="small-box bg-warning">
                     <div class="inner">
                         <h3>{{ $dashboardData['transport_users'] }}</h3>
-                        <p>Usuarios Transporte</p>
+                        <p>Respuestas Transporte</p>
                         <small>{{ round(($dashboardData['transport_users'] / $dashboardData['total_responses']) * 100, 1) }}% del total</small>
                     </div>
                     <div class="icon">

@@ -198,7 +198,7 @@
                                             <tr id="materialItem-{{ $item->item }}">
                                                 <td>{{ $item->item }}</td>
                                                 <td>
-                                                    <select class="form-control form-control-sm select2" name="material_items[{{ $index }}][article]">
+                                                    <select class="form-control form-control-sm material-select" name="material_items[{{ $index }}][article]">
                                                         <option value="">Seleccione un producto...</option>
                                                         @foreach($inventoryItems as $inventoryItem)
                                                             <option value="{{ $inventoryItem->producto }}" {{ $item->article == $inventoryItem->producto ? 'selected' : '' }}>
@@ -225,7 +225,7 @@
                                         <tr id="materialItem-1">
                                             <td>1</td>
                                             <td>
-                                                <select class="form-control form-control-sm select2" name="material_items[0][article]">
+                                                <select class="form-control form-control-sm material-select" name="material_items[0][article]">
                                                     <option value="">Seleccione un producto...</option>
                                                     @foreach($inventoryItems as $item)
                                                         <option value="{{ $item->producto }}">{{ $item->producto }}</option>
@@ -333,18 +333,119 @@
     .select2-container--default .select2-selection--single .select2-selection__arrow {
         height: 31px;
     }
+    
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 31px;
+        padding-left: 8px;
+        color: #495057;
+    }
+    
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: var(--institutional-blue);
+    }
+    
+    .select2-dropdown {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    
+    .select2-container {
+        width: 100% !important;
+    }
 </style>
 @stop
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    $(function() {
-        // Inicializar Select2 para los selectores de productos
-        $('.select2').select2({
-            placeholder: 'Seleccione un producto',
-            width: '100%'
+    $(document).ready(function() {
+        // Función para inicializar Select2 en un elemento específico
+        function initializeSelect2(element) {
+            if (!$(element).hasClass('select2-hidden-accessible')) {
+                $(element).select2({
+                    placeholder: 'Seleccione un producto',
+                    width: '100%',
+                    allowClear: true
+                });
+                console.log('Select2 inicializado para:', $(element).attr('name'));
+                // Forzar actualización de la vista
+                $(element).trigger('change.select2');
+            }
+        }
+        
+        // Inicializar Select2 para elementos existentes
+        $('.material-select').each(function() {
+            initializeSelect2(this);
         });
+        
+        // Manejar eventos de selección usando delegación
+        $(document).on('select2:select', '.material-select', function (e) {
+            var data = e.params.data;
+            console.log('Producto seleccionado:', data.text, 'Valor:', data.id);
+            
+            const selectElement = $(this);
+            
+            // Asegurar que el valor se mantiene
+            selectElement.val(data.id).trigger('change');
+            
+            // Verificar y corregir la visualización después de un momento
+            setTimeout(function() {
+                const container = selectElement.next('.select2-container');
+                if (container.length) {
+                    const rendered = container.find('.select2-selection__rendered');
+                    const currentText = rendered.text().trim();
+                    
+                    console.log('Verificando display:', {
+                        selected: data.text,
+                        displayed: currentText,
+                        selectName: selectElement.attr('name')
+                    });
+                    
+                    // Si el texto no coincide con lo seleccionado, corregirlo
+                    if (currentText === '' || currentText === 'Seleccione un producto' || currentText !== data.text) {
+                        console.log('🔧 Corrigiendo display visual para:', selectElement.attr('name'));
+                        rendered.text(data.text);
+                        rendered.attr('title', data.text);
+                        
+                        // Verificar que se aplicó el cambio
+                        setTimeout(function() {
+                            const newText = rendered.text();
+                            console.log('✅ Display corregido a:', newText);
+                        }, 10);
+                    } else {
+                        console.log('✅ Display correcto:', currentText);
+                    }
+                }
+            }, 50);
+            
+            console.log('Valor actualizado visualmente para:', selectElement.attr('name'));
+        });
+        
+        // Función para verificar y corregir el estado visual de Select2
+        function refreshSelect2Display(selectElement) {
+            if (selectElement.hasClass('select2-hidden-accessible')) {
+                const currentValue = selectElement.val();
+                if (currentValue && currentValue !== '') {
+                    // Múltiples métodos para forzar la actualización visual
+                    selectElement.trigger('change.select2');
+                    selectElement.select2('trigger', 'change');
+                    
+                    // Verificar el texto mostrado
+                    const displayText = selectElement.find('option:selected').text();
+                    console.log('Display actualizado para:', selectElement.attr('name'), 'Valor:', currentValue, 'Texto:', displayText);
+                    
+                    // Si el texto no se muestra, forzar recreación
+                    const container = selectElement.next('.select2-container');
+                    if (container.length) {
+                        const rendered = container.find('.select2-selection__rendered');
+                        if (rendered.text() === '' || rendered.text() === 'Seleccione un producto') {
+                            console.log('Forzando actualización visual...');
+                            rendered.text(displayText);
+                        }
+                    }
+                }
+            }
+        }
         
         // Variables para contadores de filas
         let copyItemCounter = {{ $purchaseRequest->copyItems && count($purchaseRequest->copyItems) > 0 ? $purchaseRequest->copyItems->max('item') : 1 }};
@@ -388,14 +489,15 @@
             materialItemCounter++;
             const newIndex = $('#materialItemsBody tr').length;
             
-            // Obtener opciones de productos desde el primer select
-            const productOptions = $('select[name="material_items[0][article]"]').html();
+            // Obtener opciones de productos desde el primer select original
+            const firstSelect = $('select[name="material_items[0][article]"]');
+            const productOptions = firstSelect.html();
             
             const newRow = `
                 <tr id="materialItem-${materialItemCounter}">
                     <td>${materialItemCounter}</td>
                     <td>
-                        <select class="form-control form-control-sm select2-new" name="material_items[${newIndex}][article]">
+                        <select class="form-control form-control-sm material-select" name="material_items[${newIndex}][article]">
                             ${productOptions}
                         </select>
                         <input type="hidden" name="material_items[${newIndex}][item]" value="${materialItemCounter}">
@@ -413,13 +515,42 @@
                     </td>
                 </tr>
             `;
+            
+            // Agregar la fila al DOM
             $('#materialItemsBody').append(newRow);
             
-            // Inicializar Select2 para el nuevo select
-            $('.select2-new').select2({
+            // Buscar el nuevo select que acabamos de crear e inicializar Select2
+            const newSelect = $(`#materialItem-${materialItemCounter} select.material-select`);
+            console.log('Nuevo select creado:', newSelect.length, 'Selector:', `#materialItem-${materialItemCounter} select.material-select`);
+            
+            // Destruir cualquier instancia previa de Select2 y reinicializar
+            if (newSelect.hasClass('select2-hidden-accessible')) {
+                newSelect.select2('destroy');
+            }
+            
+            // Inicializar Select2 en el nuevo elemento
+            newSelect.select2({
                 placeholder: 'Seleccione un producto',
-                width: '100%'
-            }).removeClass('select2-new');
+                width: '100%',
+                allowClear: true
+            });
+            
+            // Forzar actualización del display
+            newSelect.trigger('change.select2');
+            
+            console.log('Select2 inicializado para nuevo item:', newSelect.attr('name'));
+            
+            // Verificar que el select está correctamente inicializado
+            if (newSelect.hasClass('select2-hidden-accessible')) {
+                console.log('✓ Select2 correctamente inicializado y accesible');
+                
+                // Verificar y actualizar el display después de un breve momento
+                setTimeout(function() {
+                    refreshSelect2Display(newSelect);
+                }, 50);
+            } else {
+                console.log('✗ Error: Select2 no se inicializó correctamente');
+            }
         });
         
         // Evento para eliminar fila (delegación de eventos)
