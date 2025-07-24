@@ -197,7 +197,7 @@ class PerformanceEvaluation extends Model
      */
     public function canSelfEvaluate(): bool
     {
-        return in_array($this->status, ['draft', 'self_completed']);
+        return $this->status === 'draft';
     }
 
     /**
