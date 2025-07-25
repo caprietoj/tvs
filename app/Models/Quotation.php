@@ -35,11 +35,17 @@ class Quotation extends Model
         'pre_approval_comments',
         'pre_approved_by',
         'additional_items',
+        'original_item_prices',
+        'original_item_totals',
+        'original_item_taxes',
         // otros campos necesarios
     ];
 
     protected $casts = [
         'additional_items' => 'array',
+        'original_item_prices' => 'array',
+        'original_item_totals' => 'array',
+        'original_item_taxes' => 'array',
         'includes_iva' => 'boolean',
         'includes_iva_19' => 'boolean',
         'includes_iva_5' => 'boolean',

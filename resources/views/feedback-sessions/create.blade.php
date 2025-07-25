@@ -33,7 +33,12 @@
                                 <strong>Supervisor:</strong> {{ $supervisor->name }}
                             </div>
                             <div class="col-md-6">
-                                <strong>Período:</strong> {{ $evaluation->period_start->format('d/m/Y') }} - {{ $evaluation->period_end->format('d/m/Y') }}<br>
+                                <strong>Período:</strong> 
+                                @if($evaluation->evaluation_period_start && $evaluation->evaluation_period_end)
+                                    {{ $evaluation->evaluation_period_start->format('d/m/Y') }} - {{ $evaluation->evaluation_period_end->format('d/m/Y') }}
+                                @else
+                                    Período no definido
+                                @endif<br>
                                 <strong>Tipo:</strong> {{ $evaluation->evaluation_type }}
                             </div>
                         </div>

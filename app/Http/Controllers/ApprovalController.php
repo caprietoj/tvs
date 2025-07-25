@@ -94,6 +94,13 @@ class ApprovalController extends Controller
         }
         
         if (!$validForApproval) {
+            // En lugar de mostrar error, verificar si ya está aprobada o pre-aprobada
+            $approvalInfo = $this->getApprovalInfo($request);
+            
+            if ($approvalInfo) {
+                return view('approvals.show', compact('request', 'approvalInfo'));
+            }
+            
             return redirect()->route('approvals.index')
                 ->with('error', 'Esta solicitud no está en un estado válido para aprobación.');
         }
@@ -167,6 +174,14 @@ class ApprovalController extends Controller
         }
         
         if (!$validForApproval) {
+            // En lugar de mostrar error, verificar si ya está aprobada o pre-aprobada
+            $approvalInfo = $this->getApprovalInfo($purchaseRequest);
+            
+            if ($approvalInfo) {
+                return redirect()->back()
+                    ->with('approvalInfo', $approvalInfo);
+            }
+            
             return redirect()->back()
                 ->with('error', 'Esta solicitud no está en un estado válido para aprobación.');
         }
@@ -674,5 +689,38 @@ class ApprovalController extends Controller
         
         // Verificar que hay selección para cada item
         return $selectionsCount === count($purchaseItems);
+    }
+
+    /**
+     * Obtener información de aprobación/pre-aprobación existente
+     */
+    private function getApprovalInfo(PurchaseRequest $purchaseRequest)
+    {
+        $info = null;
+        
+        // Verificar si ya está aprobada
+        if ($purchaseRequest->status === 'approved' && $purchaseRequest->approved_by) {
+            $approver = \App\Models\User::find($purchaseRequest->approved_by);
+            $info = [
+                'type' => 'approved',
+                'title' => 'Solicitud ya Aprobada',
+                'message' => 'Esta solicitud ya ha sido aprobada definitivamente.',
+                'approver' => $approver ? $approver->name : 'Usuario no encontrado',
+                'date' => $purchaseRequest->approval_date ? $purchaseRequest->approval_date->format('d/m/Y H:i:s') : 'Fecha no disponible'
+            ];
+        }
+        // Verificar si ya está pre-aprobada
+        elseif (in_array($purchaseRequest->status, ['pre-approved', 'Pre-aprobada']) && $purchaseRequest->pre_approved_by) {
+            $preApprover = \App\Models\User::find($purchaseRequest->pre_approved_by);
+            $info = [
+                'type' => 'pre-approved',
+                'title' => 'Solicitud ya Pre-aprobada',
+                'message' => 'Esta solicitud ya ha sido pre-aprobada y está esperando aprobación final.',
+                'approver' => $preApprover ? $preApprover->name : 'Usuario no encontrado',
+                'date' => $purchaseRequest->pre_approved_at ? $purchaseRequest->pre_approved_at->format('d/m/Y H:i:s') : 'Fecha no disponible'
+            ];
+        }
+        
+        return $info;
     }
 }

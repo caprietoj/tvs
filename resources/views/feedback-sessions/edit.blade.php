@@ -30,8 +30,18 @@
                         <h5><i class="fas fa-info-circle"></i> Información Actual</h5>
                         <div class="row">
                             <div class="col-md-6">
-                                <strong>Fecha actual:</strong> {{ $feedbackSession->scheduled_datetime->format('d/m/Y') }}<br>
-                                <strong>Hora actual:</strong> {{ $feedbackSession->scheduled_datetime->format('H:i') }}
+                                <strong>Fecha actual:</strong> 
+                                @if($feedbackSession->scheduled_datetime)
+                                    {{ $feedbackSession->scheduled_datetime->format('d/m/Y') }}
+                                @else
+                                    No definida
+                                @endif<br>
+                                <strong>Hora actual:</strong> 
+                                @if($feedbackSession->scheduled_datetime)
+                                    {{ $feedbackSession->scheduled_datetime->format('H:i') }}
+                                @else
+                                    No definida
+                                @endif
                             </div>
                             <div class="col-md-6">
                                 <strong>Estado:</strong> {{ ucfirst($feedbackSession->status) }}<br>
@@ -51,8 +61,8 @@
                                        class="form-control @error('scheduled_date') is-invalid @enderror" 
                                        id="scheduled_date" 
                                        name="scheduled_date" 
-                                       value="{{ old('scheduled_date', $feedbackSession->scheduled_datetime->format('Y-m-d')) }}"
-                                       min="{{ now()->addDay()->format('Y-m-d') }}"
+                                       value="{{ old('scheduled_date', $feedbackSession->scheduled_datetime ? $feedbackSession->scheduled_datetime->format('Y-m-d') : $feedbackSession->getMinimumRescheduleDate()) }}"
+                                       min="{{ $feedbackSession->getMinimumRescheduleDate() }}"
                                        required>
                                 @error('scheduled_date')
                                     <span class="invalid-feedback">{{ $message }}</span>
@@ -69,7 +79,7 @@
                                        class="form-control @error('scheduled_time') is-invalid @enderror" 
                                        id="scheduled_time" 
                                        name="scheduled_time" 
-                                       value="{{ old('scheduled_time', $feedbackSession->scheduled_datetime->format('H:i')) }}"
+                                       value="{{ old('scheduled_time', $feedbackSession->scheduled_datetime ? $feedbackSession->scheduled_datetime->format('H:i') : '09:00') }}"
                                        required>
                                 @error('scheduled_time')
                                     <span class="invalid-feedback">{{ $message }}</span>
@@ -82,11 +92,8 @@
                                     <i class="fas fa-hourglass-half"></i> Duración (minutos) *
                                 </label>
                                 @php
-                                    $currentDuration = 60; // Default
-                                    if($feedbackSession->scheduled_datetime && $feedbackSession->scheduled_datetime->copy()->addHour()->format('H:i') !== $feedbackSession->scheduled_datetime->format('H:i')) {
-                                        // Intentar calcular duración actual, por defecto 60 min
-                                        $currentDuration = 60;
-                                    }
+                                    // Usar duración por defecto de 60 minutos
+                                    $currentDuration = 60;
                                 @endphp
                                 <select class="form-control @error('duration') is-invalid @enderror" 
                                         id="duration" 
@@ -240,7 +247,7 @@ $(document).ready(function() {
                 text: 'Debe seleccionar una fecha futura (mínimo mañana).',
                 confirmButtonColor: '#007bff'
             });
-            $(this).val('{{ $feedbackSession->scheduled_datetime->addDay()->format("Y-m-d") }}');
+            $(this).val('{{ $feedbackSession->getSuggestedRescheduleDate() }}');
         }
     });
 

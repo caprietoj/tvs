@@ -341,6 +341,225 @@
     </div>
     @endif
 
+    <!-- Detalles de la Evaluación -->
+    @if($performanceEvaluation->objectives_section || $performanceEvaluation->organizational_competencies)
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-clipboard-list"></i> Detalles de la Evaluación
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-12">
+                    <ul class="nav nav-tabs" id="evaluation-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="objectives-tab" data-toggle="tab" href="#objectives" role="tab">
+                                <i class="fas fa-target"></i> Objetivos del Cargo
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="competencies-tab" data-toggle="tab" href="#competencies" role="tab">
+                                <i class="fas fa-users"></i> Competencias Organizacionales
+                            </a>
+                        </li>
+                        @if($performanceEvaluation->technical_competencies)
+                        <li class="nav-item">
+                            <a class="nav-link" id="technical-tab" data-toggle="tab" href="#technical" role="tab">
+                                <i class="fas fa-cogs"></i> Competencias Técnicas
+                            </a>
+                        </li>
+                        @endif
+                        @if($performanceEvaluation->safety_health_section)
+                        <li class="nav-item">
+                            <a class="nav-link" id="safety-tab" data-toggle="tab" href="#safety" role="tab">
+                                <i class="fas fa-shield-alt"></i> Seguridad y Salud
+                            </a>
+                        </li>
+                        @endif
+                    </ul>
+                    
+                    <div class="tab-content mt-3" id="evaluation-tabsContent">
+                        <!-- Objetivos del Cargo -->
+                        <div class="tab-pane fade show active" id="objectives" role="tabpanel">
+                            @if($performanceEvaluation->objectives_section)
+                            @foreach($objectivesQuestions as $sectionKey => $section)
+                            @if(isset($performanceEvaluation->objectives_section[$sectionKey]))
+                            <div class="mb-4">
+                                <h5 class="text-primary">
+                                    <i class="fas fa-flag"></i> {{ $section['title'] }} 
+                                    <small class="text-muted">({{ $section['weight'] * 100 }}% del peso de objetivos)</small>
+                                </h5>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th width="50%">Criterio</th>
+                                                <th width="25%" class="text-center">Autoevaluación</th>
+                                                @if($performanceEvaluation->objectives_supervisor_score)
+                                                <th width="25%" class="text-center">Evaluación Supervisor</th>
+                                                @endif
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($section['questions'] as $questionKey => $question)
+                                            @if(isset($performanceEvaluation->objectives_section[$sectionKey][$questionKey]))
+                                            <tr>
+                                                <td>{{ $question }}</td>
+                                                <td class="text-center">
+                                                    <span class="badge badge-success">
+                                                        {{ $performanceEvaluation->objectives_section[$sectionKey][$questionKey] }}
+                                                    </span>
+                                                </td>
+                                                @if($performanceEvaluation->objectives_section_supervisor && isset($performanceEvaluation->objectives_section_supervisor[$sectionKey][$questionKey]))
+                                                <td class="text-center">
+                                                    <span class="badge badge-info">
+                                                        {{ $performanceEvaluation->objectives_section_supervisor[$sectionKey][$questionKey] }}
+                                                    </span>
+                                                </td>
+                                                @elseif($performanceEvaluation->objectives_supervisor_score)
+                                                <td class="text-center">
+                                                    <span class="text-muted">-</span>
+                                                </td>
+                                                @endif
+                                            </tr>
+                                            @endif
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            @endif
+                            @endforeach
+                            @else
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> No se han completado los objetivos del cargo.
+                            </div>
+                            @endif
+                        </div>
+                        
+                        <!-- Competencias Organizacionales -->
+                        <div class="tab-pane fade" id="competencies" role="tabpanel">
+                            @if($performanceEvaluation->organizational_competencies)
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th width="50%">Competencia</th>
+                                            <th width="25%" class="text-center">Autoevaluación</th>
+                                            @if($performanceEvaluation->competencies_supervisor_score)
+                                            <th width="25%" class="text-center">Evaluación Supervisor</th>
+                                            @endif
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($organizationalCompetencies as $competencyKey => $competency)
+                                        @if(isset($performanceEvaluation->organizational_competencies[$competencyKey]))
+                                        <tr>
+                                            <td>{{ $competency }}</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-success">
+                                                    {{ $performanceEvaluation->organizational_competencies[$competencyKey] }}
+                                                </span>
+                                            </td>
+                                            @if($performanceEvaluation->organizational_competencies_supervisor && isset($performanceEvaluation->organizational_competencies_supervisor[$competencyKey]))
+                                            <td class="text-center">
+                                                <span class="badge badge-info">
+                                                    {{ $performanceEvaluation->organizational_competencies_supervisor[$competencyKey] }}
+                                                </span>
+                                            </td>
+                                            @elseif($performanceEvaluation->competencies_supervisor_score)
+                                            <td class="text-center">
+                                                <span class="text-muted">-</span>
+                                            </td>
+                                            @endif
+                                        </tr>
+                                        @endif
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            @else
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> No se han completado las competencias organizacionales.
+                            </div>
+                            @endif
+                        </div>
+                        
+                        <!-- Competencias Técnicas -->
+                        @if($performanceEvaluation->technical_competencies)
+                        <div class="tab-pane fade" id="technical" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th width="50%">Competencia</th>
+                                            <th width="50%">Respuesta del Empleado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($technicalCompetencies as $competencyKey => $competency)
+                                        @if(isset($performanceEvaluation->technical_competencies[$competencyKey]))
+                                        <tr>
+                                            <td><strong>{{ $competency['title'] }}</strong></td>
+                                            <td>{{ $performanceEvaluation->technical_competencies[$competencyKey] ?? 'No especificado' }}</td>
+                                        </tr>
+                                        @endif
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        @endif
+                        
+                        <!-- Seguridad y Salud en el Trabajo -->
+                        @if($performanceEvaluation->safety_health_section)
+                        <div class="tab-pane fade" id="safety" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th width="70%">Pregunta</th>
+                                            <th width="30%" class="text-center">Respuesta</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($safetyHealthQuestions as $questionKey => $question)
+                                        @if(isset($performanceEvaluation->safety_health_section[$questionKey]))
+                                        <tr>
+                                            <td>{{ $question }}</td>
+                                            <td class="text-center">
+                                                @if($performanceEvaluation->safety_health_section[$questionKey] === 'si')
+                                                    <span class="badge badge-success">Sí</span>
+                                                @else
+                                                    <span class="badge badge-danger">No</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @endif
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                    
+                    <!-- Escala de puntuación -->
+                    <div class="alert alert-info mt-3">
+                        <h6><i class="fas fa-info-circle"></i> Escala de Puntuación:</h6>
+                        <strong>1:</strong> No cumple - 
+                        <strong>2:</strong> Aceptable - 
+                        <strong>3:</strong> Cumple con lo establecido sin proactividad - 
+                        <strong>4:</strong> Buen desempeño con características proactivas - 
+                        <strong>5:</strong> Supera las expectativas de desempeño
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Fechas Importantes -->
     <div class="card">
         <div class="card-header">
@@ -463,6 +682,60 @@
         text-align: center;
         left: 18px;
         top: 0;
+    }
+    
+    /* Estilos para las tabs de evaluación */
+    .nav-tabs .nav-link {
+        border: 1px solid transparent;
+        border-radius: 0.25rem 0.25rem 0 0;
+        color: #495057;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-color: #e9ecef #e9ecef #dee2e6;
+        color: #007bff;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #495057;
+        background-color: #fff;
+        border-color: #dee2e6 #dee2e6 #fff;
+        font-weight: 600;
+    }
+    
+    .tab-content {
+        border: 1px solid #dee2e6;
+        border-top: none;
+        padding: 1rem;
+        border-radius: 0 0 0.25rem 0.25rem;
+        background-color: #fff;
+    }
+    
+    .table-bordered th {
+        border: 1px solid #dee2e6;
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    
+    .table-bordered td {
+        border: 1px solid #dee2e6;
+        vertical-align: middle;
+    }
+    
+    .badge {
+        font-size: 0.875em;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .text-primary {
+        color: #007bff !important;
+    }
+    
+    .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
     }
 </style>
 @stop

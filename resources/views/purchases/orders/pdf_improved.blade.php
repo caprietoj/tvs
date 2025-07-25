@@ -352,16 +352,35 @@
                         $subtotal = 0;
                         $items = [];
                         
-                        // Obtener items de la solicitud original
+                        // Obtener cotización seleccionada
+                        $selectedQuotation = null;
+                        if ($order->purchaseRequest && $order->purchaseRequest->selected_quotation_id) {
+                            $selectedQuotation = $order->purchaseRequest->selectedQuotation;
+                        }
+                        
+                        // Obtener items de la solicitud original con precios de la cotización
                         if($order->purchaseRequest && $order->purchaseRequest->purchase_items) {
-                            foreach($order->purchaseRequest->purchase_items as $item) {
+                            foreach($order->purchaseRequest->purchase_items as $index => $item) {
                                 $cantidad = $item['quantity'] ?? 1;
-                                $precioUnitario = $order->total_amount / array_sum(array_column($order->purchaseRequest->purchase_items, 'quantity'));
+                                $descripcion = $item['description'] ?? 'N/A';
+                                
+                                // Intentar obtener precio unitario de la cotización seleccionada
+                                $precioUnitario = 0;
+                                if ($selectedQuotation && 
+                                    isset($selectedQuotation->original_item_prices) && 
+                                    isset($selectedQuotation->original_item_prices[$index])) {
+                                    $precioUnitario = $selectedQuotation->original_item_prices[$index];
+                                } else {
+                                    // Fallback: calcular precio promedio
+                                    $totalCantidad = array_sum(array_column($order->purchaseRequest->purchase_items, 'quantity'));
+                                    $precioUnitario = $totalCantidad > 0 ? $order->total_amount / $totalCantidad : 0;
+                                }
+                                
                                 $total = $cantidad * $precioUnitario;
                                 $items[] = [
                                     'cantidad' => $cantidad,
                                     'unidad' => 'UN',
-                                    'descripcion' => $item['description'] ?? 'N/A',
+                                    'descripcion' => $descripcion,
                                     'precio_unitario' => $precioUnitario,
                                     'descuento' => 0,
                                     'total' => $total

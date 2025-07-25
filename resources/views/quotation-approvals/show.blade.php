@@ -32,6 +32,34 @@
                 </div>
             </div>
             <div class="card-body">
+                <!-- Alertas de sesión -->
+                @if(session('success'))
+                    <div class="alert alert-success alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        <h5><i class="icon fas fa-check"></i> ¡Éxito!</h5>
+                        {{ session('success') }}
+                    </div>
+                @endif
+
+                @if(session('error'))
+                    <div class="alert alert-danger alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        <h5><i class="icon fas fa-ban"></i> Error</h5>
+                        {{ session('error') }}
+                    </div>
+                @endif
+
+                @if(session('approvalInfo'))
+                    @php $info = session('approvalInfo'); @endphp
+                    <div class="alert alert-info alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        <h5><i class="icon fas fa-info-circle"></i> {{ $info['title'] }}</h5>
+                        <p>{{ $info['message'] }}</p>
+                        <p><strong>{{ $info['type'] == 'approved' ? 'Aprobada' : 'Pre-aprobada' }} por:</strong> {{ $info['approver'] }}</p>
+                        <p><strong>Fecha:</strong> {{ $info['date'] }}</p>
+                    </div>
+                @endif
+                
                 <!-- Información de la solicitud -->
                 <div class="row mb-4">
                     <div class="col-md-6">
@@ -718,11 +746,77 @@
             padding: 0;
         }
     </style>
+
+<!-- Modal de información de aprobación -->
+@if(session('approvalInfo') || isset($approvalInfo))
+    @php 
+        $info = session('approvalInfo') ?? $approvalInfo; 
+    @endphp
+    <div class="modal fade" id="approvalInfoModal" tabindex="-1" role="dialog" aria-labelledby="approvalInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header {{ $info['type'] == 'approved' ? 'bg-success' : 'bg-info' }}">
+                    <h5 class="modal-title text-white" id="approvalInfoModalLabel">
+                        <i class="fas {{ $info['type'] == 'approved' ? 'fa-check-circle' : 'fa-info-circle' }}"></i>
+                        {{ $info['title'] }}
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert {{ $info['type'] == 'approved' ? 'alert-success' : 'alert-info' }} border-0 text-white">
+                        <p class="mb-3 text-white">
+                            <i class="fas {{ $info['type'] == 'approved' ? 'fa-check-circle' : 'fa-info-circle' }} mr-2 text-white"></i>
+                            {{ $info['message'] }}
+                        </p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong class="text-white">{{ $info['type'] == 'approved' ? 'Aprobada' : 'Pre-aprobada' }} por:</strong><br>
+                                <span class="text-white-50">{{ $info['approver'] }}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong class="text-white">Fecha y hora:</strong><br>
+                                <span class="text-white-50">{{ $info['date'] }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <small class="text-muted">
+                            <i class="fas fa-lightbulb mr-1"></i>
+                            <strong>Información:</strong> 
+                            @if($info['type'] == 'approved')
+                                Esta solicitud ya ha completado todo el proceso de aprobación y no requiere acciones adicionales.
+                            @else
+                                Esta solicitud está esperando la aprobación final del director correspondiente.
+                            @endif
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Cerrar
+                    </button>
+                    <a href="{{ route('quotation-approvals.index') }}" class="btn {{ $info['type'] == 'approved' ? 'btn-success' : 'btn-info' }}">
+                        <i class="fas fa-arrow-left mr-1"></i> Volver a la lista
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
 @stop
 
 @section('js')
 <script>
     $(document).ready(function() {
+        // Mostrar modal de información de aprobación si está presente
+        @if(session('approvalInfo') || isset($approvalInfo))
+            $('#approvalInfoModal').modal('show');
+        @endif
+        
         // Configurar el modal de pre-aprobación con cotización
         $('#preApproveModal').on('show.bs.modal', function (event) {
             var button = $(event.relatedTarget);

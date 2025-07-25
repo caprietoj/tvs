@@ -116,7 +116,13 @@
             </div>
             <div class="card-body">
                 <div class="alert alert-light border-left-success">
-                    <h6>Completada el: {{ $feedbackSession->completed_at->format('d/m/Y \a \l\a\s H:i') }}</h6>
+                    <h6>Completada el: 
+                        @if($feedbackSession->completed_at)
+                            {{ $feedbackSession->completed_at->format('d/m/Y \a \l\a\s H:i') }}
+                        @else
+                            Fecha no registrada
+                        @endif
+                    </h6>
                     <hr>
                     {!! nl2br(e($feedbackSession->meeting_notes)) !!}
                 </div>
@@ -206,7 +212,12 @@
                     <div class="alert alert-success">
                         <i class="fas fa-check-circle"></i>
                         <strong>Sesión Completada</strong><br>
-                        Esta sesión se realizó exitosamente el {{ $feedbackSession->completed_at->format('d/m/Y') }}.
+                        Esta sesión se realizó exitosamente
+                        @if($feedbackSession->completed_at)
+                            el {{ $feedbackSession->completed_at->format('d/m/Y') }}.
+                        @else
+                            .
+                        @endif
                     </div>
                 @else
                     <div class="alert alert-secondary">
@@ -222,7 +233,13 @@
                     <i class="fas fa-clock"></i> Cronología
                 </h6>
                 <ul class="list-unstyled text-sm">
-                    <li><strong>Programada:</strong> {{ $feedbackSession->created_at->format('d/m/Y H:i') }}</li>
+                    <li><strong>Programada:</strong> 
+                        @if($feedbackSession->created_at)
+                            {{ $feedbackSession->created_at->format('d/m/Y H:i') }}
+                        @else
+                            Fecha no registrada
+                        @endif
+                    </li>
                     @if($feedbackSession->completed_at)
                     <li><strong>Completada:</strong> {{ $feedbackSession->completed_at->format('d/m/Y H:i') }}</li>
                     @endif

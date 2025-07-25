@@ -39,13 +39,17 @@ class PerformanceEvaluationController extends Controller
         $query = PerformanceEvaluation::query();        // Filtrar evaluaciones según el rol del usuario
         if ($user->hasRole('admin') || $user->can('view-all-performance-evaluations')) {
             // Los admins pueden ver todas las evaluaciones
-            $query->with(['user', 'evaluator']);
+            $query->with(['user', 'evaluator', 'feedbackSessions' => function($q) {
+                $q->latest('scheduled_datetime');
+            }]);
         } else {
             // Los empleados y supervisores pueden ver sus propias evaluaciones y las que deben evaluar
             $query->where(function($q) use ($user) {
                 $q->where('evaluator_id', $user->id)
                   ->orWhere('user_id', $user->id);
-            })->with(['user', 'evaluator']);
+            })->with(['user', 'evaluator', 'feedbackSessions' => function($q) {
+                $q->latest('scheduled_datetime');
+            }]);
         }
         
         // Filtro por estado
@@ -266,7 +270,19 @@ class PerformanceEvaluationController extends Controller
         
         $performanceEvaluation->load(['user', 'evaluator']);
         
-        return view('performance-evaluations.show', compact('performanceEvaluation'));
+        // Obtener las preguntas para mostrar detalles de la evaluación
+        $objectivesQuestions = PerformanceEvaluation::getObjectivesQuestions();
+        $organizationalCompetencies = PerformanceEvaluation::getOrganizationalCompetencies();
+        $technicalCompetencies = PerformanceEvaluation::getTechnicalCompetencies();
+        $safetyHealthQuestions = PerformanceEvaluation::getSafetyHealthQuestions();
+        
+        return view('performance-evaluations.show', compact(
+            'performanceEvaluation',
+            'objectivesQuestions',
+            'organizationalCompetencies',
+            'technicalCompetencies',
+            'safetyHealthQuestions'
+        ));
     }
 
     /**
@@ -423,12 +439,25 @@ class PerformanceEvaluationController extends Controller
         $objectivesScore = $this->calculateObjectivesScore($request->objectives_section_supervisor);
         $competenciesScore = $this->calculateCompetenciesScore($request->organizational_competencies_supervisor);
         
+        // Calcular puntaje final del supervisor
+        $finalSupervisorScore = ($objectivesScore * 0.30) + ($competenciesScore * 0.70);
+        
         // Actualizar evaluación
-        $performanceEvaluation->update([
+        $updateData = [
             'objectives_supervisor_score' => $objectivesScore,
             'competencies_supervisor_score' => $competenciesScore,
-            'supervisor_observations' => $request->supervisor_observations
-        ]);
+            'final_supervisor_score' => $finalSupervisorScore,
+            'supervisor_observations' => $request->supervisor_observations,
+            'objectives_section_supervisor' => $request->objectives_section_supervisor,
+            'organizational_competencies_supervisor' => $request->organizational_competencies_supervisor
+        ];
+        
+        // Si el supervisor está evaluando, cambiar el estado a supervisor_review
+        if ($performanceEvaluation->status === 'self_completed') {
+            $updateData['status'] = 'supervisor_review';
+        }
+        
+        $performanceEvaluation->update($updateData);
         
         if ($request->has('complete_evaluation')) {
             $performanceEvaluation->completeSupervisorEvaluation();

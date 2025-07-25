@@ -65,6 +65,15 @@ class QuotationController extends Controller
             'ipoconsumo_4_amount' => 'nullable|numeric|min:0',
             'tax_application_mode' => 'nullable|string|in:global,per_item',
             'quotation_file' => 'required|file|mimes:pdf|max:5120',
+            'item_prices' => 'nullable|array',
+            'item_prices.*' => 'nullable|numeric|min:0',
+            'item_totals' => 'nullable|array',
+            'item_totals.*' => 'nullable|numeric|min:0',
+            'item_iva_19' => 'nullable|array',
+            'item_iva_5' => 'nullable|array',
+            'item_ipoconsumo_8' => 'nullable|array',
+            'item_ipoconsumo_4' => 'nullable|array',
+            'general_service_price' => 'nullable|numeric|min:0',
             'additional_items' => 'nullable|array',
             'additional_items.*.description' => 'required_with:additional_items|string|max:255',
             'additional_items.*.quantity' => 'required_with:additional_items|numeric|min:0',
@@ -80,6 +89,56 @@ class QuotationController extends Controller
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
+        }
+        
+        // Procesar precios de items originales de la solicitud
+        $originalItemPrices = [];
+        $originalItemTotals = [];
+        $originalItemTaxes = [];
+        
+        // Obtener los items de la solicitud para validación
+        $requestItems = [];
+        if ($purchaseRequest->type === 'purchase' && $purchaseRequest->purchase_items) {
+            $requestItems = is_array($purchaseRequest->purchase_items) 
+                ? $purchaseRequest->purchase_items 
+                : json_decode($purchaseRequest->purchase_items, true);
+        } elseif ($purchaseRequest->type === 'services' && $purchaseRequest->service_type === 'regular' && $purchaseRequest->service_items) {
+            $requestItems = is_array($purchaseRequest->service_items) 
+                ? $purchaseRequest->service_items 
+                : json_decode($purchaseRequest->service_items, true);
+        }
+        
+        // Procesar precios unitarios y totales de items originales
+        if ($request->has('item_prices') && is_array($request->item_prices)) {
+            foreach ($request->item_prices as $index => $price) {
+                if (!empty($price) && is_numeric($price) && isset($requestItems[$index])) {
+                    $quantity = $requestItems[$index]['quantity'] ?? 1;
+                    $unitPrice = floatval($price);
+                    $itemTotal = $quantity * $unitPrice;
+                    
+                    $originalItemPrices[$index] = $unitPrice;
+                    $originalItemTotals[$index] = $itemTotal;
+                }
+            }
+        }
+        
+        // Procesar servicios generales
+        if ($request->has('general_service_price') && !empty($request->general_service_price)) {
+            $generalPrice = floatval($request->general_service_price);
+            $originalItemPrices['general'] = $generalPrice;
+            $originalItemTotals['general'] = $generalPrice; // Para servicios generales, cantidad = 1
+        }
+        
+        // Procesar impuestos por item
+        $taxTypes = ['iva_19', 'iva_5', 'ipoconsumo_8', 'ipoconsumo_4'];
+        foreach ($taxTypes as $taxType) {
+            if ($request->has("item_{$taxType}") && is_array($request->{"item_{$taxType}"})) {
+                foreach ($request->{"item_{$taxType}"} as $index => $value) {
+                    if (!empty($value)) {
+                        $originalItemTaxes[$index][$taxType] = true;
+                    }
+                }
+            }
         }
         
         // Procesar items adicionales
@@ -125,7 +184,17 @@ class QuotationController extends Controller
         // Validar cálculos (verificar que los totales sean consistentes)
         $subtotal = floatval($request->subtotal);
         $additionalItemsTotal = array_sum(array_column($additionalItems, 'total'));
+        $originalItemsTotal = array_sum($originalItemTotals);
         $totalSubtotal = $subtotal + $additionalItemsTotal;
+        
+        // Verificar que el subtotal coincida con la suma de items originales (con tolerancia)
+        if (!empty($originalItemTotals) && abs($subtotal - $originalItemsTotal) > 0.01) {
+            \Log::warning('Discrepancia en subtotal de items originales', [
+                'subtotal_declarado' => $subtotal,
+                'suma_items_originales' => $originalItemsTotal,
+                'diferencia' => abs($subtotal - $originalItemsTotal)
+            ]);
+        }
         
         // Calcular todos los impuestos según el modo
         $includesIva = $request->has('includes_iva');
@@ -147,11 +216,29 @@ class QuotationController extends Controller
             $ipoconsumo8Amount = 0;
             $ipoconsumo4Amount = 0;
             
+            // Impuestos de items adicionales
             foreach ($additionalItems as $item) {
                 $iva19Amount += $item['iva_19_amount'] ?? 0;
                 $iva5Amount += $item['iva_5_amount'] ?? 0;
                 $ipoconsumo8Amount += $item['ipoconsumo_8_amount'] ?? 0;
                 $ipoconsumo4Amount += $item['ipoconsumo_4_amount'] ?? 0;
+            }
+            
+            // Impuestos de items originales
+            foreach ($originalItemTaxes as $index => $taxes) {
+                $itemTotal = $originalItemTotals[$index] ?? 0;
+                if (isset($taxes['iva_19']) && $taxes['iva_19']) {
+                    $iva19Amount += $itemTotal * 0.19;
+                }
+                if (isset($taxes['iva_5']) && $taxes['iva_5']) {
+                    $iva5Amount += $itemTotal * 0.05;
+                }
+                if (isset($taxes['ipoconsumo_8']) && $taxes['ipoconsumo_8']) {
+                    $ipoconsumo8Amount += $itemTotal * 0.08;
+                }
+                if (isset($taxes['ipoconsumo_4']) && $taxes['ipoconsumo_4']) {
+                    $ipoconsumo4Amount += $itemTotal * 0.04;
+                }
             }
             
             // Marcar que hay impuestos si hay algún monto
@@ -198,6 +285,9 @@ class QuotationController extends Controller
                 'ipoconsumo_4_amount' => $ipoconsumo4Amount,
                 'tax_application_mode' => $taxMode,
                 'additional_items' => $additionalItems,
+                'original_item_prices' => $originalItemPrices,
+                'original_item_totals' => $originalItemTotals,
+                'original_item_taxes' => $originalItemTaxes,
                 'delivery_time' => $request->delivery_time,
                 'payment_method' => $request->payment_method,
                 'validity' => $request->validity,

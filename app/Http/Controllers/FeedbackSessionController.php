@@ -26,13 +26,13 @@ class FeedbackSessionController extends Controller
      */
     public function create(PerformanceEvaluation $evaluation)
     {
-        // Verificar que el usuario sea el supervisor de la evaluación
-        if (Auth::id() !== $evaluation->evaluator_id) {
+        // Verificar que el usuario sea el supervisor de la evaluación o admin
+        if (Auth::id() !== $evaluation->evaluator_id && !Auth::user()->hasRole('admin')) {
             abort(403, 'No tienes permisos para programar sesiones para esta evaluación.');
         }
 
         // Verificar que la evaluación del supervisor esté completada
-        if ($evaluation->status !== 'supervisor_completed') {
+        if ($evaluation->status !== 'completed' || !$evaluation->supervisor_evaluation_completed_at) {
             abort(400, 'La evaluación del supervisor debe estar completada para programar sesiones de retroalimentación.');
         }
 
@@ -57,7 +57,7 @@ class FeedbackSessionController extends Controller
     public function store(Request $request, PerformanceEvaluation $evaluation)
     {
         // Verificar permisos
-        if (Auth::id() !== $evaluation->evaluator_id) {
+        if (Auth::id() !== $evaluation->evaluator_id && !Auth::user()->hasRole('admin')) {
             abort(403, 'No tienes permisos para programar sesiones para esta evaluación.');
         }
 
@@ -76,7 +76,7 @@ class FeedbackSessionController extends Controller
                 $request->scheduled_date . ' ' . $request->scheduled_time
             );
 
-            $endDateTime = $scheduledDateTime->copy()->addMinutes($request->duration);
+            $endDateTime = $scheduledDateTime->copy()->addMinutes((int) $request->duration);
 
             // Crear sesión de retroalimentación
             $feedbackSession = FeedbackSession::create([
@@ -84,7 +84,9 @@ class FeedbackSessionController extends Controller
                 'supervisor_id' => $evaluation->evaluator_id,
                 'employee_id' => $evaluation->user_id,
                 'title' => "Sesión de Retroalimentación - {$evaluation->user->name}",
-                'description' => $request->description ?: "Sesión de retroalimentación para la evaluación de desempeño del período {$evaluation->period_start->format('d/m/Y')} - {$evaluation->period_end->format('d/m/Y')}",
+                'description' => $request->description ?: "Sesión de retroalimentación para la evaluación de desempeño del período " . 
+                    ($evaluation->evaluation_period_start ? $evaluation->evaluation_period_start->format('d/m/Y') : 'N/A') . " - " . 
+                    ($evaluation->evaluation_period_end ? $evaluation->evaluation_period_end->format('d/m/Y') : 'N/A'),
                 'scheduled_datetime' => $scheduledDateTime,
                 'location' => $request->location,
                 'status' => 'programada'
@@ -158,7 +160,7 @@ class FeedbackSessionController extends Controller
     public function edit(FeedbackSession $feedbackSession)
     {
         // Verificar permisos
-        if (Auth::id() !== $feedbackSession->supervisor_id) {
+        if (Auth::id() !== $feedbackSession->supervisor_id && !Auth::user()->hasRole('admin')) {
             abort(403, 'No tienes permisos para editar esta sesión.');
         }
 
@@ -177,7 +179,7 @@ class FeedbackSessionController extends Controller
     public function update(Request $request, FeedbackSession $feedbackSession)
     {
         // Verificar permisos
-        if (Auth::id() !== $feedbackSession->supervisor_id) {
+        if (Auth::id() !== $feedbackSession->supervisor_id && !Auth::user()->hasRole('admin')) {
             abort(403, 'No tienes permisos para editar esta sesión.');
         }
 
@@ -195,7 +197,7 @@ class FeedbackSessionController extends Controller
                 $request->scheduled_date . ' ' . $request->scheduled_time
             );
 
-            $endDateTime = $scheduledDateTime->copy()->addMinutes($request->duration);
+            $endDateTime = $scheduledDateTime->copy()->addMinutes((int) $request->duration);
 
             $feedbackSession->update([
                 'scheduled_datetime' => $scheduledDateTime,
@@ -238,7 +240,7 @@ class FeedbackSessionController extends Controller
     public function complete(Request $request, FeedbackSession $feedbackSession)
     {
         // Verificar permisos
-        if (Auth::id() !== $feedbackSession->supervisor_id) {
+        if (Auth::id() !== $feedbackSession->supervisor_id && !Auth::user()->hasRole('admin')) {
             abort(403, 'No tienes permisos para completar esta sesión.');
         }
 
@@ -258,7 +260,7 @@ class FeedbackSessionController extends Controller
     public function cancel(FeedbackSession $feedbackSession)
     {
         // Verificar permisos
-        if (Auth::id() !== $feedbackSession->supervisor_id) {
+        if (Auth::id() !== $feedbackSession->supervisor_id && !Auth::user()->hasRole('admin')) {
             abort(403, 'No tienes permisos para cancelar esta sesión.');
         }
 

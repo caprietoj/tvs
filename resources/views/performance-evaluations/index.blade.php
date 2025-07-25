@@ -94,13 +94,14 @@
                 <table class="table table-bordered table-striped">
                     <thead>
                         <tr>
-                            <th style="width: 20%;">Empleado</th>
-                            <th style="width: 15%;">Evaluador</th>
-                            <th style="width: 12%;">Tipo</th>
-                            <th style="width: 15%;">Período</th>
-                            <th style="width: 12%;">Estado</th>
-                            <th style="width: 10%;">Puntaje Final</th>
-                            <th style="width: 8%;">Nivel</th>
+                            <th style="width: 18%;">Empleado</th>
+                            <th style="width: 13%;">Evaluador</th>
+                            <th style="width: 10%;">Tipo</th>
+                            <th style="width: 12%;">Período</th>
+                            <th style="width: 10%;">Estado</th>
+                            <th style="width: 8%;">Puntaje Final</th>
+                            <th style="width: 7%;">Nivel</th>
+                            <th style="width: 14%;">Retroalimentación</th>
                             <th style="width: 8%;">Acciones</th>
                         </tr>
                     </thead>
@@ -145,6 +146,45 @@
                                         {{ $evaluation->performance_level }}
                                     @else
                                         -
+                                    @endif
+                                </td>
+                                <td class="feedback-status-cell">
+                                    @php
+                                        $feedbackSession = $evaluation->feedbackSessions->first(); // Ya está eager loaded
+                                    @endphp
+                                    @if($feedbackSession)
+                                        <a href="{{ route('feedback-sessions.show', $feedbackSession) }}" class="text-decoration-none">
+                                            @if($feedbackSession->status === 'programada')
+                                                <span class="badge badge-info mb-1">
+                                                    <i class="fas fa-calendar-check"></i> Programada
+                                                </span><br>
+                                                <small class="text-muted">
+                                                    {{ $feedbackSession->scheduled_datetime ? $feedbackSession->scheduled_datetime->format('d/m/Y H:i') : 'Por confirmar' }}
+                                                </small>
+                                            @elseif($feedbackSession->status === 'realizada')
+                                                <span class="badge badge-success mb-1">
+                                                    <i class="fas fa-check-circle"></i> Realizada
+                                                </span><br>
+                                                <small class="text-muted">
+                                                    {{ $feedbackSession->completed_at ? $feedbackSession->completed_at->format('d/m/Y') : 'Completada' }}
+                                                </small>
+                                            @elseif($feedbackSession->status === 'cancelada')
+                                                <span class="badge badge-secondary mb-1">
+                                                    <i class="fas fa-times-circle"></i> Cancelada
+                                                </span>
+                                            @endif
+                                        </a>
+                                    @else
+                                        @if($evaluation->status === 'completed')
+                                            <span class="badge badge-warning">
+                                                <i class="fas fa-exclamation-triangle"></i> Pendiente
+                                            </span><br>
+                                            <small class="text-muted">Sin programar</small>
+                                        @else
+                                            <span class="text-muted">
+                                                <i class="fas fa-minus"></i> N/A
+                                            </span>
+                                        @endif
                                     @endif
                                 </td>
                                 <td class="text-center">
@@ -200,6 +240,56 @@
     }
     .btn-group .btn {
         margin-right: 2px;
+    }
+    
+    /* Estilos para la columna de retroalimentación */
+    .feedback-status-cell {
+        min-width: 130px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    .feedback-status-cell .badge {
+        white-space: nowrap;
+        font-size: 0.75em;
+        padding: 4px 8px;
+        transition: all 0.2s ease;
+        margin-bottom: 2px;
+    }
+    
+    .feedback-status-cell a {
+        text-decoration: none !important;
+        color: inherit;
+    }
+    
+    .feedback-status-cell a:hover {
+        opacity: 0.8;
+        text-decoration: none !important;
+    }
+    
+    .feedback-status-cell a:hover .badge {
+        transform: scale(1.05);
+    }
+    
+    .feedback-status-cell small {
+        font-size: 0.7em;
+        line-height: 1.2;
+        display: block;
+        margin-top: 2px;
+    }
+    
+    /* Responsive para móviles */
+    @media (max-width: 768px) {
+        .feedback-status-cell {
+            min-width: 100px;
+        }
+        .feedback-status-cell .badge {
+            font-size: 0.65em;
+            padding: 2px 6px;
+        }
+        .feedback-status-cell small {
+            font-size: 0.6em;
+        }
     }
     
     /* Estilos profesionales para el paginador */

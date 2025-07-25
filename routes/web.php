@@ -843,6 +843,9 @@ Route::middleware(['auth'])->prefix('performance-evaluations')->name('performanc
 // Rutas para sesiones de retroalimentación
 Route::middleware(['auth'])->prefix('feedback-sessions')->name('feedback-sessions.')->group(function () {
     Route::get('/evaluation/{evaluation}/create', [App\Http\Controllers\FeedbackSessionController::class, 'create'])->name('create');
+    Route::get('/evaluation/{evaluation}', function($evaluation) {
+        return redirect()->route('feedback-sessions.create', $evaluation);
+    });
     Route::post('/evaluation/{evaluation}', [App\Http\Controllers\FeedbackSessionController::class, 'store'])->name('store');
     Route::get('/{feedbackSession}', [App\Http\Controllers\FeedbackSessionController::class, 'show'])->name('show');
     Route::get('/{feedbackSession}/edit', [App\Http\Controllers\FeedbackSessionController::class, 'edit'])->name('edit');

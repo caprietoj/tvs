@@ -360,6 +360,13 @@ $(document).ready(function() {
             if (result.isConfirmed) {
                 // Validar campos antes de enviar
                 if (validateRequiredFields()) {
+                    // Agregar campo oculto para indicar que se está completando la evaluación
+                    $('<input>').attr({
+                        type: 'hidden',
+                        name: 'complete_evaluation',
+                        value: '1'
+                    }).appendTo('#supervisorEvaluationForm');
+                    
                     $('#supervisorEvaluationForm')[0].submit();
                 }
             }

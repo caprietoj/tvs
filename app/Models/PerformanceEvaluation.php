@@ -20,9 +20,11 @@ class PerformanceEvaluation extends Model
         'objectives_section',
         'objectives_self_score',
         'objectives_supervisor_score',
+        'objectives_section_supervisor',
         'organizational_competencies',
         'competencies_self_score',
         'competencies_supervisor_score',
+        'organizational_competencies_supervisor',
         'technical_competencies',
         'safety_health_section',
         'self_observations',
@@ -37,7 +39,9 @@ class PerformanceEvaluation extends Model
 
     protected $casts = [
         'objectives_section' => 'array',
+        'objectives_section_supervisor' => 'array',
         'organizational_competencies' => 'array',
+        'organizational_competencies_supervisor' => 'array',
         'technical_competencies' => 'array',
         'safety_health_section' => 'array',
         'evaluation_period_start' => 'date',

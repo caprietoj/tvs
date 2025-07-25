@@ -114,6 +114,9 @@ class FeedbackSession extends Model
      */
     public function getFormattedDatetimeAttribute()
     {
+        if (!$this->scheduled_datetime) {
+            return 'Fecha no definida';
+        }
         return $this->scheduled_datetime->format('d/m/Y \a \l\a\s H:i');
     }
 
@@ -123,11 +126,28 @@ class FeedbackSession extends Model
     public function getEvaluationPeriodAttribute()
     {
         $evaluation = $this->performanceEvaluation;
-        return $evaluation->period_start->format('d/m/Y') . ' - ' . $evaluation->period_end->format('d/m/Y');
+        if (!$evaluation || !$evaluation->evaluation_period_start || !$evaluation->evaluation_period_end) {
+            return 'Período no definido';
+        }
+        return $evaluation->evaluation_period_start->format('d/m/Y') . ' - ' . $evaluation->evaluation_period_end->format('d/m/Y');
     }
-}
 
-class FeedbackSession extends Model
-{
-    //
+    /**
+     * Obtener fecha mínima para reprogramar (día siguiente)
+     */
+    public function getMinimumRescheduleDate()
+    {
+        return now()->addDays(1)->format('Y-m-d');
+    }
+
+    /**
+     * Obtener fecha sugerida para reprogramar
+     */
+    public function getSuggestedRescheduleDate()
+    {
+        if ($this->scheduled_datetime && $this->scheduled_datetime->isFuture()) {
+            return $this->scheduled_datetime->addDays(1)->format('Y-m-d');
+        }
+        return $this->getMinimumRescheduleDate();
+    }
 }

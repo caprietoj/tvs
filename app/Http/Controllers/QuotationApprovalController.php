@@ -88,7 +88,42 @@ class QuotationApprovalController extends Controller
         // Permitir que las solicitudes sin cotizaciones continúen al flujo de preaprobación
         // ya que pueden haber pasado por el proceso de "Hecho Cumplido" sin requerir cotizaciones
         
-        return view('quotation-approvals.show', compact('request', 'mixedSelections', 'hasMixedSelections', 'purchaseItems', 'selectedQuotations'));
+        // Verificar el estado de aprobación antes de mostrar la vista
+        $approvalInfo = $this->checkApprovalStatus($request);
+        
+        return view('quotation-approvals.show', compact('request', 'mixedSelections', 'hasMixedSelections', 'purchaseItems', 'selectedQuotations', 'approvalInfo'));
+    }
+
+    /**
+     * Verificar el estado de aprobación de una solicitud antes de permitir acciones
+     */
+    private function checkApprovalStatus(PurchaseRequest $request)
+    {
+        // Verificar si ya está aprobada
+        if ($request->status === 'approved') {
+            $approver = \App\Models\User::find($request->approved_by);
+            return [
+                'type' => 'approved',
+                'title' => 'Solicitud ya Aprobada',
+                'message' => 'Esta solicitud ya ha sido aprobada definitivamente.',
+                'approver' => $approver ? $approver->name : 'Usuario no encontrado',
+                'date' => $request->approval_date ? $request->approval_date->format('d/m/Y H:i:s') : 'Fecha no disponible'
+            ];
+        }
+        
+        // Verificar si ya está pre-aprobada
+        if (in_array($request->status, ['pre-approved', 'Pre-aprobada'])) {
+            $preApprover = \App\Models\User::find($request->pre_approved_by);
+            return [
+                'type' => 'pre-approved',
+                'title' => 'Solicitud ya Pre-aprobada',
+                'message' => 'Esta solicitud ya ha sido pre-aprobada y está esperando aprobación final.',
+                'approver' => $preApprover ? $preApprover->name : 'Usuario no encontrado',
+                'date' => $request->pre_approved_at ? $request->pre_approved_at->format('d/m/Y H:i:s') : 'Fecha no disponible'
+            ];
+        }
+        
+        return null;
     }
 
     /**
@@ -115,6 +150,13 @@ class QuotationApprovalController extends Controller
 
         // Obtener la solicitud y la cotización
         $purchaseRequest = PurchaseRequest::findOrFail($id);
+        
+        // Verificar el estado de aprobación antes de proceder
+        $approvalInfo = $this->checkApprovalStatus($purchaseRequest);
+        if ($approvalInfo) {
+            return redirect()->back()->with('approvalInfo', $approvalInfo);
+        }
+        
         $quotation = Quotation::findOrFail($validated['quotation_id']);
 
         // Desmarcar cualquier otra cotización que pudiera estar seleccionada
@@ -271,6 +313,12 @@ class QuotationApprovalController extends Controller
     {
         $purchaseRequest = PurchaseRequest::findOrFail($id);
         
+        // Verificar el estado de aprobación antes de proceder
+        $approvalInfo = $this->checkApprovalStatus($purchaseRequest);
+        if ($approvalInfo) {
+            return redirect()->back()->with('approvalInfo', $approvalInfo);
+        }
+        
         // Validar los datos del formulario
         $request->validate([
             'comments' => 'required|string|max:500|min:10',
@@ -357,6 +405,15 @@ class QuotationApprovalController extends Controller
             'request_number' => $purchaseRequest->request_number
         ]);
         
+        // Obtener la solicitud
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+        
+        // Verificar el estado de aprobación antes de proceder
+        $approvalInfo = $this->checkApprovalStatus($purchaseRequest);
+        if ($approvalInfo) {
+            return redirect()->back()->with('approvalInfo', $approvalInfo);
+        }
+
         // Verificar que la solicitud esté en estado correcto
         if (!in_array($purchaseRequest->status, ['En pre-aprobación', 'En Cotización'])) {
             \Log::warning('Estado de solicitud no válido para pre-aprobación mixta', [
@@ -364,9 +421,7 @@ class QuotationApprovalController extends Controller
                 'current_status' => $purchaseRequest->status
             ]);
             return redirect()->back()->with('error', 'Esta solicitud no está en un estado válido para pre-aprobación. Estado actual: ' . $purchaseRequest->status);
-        }
-        
-        // Verificar que tenga selecciones mixtas
+        }        // Verificar que tenga selecciones mixtas
         $mixedSelections = \App\Models\QuotationItemSelection::where('purchase_request_id', $id)->get();
         if ($mixedSelections->count() === 0) {
             return redirect()->back()->with('error', 'No se encontraron selecciones mixtas para esta solicitud.');
