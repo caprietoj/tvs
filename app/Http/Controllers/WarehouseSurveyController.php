@@ -27,6 +27,7 @@ class WarehouseSurveyController extends Controller
                 'message' => 'No hay datos de encuestas disponibles. Por favor, sube el primer archivo de resultados.',
                 'totalResponses' => 0,
                 'selectedPeriod' => null,
+                'latestStats' => [],
                 'chartData' => [],
                 'dependenciesData' => [],
                 'dashboardData' => ['trend_data' => ['labels' => [], 'values' => []]],
@@ -53,9 +54,9 @@ class WarehouseSurveyController extends Controller
         return view('surveys.internal-client.warehouse.index', [
             'hasData' => true,
             'selectedPeriod' => $latestPeriod->survey_period,
+            'totalResponses' => $latestStats['total_responses'] ?? 0,
             'latestStats' => $latestStats,
             'historicalData' => $historicalData,
-            'totalResponses' => $latestStats['total_responses'] ?? 0,
             'chartData' => $chartData,
             'dependenciesData' => $dependenciesData,
             'dashboardData' => $dashboardData,

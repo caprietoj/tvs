@@ -1337,3 +1337,58 @@ $(document).ready(function() {
 </div>
 
 @stop
+
+@section('css')
+<style>
+    .bg-primary {
+        background-color: #233e6c !important;
+    }
+    
+    .bg-gradient-info {
+        background: #233e6c !important;
+    }
+    
+    .bg-secondary {
+        background-color: #233e6c !important;
+    }
+    
+    .bg-success {
+        background-color: #233e6c !important;
+    }
+    
+    .bg-warning {
+        background-color: #233e6c !important;
+    }
+    
+    .bg-info {
+        background-color: #233e6c !important;
+    }
+    
+    .card-header {
+        background-color: #233e6c !important;
+        color: white !important;
+    }
+    
+    /* Excepciones para mantener colores originales en small-box */
+    .small-box.bg-info {
+        background-color: #17a2b8 !important;
+    }
+    
+    .small-box.bg-success {
+        background-color: #28a745 !important;
+    }
+    
+    .small-box.bg-warning {
+        background-color: #ffc107 !important;
+    }
+    
+    .small-box.bg-danger {
+        background-color: #dc3545 !important;
+    }
+    
+    /* Hacer que los iconos en info-box-icon tengan color blanco */
+    .info-box-icon i {
+        color: white !important;
+    }
+</style>
+@stop
