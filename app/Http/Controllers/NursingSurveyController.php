@@ -15,7 +15,7 @@ class NursingSurveyController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'admin.role']);
+        $this->middleware(['auth', 'admin']);
     }
 
     /**

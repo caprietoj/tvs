@@ -519,6 +519,7 @@ class ApprovalController extends Controller
                 'subtotal' => $subtotal,
                 'iva_amount' => $ivaAmount,
                 'includes_iva' => $includesIva,
+                'order_date' => now()->toDateString(),
                 'payment_terms' => $quotation->payment_terms ?? 'Contado',
                 'delivery_date' => now()->addDays(15),
                 'file_path' => 'pending_generation',
@@ -610,6 +611,7 @@ class ApprovalController extends Controller
             'subtotal' => $subtotal,
             'iva_amount' => $ivaAmount,
             'includes_iva' => $includesIva,
+            'order_date' => now()->toDateString(),
             'payment_terms' => $paymentTerms,
             'delivery_date' => now()->addDays(15),
             'file_path' => 'pending_generation',
@@ -668,6 +670,7 @@ class ApprovalController extends Controller
                 'subtotal' => $subtotal,
                 'iva_amount' => $ivaAmount,
                 'includes_iva' => $includesIva,
+                'order_date' => now()->toDateString(),
                 'payment_terms' => 'Contado',
                 'delivery_date' => now()->addDays(30), // 30 días para servicios
                 'file_path' => 'pending_generation',

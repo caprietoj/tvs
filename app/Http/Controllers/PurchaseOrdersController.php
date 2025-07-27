@@ -290,6 +290,7 @@ class PurchaseOrdersController extends Controller
                 'provider_id' => $providerId,
                 'user_id' => auth()->id(),
                 'created_by' => auth()->id(),
+                'order_date' => $request->order_date ?? now()->toDateString(),
                 'payment_terms' => $request->payment_terms ?? ($isNoQuotationService ? 'Contado' : 'A definir'),
                 'delivery_date' => $request->delivery_date ?? now()->addDays($isNoQuotationService ? 30 : 15),
                 'observations' => $observations,
@@ -445,7 +446,7 @@ class PurchaseOrdersController extends Controller
     public function download(PurchaseOrder $purchaseOrder)
     {
         // Verificar si el archivo existe o si el file_path es el valor temporal
-        if ($purchaseOrder->file_path === 'pending_generation' || !Storage::exists($purchaseOrder->file_path)) {
+        if ($purchaseOrder->file_path === 'pending_generation' || !Storage::disk('public')->exists($purchaseOrder->file_path)) {
             try {
                 // Intentar regenerar el PDF
                 \Log::info('Intentando regenerar PDF para orden #' . $purchaseOrder->id);
@@ -463,14 +464,14 @@ class PurchaseOrdersController extends Controller
         }
         
         // Verificar nuevamente si el archivo existe después de intentar regenerarlo
-        if (!Storage::exists($purchaseOrder->file_path)) {
+        if (!Storage::disk('public')->exists($purchaseOrder->file_path)) {
             \Log::error('Archivo PDF no encontrado en ruta: ' . $purchaseOrder->file_path);
             return redirect()->back()->with('error', 'El archivo PDF de la orden de compra no está disponible en la ruta especificada: ' . $purchaseOrder->file_path);
         }
         
         // Obtener el contenido del PDF
         try {
-            $pdfContent = Storage::get($purchaseOrder->file_path);
+            $pdfContent = Storage::disk('public')->get($purchaseOrder->file_path);
             
             // Preparar respuesta para descarga
             $headers = [
@@ -491,7 +492,7 @@ class PurchaseOrdersController extends Controller
     public function view(PurchaseOrder $purchaseOrder)
     {
         // Verificar si el archivo existe o si el file_path es el valor temporal
-        if ($purchaseOrder->file_path === 'pending_generation' || !Storage::exists($purchaseOrder->file_path)) {
+        if ($purchaseOrder->file_path === 'pending_generation' || !Storage::disk('public')->exists($purchaseOrder->file_path)) {
             try {
                 // Intentar regenerar el PDF
                 \Log::info('Intentando regenerar PDF para visualización de orden #' . $purchaseOrder->id);
@@ -509,14 +510,14 @@ class PurchaseOrdersController extends Controller
         }
         
         // Verificar nuevamente si el archivo existe después de intentar regenerarlo
-        if (!Storage::exists($purchaseOrder->file_path)) {
+        if (!Storage::disk('public')->exists($purchaseOrder->file_path)) {
             \Log::error('Archivo PDF no encontrado en ruta para visualización: ' . $purchaseOrder->file_path);
             return redirect()->back()->with('error', 'El archivo PDF de la orden de compra no está disponible en la ruta especificada: ' . $purchaseOrder->file_path);
         }
         
         // Obtener el contenido del PDF para visualización
         try {
-            $pdfContent = Storage::get($purchaseOrder->file_path);
+            $pdfContent = Storage::disk('public')->get($purchaseOrder->file_path);
             
             // Preparar respuesta para visualización en navegador
             $headers = [
@@ -933,6 +934,188 @@ class PurchaseOrdersController extends Controller
      * Recalcula toda la información desde la solicitud original hasta la orden final.
      * Solo disponible para administradores.
      */
+    /**
+     * Mostrar formulario para editar el PDF de una orden de compra (solo admin)
+     */
+    public function editPdf(PurchaseOrder $purchaseOrder)
+    {
+        // Verificar que el usuario sea administrador
+        if (!auth()->user()->hasRole('admin')) {
+            abort(403, 'No tienes permisos para editar PDFs de órdenes de compra.');
+        }
+
+        // Cargar relaciones necesarias
+        $purchaseOrder->load([
+            'purchaseRequest.user',
+            'purchaseRequest.selectedQuotation.quotationItemSelections',
+            'purchaseRequest.quotationItemSelections.quotation',
+            'purchaseRequest.approver',
+            'provider'
+        ]);
+
+        // Usar el alias 'order' para compatibilidad con la vista
+        $order = $purchaseOrder;
+
+        return view('purchase-orders.edit-pdf-new', compact('order'));
+    }
+
+    /**
+     * Mostrar formulario mejorado para editar el PDF de una orden de compra (solo admin)
+     * Vista que replica exactamente el formato del PDF con todos los impuestos
+     */
+    public function editPdfNew(PurchaseOrder $purchaseOrder)
+    {
+        // Verificar que el usuario sea administrador
+        if (!auth()->user()->hasRole('admin')) {
+            abort(403, 'No tienes permisos para editar PDFs de órdenes de compra.');
+        }
+
+        // Cargar relaciones necesarias
+        $purchaseOrder->load([
+            'purchaseRequest.user',
+            'purchaseRequest.selectedQuotation.quotationItemSelections',
+            'purchaseRequest.quotationItemSelections.quotation',
+            'purchaseRequest.approver',
+            'provider'
+        ]);
+
+        // Usar el alias 'order' para compatibilidad con la vista
+        $order = $purchaseOrder;
+
+        return view('purchase-orders.edit-pdf-new', compact('order'));
+    }
+
+    /**
+     * Actualizar los datos del PDF de una orden de compra (solo admin)
+     */
+    public function updatePdf(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        // Verificar que el usuario sea administrador
+        if (!auth()->user()->hasRole('admin')) {
+            abort(403, 'No tienes permisos para editar PDFs de órdenes de compra.');
+        }
+
+        // Validar los datos de entrada
+        $validator = Validator::make($request->all(), [
+            'provider_name' => 'required|string|max:255',
+            'provider_nit' => 'nullable|string|max:50',
+            'provider_email' => 'nullable|email|max:255',
+            'provider_phone' => 'nullable|string|max:50',
+            'provider_address' => 'nullable|string|max:500',
+            'provider_city' => 'nullable|string|max:255',
+            'delivery_address' => 'nullable|string|max:500',
+            'payment_method' => 'nullable|string|max:255',
+            'delivery_date' => 'nullable|date',
+            'subtotal' => 'required|numeric|min:0',
+            'iva_rate' => 'nullable|numeric|min:0|max:100',
+            'iva_amount' => 'nullable|numeric|min:0',
+            'ipoconsumo_rate' => 'nullable|numeric|min:0|max:100',
+            'ipoconsumo_amount' => 'nullable|numeric|min:0',
+            'total' => 'required|numeric|min:0',
+            'observations' => 'nullable|string|max:1000',
+            'items' => 'nullable|array',
+            'items.*.description' => 'nullable|string|max:255',
+            'items.*.quantity' => 'nullable|numeric|min:0',
+            'items.*.unit_price' => 'nullable|numeric|min:0',
+            'items.*.total' => 'nullable|numeric|min:0',
+            'additional_items' => 'nullable|array',
+            'additional_items.*.description' => 'nullable|string|max:255',
+            'additional_items.*.quantity' => 'nullable|numeric|min:0',
+            'additional_items.*.unit_price' => 'nullable|numeric|min:0',
+            'additional_items.*.total' => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Guardar datos originales para el log
+            $originalData = [
+                'order_number' => $purchaseOrder->order_number,
+                'total_amount' => $purchaseOrder->total_amount,
+                'provider_id' => $purchaseOrder->provider_id,
+                'pdf_custom_data' => $purchaseOrder->pdf_custom_data,
+            ];
+
+            // Preparar datos personalizados para guardar
+            $customData = [
+                'provider_name' => $request->provider_name,
+                'provider_nit' => $request->provider_nit,
+                'provider_email' => $request->provider_email,
+                'provider_phone' => $request->provider_phone,
+                'provider_address' => $request->provider_address,
+                'provider_city' => $request->provider_city,
+                'delivery_address' => $request->delivery_address,
+                'payment_method' => $request->payment_method,
+                'iva_rate' => $request->iva_rate . '%',
+                'iva_amount' => $request->iva_amount ?? 0,
+                'ipoconsumo_rate' => $request->ipoconsumo_rate . '%',
+                'ipoconsumo_amount' => $request->ipoconsumo_amount ?? 0,
+                'subtotal' => $request->subtotal,
+                'total' => $request->total,
+                'items' => $request->items ?? [],
+                'additional_items' => $request->additional_items ?? [],
+                'observations' => $request->observations,
+                'edited_by' => auth()->user()->id,
+                'edited_at' => now()->toISOString(),
+            ];
+
+            // Actualizar los datos de la orden
+            $updateResult = $purchaseOrder->update([
+                'delivery_date' => $request->delivery_date,
+                'subtotal' => $request->subtotal,
+                'iva_amount' => $request->iva_amount ?? 0,
+                'tax_amount' => $request->iva_amount ?? 0,
+                'total_amount' => $request->total,
+                'includes_iva' => ($request->iva_amount ?? 0) > 0,
+                'observations' => $request->observations,
+                'pdf_custom_data' => json_encode($customData),
+                'updated_at' => now()
+            ]);
+
+            // Regenerar el PDF con los nuevos datos
+            $pdfPath = $this->pdfService->generatePdf($purchaseOrder);
+            $purchaseOrder->update(['file_path' => $pdfPath]);
+
+            // Registrar la edición en el log
+            Log::info('PDF de orden de compra editado por administrador', [
+                'order_id' => $purchaseOrder->id,
+                'order_number' => $purchaseOrder->order_number,
+                'edited_by' => auth()->user()->id,
+                'edited_by_name' => auth()->user()->name,
+                'original_data' => $originalData,
+                'new_subtotal' => $request->subtotal,
+                'new_iva_amount' => $request->iva_amount ?? 0,
+                'new_ipoconsumo_amount' => $request->ipoconsumo_amount ?? 0,
+                'new_total' => $request->total,
+                'pdf_path' => $pdfPath
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('success', 'PDF de la orden de compra actualizado exitosamente.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            Log::error('Error al actualizar PDF de orden de compra', [
+                'order_id' => $purchaseOrder->id,
+                'error' => $e->getMessage(),
+                'edited_by' => auth()->user()->id
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Error al actualizar el PDF: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
     public function regeneratePdf(PurchaseOrder $purchaseOrder)
     {
         // Verificar que el usuario sea administrador

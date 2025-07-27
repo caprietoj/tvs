@@ -69,6 +69,11 @@ class Quotation extends Model
     {
         return $this->belongsTo(User::class, 'pre_approved_by');
     }
+
+    public function quotationItemSelections()
+    {
+        return $this->hasMany(QuotationItemSelection::class);
+    }
     
     /**
      * Obtener los datos del proveedor basándose en el nombre

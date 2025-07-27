@@ -171,6 +171,11 @@
                                 <a href="{{ route('purchase-orders.show', $order->id) }}" class="btn btn-sm btn-info">
                                     <i class="fas fa-eye"></i> Ver
                                 </a>
+                                @if(auth()->user()->hasRole('admin'))
+                                <a href="{{ route('purchase-orders.edit-pdf', $order->id) }}" class="btn btn-sm btn-warning" title="Editar PDF personalizado">
+                                    <i class="fas fa-file-pdf"></i> Editar PDF
+                                </a>
+                                @endif
                                 @if(($order->isPending() || ($order->status == 'approved' && auth()->user()->hasRole('admin'))) && auth()->user()->hasRole('admin'))
                                 <a href="{{ route('purchase-orders.edit', $order->id) }}" class="btn btn-sm btn-primary">
                                     <i class="fas fa-edit"></i> Editar
@@ -188,8 +193,8 @@
                                 @if(auth()->user()->hasRole('admin'))
                                 <form action="{{ route('purchase-orders.regenerate-pdf', $order->id) }}" method="POST" class="d-inline regenerate-pdf-form" data-order-number="{{ $order->order_number }}">
                                     @csrf
-                                    <button type="button" class="btn btn-sm btn-warning regenerate-pdf-btn" title="Regenerar orden completa desde la solicitud original">
-                                        <i class="fas fa-sync-alt"></i> Regenerar Orden
+                                    <button type="button" class="btn btn-sm btn-secondary regenerate-pdf-btn" title="Regenerar orden completa desde la solicitud original">
+                                        <i class="fas fa-sync-alt"></i> Regenerar
                                     </button>
                                 </form>
                                 @endif

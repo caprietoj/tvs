@@ -23,6 +23,8 @@ class PurchaseOrder extends Model
         'subtotal',
         'includes_iva',
         'iva_amount',
+        'tax_amount',
+        'order_date',
         'payment_terms',
         'delivery_date',
         'file_path',
@@ -40,6 +42,7 @@ class PurchaseOrder extends Model
         'cancellation_reason',
         'approved_at',
         'approved_by',
+        'pdf_custom_data',
     ];
 
     /**
@@ -48,6 +51,7 @@ class PurchaseOrder extends Model
      * @var array
      */
     protected $casts = [
+        'order_date' => 'date',
         'delivery_date' => 'date',
         'payment_date' => 'date',
         'sent_to_accounting_at' => 'datetime',
@@ -55,6 +59,7 @@ class PurchaseOrder extends Model
         'approved_at' => 'datetime',
         'includes_iva' => 'boolean',
         'additional_items' => 'array',
+        'pdf_custom_data' => 'array',
     ];
 
     /**
@@ -70,7 +75,7 @@ class PurchaseOrder extends Model
      */
     public function provider()
     {
-        return $this->belongsTo(Proveedor::class, 'provider_id');
+        return $this->belongsTo(Provider::class, 'provider_id');
     }
 
     /**

@@ -244,11 +244,22 @@
                     }
                 }
                 
-                // Recalcular los impuestos basándose en el subtotal
+                // Priorizar datos personalizados del PDF si existen
+                $customData = null;
+                if (!empty($order->pdf_custom_data)) {
+                    $customData = json_decode($order->pdf_custom_data, true);
+                }
+                
+                // Recalcular los impuestos basándose en datos personalizados o subtotal
                 $ivaCalculado = 0;
                 $ipoconsumoCalculado = 0;
                 
-                if ($selectedQuotation) {
+                if ($customData && isset($customData['iva_amount'])) {
+                    // Usar datos personalizados del editor de PDF
+                    $ivaCalculado = $customData['iva_amount'];
+                    $ipoconsumoCalculado = $customData['ipoconsumo_amount'] ?? 0;
+                    $subtotalCalculado = $customData['subtotal'] ?? $subtotalCalculado;
+                } elseif ($selectedQuotation) {
                     // Si hay IVA 19% o 5%, calcularlos sobre el subtotal
                     if ($selectedQuotation->includes_iva_19) {
                         $ivaCalculado += $subtotalCalculado * 0.19;
@@ -269,7 +280,12 @@
                     $ivaCalculado = $order->iva_amount ?? 0;
                 }
                 
-                $totalCalculado = $subtotalCalculado + $ivaCalculado + $ipoconsumoCalculado;
+                // Calcular total usando datos personalizados si están disponibles
+                if ($customData && isset($customData['total'])) {
+                    $totalCalculado = $customData['total'];
+                } else {
+                    $totalCalculado = $subtotalCalculado + $ivaCalculado + $ipoconsumoCalculado;
+                }
             @endphp
             
             <!-- Items adicionales si existen -->
@@ -308,16 +324,22 @@
             <tr>
                 <td class="bold">FECHA:</td>
                 <td>{{ $order->purchaseRequest->approval_date ? $order->purchaseRequest->approval_date->format('d/m/Y') : '' }}</td>
-                @if($selectedQuotation && ($selectedQuotation->includes_iva_19 || $selectedQuotation->includes_iva_5 || $selectedQuotation->includes_iva))
+                @if(($order->includes_iva && $ivaCalculado > 0) || ($customData && isset($customData['iva_amount']) && $customData['iva_amount'] > 0))
                     <td class="bold">
-                        @if($selectedQuotation->includes_iva_19 && $selectedQuotation->includes_iva_5)
-                            IVA (19% + 5%)
-                        @elseif($selectedQuotation->includes_iva_19)
-                            IVA (19%)
-                        @elseif($selectedQuotation->includes_iva_5)
+                        @php
+                            // Determinar el porcentaje de IVA basándose en datos personalizados o cálculo
+                            if ($customData && isset($customData['iva_rate'])) {
+                                $ivaPercentage = (int) str_replace('%', '', $customData['iva_rate']);
+                            } else {
+                                $ivaPercentage = $subtotalCalculado > 0 ? round(($ivaCalculado / $subtotalCalculado) * 100) : 0;
+                            }
+                        @endphp
+                        @if($ivaPercentage == 5)
                             IVA (5%)
-                        @else
+                        @elseif($ivaPercentage == 19)
                             IVA (19%)
+                        @else
+                            IVA ({{ $ivaPercentage }}%)
                         @endif
                     </td>
                     <td class="right">${{ number_format($ivaCalculado, 0, ',', '.') }}</td>

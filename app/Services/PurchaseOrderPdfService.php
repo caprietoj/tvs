@@ -24,6 +24,14 @@ class PurchaseOrderPdfService
             // Cargar la solicitud y sus relaciones
             $order->load(['purchaseRequest.user', 'purchaseRequest.selectedQuotation', 'purchaseRequest.approver', 'provider']);
             
+            // Verificar si hay datos personalizados del PDF
+            $hasCustomData = !empty($order->pdf_custom_data);
+            
+            if ($hasCustomData) {
+                // Usar datos personalizados para generar el PDF
+                return $this->generateCustomPdf($order);
+            }
+            
             // Verificar si es un servicio sin cotización
             if ($order->purchaseRequest->isNoQuotationService()) {
                 // Calcular variables necesarias para el template
@@ -140,17 +148,17 @@ class PurchaseOrderPdfService
             $pdf->setPaper('letter', 'portrait');
             
             // Si ya existe un PDF, eliminarlo
-            if ($order->file_path && $order->file_path !== 'pending_generation' && Storage::exists($order->file_path)) {
-                Storage::delete($order->file_path);
+            if ($order->file_path && $order->file_path !== 'pending_generation' && Storage::disk('public')->exists($order->file_path)) {
+                Storage::disk('public')->delete($order->file_path);
                 Log::info('PDF anterior eliminado para orden de compra #' . $order->id);
             }
             
             // Definir nombre de archivo
-            $fileName = 'order_' . $order->id . '_' . now()->format('YmdHis') . '.pdf';
+            $fileName = 'order_' . $order->order_number . '_' . time() . '.pdf';
             
-            // Guardar en storage
+            // Guardar en storage público
             $path = 'purchase_orders/' . $fileName;
-            \Storage::put($path, $pdf->output());
+            Storage::disk('public')->put($path, $pdf->output());
             
             Log::info('PDF generado exitosamente para orden de compra #' . $order->id . ' en ruta: ' . $path);
             
@@ -295,5 +303,92 @@ class PurchaseOrderPdfService
     public function getPdfPath(PurchaseOrder $order): string
     {
         return $order->file_path;
+    }
+    
+    /**
+     * Genera PDF usando datos personalizados pero manteniendo el template original
+     */
+    private function generateCustomPdf(PurchaseOrder $order)
+    {
+        try {
+            $customData = json_decode($order->pdf_custom_data, true);
+            
+            // Crear un pseudo-proveedor con los datos personalizados
+            $customProvider = (object) [
+                'nombre' => $customData['provider_name'] ?? $order->provider->nombre ?? '',
+                'nit' => $customData['provider_nit'] ?? $order->provider->nit ?? '',
+                'email' => $customData['provider_email'] ?? $order->provider->email ?? '',
+                'telefono' => $customData['provider_phone'] ?? $order->provider->telefono ?? '',
+                'direccion' => $customData['provider_address'] ?? $order->provider->direccion ?? '',
+            ];
+            
+            // Temporalmente reemplazar el proveedor con datos personalizados
+            $originalProvider = $order->provider;
+            $order->setRelation('provider', $customProvider);
+            
+            // Actualizar totales si están en los datos personalizados
+            if (isset($customData['subtotal'])) {
+                $order->subtotal = $customData['subtotal'];
+            }
+            if (isset($customData['iva_amount'])) {
+                $order->iva_amount = $customData['iva_amount'];
+                $order->tax_amount = $customData['iva_amount'];
+                $order->includes_iva = $customData['iva_amount'] > 0;
+            }
+            if (isset($customData['total'])) {
+                $order->total_amount = $customData['total'];
+            }
+            
+            // Usar la lógica original para determinar el template correcto
+            $view = null;
+            
+            // Verificar si es un servicio sin cotización
+            if ($order->purchaseRequest->isNoQuotationService()) {
+                // Usar template de servicio con datos personalizados
+                $view = view('purchase-orders.pdf-template-service', [
+                    'order' => $order,
+                    'purchaseRequest' => $order->purchaseRequest,
+                    'customItems' => $customData['items'] ?? [],
+                    'includesIva' => $order->includes_iva,
+                    'subtotal' => $order->subtotal,
+                    'ivaAmount' => $order->iva_amount,
+                ]);
+            } else {
+                // Para órdenes normales, usar template tradicional
+                $quotation = $order->purchaseRequest->selectedQuotation;
+                $view = view('purchase-orders.pdf-template-new', [
+                    'order' => $order,
+                    'purchaseRequest' => $order->purchaseRequest,
+                    'quotation' => $quotation,
+                    'items' => $customData['items'] ?? $order->purchaseRequest->purchase_items ?? [],
+                    'additionalItems' => $order->additional_items ?? [],
+                    'includesIva' => $order->includes_iva,
+                    'subtotal' => $order->subtotal,
+                    'ivaAmount' => $order->iva_amount,
+                    'iva_amount' => $order->iva_amount,
+                    'tax_consumption' => 0,
+                    'discount' => 0,
+                ]);
+            }
+            
+            // Restaurar el proveedor original
+            $order->setRelation('provider', $originalProvider);
+            
+            // Generar PDF
+            $pdf = \PDF::loadHTML($view->render());
+            $pdf->setPaper('letter', 'portrait');
+            
+            // Guardar el PDF
+            $filename = 'order_' . $order->order_number . '_' . time() . '.pdf';
+            $pdfPath = 'purchase_orders/' . $filename;
+            
+            Storage::disk('public')->put($pdfPath, $pdf->output());
+            
+            return $pdfPath;
+            
+        } catch (Exception $e) {
+            Log::error('Error al generar PDF personalizado para orden #' . $order->id . ': ' . $e->getMessage());
+            throw $e;
+        }
     }
 }

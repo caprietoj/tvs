@@ -503,7 +503,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:approve-loan-requests');
         
     // Rutas de diagnóstico (solo para administradores)
-    Route::middleware(['auth', 'role:Admin'])->group(function () {
+    Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('diagnostics/routes', [App\Http\Controllers\DiagnosticController::class, 'diagnoseRoutes'])
             ->name('diagnostics.routes');
         Route::get('diagnostics/fix-routes', [App\Http\Controllers\DiagnosticController::class, 'fixRoutes'])
@@ -546,7 +546,7 @@ Route::middleware(['auth'])->group(function () {
     // Rutas para manejo del estado de entrega de fotocopias
     Route::post('purchase-requests/{purchaseRequest}/mark-delivery-status', [PurchaseRequestController::class, 'markDeliveryStatus'])
         ->name('purchase-requests.mark-delivery-status')
-        ->middleware('role:compras|admin|almacen');
+        ->middleware('admin');
     
     // Rutas para PDF de solicitudes de compra
     Route::get('purchase-requests/{id}/pdf/download', [PurchaseRequestController::class, 'generatePdf'])
@@ -611,10 +611,25 @@ Route::middleware(['auth'])->group(function () {
         ->name('purchase-orders.store');
     Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'show'])
         ->name('purchase-orders.show');
+    Route::get('purchase-orders/{purchaseOrder}/pdf', [PurchaseOrdersController::class, 'generatePdf'])
+        ->name('purchase-orders.pdf');
     Route::get('purchase-orders/{purchaseOrder}/edit', [PurchaseOrdersController::class, 'edit'])
         ->name('purchase-orders.edit');
     Route::put('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'update'])
         ->name('purchase-orders.update');
+    
+    // Rutas específicas para administradores - Edición de PDF
+    Route::middleware(['auth', 'admin'])->group(function () {
+        Route::get('purchase-orders/{purchaseOrder}/edit-pdf', [PurchaseOrdersController::class, 'editPdf'])
+            ->name('purchase-orders.edit-pdf');
+        Route::get('purchase-orders/{purchaseOrder}/edit-pdf-new', [PurchaseOrdersController::class, 'editPdfNew'])
+            ->name('purchase-orders.edit-pdf-new');
+        Route::put('purchase-orders/{purchaseOrder}/update-pdf', [PurchaseOrdersController::class, 'updatePdf'])
+            ->name('purchase-orders.update-pdf');
+        Route::post('purchase-orders/{purchaseOrder}/regenerate-pdf', [PurchaseOrdersController::class, 'regeneratePdf'])
+            ->name('purchase-orders.regenerate-pdf');
+    });
+    
     Route::delete('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'destroy'])
         ->name('purchase-orders.destroy');
     Route::get('purchase-orders/{purchaseOrder}/download', [PurchaseOrdersController::class, 'download'])
@@ -946,7 +961,7 @@ Route::get('/test-evaluations-view', function() {
 });
 
 // ==== RUTAS PARA ENCUESTAS INSTITUCIONALES (Solo Administradores) ====
-Route::middleware(['auth', 'admin.role'])->prefix('surveys')->name('surveys.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('surveys')->name('surveys.')->group(function () {
     
     // Cliente Interno
     Route::prefix('internal-client')->name('internal-client.')->group(function () {
