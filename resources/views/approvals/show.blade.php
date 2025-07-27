@@ -332,7 +332,32 @@
                     </button>
                 </div>
                 <div class="modal-body">
+                    @if($request->isNoQuotationService())
+                        <div class="alert alert-info mb-3">
+                            <h6><i class="fas fa-info-circle mr-2"></i>Servicio sin Cotización</h6>
+                            <p class="mb-1"><strong>Proveedor:</strong> {{ $request->provider_name ?? 'N/A' }}</p>
+                            <p class="mb-1"><strong>Valor:</strong> ${{ number_format($request->service_budget, 2, ',', '.') }}</p>
+                            <p class="mb-0"><strong>Justificación:</strong> {{ $request->no_quotation_reason ?? 'N/A' }}</p>
+                        </div>
+                    @endif
+                    
                     <p>¿Está seguro que desea aprobar definitivamente esta solicitud?</p>
+                    
+                    @if($request->isNoQuotationService())
+                    <div class="form-group">
+                        <label for="budget">Presupuesto asignado <span class="text-danger">*</span></label>
+                        <select class="form-control" id="budget" name="budget" required>
+                            <option value="">Seleccione un rubro presupuestal...</option>
+                            @foreach($budgetOptions as $option)
+                                <option value="{{ $option }}" {{ old('budget', $request->budget) == $option ? 'selected' : '' }}>
+                                    {{ $option }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">Seleccione el rubro presupuestal donde se cargará esta orden de servicio.</small>
+                    </div>
+                    @endif
+                    
                     <div class="form-group">
                         <label for="comments">Comentarios (opcional)</label>
                         <textarea name="comments" id="comments" class="form-control" rows="3"></textarea>

@@ -270,6 +270,12 @@ class PurchaseRequestController extends Controller
             }
         }
         
+        // Filtro por sección si se especifica
+        $sectionFilter = $request->get('section');
+        if ($sectionFilter && $sectionFilter !== 'all') {
+            $query->where('section_area', $sectionFilter);
+        }
+        
         $requests = $query->with('user')
             ->orderBy('created_at', 'desc')
             ->paginate(10);
@@ -277,7 +283,44 @@ class PurchaseRequestController extends Controller
         // Mantener los parámetros de filtro en la paginación
         $requests->appends($request->query());
         
-        return view('purchase-requests.index', compact('requests', 'typeFilter'));
+        // Obtener todas las secciones para el filtro
+        $sections = PurchaseRequest::distinct()
+            ->whereNotNull('section_area')
+            ->pluck('section_area')
+            ->sort()
+            ->values();
+        
+        // Verificar si se puede mostrar aprobación masiva de fotocopias
+        $canBulkApproveCopies = false;
+        $copiesCount = 0;
+        
+        if ($typeFilter === 'copies' && $sectionFilter && $sectionFilter !== 'all') {
+            // Verificar permisos del usuario
+            if (Auth::user()->can('approve-purchase-requests')) {
+                // Contar fotocopias pendientes en esa sección
+                $copiesCount = PurchaseRequest::where('type', 'materials')
+                    ->where('section_area', $sectionFilter)
+                    ->where(function($q) {
+                        $q->whereNotNull('copy_items')
+                          ->whereRaw('JSON_LENGTH(copy_items) > 0');
+                    })
+                    ->where('status', 'pending')
+                    ->count();
+                
+                if ($copiesCount > 0) {
+                    $canBulkApproveCopies = true;
+                }
+            }
+        }
+
+        return view('purchase-requests.index', compact(
+            'requests', 
+            'typeFilter', 
+            'sections', 
+            'sectionFilter',
+            'canBulkApproveCopies',
+            'copiesCount'
+        ));
     }
 
     /**
@@ -450,6 +493,13 @@ class PurchaseRequestController extends Controller
             $rules['provider_email'] = 'nullable|email|max:255';
             $rules['no_quotation_reason'] = 'required|string';
             $rules['quotation_file'] = 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240'; // máximo 10MB
+            
+            // Validación para campos de impuestos
+            $rules['taxes'] = 'nullable|array';
+            $rules['taxes.*'] = 'in:iva_19,iva_5,consumo_8,consumo_4';
+            $rules['subtotal_amount'] = 'nullable|numeric|min:0';
+            $rules['tax_amount'] = 'nullable|numeric|min:0';
+            $rules['total_amount'] = 'nullable|numeric|min:0';
         }
         
         $validator = Validator::make($request->all(), $rules);
@@ -484,6 +534,12 @@ class PurchaseRequestController extends Controller
             $data['provider_contact'] = $request->provider_contact;
             $data['provider_email'] = $request->provider_email;
             $data['no_quotation_reason'] = $request->no_quotation_reason;
+            
+            // Agregar campos de impuestos
+            $data['applied_taxes'] = $request->taxes ?? [];
+            $data['subtotal_amount'] = $request->subtotal_amount;
+            $data['tax_amount'] = $request->tax_amount;
+            $data['total_amount'] = $request->total_amount;
             
             // Manejar el archivo de cotización
             if ($request->hasFile('quotation_file')) {
@@ -1067,6 +1123,49 @@ class PurchaseRequestController extends Controller
     
     return redirect()->route('purchase-requests.show', $purchaseRequest)
     ->with('success', 'Solicitud aprobada exitosamente');
+    }
+
+    /**
+     * Bulk approve all copies requests for a specific section
+     */
+    public function bulkApproveCopies(Request $request)
+    {
+        if (!Auth::user()->can('approve-purchase-requests')) {
+            return redirect()->back()->with('error', 'No tienes permisos para aprobar solicitudes');
+        }
+
+        $section = $request->input('section');
+        if (!$section || $section === 'all') {
+            return redirect()->back()->with('error', 'Debe especificar una sección válida');
+        }
+
+        // Obtener todas las solicitudes de fotocopias pendientes de esa sección
+        $copiesRequests = PurchaseRequest::where('type', 'materials')
+            ->where('section_area', $section)
+            ->where(function($q) {
+                $q->whereNotNull('copy_items')
+                  ->whereRaw('JSON_LENGTH(copy_items) > 0');
+            })
+            ->where('status', 'pending')
+            ->get();
+
+        if ($copiesRequests->isEmpty()) {
+            return redirect()->back()->with('error', 'No hay solicitudes de fotocopias pendientes en la sección ' . $section);
+        }
+
+        $approvedCount = 0;
+        foreach ($copiesRequests as $request) {
+            $request->update([
+                'status' => 'approved',
+                'approved_by' => Auth::id(),
+                'approval_date' => now(),
+            ]);
+            $approvedCount++;
+        }
+
+        return redirect()->back()->with('success', 
+            "Se aprobaron exitosamente {$approvedCount} solicitudes de fotocopias de la sección {$section}"
+        );
     }
 
     /**

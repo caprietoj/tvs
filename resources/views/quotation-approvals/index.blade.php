@@ -32,6 +32,33 @@
                     </div>
                 @endif
 
+                <!-- Filtros -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <form method="GET" action="{{ route('quotation-approvals.index') }}" class="form-inline">
+                            <div class="form-group mr-3">
+                                <label for="section" class="mr-2"><strong>Área/Sección:</strong></label>
+                                <select name="section" id="section" class="form-control">
+                                    <option value="all">Todas las secciones</option>
+                                    @foreach($sections as $section)
+                                        <option value="{{ $section }}" {{ $sectionFilter === $section ? 'selected' : '' }}>
+                                            {{ $section }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-filter"></i> Filtrar
+                                </button>
+                                <a href="{{ route('quotation-approvals.index') }}" class="btn btn-secondary ml-2">
+                                    <i class="fas fa-times"></i> Limpiar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
                     <table id="requests-table" class="table table-bordered table-striped">
                         <thead>

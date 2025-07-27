@@ -109,18 +109,6 @@
             text-align: center;
             color: #777;
         }
-        
-        .signature-section {
-            margin-top: 50px;
-            page-break-inside: avoid;
-        }
-        
-        .signature-line {
-            width: 200px;
-            border-top: 1px solid #000;
-            margin: 50px auto 10px;
-            text-align: center;
-        }
 
         .company-info {
             text-align: center;
@@ -151,6 +139,87 @@
     </style>
 </head>
 <body>
+@php
+function convertirNumeroALetras($numero) {
+    $numero = round($numero);
+    if ($numero == 0) return 'cero pesos';
+    
+    $unidades = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve'];
+    $especiales = ['diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve'];
+    $decenas = ['', '', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+    $centenas = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+    
+    function convertirGrupo($n, $unidades, $especiales, $decenas, $centenas) {
+        if ($n == 0) return '';
+        if ($n == 100) return 'cien';
+        
+        $resultado = '';
+        
+        if ($n >= 100) {
+            $c = intval($n / 100);
+            $resultado .= $centenas[$c];
+            $n %= 100;
+            if ($n > 0) $resultado .= ' ';
+        }
+        
+        if ($n >= 20) {
+            $d = intval($n / 10);
+            $resultado .= $decenas[$d];
+            $n %= 10;
+            if ($n > 0) {
+                $resultado .= ' y ' . $unidades[$n];
+            }
+        } elseif ($n >= 10) {
+            $resultado .= $especiales[$n - 10];
+        } elseif ($n > 0) {
+            $resultado .= $unidades[$n];
+        }
+        
+        return $resultado;
+    }
+    
+    $resultado = '';
+    
+    if ($numero >= 1000000) {
+        $millones = intval($numero / 1000000);
+        if ($millones == 1) {
+            $resultado .= 'un millón';
+        } else {
+            $resultado .= convertirGrupo($millones, $unidades, $especiales, $decenas, $centenas) . ' millones';
+        }
+        $numero %= 1000000;
+        if ($numero > 0) $resultado .= ' ';
+    }
+    
+    if ($numero >= 1000) {
+        $miles = intval($numero / 1000);
+        if ($miles == 1) {
+            $resultado .= 'mil';
+        } else {
+            $resultado .= convertirGrupo($miles, $unidades, $especiales, $decenas, $centenas) . ' mil';
+        }
+        $numero %= 1000;
+        if ($numero > 0) $resultado .= ' ';
+    }
+    
+    if ($numero > 0) {
+        $resultado .= convertirGrupo($numero, $unidades, $especiales, $decenas, $centenas);
+    }
+    
+    if ($resultado == '') {
+        $resultado = 'cero';
+    }
+    
+    if (round($numero) == 1) {
+        $resultado .= ' peso';
+    } else {
+        $resultado .= ' pesos';
+    }
+    
+    return ucfirst($resultado);
+}
+@endphp
+
     <div class="header">
         <div class="company-info">
             <h1 style="margin: 0; color: #2c5282;">TVS - Tecnológico del Valle del Sarchi</h1>
@@ -272,6 +341,75 @@
     </div>
     @endif
 
+    <!-- Información de Impuestos y Totales -->
+    @if($purchaseRequest->service_type === 'no_quotation' && ($purchaseRequest->applied_taxes || $purchaseRequest->subtotal_amount || $purchaseRequest->tax_amount || $purchaseRequest->total_amount))
+    <div class="section">
+        <div class="section-title">Información de Impuestos y Totales</div>
+        
+        @if($purchaseRequest->subtotal_amount)
+        <div class="info-block">
+            <span class="label">Subtotal:</span>
+            ${{ number_format($purchaseRequest->subtotal_amount, 2, ',', '.') }}
+        </div>
+        @endif
+
+        @if($purchaseRequest->applied_taxes && count($purchaseRequest->applied_taxes) > 0)
+        <div class="info-block">
+            <span class="label">Impuestos Aplicados:</span>
+            <div style="margin-left: 150px;">
+                @foreach($purchaseRequest->applied_taxes as $tax)
+                    <div style="margin-bottom: 5px;">
+                        @if($tax === 'iva_19')
+                            IVA 19%
+                        @elseif($tax === 'iva_5')
+                            IVA 5%
+                        @elseif($tax === 'consumo_8')
+                            Impuesto al Consumo 8%
+                        @elseif($tax === 'consumo_4')
+                            Impuesto al Consumo 4%
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        @if($purchaseRequest->tax_amount)
+        <div class="info-block">
+            <span class="label">Total Impuestos:</span>
+            ${{ number_format($purchaseRequest->tax_amount, 2, ',', '.') }}
+        </div>
+        @endif
+
+        @if($purchaseRequest->total_amount)
+        <div class="info-block" style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;">
+            <span class="label" style="font-size: 14px; color: #2c5282;">TOTAL GENERAL:</span>
+            <span style="font-size: 14px; font-weight: bold; color: #2c5282;">${{ number_format($purchaseRequest->total_amount, 2, ',', '.') }}</span>
+        </div>
+        <div class="info-block" style="margin-top: 10px;">
+            <span class="label" style="font-size: 14px; color: #2c5282;">Valor Total en Letras:</span>
+            <span style="font-size: 12px; font-weight: bold; color: #2c5282; text-transform: uppercase;">{{ convertirNumeroALetras($purchaseRequest->total_amount) }}</span>
+        </div>
+        @endif
+    </div>
+    @endif
+
+    <!-- Información de Presupuesto (para servicios regulares sin cálculo de impuestos) -->
+    @if($purchaseRequest->type === 'services' && $purchaseRequest->service_type !== 'no_quotation' && $purchaseRequest->service_budget)
+    <div class="section">
+        <div class="section-title">Información de Presupuesto</div>
+        
+        <div class="info-block" style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;">
+            <span class="label" style="font-size: 14px; color: #2c5282;">VALOR PRESUPUESTADO:</span>
+            <span style="font-size: 14px; font-weight: bold; color: #2c5282;">${{ number_format($purchaseRequest->service_budget, 2, ',', '.') }}</span>
+        </div>
+        <div class="info-block" style="margin-top: 10px;">
+            <span class="label" style="font-size: 14px; color: #2c5282;">Valor Total en Letras:</span>
+            <span style="font-size: 12px; font-weight: bold; color: #2c5282; text-transform: uppercase;">{{ convertirNumeroALetras($purchaseRequest->service_budget) }}</span>
+        </div>
+    </div>
+    @endif
+
     <!-- Observaciones o Comentarios -->
     @if($purchaseRequest->comments)
     <div class="section">
@@ -298,38 +436,26 @@
         </div>
         @endif
 
+        @if($purchaseRequest->approved_at && $purchaseRequest->approvedBy)
+        <div class="info-block">
+            <span class="label">Aprobado por:</span>
+            {{ $purchaseRequest->approvedBy->name }}
+        </div>
+        @endif
+
+        @if($purchaseRequest->service_type === 'no_quotation' && $purchaseRequest->budget && $purchaseRequest->approved_at)
+        <div class="info-block">
+            <span class="label">Presupuesto Asignado:</span>
+            <span style="font-weight: bold; color: #2c5282;">{{ $purchaseRequest->budget }}</span>
+        </div>
+        @endif
+
         @if($purchaseRequest->rejected_at)
         <div class="info-block">
             <span class="label">Fecha de Rechazo:</span>
             {{ \Carbon\Carbon::parse($purchaseRequest->rejected_at)->format('d/m/Y H:i:s') }}
         </div>
         @endif
-    </div>
-
-    <!-- Sección de Firmas -->
-    <div class="signature-section">
-        <div class="section-title">Firmas y Autorizaciones</div>
-        
-        <table style="width: 100%; margin-top: 30px;">
-            <tr>
-                <td style="width: 50%; text-align: center; border: none;">
-                    <div class="signature-line"></div>
-                    <strong>{{ $user->name }}</strong><br>
-                    <small>Solicitante</small><br>
-                    <small>Fecha: {{ $purchaseRequest->created_at->format('d/m/Y') }}</small>
-                </td>
-                <td style="width: 50%; text-align: center; border: none;">
-                    <div class="signature-line"></div>
-                    <strong>Autorizado por</strong><br>
-                    <small>Jefe de Compras</small><br>
-                    @if($purchaseRequest->approved_at)
-                        <small>Fecha: {{ \Carbon\Carbon::parse($purchaseRequest->approved_at)->format('d/m/Y') }}</small>
-                    @else
-                        <small>Fecha: _______________</small>
-                    @endif
-                </td>
-            </tr>
-        </table>
     </div>
 
     <!-- Footer -->

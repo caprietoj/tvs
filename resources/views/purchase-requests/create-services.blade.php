@@ -206,6 +206,63 @@
                                         </small>
                                     </div>
                                 </div>
+                                
+                                <!-- Sección de Impuestos (solo para servicios sin cotización) -->
+                                <div id="tax_section" style="display: none;">
+                                    <hr>
+                                    <h6 class="mb-3" style="color: #364E76;">
+                                        <i class="fas fa-calculator mr-2"></i>Impuestos Aplicables
+                                    </h6>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label class="font-weight-bold">SELECCIONE LOS IMPUESTOS A APLICAR:</label>
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input tax-checkbox" id="iva_19" name="taxes[]" value="iva_19" data-rate="19">
+                                                <label class="custom-control-label" for="iva_19">
+                                                    <i class="fas fa-percent mr-1 text-info"></i>IVA (19%)
+                                                </label>
+                                            </div>
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input tax-checkbox" id="iva_5" name="taxes[]" value="iva_5" data-rate="5">
+                                                <label class="custom-control-label" for="iva_5">
+                                                    <i class="fas fa-percent mr-1 text-info"></i>IVA (5%)
+                                                </label>
+                                            </div>
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input tax-checkbox" id="consumo_8" name="taxes[]" value="consumo_8" data-rate="8">
+                                                <label class="custom-control-label" for="consumo_8">
+                                                    <i class="fas fa-shopping-cart mr-1 text-warning"></i>Impuesto al Consumo (8%)
+                                                </label>
+                                            </div>
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input tax-checkbox" id="consumo_4" name="taxes[]" value="consumo_4" data-rate="4">
+                                                <label class="custom-control-label" for="consumo_4">
+                                                    <i class="fas fa-shopping-cart mr-1 text-warning"></i>Impuesto al Consumo (4%)
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label class="font-weight-bold">RESUMEN DE CÁLCULO:</label>
+                                            <div class="card border-info">
+                                                <div class="card-body p-3">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span>Subtotal:</span>
+                                                        <span id="tax_subtotal">$0</span>
+                                                    </div>
+                                                    <div id="tax_breakdown"></div>
+                                                    <hr class="my-2">
+                                                    <div class="d-flex justify-content-between font-weight-bold" style="color: #364E76;">
+                                                        <span>Total con Impuestos:</span>
+                                                        <span id="tax_total">$0</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <input type="hidden" name="subtotal_amount" id="subtotal_amount" value="0">
+                                            <input type="hidden" name="tax_amount" id="tax_amount" value="0">
+                                            <input type="hidden" name="total_amount" id="total_amount" value="0">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -497,15 +554,25 @@ $(document).ready(function() {
     $('#service_type').on('change', function() {
         const serviceType = $(this).val();
         const providerSection = $('#provider_info_section');
+        const taxSection = $('#tax_section');
         
         if (serviceType === 'no_quotation') {
             providerSection.show();
+            taxSection.show();
             // Hacer campos obligatorios
             $('#provider_name, #no_quotation_reason').attr('required', true);
+            // Calcular impuestos si hay valor presupuestado
+            calculateTaxes();
         } else {
             providerSection.hide();
+            taxSection.hide();
             // Quitar campos obligatorios y limpiar valores
             $('#provider_name, #provider_nit, #provider_contact, #provider_email, #no_quotation_reason').attr('required', false).val('');
+            // Limpiar cálculos de impuestos
+            $('.tax-checkbox').prop('checked', false);
+            $('#tax_subtotal, #tax_total').text('$0');
+            $('#tax_breakdown').empty();
+            $('#subtotal_amount, #tax_amount, #total_amount').val('0');
         }
     });
 
@@ -618,6 +685,65 @@ $(document).ready(function() {
     if ($('#provider_id').val()) {
         $('#provider_id').trigger('change');
     }
+
+    // Función para calcular impuestos
+    function calculateTaxes() {
+        const budget = parseFloat($('#service_budget').val()) || 0;
+        let totalTaxes = 0;
+        let taxBreakdown = '';
+        
+        if (budget > 0) {
+            $('#tax_subtotal').text(formatCurrency(budget));
+            $('#subtotal_amount').val(budget);
+            
+            $('.tax-checkbox:checked').each(function() {
+                const rate = parseFloat($(this).data('rate'));
+                const taxAmount = budget * (rate / 100);
+                totalTaxes += taxAmount;
+                
+                const taxName = $(this).next('label').text().trim();
+                taxBreakdown += `
+                    <div class="d-flex justify-content-between text-muted">
+                        <span>${taxName}:</span>
+                        <span>${formatCurrency(taxAmount)}</span>
+                    </div>
+                `;
+            });
+            
+            $('#tax_breakdown').html(taxBreakdown);
+            $('#tax_total').text(formatCurrency(budget + totalTaxes));
+            $('#tax_amount').val(totalTaxes);
+            $('#total_amount').val(budget + totalTaxes);
+        } else {
+            $('#tax_subtotal').text('$0');
+            $('#tax_total').text('$0');
+            $('#tax_breakdown').empty();
+            $('#subtotal_amount').val('0');
+            $('#tax_amount').val('0');
+            $('#total_amount').val('0');
+        }
+    }
+    
+    // Función para formatear moneda
+    function formatCurrency(amount) {
+        return '$' + amount.toLocaleString('es-CO', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+    }
+    
+    // Manejar cambios en checkboxes de impuestos
+    $('.tax-checkbox').on('change', function() {
+        calculateTaxes();
+    });
+    
+    // Manejar cambios en el valor presupuestado
+    $('#service_budget').on('input', function() {
+        handleBudgetConversion();
+        if ($('#service_type').val() === 'no_quotation') {
+            calculateTaxes();
+        }
+    });
 
     // Inicializar estado de los botones
     updateDeleteButtons();

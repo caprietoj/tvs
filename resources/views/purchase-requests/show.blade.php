@@ -654,6 +654,84 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            <!-- Desglose de montos para servicios sin cotización -->
+                            @if($purchaseRequest->service_type === 'no_quotation' && ($purchaseRequest->subtotal_amount || $purchaseRequest->tax_amount || $purchaseRequest->total_amount))
+                                <div class="card mt-3 border">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-calculator mr-2"></i>
+                                            Desglose de Montos
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <!-- Subtotal -->
+                                            @if($purchaseRequest->subtotal_amount)
+                                                <div class="col-md-4">
+                                                    <div class="d-flex justify-content-between">
+                                                        <strong>Subtotal:</strong>
+                                                        <span class="text-primary">
+                                                            ${{ number_format($purchaseRequest->subtotal_amount, 2, ',', '.') }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            <!-- Impuestos aplicados -->
+                                            @if($purchaseRequest->applied_taxes && is_array($purchaseRequest->applied_taxes) && count($purchaseRequest->applied_taxes) > 0)
+                                                <div class="col-md-4">
+                                                    <small class="text-muted">Impuestos aplicados:</small>
+                                                    <ul class="list-unstyled mb-1">
+                                                        @foreach($purchaseRequest->applied_taxes as $tax)
+                                                            <li class="small">
+                                                                @if($tax === 'iva_19')
+                                                                    <i class="fas fa-dot-circle mr-1 text-success"></i>IVA 19%
+                                                                @elseif($tax === 'iva_5')
+                                                                    <i class="fas fa-dot-circle mr-1 text-info"></i>IVA 5%
+                                                                @elseif($tax === 'consumo_8')
+                                                                    <i class="fas fa-dot-circle mr-1 text-warning"></i>Imp. Consumo 8%
+                                                                @elseif($tax === 'consumo_4')
+                                                                    <i class="fas fa-dot-circle mr-1 text-secondary"></i>Imp. Consumo 4%
+                                                                @endif
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endif
+
+                                            <!-- Total de impuestos -->
+                                            @if($purchaseRequest->tax_amount)
+                                                <div class="col-md-4">
+                                                    <div class="d-flex justify-content-between">
+                                                        <strong>Total Impuestos:</strong>
+                                                        <span class="text-warning">
+                                                            ${{ number_format($purchaseRequest->tax_amount, 2, ',', '.') }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        <!-- Total general -->
+                                        @if($purchaseRequest->total_amount)
+                                            <hr class="my-2">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <h5 class="mb-0">
+                                                            <strong>Total General:</strong>
+                                                        </h5>
+                                                        <h4 class="mb-0 text-success">
+                                                            <strong>${{ number_format($purchaseRequest->total_amount, 2, ',', '.') }}</strong>
+                                                        </h4>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 @endif

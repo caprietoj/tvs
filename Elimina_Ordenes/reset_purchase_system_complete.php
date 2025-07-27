@@ -1,21 +1,21 @@
 <?php
 /**
- * Script COMPLETO para limpiar el sistema de compras
+ * Script COMPLETO para limpiar el sistema de compras y servicios
  * 
- * Este script eliminará ÚNICAMENTE datos relacionados con SC- incluyendo:
+ * Este script eliminará datos relacionados con SC- y SS- incluyendo:
  * - Todas las solicitudes de compra (SC-)
- * - Todas las cotizaciones y selecciones relacionadas con SC-
- * - Todas las órdenes de compra (OC-) relacionadas con SC-
- * - Todos los archivos relacionados con SC-
- * - Todas las preaprobaciones y aprobaciones relacionadas con SC-
+ * - Todas las solicitudes de servicio (SS-)
+ * - Todas las cotizaciones y selecciones relacionadas con SC- y SS-
+ * - Todas las órdenes de compra (OC-) relacionadas con SC- y SS-
+ * - Todos los archivos relacionados con SC- y SS-
+ * - Todas las preaprobaciones y aprobaciones relacionadas con SC- y SS-
  * 
  * PRESERVARÁ:
- * - Solicitudes de servicio (SS-)
  * - Solicitudes de materiales y fotocopias
- * - Archivos no relacionados con SC-
- * - Cualquier otro tipo de solicitud
+ * - Archivos no relacionados con SC- y SS-
+ * - Cualquier otro tipo de solicitud que no sea SC- o SS-
  * 
- * ADVERTENCIA: Esta operación es IRREVERSIBLE para datos SC-
+ * ADVERTENCIA: Esta operación es IRREVERSIBLE para datos SC- y SS-
  */
 
 // Configurar la ruta base del proyecto
@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
-echo "=== SCRIPT COMPLETO DE LIMPIEZA DEL SISTEMA DE COMPRAS ===\n";
+echo "=== SCRIPT COMPLETO DE LIMPIEZA DEL SISTEMA DE COMPRAS Y SERVICIOS ===\n";
 echo "📍 Ubicación: Elimina_Ordenes/reset_purchase_system_complete.php\n\n";
 
 try {
@@ -66,91 +66,97 @@ try {
         return;
     }
     
-    echo "\n2. Contabilizando registros específicos de SC-...\n";
+    echo "\n2. Contabilizando registros específicos de SC- y SS-...\n";
     
     $totalRecords = 0;
     $details = [];
     $purchaseRequestIds = [];
     
-    // Obtener IDs de solicitudes SC-
+    // Obtener IDs de solicitudes SC- y SS-
     if (in_array('purchase_requests', $existingTables)) {
         $purchaseRequestIds = DB::table('purchase_requests')
-            ->where('request_number', 'LIKE', 'SC-%')
+            ->where(function($query) {
+                $query->where('request_number', 'LIKE', 'SC-%')
+                      ->orWhere('request_number', 'LIKE', 'SS-%');
+            })
             ->pluck('id')
             ->toArray();
         
-        $scCount = count($purchaseRequestIds);
+        $scCount = DB::table('purchase_requests')->where('request_number', 'LIKE', 'SC-%')->count();
         $ssCount = DB::table('purchase_requests')->where('request_number', 'LIKE', 'SS-%')->count();
         $materialCount = DB::table('purchase_requests')->where('type', 'materials')->count();
         $purchaseCount = DB::table('purchase_requests')->where('type', 'purchase')->count();
+        $serviceCount = DB::table('purchase_requests')->where('type', 'services')->count();
         
         echo "   - Solicitudes SC- (a eliminar): $scCount\n";
-        echo "   - Solicitudes SS- (preservar): $ssCount\n";
+        echo "   - Solicitudes SS- (a eliminar): $ssCount\n";
         echo "   - Solicitudes de materiales (preservar): $materialCount\n";
-        echo "   - Solicitudes de compra total: $purchaseCount\n";
+        echo "   - Total solicitudes de compra: $purchaseCount\n";
+        echo "   - Total solicitudes de servicio: $serviceCount\n";
         
-        $totalRecords += $scCount;
+        $totalRecords += ($scCount + $ssCount);
     }
     
-    // Contar registros relacionados con SC-
+    // Contar registros relacionados con SC- y SS-
     if (in_array('quotations', $existingTables) && !empty($purchaseRequestIds)) {
         $quotationCount = DB::table('quotations')->whereIn('purchase_request_id', $purchaseRequestIds)->count();
         $selectedQuotations = DB::table('quotations')
             ->whereIn('purchase_request_id', $purchaseRequestIds)
             ->where('is_selected', true)
             ->count();
-        echo "   - Cotizaciones relacionadas con SC-: $quotationCount\n";
-        echo "   - Cotizaciones seleccionadas relacionadas con SC-: $selectedQuotations\n";
+        echo "   - Cotizaciones relacionadas con SC- y SS-: $quotationCount\n";
+        echo "   - Cotizaciones seleccionadas relacionadas con SC- y SS-: $selectedQuotations\n";
         $totalRecords += $quotationCount;
     }
     
     if (in_array('purchase_orders', $existingTables) && !empty($purchaseRequestIds)) {
         $ocCount = DB::table('purchase_orders')->whereIn('purchase_request_id', $purchaseRequestIds)->count();
-        echo "   - Órdenes OC- relacionadas con SC-: $ocCount\n";
+        echo "   - Órdenes OC- relacionadas con SC- y SS-: $ocCount\n";
         $totalRecords += $ocCount;
     }
     
     if (in_array('quotation_item_selections', $existingTables) && !empty($purchaseRequestIds)) {
         $selectionsCount = DB::table('quotation_item_selections')->whereIn('purchase_request_id', $purchaseRequestIds)->count();
-        echo "   - Selecciones relacionadas con SC-: $selectionsCount\n";
+        echo "   - Selecciones relacionadas con SC- y SS-: $selectionsCount\n";
         $totalRecords += $selectionsCount;
     }
     
     echo "\n📊 RESUMEN TOTAL:\n";
-    echo "   - Registros SC- a eliminar: $totalRecords\n";
-    echo "   - Registros SS- y materiales: PRESERVADOS\n";
+    echo "   - Registros SC- y SS- a eliminar: $totalRecords\n";
+    echo "   - Registros de materiales: PRESERVADOS\n";
     
     echo "\n🚨 ADVERTENCIA CRÍTICA 🚨\n";
     echo "Esta operación eliminará PERMANENTEMENTE:\n";
     echo "- TODAS las solicitudes de compra SC- y sus dependencias\n";
-    echo "- TODAS las cotizaciones relacionadas con SC-\n";
-    echo "- TODAS las órdenes de compra relacionadas con SC-\n";
-    echo "- TODOS los archivos relacionados con SC-\n";
-    echo "- Los IDs se resetearán a 1 para nuevas SC-\n\n";
+    echo "- TODAS las solicitudes de servicio SS- y sus dependencias\n";
+    echo "- TODAS las cotizaciones relacionadas con SC- y SS-\n";
+    echo "- TODAS las órdenes de compra relacionadas con SC- y SS-\n";
+    echo "- TODOS los archivos relacionados con SC- y SS-\n";
+    echo "- Los IDs se resetearán a 1 para nuevas SC- y SS-\n\n";
     echo "SE PRESERVARÁN:\n";
-    echo "- Solicitudes SS- y materiales\n";
-    echo "- Archivos no relacionados con SC-\n\n";
+    echo "- Solicitudes de materiales y fotocopias\n";
+    echo "- Archivos no relacionados con SC- y SS-\n\n";
     
     echo "¿Está ABSOLUTAMENTE SEGURO de continuar?\n";
-    echo "Escriba 'ELIMINAR SC' para confirmar: ";
+    echo "Escriba 'ELIMINAR SC-SS' para confirmar: ";
     
     $handle = fopen("php://stdin", "r");
     $confirmation = trim(fgets($handle));
     fclose($handle);
     
-    if ($confirmation !== 'ELIMINAR SC') {
-        echo "\n❌ Operación cancelada. Se requiere escribir exactamente 'ELIMINAR SC'.\n";
+    if ($confirmation !== 'ELIMINAR SC-SS') {
+        echo "\n❌ Operación cancelada. Se requiere escribir exactamente 'ELIMINAR SC-SS'.\n";
         DB::rollBack();
         return;
     }
     
-    echo "\n3. Iniciando eliminación de archivos relacionados con SC-...\n";
+    echo "\n3. Iniciando eliminación de archivos relacionados con SC- y SS-...\n";
     
     $deletedFiles = 0;
     
-    // Eliminar archivos de quotations relacionadas con SC-
+    // Eliminar archivos de quotations relacionadas con SC- y SS-
     if (in_array('quotations', $existingTables) && !empty($purchaseRequestIds)) {
-        echo "   Buscando archivos de cotizaciones relacionadas con SC-...\n";
+        echo "   Buscando archivos de cotizaciones relacionadas con SC- y SS-...\n";
         $quotationFiles = DB::table('quotations')
             ->whereIn('purchase_request_id', $purchaseRequestIds)
             ->whereNotNull('file_path')
@@ -162,12 +168,12 @@ try {
                 $deletedFiles++;
             }
         }
-        echo "   ✓ Eliminados archivos de cotizaciones relacionadas con SC-\n";
+        echo "   ✓ Eliminados archivos de cotizaciones relacionadas con SC- y SS-\n";
     }
     
-    // Eliminar archivos de purchase_orders relacionadas con SC-
+    // Eliminar archivos de purchase_orders relacionadas con SC- y SS-
     if (in_array('purchase_orders', $existingTables) && !empty($purchaseRequestIds)) {
-        echo "   Buscando archivos de órdenes relacionadas con SC-...\n";
+        echo "   Buscando archivos de órdenes relacionadas con SC- y SS-...\n";
         $orderFiles = DB::table('purchase_orders')
             ->whereIn('purchase_request_id', $purchaseRequestIds)
             ->whereNotNull('file_path')
@@ -179,12 +185,12 @@ try {
                 $deletedFiles++;
             }
         }
-        echo "   ✓ Eliminados archivos de órdenes relacionadas con SC-\n";
+        echo "   ✓ Eliminados archivos de órdenes relacionadas con SC- y SS-\n";
     }
     
-    // Eliminar archivos de purchase_requests SC-
+    // Eliminar archivos de purchase_requests SC- y SS-
     if (in_array('purchase_requests', $existingTables) && !empty($purchaseRequestIds)) {
-        echo "   Buscando archivos de solicitudes SC-...\n";
+        echo "   Buscando archivos de solicitudes SC- y SS-...\n";
         
         $fileFields = ['quotation_file_path', 'original_file', 'attached_files'];
         
@@ -215,7 +221,7 @@ try {
                 }
             }
         }
-        echo "   ✓ Eliminados archivos de solicitudes SC-\n";
+        echo "   ✓ Eliminados archivos de solicitudes SC- y SS-\n";
     }
     
     echo "   📁 Total archivos eliminados: $deletedFiles\n";
@@ -223,15 +229,15 @@ try {
     echo "\n4. Deshabilitando verificaciones de integridad...\n";
     DB::statement('SET FOREIGN_KEY_CHECKS=0');
     
-    echo "\n5. Eliminando datos de la base de datos relacionados con SC-...\n";
+    echo "\n5. Eliminando datos de la base de datos relacionados con SC- y SS-...\n";
     
     $deletedCounts = [];
     
-    // Eliminar en orden correcto solo datos relacionados con SC-
+    // Eliminar en orden correcto solo datos relacionados con SC- y SS-
     if (!empty($purchaseRequestIds)) {
         // Selecciones de cotizaciones
         if (in_array('quotation_item_selections', $existingTables)) {
-            echo "   Limpiando quotation_item_selections relacionadas con SC-... ";
+            echo "   Limpiando quotation_item_selections relacionadas con SC- y SS-... ";
             $deleted = DB::table('quotation_item_selections')->whereIn('purchase_request_id', $purchaseRequestIds)->delete();
             $deletedCounts['quotation_item_selections'] = $deleted;
             echo "✓ ($deleted eliminadas)\n";
@@ -239,7 +245,7 @@ try {
         
         // Órdenes de compra
         if (in_array('purchase_orders', $existingTables)) {
-            echo "   Limpiando purchase_orders relacionadas con SC-... ";
+            echo "   Limpiando purchase_orders relacionadas con SC- y SS-... ";
             $deleted = DB::table('purchase_orders')->whereIn('purchase_request_id', $purchaseRequestIds)->delete();
             $deletedCounts['purchase_orders'] = $deleted;
             echo "✓ ($deleted eliminadas)\n";
@@ -247,16 +253,21 @@ try {
         
         // Cotizaciones
         if (in_array('quotations', $existingTables)) {
-            echo "   Limpiando quotations relacionadas con SC-... ";
+            echo "   Limpiando quotations relacionadas con SC- y SS-... ";
             $deleted = DB::table('quotations')->whereIn('purchase_request_id', $purchaseRequestIds)->delete();
             $deletedCounts['quotations'] = $deleted;
             echo "✓ ($deleted eliminadas)\n";
         }
         
-        // Solicitudes SC-
+        // Solicitudes SC- y SS-
         if (in_array('purchase_requests', $existingTables)) {
-            echo "   Limpiando purchase_requests (solo SC-)... ";
-            $deleted = DB::table('purchase_requests')->where('request_number', 'LIKE', 'SC-%')->delete();
+            echo "   Limpiando purchase_requests (SC- y SS-)... ";
+            $deleted = DB::table('purchase_requests')
+                ->where(function($query) {
+                    $query->where('request_number', 'LIKE', 'SC-%')
+                          ->orWhere('request_number', 'LIKE', 'SS-%');
+                })
+                ->delete();
             $deletedCounts['purchase_requests'] = $deleted;
             echo "✓ ($deleted eliminadas)\n";
         }
@@ -307,11 +318,11 @@ try {
             $materialsRemaining = DB::table($table)->where('type', 'materials')->count();
             
             echo "     • SC- restantes: $scRemaining\n";
-            echo "     • SS- preservadas: $ssRemaining\n";
+            echo "     • SS- restantes: $ssRemaining\n";
             echo "     • Materiales preservadas: $materialsRemaining\n";
             
-            if ($scRemaining > 0) {
-                echo "   ❌ ERROR: Quedaron $scRemaining solicitudes SC-\n";
+            if ($scRemaining > 0 || $ssRemaining > 0) {
+                echo "   ❌ ERROR: Quedaron $scRemaining solicitudes SC- y $ssRemaining solicitudes SS-\n";
                 $cleanupSuccess = false;
             }
         }
@@ -335,12 +346,12 @@ try {
     echo "🚀 SISTEMA LISTO PARA EMPEZAR:\n";
     echo "═══════════════════════════════\n";
     echo "• Próxima solicitud SC-: SC-1\n";
+    echo "• Próxima solicitud SS-: SS-1\n";
     echo "• Próxima cotización: ID 1\n";
     echo "• Próxima orden OC-: OC-1\n";
-    echo "• Solicitudes SS- preservadas\n";
     echo "• Solicitudes de materiales preservadas\n\n";
     
-    echo "El sistema de compras está limpio y listo para nuevas solicitudes SC-.\n";
+    echo "El sistema de compras y servicios está limpio y listo para nuevas solicitudes SC- y SS-.\n";
     
 } catch (Exception $e) {
     DB::rollBack();

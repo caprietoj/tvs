@@ -27,7 +27,8 @@ verify_auto_return.php
 temp_db_check.php
 documentation
 create_service_test.php
-
+iva_manager_completo.php.backup
+iva_manager.php.backup
 
 # Test files and verification scripts
 test_*

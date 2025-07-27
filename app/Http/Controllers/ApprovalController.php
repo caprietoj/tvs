@@ -7,6 +7,7 @@ use App\Models\RequestHistory;
 use App\Models\QuotationItemSelection;
 use App\Notifications\RequestApproved;
 use App\Notifications\PurchaseRequestApproved;
+use App\Helpers\BudgetHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
@@ -24,10 +25,14 @@ class ApprovalController extends Controller
     /**
      * Mostrar la lista de solicitudes pendientes de aprobación final.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Obtener todas las solicitudes que estén listas para aprobación final
-        $requests = PurchaseRequest::where(function($query) {
+        // Obtener filtros de la request
+        $sectionFilter = $request->get('section');
+        $typeFilter = $request->get('type');
+        
+        // Query base
+        $query = PurchaseRequest::where(function($query) {
                 // Solicitudes pre-aprobadas tradicionales
                 $query->whereIn('status', ['pre-approved', 'Pre-aprobada'])
                       // O servicios sin cotización en estado pending
@@ -36,12 +41,39 @@ class ApprovalController extends Controller
                                    ->where('service_type', 'no_quotation')
                                    ->where('status', 'pending');
                       });
-            })
-            ->with(['quotations', 'user', 'preApprover', 'preApprovedQuotation'])
+            });
+        
+        // Aplicar filtro de sección si está presente
+        if ($sectionFilter && $sectionFilter !== 'all') {
+            $query->where('section_area', $sectionFilter);
+        }
+        
+        // Aplicar filtro de tipo si está presente
+        if ($typeFilter && $typeFilter !== 'all') {
+            if ($typeFilter === 'purchase') {
+                $query->where('type', 'purchase');
+            } elseif ($typeFilter === 'materials') {
+                $query->where('type', 'materials');
+            } elseif ($typeFilter === 'services') {
+                $query->where('type', 'services');
+            }
+        }
+        
+        $requests = $query->with(['quotations', 'user', 'preApprover', 'preApprovedQuotation'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('approvals.index', compact('requests'));
+        // Mantener parámetros de filtro en la paginación
+        $requests->appends($request->query());
+        
+        // Obtener todas las secciones para el filtro
+        $sections = PurchaseRequest::distinct()
+            ->whereNotNull('section_area')
+            ->pluck('section_area')
+            ->sort()
+            ->values();
+
+        return view('approvals.index', compact('requests', 'sections', 'sectionFilter', 'typeFilter'));
     }
 
     /**
@@ -98,14 +130,21 @@ class ApprovalController extends Controller
             $approvalInfo = $this->getApprovalInfo($request);
             
             if ($approvalInfo) {
-                return view('approvals.show', compact('request', 'approvalInfo'));
+                return view('approvals.show', [
+                    'request' => $request,
+                    'approvalInfo' => $approvalInfo,
+                    'budgetOptions' => BudgetHelper::getBudgetOptions()
+                ]);
             }
             
             return redirect()->route('approvals.index')
                 ->with('error', 'Esta solicitud no está en un estado válido para aprobación.');
         }
 
-        return view('approvals.show', compact('request'));
+        return view('approvals.show', [
+            'request' => $request,
+            'budgetOptions' => BudgetHelper::getBudgetOptions()
+        ]);
     }
 
     /**
@@ -113,14 +152,21 @@ class ApprovalController extends Controller
      */
     public function approve(Request $request, $id)
     {
-        // Validar la entrada
-        $validated = $request->validate([
-            'comments' => 'nullable|string',
-        ]);
-
-        // Obtener la solicitud
+        // Obtener la solicitud primero para validación condicional
         $purchaseRequest = PurchaseRequest::with(['preApprovedQuotation', 'user'])
             ->findOrFail($id);
+
+        // Validar la entrada con reglas condicionales
+        $validationRules = [
+            'comments' => 'nullable|string',
+        ];
+
+        // Agregar validación de presupuesto para servicios sin cotización
+        if ($purchaseRequest->isNoQuotationService()) {
+            $validationRules['budget'] = 'required|string|' . BudgetHelper::getBudgetValidationRule();
+        }
+
+        $validated = $request->validate($validationRules);
 
         // Verificar que la solicitud esté en un estado válido para aprobación
         $validForApproval = false;
@@ -192,6 +238,11 @@ class ApprovalController extends Controller
             'approved_by' => Auth::id(),
             'approval_date' => now(),
         ];
+        
+        // Agregar presupuesto para servicios sin cotización
+        if ($purchaseRequest->isNoQuotationService() && isset($validated['budget'])) {
+            $updateData['budget'] = $validated['budget'];
+        }
         
         // Solo agregar selected_quotation_id para solicitudes de compra
         if ($purchaseRequest->type === 'purchase' && $purchaseRequest->pre_approved_quotation_id) {
@@ -586,16 +637,16 @@ class ApprovalController extends Controller
     {
         try {
             // Buscar o crear proveedor basado en la información ingresada
-            $provider = \App\Models\Proveedor::where('name', $purchaseRequest->provider_name)->first();
+            $provider = \App\Models\Proveedor::where('nombre', $purchaseRequest->provider_name)->first();
             
             if (!$provider) {
                 $provider = \App\Models\Proveedor::create([
-                    'name' => $purchaseRequest->provider_name,
+                    'nombre' => $purchaseRequest->provider_name,
                     'nit' => $purchaseRequest->provider_nit ?? 'Sin NIT',
                     'email' => $purchaseRequest->provider_email ?? 'sin-email@proveedor.com',
-                    'phone' => $purchaseRequest->provider_contact ?? 'Sin teléfono',
-                    'address' => 'Por definir',
-                    'contact_person' => $purchaseRequest->provider_contact ?? 'Sin contacto'
+                    'telefono' => $purchaseRequest->provider_contact ?? 'Sin teléfono',
+                    'direccion' => 'Por definir',
+                    'persona_contacto' => $purchaseRequest->provider_contact ?? 'Sin contacto'
                 ]);
             }
 

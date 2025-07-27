@@ -927,4 +927,371 @@ class PurchaseOrdersController extends Controller
         // Descargar el archivo
         return Storage::disk('public')->download($purchaseOrder->payment_receipt_path, $downloadName);
     }
+
+    /**
+     * Regenerar completamente una orden de compra.
+     * Recalcula toda la información desde la solicitud original hasta la orden final.
+     * Solo disponible para administradores.
+     */
+    public function regeneratePdf(PurchaseOrder $purchaseOrder)
+    {
+        // Verificar que el usuario sea administrador
+        if (!auth()->user()->hasRole('admin')) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'No tienes permisos para regenerar órdenes de compra.');
+        }
+
+        try {
+            // Cargar todas las relaciones necesarias para el recálculo completo
+            $purchaseOrder->load([
+                'purchaseRequest.user',
+                'purchaseRequest.selectedQuotation',
+                'purchaseRequest.quotationItemSelections.quotation',
+                'purchaseRequest.approver',
+                'provider'
+            ]);
+
+            $purchaseRequest = $purchaseOrder->purchaseRequest;
+            
+            if (!$purchaseRequest) {
+                throw new \Exception('No se encontró la solicitud de compra asociada a esta orden.');
+            }
+
+            Log::info('Iniciando regeneración completa para orden: ' . $purchaseOrder->order_number, [
+                'purchase_request_id' => $purchaseRequest->id,
+                'purchase_request_number' => $purchaseRequest->request_number
+            ]);
+
+            // PASO 1: Recalcular impuestos y totales desde la solicitud original
+            $this->recalculateOrderFromRequest($purchaseOrder, $purchaseRequest);
+
+            // PASO 2: Generar nuevo PDF con los datos recalculados
+            $pdfPath = $this->pdfService->generatePdf($purchaseOrder);
+
+            // PASO 3: Actualizar la orden con la nueva información
+            $purchaseOrder->file_path = $pdfPath;
+            $purchaseOrder->updated_at = now();
+            $purchaseOrder->save();
+
+            Log::info('Regeneración completa exitosa para orden: ' . $purchaseOrder->order_number, [
+                'pdf_path' => $pdfPath,
+                'total_amount_recalculated' => $purchaseOrder->total_amount,
+                'applied_taxes_recalculated' => $purchaseOrder->applied_taxes,
+                'regenerated_by' => auth()->user()->id
+            ]);
+
+            return redirect()->route('purchase-orders.index')
+                ->with('success', 'La orden ' . $purchaseOrder->order_number . ' ha sido completamente regenerada con todos los cálculos actualizados desde la solicitud ' . $purchaseRequest->request_number . '.');
+
+        } catch (\Exception $e) {
+            Log::error('Error en regeneración completa para orden: ' . $purchaseOrder->order_number, [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->user()->id
+            ]);
+
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'Error al regenerar la orden: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Recalcular completamente una orden de compra desde la solicitud original
+     */
+    private function recalculateOrderFromRequest(PurchaseOrder $purchaseOrder, $purchaseRequest)
+    {
+        Log::info('Recalculando orden desde solicitud', [
+            'order_id' => $purchaseOrder->id,
+            'request_id' => $purchaseRequest->id,
+            'request_type' => $purchaseRequest->type
+        ]);
+
+        // Inicializar variables para el cálculo
+        $subtotal = 0;
+        $totalTaxes = 0;
+        $appliedTaxes = [];
+        $items = [];
+
+        // Procesar según el tipo de solicitud
+        if ($purchaseRequest->type === 'services') {
+            // Para servicios, usar los datos de la solicitud directamente
+            $this->processServiceRequest($purchaseRequest, $subtotal, $totalTaxes, $appliedTaxes, $items);
+        } else {
+            // Para productos, usar cotización seleccionada o selecciones mixtas
+            if ($purchaseRequest->selectedQuotation) {
+                $this->processSelectedQuotation($purchaseRequest->selectedQuotation, $subtotal, $totalTaxes, $appliedTaxes, $items);
+            } elseif ($purchaseRequest->quotationItemSelections->count() > 0) {
+                $this->processMixedSelections($purchaseRequest->quotationItemSelections, $subtotal, $totalTaxes, $appliedTaxes, $items);
+            } else {
+                throw new \Exception('No se encontró cotización seleccionada ni selecciones mixtas para la solicitud.');
+            }
+        }
+
+        // Actualizar la orden con los valores recalculados
+        $purchaseOrder->subtotal = $subtotal;
+        $purchaseOrder->iva_amount = $totalTaxes;
+        $purchaseOrder->total_amount = $subtotal + $totalTaxes;
+        $purchaseOrder->includes_iva = $totalTaxes > 0;
+        
+        // Almacenar el desglose detallado de impuestos en additional_items si es necesario
+        if (!empty($appliedTaxes)) {
+            $currentAdditionalItems = $purchaseOrder->additional_items ?? [];
+            $currentAdditionalItems['applied_taxes_detail'] = $appliedTaxes;
+            $purchaseOrder->additional_items = $currentAdditionalItems;
+        }
+        
+        // Actualizar información adicional desde la solicitud
+        $purchaseOrder->observations = $purchaseRequest->description ?? $purchaseOrder->observations;
+
+        Log::info('Recálculo completado', [
+            'subtotal' => $subtotal,
+            'tax_amount' => $totalTaxes,
+            'total_amount' => $subtotal + $totalTaxes,
+            'applied_taxes' => $appliedTaxes
+        ]);
+    }
+
+    /**
+     * Procesar solicitud de servicios
+     */
+    private function processServiceRequest($purchaseRequest, &$subtotal, &$totalTaxes, &$appliedTaxes, &$items)
+    {
+        Log::info('Procesando solicitud de servicios', ['request_id' => $purchaseRequest->id]);
+
+        // Para servicios, el valor base puede estar en service_budget o amount
+        $baseAmount = $purchaseRequest->service_budget ?? $purchaseRequest->amount ?? 0;
+        $subtotal = $baseAmount;
+
+        // Aplicar impuestos desde la configuración de la solicitud
+        $serviceItems = $purchaseRequest->service_items ?? [];
+        
+        if (!empty($serviceItems) && is_array($serviceItems)) {
+            foreach ($serviceItems as $item) {
+                // Verificar si el item tiene impuestos configurados
+                if (isset($item['taxes']) && is_array($item['taxes'])) {
+                    foreach ($item['taxes'] as $tax) {
+                        $taxName = $tax['name'] ?? 'IVA';
+                        $taxRate = (float)($tax['rate'] ?? 0);
+                        $taxAmount = ($baseAmount * $taxRate) / 100;
+                        
+                        if (!isset($appliedTaxes[$taxName])) {
+                            $appliedTaxes[$taxName] = [
+                                'name' => $taxName,
+                                'rate' => $taxRate,
+                                'amount' => 0
+                            ];
+                        }
+                        $appliedTaxes[$taxName]['amount'] += $taxAmount;
+                        $totalTaxes += $taxAmount;
+                    }
+                }
+            }
+        } else {
+            // Si no hay items específicos con impuestos, aplicar IVA por defecto del 19%
+            $ivaRate = 19;
+            $ivaAmount = ($baseAmount * $ivaRate) / 100;
+            
+            $appliedTaxes['IVA'] = [
+                'name' => 'IVA',
+                'rate' => $ivaRate,
+                'amount' => $ivaAmount
+            ];
+            $totalTaxes = $ivaAmount;
+        }
+        
+        Log::info('Servicio procesado', [
+            'base_amount' => $baseAmount,
+            'total_taxes' => $totalTaxes,
+            'applied_taxes' => $appliedTaxes
+        ]);
+    }
+
+    /**
+     * Procesar cotización seleccionada
+     */
+    private function processSelectedQuotation($quotation, &$subtotal, &$totalTaxes, &$appliedTaxes, &$items)
+    {
+        Log::info('Procesando cotización seleccionada', ['quotation_id' => $quotation->id]);
+
+        // Usar additional_items que es donde se almacenan los items de la cotización
+        $quotationItems = $quotation->additional_items ?? [];
+        
+        if (!empty($quotationItems) && is_array($quotationItems)) {
+            foreach ($quotationItems as $item) {
+                $quantity = (float)($item['quantity'] ?? 1);
+                $unitPrice = (float)($item['unit_price'] ?? $item['price'] ?? 0);
+                $itemSubtotal = $quantity * $unitPrice;
+                $subtotal += $itemSubtotal;
+
+                // Procesar impuestos del item si existen
+                if (isset($item['taxes']) && is_array($item['taxes'])) {
+                    foreach ($item['taxes'] as $tax) {
+                        $taxName = $tax['name'] ?? 'IVA';
+                        $taxRate = (float)($tax['rate'] ?? 0);
+                        $taxAmount = ($itemSubtotal * $taxRate) / 100;
+                        
+                        if (!isset($appliedTaxes[$taxName])) {
+                            $appliedTaxes[$taxName] = [
+                                'name' => $taxName,
+                                'rate' => $taxRate,
+                                'amount' => 0
+                            ];
+                        }
+                        $appliedTaxes[$taxName]['amount'] += $taxAmount;
+                        $totalTaxes += $taxAmount;
+                    }
+                }
+            }
+        } else {
+            // Si no hay items detallados, usar totales de la cotización
+            $subtotal = $quotation->subtotal ?? $quotation->total_amount ?? 0;
+            
+            // Usar impuestos ya calculados en la cotización
+            if ($quotation->includes_iva_19 && $quotation->iva_19_amount > 0) {
+                $appliedTaxes['IVA 19%'] = [
+                    'name' => 'IVA',
+                    'rate' => 19,
+                    'amount' => $quotation->iva_19_amount
+                ];
+                $totalTaxes += $quotation->iva_19_amount;
+            }
+            
+            if ($quotation->includes_iva_5 && $quotation->iva_5_amount > 0) {
+                $appliedTaxes['IVA 5%'] = [
+                    'name' => 'IVA',
+                    'rate' => 5,
+                    'amount' => $quotation->iva_5_amount
+                ];
+                $totalTaxes += $quotation->iva_5_amount;
+            }
+            
+            if ($quotation->includes_ipoconsumo_8 && $quotation->ipoconsumo_8_amount > 0) {
+                $appliedTaxes['Impuesto al Consumo 8%'] = [
+                    'name' => 'Impuesto al Consumo',
+                    'rate' => 8,
+                    'amount' => $quotation->ipoconsumo_8_amount
+                ];
+                $totalTaxes += $quotation->ipoconsumo_8_amount;
+            }
+            
+            if ($quotation->includes_ipoconsumo_4 && $quotation->ipoconsumo_4_amount > 0) {
+                $appliedTaxes['Impuesto al Consumo 4%'] = [
+                    'name' => 'Impuesto al Consumo',
+                    'rate' => 4,
+                    'amount' => $quotation->ipoconsumo_4_amount
+                ];
+                $totalTaxes += $quotation->ipoconsumo_4_amount;
+            }
+            
+            // Si el subtotal es 0, calcular desde total menos impuestos
+            if ($subtotal == 0 && $quotation->total_amount > 0) {
+                $subtotal = $quotation->total_amount - $totalTaxes;
+            }
+        }
+        
+        Log::info('Cotización procesada', [
+            'subtotal' => $subtotal,
+            'total_taxes' => $totalTaxes,
+            'applied_taxes' => $appliedTaxes
+        ]);
+    }
+
+    /**
+     * Procesar selecciones mixtas
+     */
+    private function processMixedSelections($selections, &$subtotal, &$totalTaxes, &$appliedTaxes, &$items)
+    {
+        Log::info('Procesando selecciones mixtas', ['selections_count' => $selections->count()]);
+
+        foreach ($selections as $selection) {
+            $itemSubtotal = $selection->quantity * $selection->unit_price;
+            $subtotal += $itemSubtotal;
+
+            // Para selecciones mixtas, los impuestos generalmente se aplican desde la cotización asociada
+            if ($selection->quotation) {
+                // Aplicar proporcionalmente los impuestos de la cotización
+                $quotation = $selection->quotation;
+                
+                if ($quotation->includes_iva_19 && $quotation->iva_19_amount > 0) {
+                    $taxRate = 19;
+                    $taxAmount = ($itemSubtotal * $taxRate) / 100;
+                    
+                    if (!isset($appliedTaxes['IVA 19%'])) {
+                        $appliedTaxes['IVA 19%'] = [
+                            'name' => 'IVA',
+                            'rate' => $taxRate,
+                            'amount' => 0
+                        ];
+                    }
+                    $appliedTaxes['IVA 19%']['amount'] += $taxAmount;
+                    $totalTaxes += $taxAmount;
+                }
+                
+                if ($quotation->includes_iva_5 && $quotation->iva_5_amount > 0) {
+                    $taxRate = 5;
+                    $taxAmount = ($itemSubtotal * $taxRate) / 100;
+                    
+                    if (!isset($appliedTaxes['IVA 5%'])) {
+                        $appliedTaxes['IVA 5%'] = [
+                            'name' => 'IVA',
+                            'rate' => $taxRate,
+                            'amount' => 0
+                        ];
+                    }
+                    $appliedTaxes['IVA 5%']['amount'] += $taxAmount;
+                    $totalTaxes += $taxAmount;
+                }
+                
+                if ($quotation->includes_ipoconsumo_8 && $quotation->ipoconsumo_8_amount > 0) {
+                    $taxRate = 8;
+                    $taxAmount = ($itemSubtotal * $taxRate) / 100;
+                    
+                    if (!isset($appliedTaxes['Impuesto al Consumo 8%'])) {
+                        $appliedTaxes['Impuesto al Consumo 8%'] = [
+                            'name' => 'Impuesto al Consumo',
+                            'rate' => $taxRate,
+                            'amount' => 0
+                        ];
+                    }
+                    $appliedTaxes['Impuesto al Consumo 8%']['amount'] += $taxAmount;
+                    $totalTaxes += $taxAmount;
+                }
+                
+                if ($quotation->includes_ipoconsumo_4 && $quotation->ipoconsumo_4_amount > 0) {
+                    $taxRate = 4;
+                    $taxAmount = ($itemSubtotal * $taxRate) / 100;
+                    
+                    if (!isset($appliedTaxes['Impuesto al Consumo 4%'])) {
+                        $appliedTaxes['Impuesto al Consumo 4%'] = [
+                            'name' => 'Impuesto al Consumo',
+                            'rate' => $taxRate,
+                            'amount' => 0
+                        ];
+                    }
+                    $appliedTaxes['Impuesto al Consumo 4%']['amount'] += $taxAmount;
+                    $totalTaxes += $taxAmount;
+                }
+            } else {
+                // Si no hay cotización asociada, aplicar IVA por defecto
+                $taxRate = 19;
+                $taxAmount = ($itemSubtotal * $taxRate) / 100;
+                
+                if (!isset($appliedTaxes['IVA 19%'])) {
+                    $appliedTaxes['IVA 19%'] = [
+                        'name' => 'IVA',
+                        'rate' => $taxRate,
+                        'amount' => 0
+                    ];
+                }
+                $appliedTaxes['IVA 19%']['amount'] += $taxAmount;
+                $totalTaxes += $taxAmount;
+            }
+        }
+        
+        Log::info('Selecciones mixtas procesadas', [
+            'subtotal' => $subtotal,
+            'total_taxes' => $totalTaxes,
+            'applied_taxes' => $appliedTaxes
+        ]);
+    }
 }

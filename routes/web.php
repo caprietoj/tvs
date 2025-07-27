@@ -535,6 +535,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('purchase-requests/{purchaseRequest}/reject', [PurchaseRequestController::class, 'reject'])
         ->name('purchase-requests.reject');
     
+    // Ruta para aprobación masiva de fotocopias por sección
+    Route::post('purchase-requests/bulk-approve-copies', [PurchaseRequestController::class, 'bulkApproveCopies'])
+        ->name('purchase-requests.bulk-approve-copies');
+    
     // Ruta para configurar cotizaciones requeridas
     Route::post('purchase-requests/{purchaseRequest}/configure-quotations', [PurchaseRequestController::class, 'configureQuotations'])
         ->name('purchase-requests.configure-quotations');
@@ -637,6 +641,11 @@ Route::middleware(['auth'])->group(function () {
         ->name('purchase-orders.download-payment-receipt');
     Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrdersController::class, 'cancel'])
         ->name('purchase-orders.cancel');
+    
+    // Ruta para regenerar PDF (solo administradores)
+    Route::post('purchase-orders/{purchaseOrder}/regenerate-pdf', [PurchaseOrdersController::class, 'regeneratePdf'])
+        ->name('purchase-orders.regenerate-pdf')
+        ->middleware('auth');
 });
 
 // Rutas para las preaprobaciones de solicitudes de compra

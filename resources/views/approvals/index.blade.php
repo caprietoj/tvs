@@ -28,6 +28,42 @@
             </div>
         @endif
 
+        <!-- Filtros -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <form method="GET" action="{{ route('approvals.index') }}" class="form-inline">
+                    <div class="form-group mr-3">
+                        <label for="section" class="mr-2"><strong>Área/Sección:</strong></label>
+                        <select name="section" id="section" class="form-control">
+                            <option value="all">Todas las secciones</option>
+                            @foreach($sections as $section)
+                                <option value="{{ $section }}" {{ $sectionFilter === $section ? 'selected' : '' }}>
+                                    {{ $section }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group mr-3">
+                        <label for="type" class="mr-2"><strong>Tipo:</strong></label>
+                        <select name="type" id="type" class="form-control">
+                            <option value="all">Todos los tipos</option>
+                            <option value="purchase" {{ $typeFilter === 'purchase' ? 'selected' : '' }}>Compra</option>
+                            <option value="materials" {{ $typeFilter === 'materials' ? 'selected' : '' }}>Materiales</option>
+                            <option value="services" {{ $typeFilter === 'services' ? 'selected' : '' }}>Servicios</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+                        <a href="{{ route('approvals.index') }}" class="btn btn-secondary ml-2">
+                            <i class="fas fa-times"></i> Limpiar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table class="table table-striped table-hover">
                 <thead>
@@ -51,9 +87,15 @@
                             <td>{{ $request->section_area }}</td>
                             <td>{{ $request->request_date->format('d/m/Y') }}</td>
                             <td>
-                                <span class="badge {{ $request->type === 'purchase' ? 'badge-primary' : 'badge-info' }}">
-                                    {{ $request->type === 'purchase' ? 'Compra' : 'Materiales' }}
-                                </span>
+                                @if($request->type === 'purchase')
+                                    <span class="badge badge-primary">Compra</span>
+                                @elseif($request->type === 'materials')
+                                    <span class="badge badge-info">Materiales</span>
+                                @elseif($request->type === 'services')
+                                    <span class="badge badge-success">Servicios</span>
+                                @else
+                                    <span class="badge badge-secondary">{{ ucfirst($request->type) }}</span>
+                                @endif
                             </td>
                             <td>{{ $request->preApprover ? $request->preApprover->name : 'N/A' }}</td>
                             <td>{{ $request->preApprovedQuotation ? $request->preApprovedQuotation->provider_name : 'N/A' }}</td>

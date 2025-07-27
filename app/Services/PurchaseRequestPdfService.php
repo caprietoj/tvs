@@ -17,7 +17,7 @@ class PurchaseRequestPdfService
     {
         try {
             // Cargar las relaciones necesarias
-            $purchaseRequest->load(['user']);
+            $purchaseRequest->load(['user', 'approvedBy']);
             
             // Configurar vista para el PDF
             $view = view('pdfs.purchase-request', [

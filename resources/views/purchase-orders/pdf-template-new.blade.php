@@ -142,62 +142,99 @@
             </tr>
             @php
                 $itemNumber = 1;
-                $items = $order->purchaseRequest->purchase_items ?? [];
-                if (is_string($items)) {
-                    $items = json_decode($items, true) ?? [];
+                $totalItems = 0;
+                $subtotalCalculado = 0;
+                
+                // Determinar si es servicio o compra y obtener items correspondientes
+                $isService = $order->purchaseRequest->type === 'services';
+                $items = [];
+                
+                if ($isService) {
+                    // Para servicios, usar service_items
+                    $items = $order->purchaseRequest->service_items ?? [];
+                    if (is_string($items)) {
+                        $items = json_decode($items, true) ?? [];
+                    }
+                } else {
+                    // Para compras, usar purchase_items
+                    $items = $order->purchaseRequest->purchase_items ?? [];
+                    if (is_string($items)) {
+                        $items = json_decode($items, true) ?? [];
+                    }
                 }
                 
                 // Obtener la cotización seleccionada para usar precios específicos
                 $selectedQuotation = $quotation ?? $order->purchaseRequest->selectedQuotation ?? null;
+                
+                // Para servicios, si hay una cotización, usar el subtotal de la cotización
+                if ($isService && $selectedQuotation) {
+                    $subtotalBase = $selectedQuotation->subtotal ?? 0;
+                } else {
+                    $subtotalBase = $order->subtotal ?? 0;
+                }
             @endphp
-            @foreach($items as $index => $item)
-                @php
-                    $cantidad = $item['quantity'] ?? 1;
-                    $descripcion = $item['description'] ?? '';
-                    
-                    // Intentar obtener precio unitario de la cotización seleccionada
-                    $precioUnitario = 0;
-                    if ($selectedQuotation && 
-                        isset($selectedQuotation->original_item_prices) && 
-                        isset($selectedQuotation->original_item_prices[$index])) {
-                        $precioUnitario = $selectedQuotation->original_item_prices[$index];
-                    } else {
-                        // Fallback: calcular precio promedio solo si no hay precios específicos
-                        $totalCantidad = array_sum(array_column($items, 'quantity'));
-                        $precioUnitario = $totalCantidad > 0 ? ($order->subtotal ?? 0) / $totalCantidad : 0;
-                    }
-                    
-                    $total = $cantidad * $precioUnitario;
-                @endphp
-                <tr>
-                    <td class="center">{{ $itemNumber++ }}</td>
-                    <td>{{ $descripcion }}</td>
-                    <td class="center">{{ $cantidad }}</td>
-                    <td class="right">${{ number_format($precioUnitario, 0, ',', '.') }}</td>
-                    <td class="right">${{ number_format($total, 0, ',', '.') }}</td>
-                </tr>
-            @endforeach
+            
+            @if($isService)
+                {{-- Mostrar servicios --}}
+                @foreach($items as $index => $item)
+                    @if(!empty($item['description']) || !empty($item['quantity']))
+                    @php
+                        $cantidad = $item['quantity'] ?? 1;
+                        $descripcion = $item['description'] ?? '';
+                        $totalItems += $cantidad;
+                        
+                        // Para servicios, calcular precio unitario basado en el subtotal total
+                        $totalCantidadServicios = array_sum(array_filter(array_column($items, 'quantity'), function($q) { return $q > 0; }));
+                        $precioUnitario = $totalCantidadServicios > 0 ? $subtotalBase / $totalCantidadServicios : $subtotalBase;
+                        
+                        $total = $cantidad * $precioUnitario;
+                        $subtotalCalculado += $total;
+                    @endphp
+                    <tr>
+                        <td class="center">{{ $itemNumber++ }}</td>
+                        <td>{{ $descripcion }}</td>
+                        <td class="center">{{ $cantidad }}</td>
+                        <td class="right">${{ number_format($precioUnitario, 0, ',', '.') }}</td>
+                        <td class="right">${{ number_format($total, 0, ',', '.') }}</td>
+                    </tr>
+                    @endif
+                @endforeach
+            @else
+                {{-- Mostrar productos (lógica original) --}}
+                @foreach($items as $index => $item)
+                    @php
+                        $cantidad = $item['quantity'] ?? 1;
+                        $descripcion = $item['description'] ?? '';
+                        
+                        // Intentar obtener precio unitario de la cotización seleccionada
+                        $precioUnitario = 0;
+                        if ($selectedQuotation && 
+                            isset($selectedQuotation->original_item_prices) && 
+                            isset($selectedQuotation->original_item_prices[$index])) {
+                            $precioUnitario = $selectedQuotation->original_item_prices[$index];
+                        } else {
+                            // Fallback: calcular precio promedio solo si no hay precios específicos
+                            $totalCantidad = array_sum(array_column($items, 'quantity'));
+                            $precioUnitario = $totalCantidad > 0 ? $subtotalBase / $totalCantidad : 0;
+                        }
+                        
+                        $total = $cantidad * $precioUnitario;
+                        $subtotalCalculado += $total;
+                    @endphp
+                    <tr>
+                        <td class="center">{{ $itemNumber++ }}</td>
+                        <td>{{ $descripcion }}</td>
+                        <td class="center">{{ $cantidad }}</td>
+                        <td class="right">${{ number_format($precioUnitario, 0, ',', '.') }}</td>
+                        <td class="right">${{ number_format($total, 0, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+            @endif
             
             @php
-                // Calcular el subtotal correcto basado en los precios específicos
-                $subtotalCalculado = 0;
-                
-                // Sumar items originales con precios específicos
-                foreach($items as $index => $item) {
-                    $cantidad = $item['quantity'] ?? 1;
-                    $precioUnitario = 0;
-                    
-                    if ($selectedQuotation && 
-                        isset($selectedQuotation->original_item_prices) && 
-                        isset($selectedQuotation->original_item_prices[$index])) {
-                        $precioUnitario = $selectedQuotation->original_item_prices[$index];
-                    } else {
-                        // Fallback
-                        $totalCantidad = array_sum(array_column($items, 'quantity'));
-                        $precioUnitario = $totalCantidad > 0 ? ($order->subtotal ?? 0) / $totalCantidad : 0;
-                    }
-                    
-                    $subtotalCalculado += $cantidad * $precioUnitario;
+                // Si no se calculó el subtotal en el loop anterior (ej: items adicionales)
+                if ($subtotalCalculado == 0) {
+                    $subtotalCalculado = $subtotalBase;
                 }
                 
                 // Sumar items adicionales
@@ -207,13 +244,12 @@
                     }
                 }
                 
-                // Recalcular los impuestos basándose en el subtotal calculado
+                // Recalcular los impuestos basándose en el subtotal
                 $ivaCalculado = 0;
                 $ipoconsumoCalculado = 0;
-                $totalCalculado = $subtotalCalculado;
                 
                 if ($selectedQuotation) {
-                    // Si hay IVA 19% o 5%, calcularlos sobre el nuevo subtotal
+                    // Si hay IVA 19% o 5%, calcularlos sobre el subtotal
                     if ($selectedQuotation->includes_iva_19) {
                         $ivaCalculado += $subtotalCalculado * 0.19;
                     }
@@ -221,7 +257,7 @@
                         $ivaCalculado += $subtotalCalculado * 0.05;
                     }
                     
-                    // Si hay impuestos al consumo, calcularlos sobre el nuevo subtotal
+                    // Si hay impuestos al consumo, calcularlos sobre el subtotal
                     if ($selectedQuotation->includes_ipoconsumo_8) {
                         $ipoconsumoCalculado += $subtotalCalculado * 0.08;
                     }
@@ -272,14 +308,16 @@
             <tr>
                 <td class="bold">FECHA:</td>
                 <td>{{ $order->purchaseRequest->approval_date ? $order->purchaseRequest->approval_date->format('d/m/Y') : '' }}</td>
-                @if($quotation && ($quotation->includes_iva_19 || $quotation->includes_iva_5))
+                @if($selectedQuotation && ($selectedQuotation->includes_iva_19 || $selectedQuotation->includes_iva_5 || $selectedQuotation->includes_iva))
                     <td class="bold">
-                        @if($quotation->includes_iva_19 && $quotation->includes_iva_5)
+                        @if($selectedQuotation->includes_iva_19 && $selectedQuotation->includes_iva_5)
                             IVA (19% + 5%)
-                        @elseif($quotation->includes_iva_19)
+                        @elseif($selectedQuotation->includes_iva_19)
                             IVA (19%)
-                        @else
+                        @elseif($selectedQuotation->includes_iva_5)
                             IVA (5%)
+                        @else
+                            IVA (19%)
                         @endif
                     </td>
                     <td class="right">${{ number_format($ivaCalculado, 0, ',', '.') }}</td>
@@ -291,11 +329,11 @@
             <tr>
                 <td class="bold">PRESUPUESTO:</td>
                 <td>{{ $order->purchaseRequest->budget ?? '' }}</td>
-                @if($quotation && ($quotation->includes_ipoconsumo_8 || $quotation->includes_ipoconsumo_4))
+                @if($selectedQuotation && ($selectedQuotation->includes_ipoconsumo_8 || $selectedQuotation->includes_ipoconsumo_4))
                     <td class="bold">
-                        @if($quotation->includes_ipoconsumo_8 && $quotation->includes_ipoconsumo_4)
+                        @if($selectedQuotation->includes_ipoconsumo_8 && $selectedQuotation->includes_ipoconsumo_4)
                             IMPTO AL CONSUMO (8% + 4%)
-                        @elseif($quotation->includes_ipoconsumo_8)
+                        @elseif($selectedQuotation->includes_ipoconsumo_8)
                             IMPTO AL CONSUMO (8%)
                         @else
                             IMPTO AL CONSUMO (4%)
@@ -304,7 +342,7 @@
                     <td class="right">${{ number_format($ipoconsumoCalculado, 0, ',', '.') }}</td>
                 @else
                     <td class="bold">IMPTO AL CONSUMO</td>
-                    <td class="right">$0</td>
+                    <td class="right">${{ number_format($ipoconsumoCalculado, 0, ',', '.') }}</td>
                 @endif
             </tr>
             <tr>
@@ -328,14 +366,14 @@
         </table>
 
         <!-- Desglose detallado de impuestos (solo si aplican) -->
-        @if($quotation && ($quotation->includes_iva_19 || $quotation->includes_iva_5 || $quotation->includes_ipoconsumo_8 || $quotation->includes_ipoconsumo_4))
+        @if($selectedQuotation && ($selectedQuotation->includes_iva_19 || $selectedQuotation->includes_iva_5 || $selectedQuotation->includes_ipoconsumo_8 || $selectedQuotation->includes_ipoconsumo_4))
         <table style="margin-top: 10px;">
             <tr>
                 <td colspan="4" class="center bold header-section" style="font-size: 12px; padding: 8px;">
                     DESGLOSE DE IMPUESTOS APLICABLES
                 </td>
             </tr>
-            @if($quotation->includes_iva_19)
+            @if($selectedQuotation->includes_iva_19)
             <tr>
                 <td class="bold" style="width: 40%;">IVA 19%:</td>
                 <td style="width: 25%;">Base: ${{ number_format($subtotalCalculado, 0, ',', '.') }}</td>
@@ -343,7 +381,7 @@
                 <td class="right" style="width: 20%;">Valor: ${{ number_format($subtotalCalculado * 0.19, 0, ',', '.') }}</td>
             </tr>
             @endif
-            @if($quotation->includes_iva_5)
+            @if($selectedQuotation->includes_iva_5)
             <tr>
                 <td class="bold">IVA 5%:</td>
                 <td>Base: ${{ number_format($subtotalCalculado, 0, ',', '.') }}</td>
@@ -351,7 +389,7 @@
                 <td class="right">Valor: ${{ number_format($subtotalCalculado * 0.05, 0, ',', '.') }}</td>
             </tr>
             @endif
-            @if($quotation->includes_ipoconsumo_8)
+            @if($selectedQuotation->includes_ipoconsumo_8)
             <tr>
                 <td class="bold">Impuesto al Consumo 8%:</td>
                 <td>Base: ${{ number_format($subtotalCalculado, 0, ',', '.') }}</td>
@@ -359,7 +397,7 @@
                 <td class="right">Valor: ${{ number_format($subtotalCalculado * 0.08, 0, ',', '.') }}</td>
             </tr>
             @endif
-            @if($quotation->includes_ipoconsumo_4)
+            @if($selectedQuotation->includes_ipoconsumo_4)
             <tr>
                 <td class="bold">Impuesto al Consumo 4%:</td>
                 <td>Base: ${{ number_format($subtotalCalculado, 0, ',', '.') }}</td>

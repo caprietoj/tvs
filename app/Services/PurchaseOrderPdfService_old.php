@@ -41,32 +41,24 @@ class PurchaseOrderPdfService
                 $ipoconsumo4Amount = 0;
                 $hasDetailedTaxes = false;
                 
-                // Si hay impuestos detallados, usarlos
-                if (!empty($appliedTaxes)) {
-                    foreach ($appliedTaxes as $tax) {
-                        $hasDetailedTaxes = true;
-                        switch ($tax['type']) {
-                            case 'IVA':
-                                if ($tax['rate'] == 19) {
-                                    $iva19Amount = $tax['amount'];
-                                } elseif ($tax['rate'] == 5) {
-                                    $iva5Amount = $tax['amount'];
-                                }
-                                break;
-                            case 'IMPUESTO_CONSUMO':
-                                if ($tax['rate'] == 8) {
-                                    $ipoconsumo8Amount = $tax['amount'];
-                                } elseif ($tax['rate'] == 4) {
-                                    $ipoconsumo4Amount = $tax['amount'];
-                                }
-                                break;
-                        }
+                foreach ($appliedTaxes as $tax) {
+                    $hasDetailedTaxes = true;
+                    switch ($tax['type']) {
+                        case 'IVA':
+                            if ($tax['rate'] == 19) {
+                                $iva19Amount = $tax['amount'];
+                            } elseif ($tax['rate'] == 5) {
+                                $iva5Amount = $tax['amount'];
+                            }
+                            break;
+                        case 'IMPUESTO_CONSUMO':
+                            if ($tax['rate'] == 8) {
+                                $ipoconsumo8Amount = $tax['amount'];
+                            } elseif ($tax['rate'] == 4) {
+                                $ipoconsumo4Amount = $tax['amount'];
+                            }
+                            break;
                     }
-                }
-                
-                // RESPALDO: Si no hay impuestos detallados, usar el IVA tradicional de la BD
-                if (!$hasDetailedTaxes && $order->includes_iva && $order->iva_amount > 0) {
-                    $iva19Amount = $order->iva_amount;
                 }
                 
                 // Usar plantilla para servicios sin cotización
@@ -187,32 +179,24 @@ class PurchaseOrderPdfService
                 $ipoconsumo4Amount = 0;
                 $hasDetailedTaxes = false;
                 
-                // Si hay impuestos detallados, usarlos
-                if (!empty($appliedTaxes)) {
-                    foreach ($appliedTaxes as $tax) {
-                        $hasDetailedTaxes = true;
-                        switch ($tax['type']) {
-                            case 'IVA':
-                                if ($tax['rate'] == 19) {
-                                    $iva19Amount = $tax['amount'];
-                                } elseif ($tax['rate'] == 5) {
-                                    $iva5Amount = $tax['amount'];
-                                }
-                                break;
-                            case 'IMPUESTO_CONSUMO':
-                                if ($tax['rate'] == 8) {
-                                    $ipoconsumo8Amount = $tax['amount'];
-                                } elseif ($tax['rate'] == 4) {
-                                    $ipoconsumo4Amount = $tax['amount'];
-                                }
-                                break;
-                        }
+                foreach ($appliedTaxes as $tax) {
+                    $hasDetailedTaxes = true;
+                    switch ($tax['type']) {
+                        case 'IVA':
+                            if ($tax['rate'] == 19) {
+                                $iva19Amount = $tax['amount'];
+                            } elseif ($tax['rate'] == 5) {
+                                $iva5Amount = $tax['amount'];
+                            }
+                            break;
+                        case 'IMPUESTO_CONSUMO':
+                            if ($tax['rate'] == 8) {
+                                $ipoconsumo8Amount = $tax['amount'];
+                            } elseif ($tax['rate'] == 4) {
+                                $ipoconsumo4Amount = $tax['amount'];
+                            }
+                            break;
                     }
-                }
-                
-                // RESPALDO: Si no hay impuestos detallados, usar el IVA tradicional de la BD
-                if (!$hasDetailedTaxes && $order->includes_iva && $order->iva_amount > 0) {
-                    $iva19Amount = $order->iva_amount;
                 }
                 
                 // Usar plantilla para servicios sin cotización

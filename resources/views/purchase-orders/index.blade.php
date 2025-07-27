@@ -183,6 +183,16 @@
                                     </button>
                                 </form>
                                 @endif
+                                
+                                {{-- Botón de regenerar orden completa solo para administradores --}}
+                                @if(auth()->user()->hasRole('admin'))
+                                <form action="{{ route('purchase-orders.regenerate-pdf', $order->id) }}" method="POST" class="d-inline regenerate-pdf-form" data-order-number="{{ $order->order_number }}">
+                                    @csrf
+                                    <button type="button" class="btn btn-sm btn-warning regenerate-pdf-btn" title="Regenerar orden completa desde la solicitud original">
+                                        <i class="fas fa-sync-alt"></i> Regenerar Orden
+                                    </button>
+                                </form>
+                                @endif
                             </td>
                         </tr>
                         @empty
@@ -211,6 +221,68 @@
         <!-- /.card-body -->
     </div>
     <!-- /.card -->
+</div>
+
+<!-- Modal de confirmación para regenerar PDF -->
+<div class="modal fade" id="confirmRegeneratePdfModal" tabindex="-1" role="dialog" aria-labelledby="confirmRegeneratePdfModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title text-white" id="confirmRegeneratePdfModalLabel">
+                    <i class="fas fa-sync-alt mr-2"></i>Regenerar Orden Completa
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-file-invoice text-warning" style="font-size: 3rem;"></i>
+                </div>
+                <h6 class="text-center mb-3">¿Está seguro de que desea regenerar completamente esta orden?</h6>
+                <div class="alert alert-info">
+                    <p class="mb-2"><strong>Orden:</strong> <span id="modalOrderNumber"></span></p>
+                    <p class="mb-2"><small class="text-muted">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <strong>Esta acción realizará un recálculo completo:</strong>
+                    </small></p>
+                    <ul class="mb-0 small text-muted">
+                        <li>Recuperará todos los datos desde la solicitud original</li>
+                        <li>Recalculará impuestos (IVA, Impuesto al Consumo, etc.)</li>
+                        <li>Actualizará subtotales y totales</li>
+                        <li>Regenerará el PDF con la información corregida</li>
+                    </ul>
+                </div>
+                <div class="alert alert-warning">
+                    <small><i class="fas fa-exclamation-triangle mr-1"></i>
+                    <strong>Importante:</strong> Los valores actuales de la orden serán reemplazados por los cálculos correctos de la solicitud original.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-warning" id="confirmRegenerateBtn">
+                    <i class="fas fa-sync-alt mr-1"></i>Regenerar Orden Completa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de procesamiento -->
+<div class="modal fade" id="processingModal" tabindex="-1" role="dialog" aria-labelledby="processingModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-warning mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="sr-only">Procesando...</span>
+                </div>
+                <h6>Regenerando orden completa...</h6>
+                <p class="text-muted mb-0"><small>Recalculando impuestos y totales desde la solicitud original. Por favor espere.</small></p>
+            </div>
+        </div>
+    </div>
 </div>
 @stop
 
@@ -313,6 +385,99 @@
         font-weight: 600;
         color: #495057;
     }
+    
+    /* Estilos para el botón de regenerar PDF */
+    .btn-warning.regenerate-pdf {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #212529;
+    }
+    
+    .btn-warning.regenerate-pdf:hover {
+        background-color: #e0a800;
+        border-color: #d39e00;
+        color: #212529;
+    }
+    
+    .btn-warning.regenerate-pdf:disabled {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        opacity: 0.6;
+        color: #212529;
+    }
+    
+    /* Mejorar espaciado en los botones de acciones */
+    .btn-sm {
+        margin: 1px;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        border-radius: 0.2rem;
+    }
+    
+    /* Responsive para botones en móviles */
+    @media (max-width: 768px) {
+        .btn-sm {
+            display: block;
+            width: 100%;
+            margin: 2px 0;
+        }
+        
+        .d-inline {
+            display: block !important;
+        }
+    }
+    
+    /* Estilos específicos para modales de regeneración */
+    #confirmRegeneratePdfModal .modal-header {
+        border-bottom: 2px solid #ffc107;
+    }
+    
+    #confirmRegeneratePdfModal .modal-content {
+        border-radius: 0.5rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    #confirmRegeneratePdfModal .alert-info {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        border-left: 4px solid #17a2b8;
+    }
+    
+    #processingModal .modal-content {
+        border-radius: 0.5rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    #processingModal .spinner-border {
+        border-width: 0.25rem;
+    }
+    
+    /* Animación para el icono de PDF */
+    #confirmRegeneratePdfModal .fa-file-pdf {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+    
+    /* Hover effects para botones */
+    .regenerate-pdf-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .regenerate-pdf-btn {
+        transition: all 0.2s ease-in-out;
+    }
 </style>
 @stop
 
@@ -353,6 +518,41 @@
 
         @if(session('error'))
             toastr.error("{{ session('error') }}");
+        @endif
+
+        // Manejar clics en botones de regenerar PDF con modal
+        $('.regenerate-pdf-btn').on('click', function(e) {
+            e.preventDefault();
+            const form = $(this).closest('form');
+            const orderNumber = form.data('order-number');
+            
+            // Configurar el modal con la información de la orden
+            $('#modalOrderNumber').text(orderNumber);
+            
+            // Mostrar el modal de confirmación
+            $('#confirmRegeneratePdfModal').modal('show');
+            
+            // Configurar el botón de confirmación
+            $('#confirmRegenerateBtn').off('click').on('click', function() {
+                // Ocultar modal de confirmación
+                $('#confirmRegeneratePdfModal').modal('hide');
+                
+                // Mostrar modal de procesamiento
+                $('#processingModal').modal('show');
+                
+                // Enviar el formulario
+                form[0].submit();
+            });
+        });
+
+        // Cerrar modal de procesamiento si hay errores
+        @if(session('error'))
+            $('#processingModal').modal('hide');
+        @endif
+
+        // Si hay éxito, también cerrar el modal de procesamiento
+        @if(session('success'))
+            $('#processingModal').modal('hide');
         @endif
     });
 </script>

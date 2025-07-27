@@ -38,10 +38,10 @@
 
             <!-- Filtros -->
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <form method="GET" action="{{ route('purchase-requests.index') }}" class="form-inline">
                         <div class="form-group mr-3">
-                            <label for="type" class="mr-2"><strong>Filtrar por tipo:</strong></label>
+                            <label for="type" class="mr-2"><strong>Tipo:</strong></label>
                             <select name="type" id="type" class="form-control">
                                 <option value="">Todos los tipos</option>
                                 <option value="purchase" {{ $typeFilter === 'purchase' ? 'selected' : '' }}>
@@ -58,6 +58,17 @@
                                 </option>
                             </select>
                         </div>
+                        <div class="form-group mr-3">
+                            <label for="section" class="mr-2"><strong>Área/Sección:</strong></label>
+                            <select name="section" id="section" class="form-control">
+                                <option value="all">Todas las secciones</option>
+                                @foreach($sections as $section)
+                                    <option value="{{ $section }}" {{ $sectionFilter === $section ? 'selected' : '' }}>
+                                        {{ $section }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary mr-2">
                                 <i class="fas fa-filter"></i> Filtrar
@@ -68,19 +79,52 @@
                         </div>
                     </form>
                 </div>
-                <div class="col-md-6 text-right">
-                    @if($typeFilter)
-                        <span class="badge badge-info">
-                            Mostrando: 
-                            @if($typeFilter === 'purchase') Compras
-                            @elseif($typeFilter === 'services') Servicios
-                            @elseif($typeFilter === 'materials') Materiales
-                            @elseif($typeFilter === 'copies') Fotocopias
+            </div>
+            
+            <!-- Indicadores de filtros activos -->
+            <div class="row mb-2">
+                <div class="col-md-12">
+                    @if($typeFilter || $sectionFilter)
+                        <div class="mb-2">
+                            <strong>Filtros activos:</strong>
+                            @if($typeFilter)
+                                <span class="badge badge-info mr-1">
+                                    Tipo: 
+                                    @if($typeFilter === 'purchase') Compras
+                                    @elseif($typeFilter === 'services') Servicios
+                                    @elseif($typeFilter === 'materials') Materiales
+                                    @elseif($typeFilter === 'copies') Fotocopias
+                                    @endif
+                                </span>
                             @endif
-                        </span>
+                            @if($sectionFilter && $sectionFilter !== 'all')
+                                <span class="badge badge-success">
+                                    Sección: {{ $sectionFilter }}
+                                </span>
+                            @endif
+                        </div>
                     @endif
                 </div>
             </div>
+
+            <!-- Botón de aprobación masiva para fotocopias -->
+            @if($canBulkApproveCopies)
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <strong>Aprobación masiva disponible:</strong> 
+                                Hay {{ $copiesCount }} solicitudes de fotocopias pendientes en la sección "{{ $sectionFilter }}"
+                            </div>
+                            <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#bulkApproveModal">
+                                <i class="fas fa-check-double mr-1"></i>
+                                Aprobar todas las fotocopias
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <div class="table-responsive">
                 <table class="table table-bordered table-striped" id="requestsTable">
@@ -219,6 +263,58 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de Aprobación Masiva -->
+@if($canBulkApproveCopies)
+<div class="modal fade" id="bulkApproveModal" tabindex="-1" role="dialog" aria-labelledby="bulkApproveModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="bulkApproveModalLabel">
+                    <i class="fas fa-check-double mr-2"></i>
+                    Confirmar Aprobación Masiva
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning"></i>
+                </div>
+                <h6 class="text-center mb-3">¿Está seguro de que desea aprobar todas las solicitudes de fotocopias?</h6>
+                <div class="alert alert-info">
+                    <strong>Detalles de la acción:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Sección:</strong> {{ $sectionFilter }}</li>
+                        <li><strong>Solicitudes a aprobar:</strong> {{ $copiesCount }}</li>
+                        <li><strong>Tipo:</strong> Fotocopias</li>
+                    </ul>
+                </div>
+                <p class="text-muted small">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Esta acción marcará todas las solicitudes como aprobadas y no se puede deshacer.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>
+                    Cancelar
+                </button>
+                <form method="POST" action="{{ route('purchase-requests.bulk-approve-copies') }}" style="display: inline;">
+                    @csrf
+                    <input type="hidden" name="section" value="{{ $sectionFilter }}">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check-double mr-1"></i>
+                        Aprobar {{ $copiesCount }} solicitudes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 @stop
 
 @section('css')

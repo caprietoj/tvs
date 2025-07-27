@@ -131,7 +131,7 @@
         <table style="margin-top: 10px;">
             <tr>
                 <td class="bold header-section" style="width: 20%;">PROVEEDOR:</td>
-                <td style="width: 50%;">{{ $order->provider->name ?? 'N/A' }}</td>
+                <td style="width: 50%;">{{ $order->provider->nombre ?? 'N/A' }}</td>
                 <td class="bold header-section" style="width: 15%;">FECHA:</td>
                 <td style="width: 15%;">{{ $order->created_at->format('d/m/Y') }}</td>
             </tr>
@@ -139,7 +139,7 @@
                 <td class="bold header-section">NIT:</td>
                 <td>{{ $purchaseRequest->provider_nit ?? $order->provider->nit ?? 'N/A' }}</td>
                 <td class="bold header-section">TELÉFONO:</td>
-                <td>{{ $purchaseRequest->provider_contact ?? $order->provider->phone ?? 'N/A' }}</td>
+                <td>{{ $purchaseRequest->provider_contact ?? $order->provider->telefono ?? 'N/A' }}</td>
             </tr>
             <tr>
                 <td class="bold header-section">EMAIL:</td>
@@ -216,25 +216,174 @@
 
         <!-- Información financiera -->
         <table style="margin-top: 15px;">
+            @php
+                // Calcular subtotal e impuestos
+                $totalFinal = $order->total_amount ?? $purchaseRequest->total_amount ?? $purchaseRequest->service_budget ?? 0;
+                
+                // Verificar si hay impuestos detallados en applied_taxes
+                $appliedTaxes = null;
+                $hasDetailedTaxes = false;
+                
+                if ($purchaseRequest->applied_taxes) {
+                    if (is_string($purchaseRequest->applied_taxes)) {
+                        $appliedTaxes = json_decode($purchaseRequest->applied_taxes, true);
+                    } else {
+                        $appliedTaxes = $purchaseRequest->applied_taxes;
+                    }
+                    $hasDetailedTaxes = !empty($appliedTaxes);
+                }
+                
+                // Extraer impuestos específicos de applied_taxes
+                $iva19Amount = 0;
+                $iva5Amount = 0;
+                $ipoconsumo8Amount = 0;
+                $ipoconsumo4Amount = 0;
+                $subtotalCalculado = 0;
+                
+                if ($hasDetailedTaxes && is_array($appliedTaxes)) {
+                    foreach ($appliedTaxes as $tax) {
+                        if (isset($tax['type']) && isset($tax['amount'])) {
+                            switch ($tax['type']) {
+                                case 'iva_19':
+                                    $iva19Amount = $tax['amount'];
+                                    break;
+                                case 'iva_5':
+                                    $iva5Amount = $tax['amount'];
+                                    break;
+                                case 'ipoconsumo_8':
+                                    $ipoconsumo8Amount = $tax['amount'];
+                                    break;
+                                case 'ipoconsumo_4':
+                                    $ipoconsumo4Amount = $tax['amount'];
+                                    break;
+                            }
+                        }
+                    }
+                    
+                    $totalImpuestos = $iva19Amount + $iva5Amount + $ipoconsumo8Amount + $ipoconsumo4Amount;
+                    $subtotalCalculado = $totalFinal - $totalImpuestos;
+                } else {
+                    // Usar método tradicional con IVA básico
+                    $subtotalCalculado = $subtotal ?? ($totalFinal - ($ivaAmount ?? 0));
+                    $ivaTradicional = $ivaAmount ?? 0;
+                }
+            @endphp
+            
+            <!-- Mostrar subtotal solo si hay impuestos -->
+            @if($hasDetailedTaxes || ($includesIva && $ivaAmount > 0))
             <tr>
-                <td class="bold header-section" style="width: 70%;">VALOR TOTAL DEL SERVICIO:</td>
-                <td class="right bold">${{ number_format($order->total_amount, 0, ',', '.') }}</td>
-            </tr>
-            @if($includesIva && $ivaAmount > 0)
-            <tr>
-                <td class="bold header-section">SUBTOTAL (Sin IVA):</td>
-                <td class="right">${{ number_format($subtotal, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td class="bold header-section">IVA (19%):</td>
-                <td class="right">${{ number_format($ivaAmount, 0, ',', '.') }}</td>
+                <td class="bold header-section" style="width: 70%;">SUBTOTAL (Sin Impuestos):</td>
+                <td class="right">${{ number_format($subtotalCalculado, 0, ',', '.') }}</td>
             </tr>
             @endif
+            
+            <!-- Mostrar impuestos detallados si están configurados -->
+            @if($hasDetailedTaxes)
+                @if($iva19Amount > 0)
+                <tr>
+                    <td class="bold header-section">IVA (19%):</td>
+                    <td class="right">${{ number_format($iva19Amount, 0, ',', '.') }}</td>
+                </tr>
+                @endif
+                
+                @if($iva5Amount > 0)
+                <tr>
+                    <td class="bold header-section">IVA (5%):</td>
+                    <td class="right">${{ number_format($iva5Amount, 0, ',', '.') }}</td>
+                </tr>
+                @endif
+                
+                @if($ipoconsumo8Amount > 0)
+                <tr>
+                    <td class="bold header-section">IMPUESTO AL CONSUMO (8%):</td>
+                    <td class="right">${{ number_format($ipoconsumo8Amount, 0, ',', '.') }}</td>
+                </tr>
+                @endif
+                
+                @if($ipoconsumo4Amount > 0)
+                <tr>
+                    <td class="bold header-section">IMPUESTO AL CONSUMO (4%):</td>
+                    <td class="right">${{ number_format($ipoconsumo4Amount, 0, ',', '.') }}</td>
+                </tr>
+                @endif
+                
+                @if($iva19Amount > 0 || $iva5Amount > 0 || $ipoconsumo8Amount > 0 || $ipoconsumo4Amount > 0)
+                <tr>
+                    <td class="bold header-section">TOTAL IMPUESTOS:</td>
+                    <td class="right bold">${{ number_format($iva19Amount + $iva5Amount + $ipoconsumo8Amount + $ipoconsumo4Amount, 0, ',', '.') }}</td>
+                </tr>
+                @endif
+            @elseif($includesIva && $ivaAmount > 0)
+                <!-- Usar IVA tradicional si no hay impuestos detallados -->
+                <tr>
+                    <td class="bold header-section">IVA (19%):</td>
+                    <td class="right">${{ number_format($ivaAmount, 0, ',', '.') }}</td>
+                </tr>
+            @endif
+            
             <tr>
-                <td class="bold header-section">VALOR TOTAL EN LETRAS:</td>
-                <td class="center bold">{{ $purchaseRequest->service_budget_text ?? '' }}</td>
+                <td class="bold header-section" style="background-color: #e6f3ff;">VALOR TOTAL DEL SERVICIO:</td>
+                <td class="right bold" style="background-color: #e6f3ff; font-size: 14px;">${{ number_format($totalFinal, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td class="bold header-section">VALOR TOTAL DEL SERVICIO EN LETRAS:</td>
+                <td class="center bold">
+                    @php
+                        use App\Helpers\NumberToWords;
+                        echo NumberToWords::convert($totalFinal);
+                    @endphp
+                </td>
             </tr>
         </table>
+
+        <!-- Desglose detallado de impuestos (solo si aplican) -->
+        @if($hasDetailedTaxes && ($iva19Amount > 0 || $iva5Amount > 0 || $ipoconsumo8Amount > 0 || $ipoconsumo4Amount > 0))
+        <table style="margin-top: 10px;">
+            <tr>
+                <td colspan="4" class="center bold header-section" style="font-size: 12px; padding: 8px;">
+                    DESGLOSE DE IMPUESTOS APLICABLES
+                </td>
+            </tr>
+            @if($iva19Amount > 0)
+            <tr>
+                <td class="bold" style="width: 40%;">IVA 19%:</td>
+                <td style="width: 25%;">Base: ${{ number_format($subtotalCalculado, 0, ',', '.') }}</td>
+                <td style="width: 15%;">Tasa: 19%</td>
+                <td class="right" style="width: 20%;">Valor: ${{ number_format($iva19Amount, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            @if($iva5Amount > 0)
+            <tr>
+                <td class="bold">IVA 5%:</td>
+                <td>Base: ${{ number_format($subtotalCalculado, 0, ',', '.') }}</td>
+                <td>Tasa: 5%</td>
+                <td class="right">Valor: ${{ number_format($iva5Amount, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            @if($ipoconsumo8Amount > 0)
+            <tr>
+                <td class="bold">Impuesto al Consumo 8%:</td>
+                <td>Base: ${{ number_format($subtotalCalculado, 0, ',', '.') }}</td>
+                <td>Tasa: 8%</td>
+                <td class="right">Valor: ${{ number_format($ipoconsumo8Amount, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            @if($ipoconsumo4Amount > 0)
+            <tr>
+                <td class="bold">Impuesto al Consumo 4%:</td>
+                <td>Base: ${{ number_format($subtotalCalculado, 0, ',', '.') }}</td>
+                <td>Tasa: 4%</td>
+                <td class="right">Valor: ${{ number_format($ipoconsumo4Amount, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            <tr style="background-color: #f0f0f0;">
+                <td class="bold">TOTAL IMPUESTOS:</td>
+                <td></td>
+                <td></td>
+                <td class="right bold">${{ number_format($iva19Amount + $iva5Amount + $ipoconsumo8Amount + $ipoconsumo4Amount, 0, ',', '.') }}</td>
+            </tr>
+        </table>
+        @endif
 
         <!-- Términos y condiciones -->
         <table style="margin-top: 15px;">
@@ -252,41 +401,21 @@
             </tr>
         </table>
 
-        <!-- Firmas -->
-        <div class="signature-section">
-            <table>
-                <tr>
-                    <td class="center" style="width: 33%; border: none; height: 80px; vertical-align: bottom;">
-                        <div style="border-top: 1px solid #000; margin-top: 60px;">
-                            <strong>SOLICITADO POR</strong><br>
-                            {{ $purchaseRequest->requester ?? 'N/A' }}<br>
-                            Fecha: _____________
-                        </div>
-                    </td>
-                    <td class="center" style="width: 34%; border: none; height: 80px; vertical-align: bottom;">
-                        <div style="border-top: 1px solid #000; margin-top: 60px;">
-                            <strong>APROBADO POR</strong><br>
-                            {{ $order->purchaseRequest->approver->name ?? 'ADMINISTRACIÓN' }}<br>
-                            Fecha: {{ $order->purchaseRequest->approval_date ? $order->purchaseRequest->approval_date->format('d/m/Y') : '_____________' }}
-                        </div>
-                    </td>
-                    <td class="center" style="width: 33%; border: none; height: 80px; vertical-align: bottom;">
-                        <div style="border-top: 1px solid #000; margin-top: 60px;">
-                            <strong>RECIBIDO POR</strong><br>
-                            {{ $order->provider->name ?? 'PROVEEDOR' }}<br>
-                            Fecha: _____________
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <!-- Pie de página -->
-        <div style="margin-top: 20px; font-size: 10px; text-align: center;">
-            <strong>COLEGIO VICTORIA S.A.S.</strong><br>
-            Carrera 15 # 88-64 | PBX: (601) 530-0013 | Bogotá D.C., Colombia<br>
-            www.tvs.edu.co | info@tvs.edu.co
-        </div>
+        <!-- Información de Aprobación -->
+        @if($purchaseRequest->status === 'approved' && $purchaseRequest->approver)
+        <table style="margin-top: 15px;">
+            <tr>
+                <td class="bold header-section" style="width: 20%;">APROBADO POR:</td>
+                <td>{{ $purchaseRequest->approver->name ?? 'N/A' }}</td>
+            </tr>
+            @if($purchaseRequest->budget)
+            <tr>
+                <td class="bold header-section">PRESUPUESTO ASIGNADO:</td>
+                <td class="bold" style="color: #2c5282;">{{ $purchaseRequest->budget }}</td>
+            </tr>
+            @endif
+        </table>
+        @endif
     </div>
 </body>
 </html>

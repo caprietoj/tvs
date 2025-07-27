@@ -20,11 +20,13 @@ class QuotationApprovalController extends Controller
     /**
      * Mostrar la lista de solicitudes pendientes de pre-aprobación.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Obtener todas las solicitudes de compra que estén en estado "En Cotización", "En pre-aprobación" o "Pre-aprobada"
-        // Excluir servicios sin cotización
-        $requests = PurchaseRequest::whereIn('status', ['En Cotización', 'En pre-aprobación', 'Pre-aprobada'])
+        // Obtener filtros de la request
+        $sectionFilter = $request->get('section');
+        
+        // Query base
+        $query = PurchaseRequest::whereIn('status', ['En Cotización', 'En pre-aprobación', 'Pre-aprobada'])
             ->where(function($query) {
                 $query->where('type', '!=', 'services')
                       ->orWhere(function($subQuery) {
@@ -34,12 +36,28 @@ class QuotationApprovalController extends Controller
                                                    ->orWhere('service_type', 'regular');
                                    });
                       });
-            })
-            ->with(['quotations'])
+            });
+        
+        // Aplicar filtro de sección si está presente
+        if ($sectionFilter && $sectionFilter !== 'all') {
+            $query->where('section_area', $sectionFilter);
+        }
+        
+        $requests = $query->with(['quotations'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('quotation-approvals.index', compact('requests'));
+        // Mantener parámetros de filtro en la paginación
+        $requests->appends($request->query());
+        
+        // Obtener todas las secciones para el filtro
+        $sections = PurchaseRequest::distinct()
+            ->whereNotNull('section_area')
+            ->pluck('section_area')
+            ->sort()
+            ->values();
+
+        return view('quotation-approvals.index', compact('requests', 'sections', 'sectionFilter'));
     }
 
     /**
@@ -89,7 +107,11 @@ class QuotationApprovalController extends Controller
         // ya que pueden haber pasado por el proceso de "Hecho Cumplido" sin requerir cotizaciones
         
         // Verificar el estado de aprobación antes de mostrar la vista
-        $approvalInfo = $this->checkApprovalStatus($request);
+        // SOLO si no venimos de un redirect exitoso (evita mostrar modal después de pre-aprobar)
+        $approvalInfo = null;
+        if (!session()->has('success')) {
+            $approvalInfo = $this->checkApprovalStatus($request);
+        }
         
         return view('quotation-approvals.show', compact('request', 'mixedSelections', 'hasMixedSelections', 'purchaseItems', 'selectedQuotations', 'approvalInfo'));
     }

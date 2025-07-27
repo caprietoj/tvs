@@ -6,6 +6,7 @@ use App\Models\PurchaseRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -64,6 +65,19 @@ class ServiceNoQuotationCreated extends Mailable
      */
     public function attachments(): array
     {
-        return [];
+        $attachments = [];
+        
+        // Adjuntar archivo de cotización si existe
+        if ($this->purchaseRequest->quotation_file_path) {
+            $filePath = storage_path('app/public/' . $this->purchaseRequest->quotation_file_path);
+            
+            if (file_exists($filePath)) {
+                $attachments[] = Attachment::fromPath($filePath)
+                    ->as('cotizacion_servicio_' . $this->purchaseRequest->id . '.' . pathinfo($filePath, PATHINFO_EXTENSION))
+                    ->withMime(mime_content_type($filePath));
+            }
+        }
+        
+        return $attachments;
     }
 }

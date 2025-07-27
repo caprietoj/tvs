@@ -74,6 +74,11 @@ class PurchaseRequest extends Model
         'provider_email',
         'no_quotation_reason',
         'quotation_file_path',
+        // Campos para impuestos en servicios sin cotización
+        'applied_taxes',
+        'subtotal_amount',
+        'tax_amount',
+        'total_amount',
     ];
 
     /**
@@ -96,6 +101,7 @@ class PurchaseRequest extends Model
         'requires_binding' => 'boolean',
         'requires_lamination' => 'boolean',
         'requires_cutting' => 'boolean',
+        'applied_taxes' => 'array',
     ];
 
     /**
