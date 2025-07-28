@@ -741,8 +741,16 @@
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
+    // Verificar si se completó la autoevaluación y mostrar modal de éxito
+    @if(session('self_evaluation_completed'))
+        setTimeout(function() {
+            showSelfEvaluationCompletedModal();
+        }, 1000);
+    @endif
+    
     // Verificar si hay mensaje de evaluación completada y mostrar modal
     @if(session('evaluation_completed') && session('show_feedback_session_option'))
         setTimeout(function() {
@@ -750,6 +758,39 @@ $(document).ready(function() {
         }, 1500);
     @endif
 });
+
+// Función para mostrar modal de autoevaluación completada
+function showSelfEvaluationCompletedModal() {
+    Swal.fire({
+        title: '¡Autoevaluación Completada!',
+        html: `
+            <div class="text-center">
+                <i class="fas fa-check-circle text-success" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                <p class="mb-3 h5">Su autoevaluación ha sido enviada exitosamente.</p>
+                <div class="alert alert-info text-left">
+                    <h6><i class="fas fa-info-circle"></i> ¿Qué sigue ahora?</h6>
+                    <ul class="mb-2">
+                        <li>Su jefe inmediato revisará su autoevaluación</li>
+                        <li>Realizará la evaluación del supervisor</li>
+                        <li>Se programará una sesión de retroalimentación</li>
+                        <li>Recibirá notificaciones del progreso por email</li>
+                    </ul>
+                </div>
+                <p class="text-muted"><small>Puede revisar el estado de su evaluación en esta página en cualquier momento.</small></p>
+            </div>
+        `,
+        icon: 'success',
+        confirmButtonColor: '#28a745',
+        confirmButtonText: '<i class="fas fa-thumbs-up"></i> Entendido',
+        width: '600px',
+        showClass: {
+            popup: 'animate__animated animate__zoomIn'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__zoomOut'
+        }
+    });
+}
 
 // Función para mostrar modal de programar sesión de retroalimentación
 function showFeedbackSessionModal() {

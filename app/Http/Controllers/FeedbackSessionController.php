@@ -295,6 +295,9 @@ class FeedbackSessionController extends Controller
                 'supervisor_email' => $feedbackSession->supervisor->email
             ]);
 
+            // Limpiar archivos temporales ICS después del envío
+            $this->cleanTempIcsFiles();
+
         } catch (\Exception $e) {
             Log::error('Error enviando notificaciones de sesión de retroalimentación', [
                 'feedback_session_id' => $feedbackSession->id,
@@ -308,7 +311,58 @@ class FeedbackSessionController extends Controller
      */
     private function sendUpdatedNotifications(FeedbackSession $feedbackSession)
     {
-        // Implementar lógica similar para notificaciones de actualización
-        // Se puede crear un Mailable específico para actualizaciones
+        try {
+            // Enviar notificaciones de actualización similares a las de programación
+            Mail::to($feedbackSession->employee->email)
+                ->send(new FeedbackSessionScheduled($feedbackSession, 'employee'));
+
+            Mail::to($feedbackSession->supervisor->email)
+                ->send(new FeedbackSessionScheduled($feedbackSession, 'supervisor'));
+
+            Log::info('Notificaciones de actualización de sesión enviadas', [
+                'feedback_session_id' => $feedbackSession->id,
+                'employee_email' => $feedbackSession->employee->email,
+                'supervisor_email' => $feedbackSession->supervisor->email
+            ]);
+
+            // Limpiar archivos temporales ICS después del envío
+            $this->cleanTempIcsFiles();
+
+        } catch (\Exception $e) {
+            Log::error('Error enviando notificaciones de actualización', [
+                'feedback_session_id' => $feedbackSession->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Limpiar archivos temporales ICS
+     */
+    private function cleanTempIcsFiles()
+    {
+        try {
+            $tempDir = storage_path('app/temp');
+            
+            if (!file_exists($tempDir)) {
+                return;
+            }
+
+            $files = glob($tempDir . '/*.ics');
+            $cutoffTime = now()->subHours(1); // Limpiar archivos más antiguos de 1 hora
+
+            foreach ($files as $file) {
+                $fileModified = \Carbon\Carbon::createFromTimestamp(filemtime($file));
+                
+                if ($fileModified->lt($cutoffTime)) {
+                    unlink($file);
+                    Log::info('Archivo ICS temporal eliminado', ['file' => basename($file)]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Error limpiando archivos ICS temporales', [
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

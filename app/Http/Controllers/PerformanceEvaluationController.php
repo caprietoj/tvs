@@ -365,12 +365,16 @@ class PerformanceEvaluationController extends Controller
         if ($request->has('complete_evaluation')) {
             $performanceEvaluation->completeSelfEvaluation();
             $message = 'Autoevaluación completada exitosamente';
+            return redirect()->route('performance-evaluations.show', $performanceEvaluation)
+                            ->with([
+                                'success' => $message,
+                                'self_evaluation_completed' => true
+                            ]);
         } else {
             $message = 'Autoevaluación guardada como borrador';
+            return redirect()->route('performance-evaluations.show', $performanceEvaluation)
+                            ->with('success', $message);
         }
-        
-        return redirect()->route('performance-evaluations.show', $performanceEvaluation)
-                        ->with('success', $message);
     }
 
     /**

@@ -303,49 +303,92 @@
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
-    // Confirmación antes de completar la evaluación
+    // Confirmación antes de completar la evaluación con modal
     $('button[name="complete_evaluation"]').on('click', function(e) {
-        if (!confirm('¿Está seguro de que desea completar la autoevaluación? Una vez completada no podrá ser modificada.')) {
-            e.preventDefault();
-        }
+        e.preventDefault();
+        
+        Swal.fire({
+            title: '¿Completar Autoevaluación?',
+            text: '¿Está seguro de que desea completar la autoevaluación? Una vez completada no podrá ser modificada.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, Completar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Validar campos antes de enviar
+                validateAndSubmit();
+            }
+        });
     });
 
-    // Validar que todos los campos requeridos estén completos antes de completar
-    $('#selfEvaluationForm').on('submit', function(e) {
-        if ($('button[name="complete_evaluation"]:focus').length > 0) {
-            let incompleteFields = 0;
-            
-            // Verificar objetivos
-            $('.objectives-score').each(function() {
-                if ($(this).val() === '') {
-                    incompleteFields++;
-                }
-            });
-            
-            // Verificar competencias
-            $('.competencies-score').each(function() {
-                if ($(this).val() === '') {
-                    incompleteFields++;
-                }
-            });
-            
-            // Verificar SST
-            let sstQuestions = $('input[type="radio"][name^="safety_health_section"]').length / 2;
-            let sstAnswered = $('input[type="radio"][name^="safety_health_section"]:checked').length;
-            
-            if (sstAnswered < sstQuestions) {
-                incompleteFields += (sstQuestions - sstAnswered);
+    // Función para validar y enviar el formulario
+    function validateAndSubmit() {
+        let incompleteFields = 0;
+        
+        // Verificar objetivos
+        $('.objectives-score').each(function() {
+            if ($(this).val() === '') {
+                incompleteFields++;
             }
-            
-            if (incompleteFields > 0) {
-                e.preventDefault();
-                alert('Por favor complete todos los campos requeridos antes de finalizar la autoevaluación. Faltan ' + incompleteFields + ' campos por completar.');
-                return false;
+        });
+        
+        // Verificar competencias
+        $('.competencies-score').each(function() {
+            if ($(this).val() === '') {
+                incompleteFields++;
             }
+        });
+        
+        // Verificar SST
+        let sstQuestions = $('input[type="radio"][name^="safety_health_section"]').length / 2;
+        let sstAnswered = $('input[type="radio"][name^="safety_health_section"]:checked').length;
+        
+        if (sstAnswered < sstQuestions) {
+            incompleteFields += (sstQuestions - sstAnswered);
         }
-    });
+        
+        if (incompleteFields > 0) {
+            Swal.fire({
+                title: 'Campos Incompletos',
+                html: `<p>Por favor complete todos los campos requeridos antes de finalizar la autoevaluación.</p>
+                       <p><strong>Faltan ${incompleteFields} campos por completar.</strong></p>`,
+                icon: 'warning',
+                confirmButtonColor: '#f8bb86',
+                confirmButtonText: 'Entendido'
+            });
+        } else {
+            // Mostrar modal de éxito y enviar formulario
+            Swal.fire({
+                title: '¡Procesando!',
+                text: 'Completando su autoevaluación...',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Agregar el campo hidden para indicar que se quiere completar
+            if (!$('input[name="complete_evaluation"]').length) {
+                $('#selfEvaluationForm').append('<input type="hidden" name="complete_evaluation" value="1">');
+            }
+            
+            // Enviar el formulario
+            $('#selfEvaluationForm')[0].submit();
+        }
+    }
+
+    // Remover la validación del evento submit original ya que ahora se maneja en el botón
+    $('#selfEvaluationForm').off('submit');
     
     // Contador de caracteres para observaciones
     $('#self_observations').on('input', function() {

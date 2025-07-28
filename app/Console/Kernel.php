@@ -16,6 +16,9 @@ class Kernel extends ConsoleKernel
         
         // Proceso de devolución automática de equipos al finalizar los períodos de clase
         $schedule->command('equipment:process-returns')->everyTenMinutes();
+        
+        // Limpiar archivos ICS temporales cada 6 horas
+        $schedule->command('calendar:clean-temp-ics --older-than=6')->everySixHours();
     }
 
     protected function commands()

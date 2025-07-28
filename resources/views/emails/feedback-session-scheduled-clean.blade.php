@@ -144,55 +144,6 @@
             font-size: 13px;
             margin: 0;
         }
-        .calendar-button {
-            display: inline-block;
-            color: white;
-            padding: 12px 30px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            margin: 5px;
-            box-shadow: 0 4px 12px rgba(35, 62, 108, 0.3);
-            transition: all 0.3s ease;
-            background: linear-gradient(135deg, #233E6C 0%, #1a2d4d 100%);
-        }
-        .calendar-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(35, 62, 108, 0.4);
-            color: white;
-            text-decoration: none;
-        }
-        .calendar-service-button {
-            display: inline-block;
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 14px;
-            margin: 3px;
-            transition: all 0.3s ease;
-        }
-        .calendar-service-button:hover {
-            transform: translateY(-1px);
-            color: white;
-            text-decoration: none;
-        }
-        .google-calendar {
-            background-color: #4285f4;
-            box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
-        }
-        .google-calendar:hover {
-            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.4);
-        }
-        .outlook-calendar {
-            background-color: #0078d4;
-            box-shadow: 0 2px 8px rgba(0, 120, 212, 0.3);
-        }
-        .outlook-calendar:hover {
-            box-shadow: 0 4px 15px rgba(0, 120, 212, 0.4);
-        }
         @media (max-width: 600px) {
             .email-container {
                 margin: 10px;
@@ -211,18 +162,6 @@
             }
             .detail-value {
                 text-align: left;
-            }
-            .calendar-button {
-                display: block;
-                text-align: center;
-                margin: 10px 0;
-                padding: 15px 20px;
-            }
-            .calendar-service-button {
-                display: block;
-                text-align: center;
-                margin: 8px 0;
-                padding: 12px 15px;
             }
         }
     </style>
@@ -281,29 +220,10 @@
                 </div>
             </div>
 
-            <!-- Calendar Actions -->
+            <!-- Instructions -->
             <div class="instructions">
-                <h4>Agregar al Calendario</h4>
-                <p style="margin-bottom: 15px;">Agregue esta reunión directamente a su calendario con un solo clic:</p>
-                
-                <div style="text-align: center; margin: 20px 0;">
-                    
-                    <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ urlencode('Sesión de Retroalimentación - ' . $employee->name) }}&dates={{ $feedbackSession->scheduled_datetime->utc()->format('Ymd\THis\Z') }}/{{ $feedbackSession->scheduled_datetime->copy()->addMinutes(60)->utc()->format('Ymd\THis\Z') }}&details={{ urlencode('Sesión de retroalimentación programada como parte del proceso de evaluación de desempeño.') }}&location={{ urlencode($feedbackSession->location ?: 'Por definir') }}&sf=true&output=xml" 
-                       target="_blank"
-                       class="calendar-service-button google-calendar">
-                        📅 Google Calendar
-                    </a>
-                    
-                    <a href="https://outlook.live.com/calendar/0/deeplink/compose?subject={{ urlencode('Sesión de Retroalimentación - ' . $employee->name) }}&startdt={{ $feedbackSession->scheduled_datetime->utc()->format('Y-m-d\TH:i:s\Z') }}&enddt={{ $feedbackSession->scheduled_datetime->copy()->addMinutes(60)->utc()->format('Y-m-d\TH:i:s\Z') }}&body={{ urlencode('Sesión de retroalimentación programada como parte del proceso de evaluación de desempeño.') }}&location={{ urlencode($feedbackSession->location ?: 'Por definir') }}" 
-                       target="_blank"
-                       class="calendar-service-button outlook-calendar">
-                        📅 Outlook
-                    </a>
-                </div>
-                
-                <p style="font-size: 13px; color: #718096; text-align: center; margin-top: 15px;">
-                    💡 También se ha adjuntado un archivo .ics que puede abrir con cualquier aplicación de calendario
-                </p>
+                <h4>📎 Archivo de Calendario</h4>
+                <p>Se ha adjuntado un archivo de calendario (.ics) que puede agregar directamente a su calendario personal para recibir recordatorios automáticos de esta importante reunión.</p>
             </div>
 
             @if($recipientType === 'employee')
