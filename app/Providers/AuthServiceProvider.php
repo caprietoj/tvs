@@ -58,6 +58,16 @@ class AuthServiceProvider extends ServiceProvider
             }
         });
 
+        // Gate para verificar acceso a documentos institucionales
+        Gate::define('institucional-access', function ($user) {
+            return $user->hasRole('admin') || $user->email === 'asistentegeneral@tvs.edu.co';
+        });
+
+        // Gate para verificar acceso a gestión documental (incluyendo acceso especial para asistentegeneral)
+        Gate::define('documents-general-access', function ($user) {
+            return $user->hasRole('admin') || $user->email === 'asistentegeneral@tvs.edu.co';
+        });
+
         // ... existing code ...
     }
 }

@@ -631,7 +631,7 @@ return [
                     'text' => 'Gestión Documental',
                     'icon' => 'fas fa-file-pdf',
                     'classes' => 'submenu-item',
-                    'can'  => 'documents',
+                    'can'  => 'documents-general-access',
                     'submenu' => [
                         [
                             'text' => 'Gestión Documental - Enfermería',
@@ -667,6 +667,13 @@ return [
                             'icon' => 'fas fa-calculator',
                             'active' => ['contabilidad/documents', 'contabilidad/documents/*'],
                             'can' => 'documents-contabilidad',
+                        ],
+                        [
+                            'text' => 'Institucional',
+                            'url'  => 'institucional/documents',
+                            'icon' => 'fas fa-building',
+                            'active' => ['institucional/documents', 'institucional/documents/*'],
+                            'can' => 'institucional-access',
                         ],
                     ],
                 ],

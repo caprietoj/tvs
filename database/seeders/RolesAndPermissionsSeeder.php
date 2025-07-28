@@ -79,6 +79,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'documents-rrhh',
             'documents-sistemas',
             'documents-contabilidad',
+            'documents-institucional',
             'view.salidas',
             'documents-new',
             'inpersonate',

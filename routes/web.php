@@ -258,6 +258,22 @@ Route::middleware('auth')->group(function () {
         });
     });
 
+    // Institucional Document Management
+    Route::group(['prefix' => 'institucional', 'middleware' => ['auth']], function () {
+        Route::get('/documents', [App\Http\Controllers\InstitucionalDocumentController::class, 'index'])
+            ->name('institucional.documents.index');
+        Route::get('/documents/create', [App\Http\Controllers\InstitucionalDocumentController::class, 'create'])
+            ->name('institucional.documents.create');
+        Route::post('/documents', [App\Http\Controllers\InstitucionalDocumentController::class, 'store'])
+            ->name('institucional.documents.store');
+        Route::get('/documents/{document}/structure', [App\Http\Controllers\InstitucionalDocumentController::class, 'showStructure'])
+            ->name('institucional.documents.structure');
+        Route::get('/documents/{document}/download', [App\Http\Controllers\InstitucionalDocumentController::class, 'download'])
+            ->name('institucional.documents.download');
+        Route::delete('/documents/{document}', [App\Http\Controllers\InstitucionalDocumentController::class, 'destroy'])
+            ->name('institucional.documents.destroy');
+    });
+
     Route::get('tickets/dashboard', [HomeController::class, 'dashboard'])->name('tickets.dashboard');
     Route::resource('tickets', TicketController::class);
 
