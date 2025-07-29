@@ -129,7 +129,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'view-all-performance-evaluations',
             'export-performance-evaluations',
             'view-own-performance-evaluations', // Para ver y realizar sus propias evaluaciones
-            'complete-own-performance-evaluations' // Para completar autoevaluaciones y evaluaciones asignadas
+            'complete-own-performance-evaluations', // Para completar autoevaluaciones y evaluaciones asignadas
+            'evaluate-as-supervisor' // Para evaluar como supervisor/jefe inmediato
         ];
        
         foreach ($ticketPermissions as $perm) {
@@ -539,6 +540,35 @@ class RolesAndPermissionsSeeder extends Seeder
             // Permisos para evaluaciones de desempeño
             Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
             Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
+         ]);
+
+         // Crear el rol "jefe_inmediato" (supervisor con permisos para calificar evaluaciones de desempeño)
+         $jefeInmediatoRole = Role::firstOrCreate(['name' => 'jefe_inmediato']);
+         $jefeInmediatoRole->syncPermissions([
+            // Permisos básicos del sistema
+            Permission::firstOrCreate(['name' => 'view.dashboard']),
+            Permission::firstOrCreate(['name' => 'ticket.view']),
+            Permission::firstOrCreate(['name' => 'document-requests']),
+            
+            // Permisos para evaluaciones de desempeño como supervisor
+            Permission::firstOrCreate(['name' => 'evaluate-as-supervisor']),
+            Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
+            Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
+            
+            // Permisos para ver reservas de espacios
+            Permission::firstOrCreate(['name' => 'view.space-reservations']),
+            Permission::firstOrCreate(['name' => 'create.space-reservations']),
+            
+            // Permisos para gestión académica básica
+            Permission::firstOrCreate(['name' => 'view.reservas']),
+            Permission::firstOrCreate(['name' => 'view.events']),
+            Permission::firstOrCreate(['name' => 'view.salidas']),
+            Permission::firstOrCreate(['name' => 'view.calendar']),
+            
+            // Permisos para solicitudes básicas
+            Permission::firstOrCreate(['name' => 'view-loan-requests']),
+            Permission::firstOrCreate(['name' => 'create-loan-requests']),
+            Permission::firstOrCreate(['name' => 'solicitudes_compra']),
          ]);
     }
 }
