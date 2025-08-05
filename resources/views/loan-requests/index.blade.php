@@ -98,6 +98,19 @@
         color: white;
     }
 
+    .authorization-info-btn {
+        background-color: #6f42c1;
+        color: white;
+        border: none;
+    }
+
+    .authorization-info-btn:hover {
+        background-color: #5a2d91;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
     .btn-view {
         background-color: var(--institutional-blue);
         color: white;
@@ -291,6 +304,15 @@
                                             <i class="fas fa-times"></i>
                                         </button>
                                     @endif
+
+                                    @if(auth()->user()->hasAnyRole(['Admin', 'admin']) && $loan->status === 'approved')
+                                        <button type="button" 
+                                                class="btn btn-sm btn-info authorization-info-btn" 
+                                                data-id="{{ $loan->id }}"
+                                                title="Ver información de autorización">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -303,23 +325,23 @@
 </div>
 
 <!-- Modal for rejection reason -->
-<div class="modal fade" id="rejectModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="rejectModal" tabindex="-1" role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Razón de Rechazo</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
+                <h5 class="modal-title" id="rejectModalLabel">Rechazar Solicitud</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <form id="rejectForm">
-                @csrf
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="rejection_reason">Por favor, indique la razón del rechazo<span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="3" required></textarea>
+                        <label for="rejection_reason">Motivo del rechazo</label>
+                        <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="4" 
+                                  placeholder="Explique las razones por las cuales se rechaza esta solicitud..." required></textarea>
                         <div class="invalid-feedback">
-                            Este campo es obligatorio.
+                            Este campo es obligatorio
                         </div>
                     </div>
                 </div>
@@ -330,6 +352,35 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for authorization information -->
+<div class="modal fade" id="authorizationModal" tabindex="-1" role="dialog" aria-labelledby="authorizationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="authorizationModalLabel">
+                    <i class="fas fa-info-circle mr-2"></i>Información de Autorización del Préstamo
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="authorizationContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-info" role="status">
+                            <span class="sr-only">Cargando...</span>
+                        </div>
+                        <p class="mt-2">Cargando información de autorización...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
         </div>
     </div>
 </div>
@@ -442,6 +493,49 @@ $(document).ready(function() {
         $('#rejectModal').modal('show');
     });
 
+    // Handle authorization info button click
+    $('.authorization-info-btn').click(function(e) {
+        e.preventDefault();
+        let requestId = $(this).data('id');
+        
+        // Show modal
+        $('#authorizationModal').modal('show');
+        
+        // Load authorization information
+        $.ajax({
+            url: `{{ url('/') }}/loan-requests/${requestId}/authorization-info`,
+            type: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#authorizationContent').html(response.html);
+                } else {
+                    $('#authorizationContent').html(`
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            ${response.message || 'No se pudo cargar la información de autorización.'}
+                        </div>
+                    `);
+                }
+            },
+            error: function(xhr) {
+                let errorMessage = 'Error al cargar la información de autorización';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                $('#authorizationContent').html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        ${errorMessage}
+                    </div>
+                `);
+            }
+        });
+    });
+
     $('#rejectForm').on('submit', function(e) {
         e.preventDefault();
         
@@ -495,6 +589,18 @@ $(document).ready(function() {
         $('#rejection_reason').val('').removeClass('is-invalid');
         $('#confirmReject').prop('disabled', false)
             .html('<i class="fas fa-times mr-1"></i>Rechazar');
+    });
+
+    // Reset authorization modal content when closed
+    $('#authorizationModal').on('hidden.bs.modal', function() {
+        $('#authorizationContent').html(`
+            <div class="text-center">
+                <div class="spinner-border text-info" role="status">
+                    <span class="sr-only">Cargando...</span>
+                </div>
+                <p class="mt-2">Cargando información de autorización...</p>
+            </div>
+        `);
     });
 });
 </script>

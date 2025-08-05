@@ -124,10 +124,6 @@ class LoanRequestController extends Controller
             Mail::to(config('loan_emails.hr'))
                 ->send(new LoanRequestCreated($loanRequest, 'created-hr'));
 
-            // Notify treasury about new loan request
-            Mail::to(config('loan_emails.treasury'))
-                ->send(new LoanRequestCreated($loanRequest, 'created-hr'));
-
             DB::commit();
 
             return redirect()->route('loan-requests.index')
@@ -427,6 +423,55 @@ class LoanRequestController extends Controller
         return view('loan-requests.amortization', [
             'loanRequest' => $loanRequest,
             'amortizationTable' => $amortizationTable
+        ]);
+    }
+
+    /**
+     * Get authorization information for a loan request (Admin only)
+     */
+    public function getAuthorizationInfo(LoanRequest $loanRequest)
+    {
+        // Verificar que el usuario sea administrador (con diferentes variantes del rol)
+        if (!Auth::user()->hasAnyRole(['Admin', 'admin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No autorizado para ver esta información. Solo administradores pueden acceder.'
+            ], 403);
+        }
+
+        // Verificar que el préstamo esté aprobado
+        if ($loanRequest->status !== 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta solicitud no está en estado aprobado. Solo se puede ver información de autorización para préstamos aprobados.'
+            ], 400);
+        }
+
+        // Obtener información de autorización
+        $authorizationData = [
+            'loan_request' => $loanRequest,
+            'hr_reviewer' => null,
+            'admin_approver' => null
+        ];
+
+        // Buscar información del revisor de RRHH si existe
+        if ($loanRequest->hr_signature) {
+            $authorizationData['hr_signature'] = $loanRequest->hr_signature;
+            $authorizationData['review_date'] = $loanRequest->review_date;
+        }
+
+        // Buscar información del aprobador admin
+        if ($loanRequest->admin_signature) {
+            $authorizationData['admin_signature'] = $loanRequest->admin_signature;
+            $authorizationData['decision_date'] = $loanRequest->decision_date;
+        }
+
+        // Generar HTML para mostrar en el modal
+        $html = view('loan-requests.partials.authorization-info', $authorizationData)->render();
+
+        return response()->json([
+            'success' => true,
+            'html' => $html
         ]);
     }
 }

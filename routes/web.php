@@ -518,6 +518,11 @@ Route::middleware('auth')->group(function () {
         ->name('loan-requests.reject')
         ->middleware('can:approve-loan-requests');
         
+    // Ruta para obtener información de autorización (solo para admins)
+    Route::get('loan-requests/{loanRequest}/authorization-info', [App\Http\Controllers\LoanRequestController::class, 'getAuthorizationInfo'])
+        ->name('loan-requests.authorization-info')
+        ->middleware('auth');
+        
     // Rutas de diagnóstico (solo para administradores)
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('diagnostics/routes', [App\Http\Controllers\DiagnosticController::class, 'diagnoseRoutes'])
