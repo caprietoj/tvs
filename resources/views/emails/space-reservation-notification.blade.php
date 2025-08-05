@@ -53,7 +53,7 @@
 <body>
     <div class="header">
         <h1>Nueva Reserva de Espacio</h1>
-        <p>Sistema de Reservas - Tecnológico de la Vanguardia Salesiana</p>
+        <p>Sistema de Reservas - The Victoria School</p>
     </div>
 
     <div class="content">
@@ -103,7 +103,7 @@
 
     <div class="footer">
         <p>Este es un correo automático del Sistema de Reservas de Espacios</p>
-        <p>Tecnológico de la Vanguardia Salesiana</p>
+        <p>The Victoria School</p>
     </div>
 </body>
 </html>
