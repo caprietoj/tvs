@@ -1199,7 +1199,7 @@
                     <div class="col-md-10">
                         <h6 class="mb-3">Se han adjuntado todas las cotizaciones requeridas</h6>
                         <p class="mb-3">
-                            Se han completado las <strong>{{ session('quotation_count', 3) }} cotizaciones</strong> para esta solicitud de compra.
+                            Se han completado las <strong>{{ session('quotation_count', $purchaseRequest->getRequiredQuotationsCount()) }} cotizaciones</strong> para esta solicitud de compra.
                         </p>
                         <p class="text-muted mb-0">
                             ¿Desea enviar las cotizaciones al supervisor correspondiente para su pre-aprobación ahora?

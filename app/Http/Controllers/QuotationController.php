@@ -44,9 +44,10 @@ class QuotationController extends Controller
         // Guardar el estado original para verificación posterior
         $originalStatus = $purchaseRequest->status;
         
-        // Verificar que no haya más de 3 cotizaciones
-        if ($purchaseRequest->quotations()->count() >= 3) {
-            return redirect()->back()->with('error', 'Ya se han subido 3 cotizaciones para esta solicitud.');
+        // Verificar que no haya más cotizaciones del límite configurado
+        $requiredQuotations = $purchaseRequest->getRequiredQuotationsCount();
+        if ($purchaseRequest->quotations()->count() >= $requiredQuotations) {
+            return redirect()->back()->with('error', "Ya se han subido {$requiredQuotations} cotizaciones para esta solicitud.");
         }
         
         $validator = Validator::make($request->all(), [
@@ -316,11 +317,13 @@ class QuotationController extends Controller
                 ]);
             }
             
-            // Log cuando se completan las 3 cotizaciones (sin envío automático)
-            if ($quotationCount >= 3) {
-                \Log::info('Se completaron 3 cotizaciones - esperando confirmación manual para envío', [
+            // Log cuando se completan las cotizaciones requeridas (sin envío automático)
+            $requiredQuotations = $purchaseRequest->getRequiredQuotationsCount();
+            if ($quotationCount >= $requiredQuotations) {
+                \Log::info("Se completaron {$requiredQuotations} cotizaciones - esperando confirmación manual para envío", [
                     'purchase_request' => $purchaseRequest->request_number,
-                    'quotation_count' => $quotationCount
+                    'quotation_count' => $quotationCount,
+                    'required_quotations' => $requiredQuotations
                 ]);
             }
             
@@ -366,8 +369,9 @@ class QuotationController extends Controller
             'quotation_count' => $quotationCount
         ]);
         
-        // Verificar si ahora tiene 3 cotizaciones y mostrar modal
-        if ($quotationCount >= 3 && is_null($purchaseRequest->preapproval_sent_at)) {
+        // Verificar si ahora tiene las cotizaciones requeridas y mostrar modal
+        $requiredQuotations = $purchaseRequest->getRequiredQuotationsCount();
+        if ($quotationCount >= $requiredQuotations && is_null($purchaseRequest->preapproval_sent_at)) {
             return redirect()->route('purchase-requests.show', $purchaseRequest->id)
                 ->with('success', 'Cotización agregada exitosamente.')
                 ->with('show_preapproval_modal', true)
@@ -486,9 +490,10 @@ class QuotationController extends Controller
             return redirect()->back()->with('error', 'Esta solicitud no requiere cotizaciones.');
         }
 
-        // Verificar que no tenga ya 3 cotizaciones
-        if ($purchaseRequest->quotations()->count() >= 3) {
-            return redirect()->back()->with('error', 'Ya se han subido 3 cotizaciones para esta solicitud.');
+        // Verificar que no tenga ya el límite máximo de cotizaciones configurado
+        $requiredQuotations = $purchaseRequest->getRequiredQuotationsCount();
+        if ($purchaseRequest->quotations()->count() >= $requiredQuotations) {
+            return redirect()->back()->with('error', "Ya se han subido {$requiredQuotations} cotizaciones para esta solicitud.");
         }
         
         return view('quotations.ask_for_more', compact('purchaseRequest'));
@@ -518,14 +523,15 @@ class QuotationController extends Controller
                     $this->sendIncompleteQuotationsNotification($purchaseRequest, $sectionEmails);
                     
                     // Actualizar estado
-                    $purchaseRequest->updateStatus('En Cotización', Auth::id(), 'Cotizaciones incompletas enviadas para revisión (' . $quotationCount . ' de 3)');
+                    $requiredQuotations = $purchaseRequest->getRequiredQuotationsCount();
+                    $purchaseRequest->updateStatus('En Cotización', Auth::id(), "Cotizaciones incompletas enviadas para revisión ({$quotationCount} de {$requiredQuotations})");
                     
                     // Registrar en historial
                     RequestHistory::create([
                         'purchase_request_id' => $purchaseRequest->id,
                         'user_id' => Auth::id(),
                         'action' => 'Cotizaciones incompletas',
-                        'notes' => 'Se enviaron ' . $quotationCount . ' cotizaciones para revisión sin completar las 3 requeridas.',
+                        'notes' => "Se enviaron {$quotationCount} cotizaciones para revisión sin completar las {$requiredQuotations} requeridas.",
                     ]);
                 }
             }
