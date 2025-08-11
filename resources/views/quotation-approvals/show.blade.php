@@ -108,15 +108,15 @@
                                 
                                 @if($request->type === 'purchase' && $request->purchase_justification)
                                     <div class="mt-3">
-                                        <h6 class="text-primary"><strong>Justificación de la Compra:</strong></h6>
-                                        <p class="info-box-text">{{ $request->purchase_justification }}</p>
+                                        <h6 class="text-primary"><strong>JUSTIFICACIÓN DE LA COMPRA:</strong></h6>
+                                        <p class="info-box-text" style="white-space: pre-wrap; word-wrap: break-word; overflow: visible; height: auto; max-height: none;">{{ $request->purchase_justification }}</p>
                                     </div>
                                 @endif
                                 
-                                @if($request->type === 'purchase' && $request->service_justification)
+                                @if($request->type === 'services' && $request->service_justification)
                                     <div class="mt-3">
-                                        <h6 class="text-primary"><strong>Justificación del Servicio:</strong></h6>
-                                        <p class="info-box-text">{{ $request->service_justification }}</p>
+                                        <h6 class="text-primary"><strong>JUSTIFICACIÓN DEL SERVICIO:</strong></h6>
+                                        <p class="info-box-text" style="white-space: pre-wrap; word-wrap: break-word; overflow: visible; height: auto; max-height: none;">{{ $request->service_justification }}</p>
                                     </div>
                                 @endif
                                 
@@ -129,7 +129,7 @@
                                 @if($request->description)
                                     <div class="mt-3">
                                         <h6 class="text-secondary"><strong>Descripción Adicional:</strong></h6>
-                                        <p class="info-box-text">{{ $request->description }}</p>
+                                        <p class="info-box-text" style="white-space: pre-wrap; word-wrap: break-word; overflow: visible; height: auto; max-height: none;">{{ $request->description }}</p>
                                     </div>
                                 @endif
                             </div>
@@ -287,9 +287,14 @@
                                         <small>{{ $mixedSelections->count() }} productos seleccionados de {{ $selectedQuotations->count() }} proveedores</small>
                                     </div>
                                     <div>
-                                        <button class="btn btn-primary" data-toggle="modal" data-target="#preApproveMixedSelectionModal">
+                                        <button class="btn btn-primary mr-2" data-toggle="modal" data-target="#preApproveMixedSelectionModal">
                                             <i class="fas fa-check-circle"></i> Pre-aprobar Selección Mixta
                                         </button>
+                                        @if($request->status !== 'Pre-aprobada' && $request->status !== 'approved')
+                                            <button class="btn btn-danger" data-toggle="modal" data-target="#rejectModal">
+                                                <i class="fas fa-times-circle"></i> Rechazar Solicitud
+                                            </button>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -436,10 +441,15 @@
                                                 <i class="fas fa-lock"></i> Ya existe una cotización pre-aprobada
                                             </button>
                                         @else
-                                            <button class="btn btn-success btn-block mt-3" data-toggle="modal" data-target="#preApproveModal" 
+                                            <button class="btn btn-success btn-block mt-3 mr-2" data-toggle="modal" data-target="#preApproveModal" 
                                                 data-quotation-id="{{ $quotation->id }}" data-provider="{{ $quotation->provider_name }}">
                                                 <i class="fas fa-check-circle"></i> Pre-aprobar esta cotización
                                             </button>
+                                            @if($request->status !== 'Pre-aprobada' && $request->status !== 'approved')
+                                                <button class="btn btn-danger btn-block mt-2" data-toggle="modal" data-target="#rejectModal">
+                                                    <i class="fas fa-times-circle"></i> Rechazar Solicitud
+                                                </button>
+                                            @endif
                                         @endif
                                     </div>
                                 </div>
@@ -457,8 +467,11 @@
                                     
                                     @if($request->status !== 'Pre-aprobada' && $request->status !== 'approved')
                                         <div class="mt-3">
-                                            <button class="btn btn-success" data-toggle="modal" data-target="#preApproveWithoutQuotationModal">
+                                            <button class="btn btn-success mr-2" data-toggle="modal" data-target="#preApproveWithoutQuotationModal">
                                                 <i class="fas fa-check-circle"></i> Pre-aprobar Sin Cotización
+                                            </button>
+                                            <button class="btn btn-danger" data-toggle="modal" data-target="#rejectModal">
+                                                <i class="fas fa-times-circle"></i> Rechazar Solicitud
                                             </button>
                                             <small class="form-text text-muted mt-2">
                                                 Al pre-aprobar sin cotización, la solicitud continuará al siguiente paso del proceso de aprobación.
@@ -807,6 +820,65 @@
         </div>
     </div>
 @endif
+
+<!-- Modal de Rechazo -->
+<div class="modal fade" id="rejectModal" tabindex="-1" role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger">
+                <h5 class="modal-title text-white" id="rejectModalLabel">
+                    <i class="fas fa-times-circle"></i> Rechazar Solicitud
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ route('quotation-approvals.reject', $request->id) }}">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Atención:</strong> Está a punto de rechazar la solicitud <strong>#{{ $request->request_number }}</strong>.
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rejection_reason">Motivo del Rechazo *</label>
+                        <textarea name="rejection_reason" id="rejection_reason" class="form-control" rows="4" 
+                                  placeholder="Explique detalladamente el motivo por el cual se rechaza esta solicitud..." 
+                                  required maxlength="1000"></textarea>
+                        <small class="form-text text-muted">Máximo 1000 caracteres. Este motivo será enviado al solicitante y registrado en el historial.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="confirm_rejection" required>
+                            <label class="custom-control-label" for="confirm_rejection">
+                                Confirmo que deseo rechazar esta solicitud y entiendo que esta acción no se puede deshacer
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <small>
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <strong>Nota:</strong> Al rechazar esta solicitud se notificará automáticamente al solicitante, 
+                            a la sección correspondiente y al área de compras. La solicitud cambiará su estado a "Rechazada" 
+                            y no podrá continuar con el proceso de aprobación.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger" id="confirmRejectBtn" disabled>
+                        <i class="fas fa-times-circle"></i> Confirmar Rechazo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('js')
@@ -918,7 +990,53 @@
             $('#confirmMixedSelectionBtn').prop('disabled', true);
         });
         
-        // Agregar evento de depuración para el formulario de selección mixta
+        // Manejar el modal de rechazo
+        $('#confirm_rejection').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            const hasReason = $('#rejection_reason').val().trim().length > 0;
+            $('#confirmRejectBtn').prop('disabled', !(isChecked && hasReason));
+        });
+        
+        $('#rejection_reason').on('input', function() {
+            const isChecked = $('#confirm_rejection').is(':checked');
+            const hasReason = $(this).val().trim().length > 0;
+            $('#confirmRejectBtn').prop('disabled', !(isChecked && hasReason));
+        });
+        
+        // Limpiar modal de rechazo al cerrar
+        $('#rejectModal').on('hidden.bs.modal', function () {
+            $('#rejection_reason').val('');
+            $('#confirm_rejection').prop('checked', false);
+            $('#confirmRejectBtn').prop('disabled', true);
+        });
+        
+        // Agregar evento de depuración para el formulario de rechazo
+        $('#rejectModal form').on('submit', function(e) {
+            console.log('Formulario de rechazo enviándose...');
+            console.log('Datos del formulario:', $(this).serialize());
+            
+            const reason = $('#rejection_reason').val().trim();
+            const confirmed = $('#confirm_rejection').is(':checked');
+            
+            console.log('Motivo:', reason);
+            console.log('Confirmado:', confirmed);
+            
+            if (!reason) {
+                e.preventDefault();
+                alert('Por favor ingrese el motivo del rechazo');
+                return false;
+            }
+            
+            if (!confirmed) {
+                e.preventDefault();
+                alert('Por favor confirme que desea rechazar la solicitud');
+                return false;
+            }
+            
+            console.log('Formulario válido, enviando...');
+        });
+        
+        // Agregar evento de depuración para el formulario de pre-aprobación de selección mixta
         $('#preApproveMixedSelectionModal form').on('submit', function(e) {
             console.log('Formulario de selección mixta enviándose...');
             console.log('Datos del formulario:', $(this).serialize());

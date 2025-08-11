@@ -25,6 +25,8 @@ use App\Http\Controllers\SistemasThresholdController;
 
 // contabilidad
 use App\Http\Controllers\BudgetExecutionController; // Add this line
+use App\Http\Controllers\PresupuestoController;
+use App\Http\Controllers\ParametrizacionController;
 
 // Documentos
 use App\Http\Controllers\DocumentController;
@@ -69,11 +71,6 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    // Ruta de Presupuesto
-    Route::get('/presupuesto', function () {
-        return view('presupuesto');
-    })->name('presupuesto');
-
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -197,6 +194,18 @@ Route::middleware('auth')->group(function () {
         Route::get('/budget', [BudgetExecutionController::class, 'index'])->name('budget.index');
         Route::get('/budget/create', [BudgetExecutionController::class, 'create'])->name('budget.create');
         Route::post('/budget', [BudgetExecutionController::class, 'store'])->name('budget.store');
+    
+        // Presupuesto routes
+        Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.index');
+        Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.update');
+        Route::post('/presupuesto/guardar-ejecucion', [PresupuestoController::class, 'guardarEjecucion'])->name('presupuesto.guardar-ejecucion');
+        Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.export');
+        Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.procesar-extracto-contable');
+        
+        // Parametrización routes
+        Route::get('/parametrizacion', [App\Http\Controllers\ParametrizacionController::class, 'index'])->name('parametrizacion.index');
+        Route::post('/parametrizacion', [App\Http\Controllers\ParametrizacionController::class, 'store'])->name('parametrizacion.store');
+        Route::post('/parametrizacion/reset', [App\Http\Controllers\ParametrizacionController::class, 'resetearSistema'])->name('parametrizacion.reset');
     
         // Contabilidad Document Management
         Route::group(['middleware' => ['auth']], function () {
@@ -698,6 +707,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('quotation-approvals.pre-approve-without-quotation');
     Route::post('quotation-approvals/{id}/pre-approve-mixed-selection', [QuotationApprovalController::class, 'preApproveMixedSelection'])
         ->name('quotation-approvals.pre-approve-mixed-selection');
+    Route::post('quotation-approvals/{id}/reject', [QuotationApprovalController::class, 'reject'])
+        ->name('quotation-approvals.reject');
 });
 
 // Rutas para las aprobaciones finales de solicitudes de compra
@@ -1040,3 +1051,9 @@ Route::middleware(['auth', 'admin'])->prefix('surveys')->name('surveys.')->group
         Route::get('/export', [App\Http\Controllers\ParentStudentSurveyController::class, 'exportData'])->name('export');
     });
 });
+
+// Ruta principal para presupuesto (temporal sin auth para pruebas)
+Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.main');
+Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.main.update');
+Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.main.export');
+Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.main.procesar-extracto-contable');

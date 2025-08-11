@@ -582,6 +582,192 @@ class QuotationApprovalController extends Controller
     }
     
     /**
+     * Rechazar una solicitud desde pre-aprobación
+     */
+    public function reject(Request $request, $id)
+    {
+        \Log::info('Iniciando rechazo de solicitud desde pre-aprobación', [
+            'purchase_request_id' => $id,
+            'request_data' => $request->all(),
+            'user_id' => auth()->id()
+        ]);
+        
+        // Validar la entrada
+        $validated = $request->validate([
+            'rejection_reason' => 'required|string|max:1000',
+        ]);
+
+        \Log::info('Validación exitosa para rechazo', [
+            'validated_data' => $validated
+        ]);
+
+        // Obtener la solicitud
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+        
+        // Verificar que la solicitud esté en un estado válido para rechazo
+        if (!in_array($purchaseRequest->status, ['En pre-aprobación', 'En Cotización', 'Pre-aprobada'])) {
+            \Log::warning('Estado de solicitud no válido para rechazo', [
+                'purchase_request_id' => $id,
+                'current_status' => $purchaseRequest->status
+            ]);
+            return redirect()->back()->with('error', 'Esta solicitud no está en un estado válido para rechazo. Estado actual: ' . $purchaseRequest->status);
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            \Log::info('Iniciando transacción para rechazo de solicitud', [
+                'purchase_request_id' => $id,
+                'user_id' => auth()->id(),
+                'validated_data' => $validated
+            ]);
+
+            // Si había una cotización pre-aprobada, desmarcarla
+            if ($purchaseRequest->pre_approved_quotation_id) {
+                $preApprovedQuotation = Quotation::find($purchaseRequest->pre_approved_quotation_id);
+                if ($preApprovedQuotation) {
+                    $preApprovedQuotation->update([
+                        'status' => 'pending',
+                        'is_selected' => false,
+                        'pre_approval_date' => null,
+                        'pre_approval_comments' => null,
+                        'pre_approved_by' => null,
+                    ]);
+                }
+            }
+
+            // Actualizar el estado de la solicitud a rechazada
+            $purchaseRequest->update([
+                'status' => 'Rechazada',
+                'rejected_by' => auth()->id(),
+                'rejected_at' => now(),
+                'rejection_reason' => $validated['rejection_reason'],
+                'pre_approved_quotation_id' => null,
+                'pre_approved_by' => null,
+                'pre_approved_at' => null,
+                'pre_approval_comments' => null,
+            ]);
+
+            \Log::info('Solicitud rechazada exitosamente', [
+                'purchase_request_id' => $id,
+                'new_status' => 'Rechazada',
+                'rejection_reason' => $validated['rejection_reason']
+            ]);
+
+            // Registrar en el historial
+            \App\Models\RequestHistory::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'user_id' => auth()->id(),
+                'action' => 'Solicitud rechazada desde pre-aprobación',
+                'notes' => 'Motivo del rechazo: ' . $validated['rejection_reason']
+            ]);
+
+            // Enviar notificaciones de rechazo
+            $this->sendRejectionNotifications($purchaseRequest, $validated['rejection_reason']);
+
+            \DB::commit();
+
+            \Log::info('Rechazo de solicitud completado exitosamente', [
+                'purchase_request_id' => $id,
+                'request_number' => $purchaseRequest->request_number
+            ]);
+
+            return redirect()->route('quotation-approvals.index')
+                ->with('success', 'La solicitud ha sido rechazada correctamente. Se han enviado las notificaciones correspondientes.');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            \Log::error('Error al rechazar solicitud: ' . $e->getMessage(), [
+                'purchase_request_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->with('error', 'Error al rechazar la solicitud: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Enviar notificaciones de rechazo
+     */
+    private function sendRejectionNotifications($purchaseRequest, $rejectionReason)
+    {
+        try {
+            \Log::info('Iniciando envío de notificaciones de rechazo', [
+                'purchase_request' => $purchaseRequest->request_number,
+                'purchase_request_id' => $purchaseRequest->id
+            ]);
+            
+            // Obtener configuración dinámica
+            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
+            
+            // Obtener emails del solicitante y de la sección
+            $requesterEmail = $purchaseRequest->user->email ?? null;
+            $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
+            
+            \Log::info('Configuración de emails para notificaciones de rechazo', [
+                'section_area' => $purchaseRequest->section_area,
+                'requester_email' => $requesterEmail,
+                'section_emails' => $sectionEmails,
+                'compras_email' => $comprasEmail
+            ]);
+            
+            // 1. NOTIFICAR AL SOLICITANTE
+            if ($requesterEmail) {
+                $requesterNotification = new \App\Notifications\RequestRejected(
+                    $purchaseRequest,
+                    $rejectionReason,
+                    auth()->user()->name
+                );
+                
+                \Log::info('Enviando notificación de rechazo al solicitante: ' . $requesterEmail);
+                \Notification::route('mail', $requesterEmail)->notify($requesterNotification);
+            }
+            
+            // 2. NOTIFICAR A LA SECCIÓN/ÁREA
+            if (!empty($sectionEmails)) {
+                $sectionNotification = new \App\Notifications\RequestRejected(
+                    $purchaseRequest,
+                    $rejectionReason,
+                    auth()->user()->name
+                );
+                
+                foreach ($sectionEmails as $email) {
+                    \Log::info('Enviando notificación de rechazo a la sección: ' . $email);
+                    \Notification::route('mail', $email)->notify($sectionNotification);
+                }
+            }
+            
+            // 3. NOTIFICAR A COMPRAS (INFORMATIVO)
+            if ($comprasEmail) {
+                $comprasNotification = new \App\Notifications\RequestRejected(
+                    $purchaseRequest,
+                    $rejectionReason,
+                    auth()->user()->name
+                );
+                
+                \Log::info('Enviando notificación informativa de rechazo a compras: ' . $comprasEmail);
+                \Notification::route('mail', $comprasEmail)->notify($comprasNotification);
+            }
+            
+            \Log::info('Notificaciones de rechazo enviadas correctamente', [
+                'requester_email' => $requesterEmail,
+                'section_emails' => $sectionEmails,
+                'compras_email' => $comprasEmail,
+                'purchase_request' => $purchaseRequest->request_number
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar notificación de rechazo: ' . $e->getMessage(), [
+                'purchase_request' => $purchaseRequest->request_number,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+    
+    /**
      * Obtener los correos electrónicos de la sección especificada
      */
     private function getSectionEmails($section_area)
