@@ -290,7 +290,7 @@
                                         </a>
                                     @endif
 
-                                    @if(auth()->user()->can('approve-loan-requests') && ($loan->status === 'pending' || $loan->status === 'reviewed'))
+                                    @if(auth()->user()->can('approve-loan-requests') && $loan->status === 'reviewed')
                                         <button type="button" 
                                                 class="btn btn-sm btn-success approve-btn" 
                                                 data-id="{{ $loan->id }}"

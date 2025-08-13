@@ -749,7 +749,7 @@
                     </div>
                 @endif
 
-                @if(auth()->user()->can('approve-loan-requests') && ($loanRequest->status === 'pending' || $loanRequest->status === 'reviewed'))
+                @if(auth()->user()->can('approve-loan-requests') && $loanRequest->status === 'reviewed')
                     <div class="mt-4">
                         <button type="button" class="btn btn-success approve-btn btn-block mb-2">
                             <i class="fas fa-check mr-1"></i> Aprobar Solicitud
