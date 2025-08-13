@@ -118,11 +118,22 @@
                                 <dd class="col-sm-7">{{ $request->pre_approved_at ? $request->pre_approved_at->format('d/m/Y H:i') : 'N/A' }}</dd>
 
                                 <dt class="col-sm-5">Cotización seleccionada:</dt>
-                                <dd class="col-sm-7">{{ $request->preApprovedQuotation ? $request->preApprovedQuotation->provider_name : 'N/A' }}</dd>
+                                <dd class="col-sm-7">
+                                    @if($request->quotationItemSelections && $request->quotationItemSelections->count() > 0)
+                                        <span class="badge badge-info">Selección Mixta</span>
+                                        <small class="d-block text-muted">{{ $request->quotationItemSelections->count() }} proveedores seleccionados</small>
+                                    @elseif($request->preApprovedQuotation)
+                                        {{ $request->preApprovedQuotation->provider_name }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </dd>
 
                                 <dt class="col-sm-5">Monto:</dt>
                                 <dd class="col-sm-7">
-                                    @if($request->preApprovedQuotation)
+                                    @if($request->quotationItemSelections && $request->quotationItemSelections->count() > 0)
+                                        ${{ number_format($request->quotationItemSelections->sum('total_price'), 2, ',', '.') }}
+                                    @elseif($request->preApprovedQuotation)
                                         ${{ number_format($request->preApprovedQuotation->total_amount, 2, ',', '.') }}
                                     @else
                                         N/A
@@ -239,30 +250,72 @@
                     @endif
                 @endif
 
-                @if($request->preApprovedQuotation && !$request->isNoQuotationService())
-                    <h5 class="text-muted mt-4">Cotización Pre-aprobada</h5>
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Proveedor</th>
-                                    <th>Monto total</th>
-                                    <th>Archivo</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>{{ $request->preApprovedQuotation->provider_name }}</td>
-                                    <td>${{ number_format($request->preApprovedQuotation->total_amount, 2, ',', '.') }}</td>
-                                    <td>
-                                        <a href="{{ route('quotations.download', $request->preApprovedQuotation->id) }}" class="btn btn-sm btn-info">
-                                            <i class="fas fa-download"></i> Descargar
-                                        </a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                @if(($request->preApprovedQuotation && !$request->isNoQuotationService()) || ($request->quotationItemSelections && $request->quotationItemSelections->count() > 0))
+                    @if($request->quotationItemSelections && $request->quotationItemSelections->count() > 0)
+                        {{-- Mostrar selecciones mixtas --}}
+                        <h5 class="text-muted mt-4">Selecciones Mixtas Pre-aprobadas</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Proveedor</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unitario</th>
+                                        <th>Monto Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($request->quotationItemSelections as $selection)
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $selection->item_index + 1 }}</strong><br>
+                                                <small class="text-muted">{{ $selection->item_description }}</small>
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $quotation = $request->quotations->find($selection->quotation_id);
+                                                @endphp
+                                                {{ $quotation ? $quotation->provider_name : 'Proveedor no encontrado' }}
+                                            </td>
+                                            <td>{{ $selection->quantity }}</td>
+                                            <td>${{ number_format($selection->unit_price, 2, ',', '.') }}</td>
+                                            <td>${{ number_format($selection->total_price, 2, ',', '.') }}</td>
+                                        </tr>
+                                    @endforeach
+                                    <tr class="table-info">
+                                        <td colspan="4" class="text-right"><strong>Total General:</strong></td>
+                                        <td><strong>${{ number_format($request->quotationItemSelections->sum('total_price'), 2, ',', '.') }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        {{-- Mostrar cotización tradicional pre-aprobada --}}
+                        <h5 class="text-muted mt-4">Cotización Pre-aprobada</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Proveedor</th>
+                                        <th>Monto total</th>
+                                        <th>Archivo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>{{ $request->preApprovedQuotation->provider_name }}</td>
+                                        <td>${{ number_format($request->preApprovedQuotation->total_amount, 2, ',', '.') }}</td>
+                                        <td>
+                                            <a href="{{ route('quotations.download', $request->preApprovedQuotation->id) }}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-download"></i> Descargar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
                 @endif
 
                 <h5 class="text-muted mt-4">Acciones</h5>

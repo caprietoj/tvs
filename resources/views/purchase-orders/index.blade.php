@@ -125,7 +125,7 @@
                     </thead>
                     <tbody>
                         @forelse($orders as $order)
-                        <tr>
+                        <tr class="{{ $order->is_viewed ? 'order-viewed' : '' }}" data-order-id="{{ $order->id }}">
                             <td>{{ $order->order_number }}</td>
                             <td>
                                 @if($order->purchaseRequest)
@@ -171,12 +171,12 @@
                                 <a href="{{ route('purchase-orders.show', $order->id) }}" class="btn btn-sm btn-info">
                                     <i class="fas fa-eye"></i> Ver
                                 </a>
-                                @if(auth()->user()->hasRole('admin'))
+                                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras'))
                                 <a href="{{ route('purchase-orders.edit-pdf', $order->id) }}" class="btn btn-sm btn-warning" title="Editar PDF personalizado">
                                     <i class="fas fa-file-pdf"></i> Editar PDF
                                 </a>
                                 @endif
-                                @if(($order->isPending() || ($order->status == 'approved' && auth()->user()->hasRole('admin'))) && auth()->user()->hasRole('admin'))
+                                @if(($order->isPending() || ($order->status == 'approved' && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))) && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))
                                 <a href="{{ route('purchase-orders.edit', $order->id) }}" class="btn btn-sm btn-primary">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
@@ -189,8 +189,22 @@
                                 </form>
                                 @endif
                                 
-                                {{-- Botón de regenerar orden completa solo para administradores --}}
-                                @if(auth()->user()->hasRole('admin'))
+                                {{-- Botón marcar como vista solo para admin, contabilidad y tesorería --}}
+                                @php
+                                    $allowedEmails = ['asistentecontabilidad@tvs.edu.co', 'contabilidad@tvs.edu.co', 'tesoreria@tvs.edu.co'];
+                                    $canMarkViewed = auth()->user()->hasRole('admin') || in_array(auth()->user()->email, $allowedEmails);
+                                @endphp
+                                @if($canMarkViewed)
+                                <button type="button" class="btn btn-sm {{ $order->is_viewed ? 'btn-success' : 'btn-outline-success' }} toggle-viewed-btn" 
+                                        data-order-id="{{ $order->id }}" 
+                                        title="{{ $order->is_viewed ? 'Marcar como NO vista' : 'Marcar como vista' }}">
+                                    <i class="fas {{ $order->is_viewed ? 'fa-eye' : 'fa-eye-slash' }}"></i>
+                                    {{ $order->is_viewed ? 'Vista' : 'No vista' }}
+                                </button>
+                                @endif
+                                
+                                {{-- Botón de regenerar orden completa solo para administradores y compras --}}
+                                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras'))
                                 <form action="{{ route('purchase-orders.regenerate-pdf', $order->id) }}" method="POST" class="d-inline regenerate-pdf-form" data-order-number="{{ $order->order_number }}">
                                     @csrf
                                     <button type="button" class="btn btn-sm btn-secondary regenerate-pdf-btn" title="Regenerar orden completa desde la solicitud original">
@@ -294,6 +308,15 @@
 @section('css')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <style>
+    /* Estilo para órdenes marcadas como vistas */
+    .order-viewed {
+        background-color: #d4edda !important; /* Verde suave */
+    }
+    
+    .order-viewed td {
+        background-color: transparent !important;
+    }
+    
     /* Estilos para paginación profesional */
     .pagination-wrapper {
         display: flex;
@@ -499,7 +522,7 @@
             "autoWidth": false,
             "responsive": true,
             "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+                "url": "https://cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
             }
         });
 
@@ -512,7 +535,7 @@
             "autoWidth": false,
             "responsive": true,
             "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+                "url": "https://cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
             }
         });
 
@@ -559,6 +582,77 @@
         @if(session('success'))
             $('#processingModal').modal('hide');
         @endif
+
+        // Manejar clics en botones de marcar como vista
+        $('.toggle-viewed-btn').on('click', function(e) {
+            e.preventDefault();
+            
+            const button = $(this);
+            const orderId = button.data('order-id');
+            const row = button.closest('tr');
+            
+            console.log('Toggle clicked for order:', orderId);
+            console.log('Current row class:', row.attr('class'));
+            
+            // Deshabilitar el botón temporalmente
+            button.prop('disabled', true);
+            
+            // Realizar petición AJAX
+            $.ajax({
+                url: `/purchase-orders/${orderId}/toggle-viewed`,
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    console.log('Server response:', response);
+                    
+                    if (response.success) {
+                        // Actualizar el estado visual de la fila
+                        if (response.is_viewed) {
+                            console.log('Setting as viewed');
+                            row.addClass('order-viewed');
+                            button.removeClass('btn-outline-success').addClass('btn-success');
+                            button.find('i').removeClass('fa-eye-slash').addClass('fa-eye');
+                            button.attr('title', 'Marcar como NO vista');
+                            button.html('<i class="fas fa-eye"></i> Vista');
+                        } else {
+                            console.log('Setting as not viewed');
+                            row.removeClass('order-viewed');
+                            button.removeClass('btn-success').addClass('btn-outline-success');
+                            button.find('i').removeClass('fa-eye').addClass('fa-eye-slash');
+                            button.attr('title', 'Marcar como vista');
+                            button.html('<i class="fas fa-eye-slash"></i> No vista');
+                        }
+                        
+                        console.log('New row class:', row.attr('class'));
+                        
+                        // Forzar re-render del estilo
+                        row[0].offsetHeight; // Trigger reflow
+                        
+                        // Mostrar mensaje de éxito
+                        toastr.success(response.message);
+                    } else {
+                        toastr.error(response.message || 'Error al actualizar el estado');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    let errorMessage = 'Error al actualizar el estado de la orden';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.status === 403) {
+                        errorMessage = 'No tienes permisos para realizar esta acción';
+                    }
+                    
+                    toastr.error(errorMessage);
+                },
+                complete: function() {
+                    // Rehabilitar el botón
+                    button.prop('disabled', false);
+                }
+            });
+        });
     });
 </script>
 @stop

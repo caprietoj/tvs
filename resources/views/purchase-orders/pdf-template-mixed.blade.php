@@ -278,7 +278,19 @@
             </tr>
             <tr>
                 <td class="bold">PRESUPUESTO:</td>
-                <td>{{ $order->purchaseRequest->budget ?? '' }}</td>
+                <td>
+                    @php
+                        $budgetValue = '';
+                        if (!empty($order->pdf_custom_data)) {
+                            $customData = json_decode($order->pdf_custom_data, true);
+                            $budgetValue = $customData['budget'] ?? '';
+                        }
+                        if (empty($budgetValue)) {
+                            $budgetValue = $order->purchaseRequest->budget ?? '';
+                        }
+                    @endphp
+                    {{ $budgetValue }}
+                </td>
                 <td class="bold">IMPTO AL CONSUMO</td>
                 <td class="right">$0</td>
             </tr>

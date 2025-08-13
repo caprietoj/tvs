@@ -350,7 +350,19 @@
             </tr>
             <tr>
                 <td class="bold">PRESUPUESTO:</td>
-                <td>{{ $order->purchaseRequest->budget ?? '' }}</td>
+                <td>
+                    @php
+                        $budgetValue = '';
+                        if (!empty($order->pdf_custom_data)) {
+                            $customData = json_decode($order->pdf_custom_data, true);
+                            $budgetValue = $customData['budget'] ?? '';
+                        }
+                        if (empty($budgetValue)) {
+                            $budgetValue = $order->purchaseRequest->budget ?? '';
+                        }
+                    @endphp
+                    {{ $budgetValue }}
+                </td>
                 @if($selectedQuotation && ($selectedQuotation->includes_ipoconsumo_8 || $selectedQuotation->includes_ipoconsumo_4))
                     <td class="bold">
                         @if($selectedQuotation->includes_ipoconsumo_8 && $selectedQuotation->includes_ipoconsumo_4)

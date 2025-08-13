@@ -43,6 +43,9 @@ class PurchaseOrder extends Model
         'approved_at',
         'approved_by',
         'pdf_custom_data',
+        'is_viewed',
+        'viewed_by',
+        'viewed_at',
     ];
 
     /**
@@ -108,6 +111,14 @@ class PurchaseOrder extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Obtener el usuario que marcó la orden como vista.
+     */
+    public function viewer()
+    {
+        return $this->belongsTo(User::class, 'viewed_by');
     }
 
     /**

@@ -501,11 +501,27 @@
                                 @if(($purchaseRequest->type == 'purchase' || ($purchaseRequest->type == 'services' && $purchaseRequest->service_type == 'regular')) && $purchaseRequest->quotations->count() > 1)
                                     <div class="p-3 text-center">
                                         <h5 class="mb-3"><i class="fas fa-balance-scale mr-2"></i>Opciones de Selección</h5>
-                                        @if($purchaseRequest->status === 'approved')
+                                        @php
+                                            // Verificar si hay órdenes de compra activas (no eliminadas)
+                                            $hasActivePurchaseOrders = $purchaseRequest->purchaseOrders()->whereNull('deleted_at')->exists();
+                                            $hasDeletedOrdersOnly = $purchaseRequest->purchaseOrders()->onlyTrashed()->exists() && !$hasActivePurchaseOrders;
+                                        @endphp
+                                        
+                                        @if($purchaseRequest->status === 'approved' && $hasActivePurchaseOrders)
                                             <button type="button" class="btn btn-secondary btn-sm" disabled>
                                                 <i class="fas fa-balance-scale mr-2"></i>Selección Mixta de Proveedores
-                                                <small class="d-block">(Solicitud ya aprobada)</small>
+                                                <small class="d-block">(Ya tiene órdenes de compra generadas)</small>
                                             </button>
+                                        @elseif($purchaseRequest->status === 'approved' && $hasDeletedOrdersOnly)
+                                            <div class="alert alert-success mb-2">
+                                                <i class="fas fa-undo mr-2"></i>
+                                                <strong>Orden revertida:</strong> Puede hacer una nueva selección mixta
+                                            </div>
+                                            <a href="{{ route('quotation-selections.show', $purchaseRequest->id) }}" 
+                                               class="btn btn-warning btn-sm">
+                                                <i class="fas fa-balance-scale mr-2"></i>Realizar Selección Mixta
+                                                <small class="d-block">{{ $purchaseRequest->quotations->count() }} proveedores disponibles</small>
+                                            </a>
                                         @elseif(!is_null($purchaseRequest->preapproval_sent_at))
                                             <button type="button" class="btn btn-secondary btn-sm" disabled>
                                                 <i class="fas fa-balance-scale mr-2"></i>Selección Mixta de Proveedores

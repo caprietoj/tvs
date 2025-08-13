@@ -183,8 +183,14 @@
                                                         </tfoot>
                                                     </table>
                                                 </div>
+                                                <div class="alert alert-info mt-3">
+                                                    <i class="fas fa-info-circle mr-2"></i>
+                                                    <strong>Información importante:</strong><br>
+                                                    Se generará una orden de compra separada para cada proveedor seleccionado en la tabla anterior. 
+                                                    Total de órdenes a crear: <strong>{{ $mixedSelections->groupBy('quotation.provider_name')->count() }}</strong>
+                                                </div>
                                                 <small class="text-muted">
-                                                    Esta orden incluye productos de múltiples proveedores según la selección mixta realizada.
+                                                    Esta selección mixta incluye productos de múltiples proveedores. Cada proveedor recibirá su propia orden de compra.
                                                 </small>
                                             </div>
                                         </div>

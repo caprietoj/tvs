@@ -32,18 +32,48 @@ class LoanRequestController extends Controller
     /**
      * Display a listing of loan requests.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         
-        // Show all requests to Admin, HR and Finance roles
-        if ($user->hasRole(['Admin', 'rrhh', 'financiera'])) {
-            $loanRequests = LoanRequest::with('user')->latest()->get();
-        } else {
-            $loanRequests = LoanRequest::where('user_id', $user->id)->latest()->get();
+        // Base query
+        $query = LoanRequest::with('user');
+        
+        // Role-based filtering
+        if (!$user->hasRole(['Admin', 'rrhh', 'financiera'])) {
+            $query->where('user_id', $user->id);
         }
         
-        return view('loan-requests.index', compact('loanRequests'));
+        // Date filters
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+        
+        // User filter (only for admin, HR and finance roles)
+        if ($request->filled('user_id') && $user->hasRole(['Admin', 'rrhh', 'financiera'])) {
+            $query->where('user_id', $request->user_id);
+        }
+        
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        $loanRequests = $query->latest()->get();
+        
+        // Get all users for the filter dropdown (only for authorized roles)
+        $users = collect();
+        if ($user->hasRole(['Admin', 'rrhh', 'financiera'])) {
+            $users = \App\Models\User::whereHas('loanRequests')
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
+        
+        return view('loan-requests.index', compact('loanRequests', 'users'));
     }
 
     /**

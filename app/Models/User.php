@@ -90,4 +90,12 @@ class User extends Authenticatable
     {
         return 'admin/settings';
     }
+
+    /**
+     * Get the loan requests for the user.
+     */
+    public function loanRequests()
+    {
+        return $this->hasMany(LoanRequest::class);
+    }
 }

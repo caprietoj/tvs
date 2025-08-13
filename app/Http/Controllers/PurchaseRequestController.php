@@ -980,7 +980,7 @@ class PurchaseRequestController extends Controller
             'copy_items.*.impresion' => 'nullable|boolean',
             'copy_items.*.total' => 'nullable|integer|min:0',
             'attached_files' => 'nullable|array|max:5', // Máximo 5 archivos
-            'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:20480', // 20MB máximo cada archivo
+            'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:524288', // 20MB máximo cada archivo
             // Validaciones para especificaciones
             'paper_size' => 'nullable|string|in:Carta,Oficio,A4,A3,Tabloid',
             'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina',
@@ -1280,7 +1280,7 @@ class PurchaseRequestController extends Controller
             'copy_items.*.impresion' => 'nullable|boolean',
             'copy_items.*.total' => 'nullable|integer|min:0',
             'attached_files' => 'nullable|array|max:5', // Máximo 5 archivos
-            'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:20480', // 20MB máximo cada archivo
+            'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:524288', // 20MB máximo cada archivo
             // Validaciones para especificaciones
             'paper_size' => 'nullable|string|in:Carta,Oficio,A4,A3,Tabloid',
             'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina',

@@ -208,6 +208,38 @@
         background-color: var(--institutional-blue-hover);
         color: white;
     }
+    
+    .filters-section {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .filters-section .form-group label {
+        font-weight: 500;
+        color: var(--institutional-blue);
+        font-size: 0.9rem;
+    }
+    
+    .filters-section .form-control {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        box-shadow: none;
+        transition: border-color 0.2s ease;
+    }
+    
+    .filters-section .form-control:focus {
+        border-color: var(--institutional-blue);
+        box-shadow: 0 0 0 0.2rem rgba(54, 78, 118, 0.25);
+    }
+    
+    .filter-buttons {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
 </style>
 @stop
 
@@ -223,6 +255,76 @@
 @section('content')
 <div class="card">
     <div class="card-body">
+        {{-- Filtros --}}
+        <div class="filters-section">
+            <form method="GET" action="{{ route('loan-requests.index') }}">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="date_from" class="form-label">Fecha desde:</label>
+                        <input type="date" 
+                               id="date_from" 
+                               name="date_from" 
+                               class="form-control" 
+                               value="{{ request('date_from') }}">
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label for="date_to" class="form-label">Fecha hasta:</label>
+                        <input type="date" 
+                               id="date_to" 
+                               name="date_to" 
+                               class="form-control" 
+                               value="{{ request('date_to') }}">
+                    </div>
+                    
+                    @if(auth()->user()->hasRole(['Admin', 'rrhh', 'financiera']))
+                    <div class="col-md-3 mb-3">
+                        <label for="user_id" class="form-label">Solicitante:</label>
+                        <select id="user_id" name="user_id" class="form-control">
+                            <option value="">Todos los solicitantes</option>
+                            @foreach($users as $user)
+                                <option value="{{ $user->id }}" 
+                                        {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                                    {{ $user->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
+                    
+                    <div class="col-md-3 mb-3">
+                        <label for="status" class="form-label">Estado:</label>
+                        <select id="status" name="status" class="form-control">
+                            <option value="">Todos los estados</option>
+                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pendiente</option>
+                            <option value="reviewed" {{ request('status') == 'reviewed' ? 'selected' : '' }}>Revisado</option>
+                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Aprobado</option>
+                            <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rechazado</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <div class="filter-buttons">
+                            <button type="submit" class="btn btn-institutional">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                            <a href="{{ route('loan-requests.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Limpiar Filtros
+                            </a>
+                            @if(request()->hasAny(['date_from', 'date_to', 'user_id', 'status']))
+                                <span class="text-muted ml-2">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Mostrando {{ $loanRequests->count() }} resultado(s) filtrado(s)
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
         @if($loanRequests->isEmpty())
             <div class="empty-state">
                 <i class="fas fa-money-check-alt"></i>
@@ -601,6 +703,38 @@ $(document).ready(function() {
                 <p class="mt-2">Cargando información de autorización...</p>
             </div>
         `);
+    });
+
+    // Filter functionality improvements
+    $('.filters-section').on('change', '#status, #user_id', function() {
+        // Auto-submit form when status or user changes
+        if ($(this).val() !== '') {
+            $(this).closest('form').submit();
+        }
+    });
+
+    // Clear individual filters with double click
+    $('.filters-section input[type="date"], .filters-section select').on('dblclick', function() {
+        $(this).val('');
+        if ($(this).is('select')) {
+            $(this).find('option:first').prop('selected', true);
+        }
+    });
+
+    // Validate date range
+    $('#date_from, #date_to').on('change', function() {
+        const dateFrom = $('#date_from').val();
+        const dateTo = $('#date_to').val();
+        
+        if (dateFrom && dateTo && dateFrom > dateTo) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Fechas inválidas',
+                text: 'La fecha "desde" no puede ser mayor a la fecha "hasta"',
+                timer: 3000
+            });
+            $('#date_to').val('');
+        }
     });
 });
 </script>

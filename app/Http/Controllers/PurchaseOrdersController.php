@@ -7,6 +7,7 @@ use App\Models\RequestHistory;
 use App\Models\PurchaseOrder;
 use App\Notifications\OrderCreated;
 use App\Services\PurchaseOrderPdfService;
+use App\Helpers\BudgetHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
@@ -34,7 +35,7 @@ class PurchaseOrdersController extends Controller
     public function index()
     {
         // Obtener las órdenes de compra existentes
-        $orders = PurchaseOrder::with(['purchaseRequest', 'purchaseRequest.user', 'provider'])
+        $orders = PurchaseOrder::with(['purchaseRequest', 'purchaseRequest.user', 'provider', 'viewer'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
             
@@ -158,6 +159,11 @@ class PurchaseOrdersController extends Controller
                 ]);
                 return redirect()->route('purchase-orders.index')->with('error', 'Solo se pueden crear órdenes de compra para solicitudes aprobadas.');
             }
+
+            // Si hay selección mixta, crear múltiples órdenes por proveedor
+            if ($hasMixedSelection) {
+                return $this->createMixedSelectionOrders($request, $purchaseRequest);
+            }
             
             // Verificar que no exista una orden para esta solicitud
             $existingOrder = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->exists();
@@ -248,21 +254,6 @@ class PurchaseOrdersController extends Controller
                 
                 // Usar prefijo especial para servicios
                 $orderNumber = 'ORD-SV-' . str_pad($purchaseRequest->id, 4, '0', STR_PAD_LEFT);
-            } elseif ($hasMixedSelection && !$providerId) {
-                // Crear o usar proveedor especial para selecciones mixtas
-                $mixedProvider = \App\Models\Proveedor::firstOrCreate([
-                    'nombre' => 'Selección Mixta de Proveedores',
-                    'nit' => 'MIXTA-000'
-                ], [
-                    'email' => 'mixta@proveedores.com',
-                    'direccion' => 'Múltiples proveedores',
-                    'telefono' => '000-000-0000',
-                    'persona_contacto' => 'Ver detalles de la orden',
-                    'ciudad' => 'Múltiples ciudades',
-                    'servicio_producto' => 'Selección Mixta'
-                ]);
-                $providerId = $mixedProvider->id;
-                $orderNumber = 'OC-' . date('Ym') . '-' . str_pad(PurchaseOrder::count() + 1, 3, '0', STR_PAD_LEFT);
             } else {
                 // Para cotizaciones normales
                 $orderNumber = 'OC-' . date('Ym') . '-' . str_pad(PurchaseOrder::count() + 1, 3, '0', STR_PAD_LEFT);
@@ -353,8 +344,8 @@ class PurchaseOrdersController extends Controller
      */
     public function edit(PurchaseOrder $purchaseOrder)
     {
-        // Solo administradores pueden editar órdenes de compra
-        if (!auth()->user()->hasRole('admin')) {
+        // Solo administradores y personal de compras pueden editar órdenes de compra
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
             return redirect()->route('purchase-orders.index')
                 ->with('error', 'No tienes permisos para editar órdenes de compra.');
         }
@@ -373,8 +364,8 @@ class PurchaseOrdersController extends Controller
      */
     public function update(Request $request, PurchaseOrder $purchaseOrder)
     {
-        // Solo administradores pueden actualizar órdenes de compra
-        if (!auth()->user()->hasRole('admin')) {
+        // Solo administradores y personal de compras pueden actualizar órdenes de compra
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
             return redirect()->route('purchase-orders.index')
                 ->with('error', 'No tienes permisos para editar órdenes de compra.');
         }
@@ -877,8 +868,8 @@ class PurchaseOrdersController extends Controller
      */
     public function destroy(PurchaseOrder $purchaseOrder)
     {
-        // Solo administradores pueden eliminar órdenes de compra
-        if (!auth()->user()->hasRole('admin')) {
+        // Solo administradores y personal de compras pueden eliminar órdenes de compra
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
             return redirect()->route('purchase-orders.index')
                 ->with('error', 'No tienes permisos para eliminar órdenes de compra.');
         }
@@ -939,8 +930,8 @@ class PurchaseOrdersController extends Controller
      */
     public function editPdf(PurchaseOrder $purchaseOrder)
     {
-        // Verificar que el usuario sea administrador
-        if (!auth()->user()->hasRole('admin')) {
+        // Verificar que el usuario sea administrador o personal de compras
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
             abort(403, 'No tienes permisos para editar PDFs de órdenes de compra.');
         }
 
@@ -956,7 +947,10 @@ class PurchaseOrdersController extends Controller
         // Usar el alias 'order' para compatibilidad con la vista
         $order = $purchaseOrder;
 
-        return view('purchase-orders.edit-pdf-new', compact('order'));
+        // Obtener opciones de presupuesto
+        $budgetOptions = BudgetHelper::getBudgetOptions();
+
+        return view('purchase-orders.edit-pdf-new', compact('order', 'budgetOptions'));
     }
 
     /**
@@ -965,8 +959,8 @@ class PurchaseOrdersController extends Controller
      */
     public function editPdfNew(PurchaseOrder $purchaseOrder)
     {
-        // Verificar que el usuario sea administrador
-        if (!auth()->user()->hasRole('admin')) {
+        // Verificar que el usuario sea administrador o personal de compras
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
             abort(403, 'No tienes permisos para editar PDFs de órdenes de compra.');
         }
 
@@ -982,7 +976,10 @@ class PurchaseOrdersController extends Controller
         // Usar el alias 'order' para compatibilidad con la vista
         $order = $purchaseOrder;
 
-        return view('purchase-orders.edit-pdf-new', compact('order'));
+        // Obtener opciones de presupuesto
+        $budgetOptions = BudgetHelper::getBudgetOptions();
+
+        return view('purchase-orders.edit-pdf-new', compact('order', 'budgetOptions'));
     }
 
     /**
@@ -990,13 +987,14 @@ class PurchaseOrdersController extends Controller
      */
     public function updatePdf(Request $request, PurchaseOrder $purchaseOrder)
     {
-        // Verificar que el usuario sea administrador
-        if (!auth()->user()->hasRole('admin')) {
+        // Verificar que el usuario sea administrador o personal de compras
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
             abort(403, 'No tienes permisos para editar PDFs de órdenes de compra.');
         }
 
         // Validar los datos de entrada
         $validator = Validator::make($request->all(), [
+            'provider_id' => 'nullable|exists:proveedors,id',
             'provider_name' => 'required|string|max:255',
             'provider_nit' => 'nullable|string|max:50',
             'provider_email' => 'nullable|email|max:255',
@@ -1006,6 +1004,7 @@ class PurchaseOrdersController extends Controller
             'delivery_address' => 'nullable|string|max:500',
             'payment_method' => 'nullable|string|max:255',
             'delivery_date' => 'nullable|date',
+            'budget' => ['nullable', 'string', 'max:255', BudgetHelper::getBudgetValidationRule()],
             'subtotal' => 'required|numeric|min:0',
             'iva_rate' => 'nullable|numeric|min:0|max:100',
             'iva_amount' => 'nullable|numeric|min:0',
@@ -1052,6 +1051,7 @@ class PurchaseOrdersController extends Controller
                 'provider_city' => $request->provider_city,
                 'delivery_address' => $request->delivery_address,
                 'payment_method' => $request->payment_method,
+                'budget' => $request->budget,
                 'iva_rate' => $request->iva_rate . '%',
                 'iva_amount' => $request->iva_amount ?? 0,
                 'ipoconsumo_rate' => $request->ipoconsumo_rate . '%',
@@ -1065,8 +1065,8 @@ class PurchaseOrdersController extends Controller
                 'edited_at' => now()->toISOString(),
             ];
 
-            // Actualizar los datos de la orden
-            $updateResult = $purchaseOrder->update([
+            // Actualizar el proveedor si se proporcionó un provider_id
+            $updateData = [
                 'delivery_date' => $request->delivery_date,
                 'subtotal' => $request->subtotal,
                 'iva_amount' => $request->iva_amount ?? 0,
@@ -1076,7 +1076,15 @@ class PurchaseOrdersController extends Controller
                 'observations' => $request->observations,
                 'pdf_custom_data' => json_encode($customData),
                 'updated_at' => now()
-            ]);
+            ];
+
+            // Si se proporcionó un provider_id, actualizar el proveedor
+            if ($request->provider_id) {
+                $updateData['provider_id'] = $request->provider_id;
+            }
+
+            // Actualizar los datos de la orden
+            $updateResult = $purchaseOrder->update($updateData);
 
             // Regenerar el PDF con los nuevos datos
             $pdfPath = $this->pdfService->generatePdf($purchaseOrder);
@@ -1118,8 +1126,8 @@ class PurchaseOrdersController extends Controller
 
     public function regeneratePdf(PurchaseOrder $purchaseOrder)
     {
-        // Verificar que el usuario sea administrador
-        if (!auth()->user()->hasRole('admin')) {
+        // Verificar que el usuario sea administrador o personal de compras
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
             return redirect()->route('purchase-orders.index')
                 ->with('error', 'No tienes permisos para regenerar órdenes de compra.');
         }
@@ -1476,5 +1484,619 @@ class PurchaseOrdersController extends Controller
             'total_taxes' => $totalTaxes,
             'applied_taxes' => $appliedTaxes
         ]);
+    }
+
+    /**
+     * Crear múltiples órdenes de compra para selección mixta de proveedores
+     */
+    private function createMixedSelectionOrders(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        Log::info('Iniciando creación de órdenes múltiples para selección mixta', [
+            'purchase_request_id' => $purchaseRequest->id,
+            'user_id' => auth()->id()
+        ]);
+
+        try {
+            DB::beginTransaction();
+            
+            // Obtener las selecciones mixtas agrupadas por proveedor
+            $itemSelections = $purchaseRequest->quotationItemSelections()->with('quotation')->get();
+            $selectionsByProvider = $itemSelections->groupBy('quotation_id');
+            
+            Log::info('Selecciones agrupadas por proveedor', [
+                'providers_count' => $selectionsByProvider->count(),
+                'total_selections' => $itemSelections->count()
+            ]);
+            
+            $createdOrders = [];
+            $orderCounter = 1;
+            
+            foreach ($selectionsByProvider as $quotationId => $providerSelections) {
+                $quotation = $providerSelections->first()->quotation;
+                
+                // Buscar o crear proveedor basado en el nombre de la cotización
+                $provider = \App\Models\Proveedor::where('nombre', $quotation->provider_name)->first();
+                
+                if (!$provider) {
+                    $provider = \App\Models\Proveedor::create([
+                        'nombre' => $quotation->provider_name,
+                        'email' => $quotation->provider_email ?? 'proveedor@contacto.com',
+                        'telefono' => $quotation->provider_phone ?? '000-000-0000',
+                        'direccion' => 'Por definir',
+                        'persona_contacto' => 'Por asignar',
+                        'nit' => $quotation->provider_nit ?? '000000000-0'
+                    ]);
+                }
+                
+                // Calcular total para este proveedor
+                $totalAmount = $providerSelections->sum('total_price');
+                
+                // Calcular IVA correctamente - para selecciones mixtas asumimos que los precios ya incluyen IVA
+                $includesIva = true;
+                $subtotal = round($totalAmount / 1.19, 2); // Calcular subtotal sin IVA
+                $ivaAmount = round($totalAmount - $subtotal, 2); // Calcular IVA
+                
+                // Generar número de orden único para este proveedor
+                $orderNumber = 'OC-' . date('Ym') . '-' . str_pad(PurchaseOrder::count() + $orderCounter, 3, '0', STR_PAD_LEFT);
+                
+                // Preparar observaciones específicas para este proveedor
+                $observations = $request->observations ?? '';
+                $providerObservations = 'Orden para proveedor: ' . $quotation->provider_name;
+                if ($observations) {
+                    $providerObservations .= ' | ' . $observations;
+                }
+                
+                Log::info('Creando orden individual para proveedor', [
+                    'provider_name' => $quotation->provider_name,
+                    'provider_id' => $provider->id,
+                    'order_number' => $orderNumber,
+                    'total_amount' => $totalAmount,
+                    'items_count' => $providerSelections->count()
+                ]);
+                
+                // Crear orden de compra individual para este proveedor
+                $order = PurchaseOrder::create([
+                    'order_number' => $orderNumber,
+                    'purchase_request_id' => $purchaseRequest->id,
+                    'provider_id' => $provider->id,
+                    'user_id' => auth()->id(),
+                    'created_by' => auth()->id(),
+                    'order_date' => $request->order_date ?? now()->toDateString(),
+                    'payment_terms' => $request->payment_terms ?? $quotation->payment_terms ?? 'Contado',
+                    'delivery_date' => $request->delivery_date ?? now()->addDays(15),
+                    'observations' => $providerObservations,
+                    'total_amount' => $totalAmount,
+                    'file_path' => 'pending_generation',
+                    'status' => 'pending',
+                    'additional_items' => [],
+                    'includes_iva' => $includesIva,
+                    'subtotal' => $subtotal,
+                    'iva_amount' => $ivaAmount,
+                ]);
+                
+                // Generar PDF específico para este proveedor
+                $pdfService = app(PurchaseOrderPdfService::class);
+                $pdfPath = $pdfService->generatePdf($order, $providerSelections);
+                
+                // Actualizar la ruta del archivo
+                $order->update(['file_path' => $pdfPath]);
+                
+                $createdOrders[] = $order;
+                $orderCounter++;
+                
+                Log::info('Orden individual creada exitosamente', [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'provider' => $quotation->provider_name
+                ]);
+            }
+            
+            DB::commit();
+            
+            Log::info('Todas las órdenes de selección mixta creadas exitosamente', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'orders_created' => count($createdOrders),
+                'order_ids' => array_column($createdOrders, 'id')
+            ]);
+            
+            // Redirigir a la lista con mensaje de éxito
+            $orderCount = count($createdOrders);
+            return redirect()->route('purchase-orders.index')
+                ->with('success', "Se crearon exitosamente {$orderCount} órdenes de compra para los diferentes proveedores de la selección mixta.");
+                
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            Log::error('Error al crear órdenes de selección mixta', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'Error al crear las órdenes de compra: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Separar una orden mixta creando una nueva orden para un proveedor específico
+     */
+    public function separateMixedOrder(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        // Verificar que el usuario sea administrador o personal de compras
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
+            abort(403, 'No tienes permisos para separar órdenes de compra.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $quotationId = $request->quotation_id;
+            $providerName = $request->provider_name;
+
+            Log::info('Iniciando separación de orden mixta', [
+                'original_order_id' => $purchaseOrder->id,
+                'quotation_id' => $quotationId,
+                'provider_name' => $providerName
+            ]);
+
+            // Obtener las selecciones del proveedor específico
+            $providerSelections = $purchaseOrder->purchaseRequest
+                ->quotationItemSelections()
+                ->where('quotation_id', $quotationId)
+                ->with('quotation')
+                ->get();
+
+            if ($providerSelections->isEmpty()) {
+                throw new \Exception('No se encontraron items para este proveedor.');
+            }
+
+            // Buscar o crear el proveedor
+            $provider = \App\Models\Proveedor::where('nombre', $providerName)->first();
+            if (!$provider) {
+                $quotation = $providerSelections->first()->quotation;
+                $provider = \App\Models\Proveedor::create([
+                    'nombre' => $providerName,
+                    'email' => $quotation->provider_email ?? 'proveedor@contacto.com',
+                    'telefono' => $quotation->provider_phone ?? '000-000-0000',
+                    'direccion' => 'Por definir',
+                    'persona_contacto' => 'Por asignar',
+                    'nit' => $quotation->provider_nit ?? '000000000-0'
+                ]);
+            }
+
+            // Calcular totales para la nueva orden
+            $totalAmount = $providerSelections->sum('total_price');
+            $includesIva = true;
+            $subtotal = round($totalAmount / 1.19, 2);
+            $ivaAmount = round($totalAmount - $subtotal, 2);
+
+            // Generar número de orden único
+            $orderNumber = 'OC-' . date('Ym') . '-' . str_pad(PurchaseOrder::count() + 1, 3, '0', STR_PAD_LEFT);
+
+            // Crear la nueva orden
+            $newOrder = PurchaseOrder::create([
+                'order_number' => $orderNumber,
+                'purchase_request_id' => $purchaseOrder->purchase_request_id,
+                'provider_id' => $provider->id,
+                'user_id' => auth()->id(),
+                'created_by' => auth()->id(),
+                'order_date' => now()->toDateString(),
+                'payment_terms' => $purchaseOrder->payment_terms ?? 'Contado',
+                'delivery_date' => $purchaseOrder->delivery_date ?? now()->addDays(15),
+                'observations' => "Orden separada de {$purchaseOrder->order_number} - Proveedor: {$providerName}",
+                'total_amount' => $totalAmount,
+                'file_path' => 'pending_generation',
+                'status' => 'pending',
+                'additional_items' => [],
+                'includes_iva' => $includesIva,
+                'subtotal' => $subtotal,
+                'iva_amount' => $ivaAmount,
+            ]);
+
+            // Generar PDF para la nueva orden
+            $pdfService = app(PurchaseOrderPdfService::class);
+            $pdfPath = $pdfService->generatePdf($newOrder, $providerSelections);
+            $newOrder->update(['file_path' => $pdfPath]);
+
+            DB::commit();
+
+            Log::info('Orden separada creada exitosamente', [
+                'original_order_id' => $purchaseOrder->id,
+                'new_order_id' => $newOrder->id,
+                'new_order_number' => $newOrder->order_number,
+                'provider' => $providerName
+            ]);
+
+            return redirect()->route('purchase-orders.show', $newOrder->id)
+                ->with('success', "Se creó exitosamente la orden separada {$newOrder->order_number} para el proveedor {$providerName}.");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            Log::error('Error al separar orden mixta', [
+                'order_id' => $purchaseOrder->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Error al separar la orden: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remover items de un proveedor específico de una orden mixta
+     */
+    public function removeProviderItems(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        // Verificar que el usuario sea administrador o personal de compras
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
+            abort(403, 'No tienes permisos para modificar órdenes de compra.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $quotationId = $request->quotation_id;
+            $providerName = $request->provider_name;
+
+            Log::info('Removiendo items de proveedor de orden mixta', [
+                'order_id' => $purchaseOrder->id,
+                'quotation_id' => $quotationId,
+                'provider_name' => $providerName
+            ]);
+
+            // Obtener las selecciones del proveedor específico
+            $providerSelections = $purchaseOrder->purchaseRequest
+                ->quotationItemSelections()
+                ->where('quotation_id', $quotationId)
+                ->get();
+
+            if ($providerSelections->isEmpty()) {
+                throw new \Exception('No se encontraron items para este proveedor.');
+            }
+
+            $totalToRemove = $providerSelections->sum('total_price');
+
+            // Eliminar las selecciones del proveedor
+            $purchaseOrder->purchaseRequest
+                ->quotationItemSelections()
+                ->where('quotation_id', $quotationId)
+                ->delete();
+
+            // Recalcular totales de la orden original
+            $remainingSelections = $purchaseOrder->purchaseRequest
+                ->quotationItemSelections()
+                ->get();
+
+            if ($remainingSelections->isEmpty()) {
+                // Si no quedan items, eliminar la orden
+                $purchaseOrder->delete();
+                
+                DB::commit();
+                
+                return redirect()->route('purchase-orders.index')
+                    ->with('success', 'Todos los items fueron removidos. La orden ha sido eliminada.');
+            } else {
+                // Recalcular totales
+                $newTotal = $remainingSelections->sum('total_price');
+                $newSubtotal = round($newTotal / 1.19, 2);
+                $newIvaAmount = round($newTotal - $newSubtotal, 2);
+
+                // Actualizar la orden
+                $purchaseOrder->update([
+                    'total_amount' => $newTotal,
+                    'subtotal' => $newSubtotal,
+                    'iva_amount' => $newIvaAmount,
+                    'observations' => ($purchaseOrder->observations ?? '') . " | Items de {$providerName} removidos"
+                ]);
+
+                // Regenerar PDF
+                $pdfService = app(PurchaseOrderPdfService::class);
+                $pdfPath = $pdfService->generatePdf($purchaseOrder);
+                $purchaseOrder->update(['file_path' => $pdfPath]);
+            }
+
+            DB::commit();
+
+            Log::info('Items de proveedor removidos exitosamente', [
+                'order_id' => $purchaseOrder->id,
+                'provider' => $providerName,
+                'amount_removed' => $totalToRemove,
+                'remaining_total' => $purchaseOrder->total_amount ?? 0
+            ]);
+
+            return redirect()->back()
+                ->with('success', "Se removieron exitosamente los items de {$providerName} de la orden.");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            Log::error('Error al remover items de proveedor', [
+                'order_id' => $purchaseOrder->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Error al remover los items: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Crear una orden alternativa basada en una cotización diferente
+     */
+    public function createAlternativeOrder(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        // Verificar que el usuario sea administrador o personal de compras
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
+            abort(403, 'No tienes permisos para crear órdenes alternativas.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $quotationId = $request->quotation_id;
+            $providerName = $request->provider_name;
+
+            Log::info('Creando orden alternativa', [
+                'original_order_id' => $purchaseOrder->id,
+                'quotation_id' => $quotationId,
+                'provider_name' => $providerName
+            ]);
+
+            // Verificar que la cotización existe y pertenece a la misma solicitud
+            $quotation = \App\Models\Quotation::with(['items', 'purchaseRequest'])
+                ->where('id', $quotationId)
+                ->where('purchase_request_id', $purchaseOrder->purchase_request_id)
+                ->first();
+
+            if (!$quotation) {
+                throw new \Exception('La cotización especificada no existe o no pertenece a esta solicitud.');
+            }
+
+            // Buscar o crear el proveedor
+            $provider = \App\Models\Proveedor::where('nombre', $providerName)->first();
+            if (!$provider) {
+                $provider = \App\Models\Proveedor::create([
+                    'nombre' => $providerName,
+                    'email' => $quotation->provider_email ?? 'proveedor@contacto.com',
+                    'telefono' => $quotation->provider_phone ?? '000-000-0000',
+                    'direccion' => $quotation->provider_address ?? 'Por definir',
+                    'persona_contacto' => 'Por asignar',
+                    'nit' => $quotation->provider_nit ?? '000000000-0'
+                ]);
+            }
+
+            // Calcular totales basados en la cotización
+            $totalAmount = $quotation->total_amount;
+            $includesIva = $quotation->includes_iva ?? true;
+            
+            if ($includesIva) {
+                $subtotal = round($totalAmount / 1.19, 2);
+                $ivaAmount = round($totalAmount - $subtotal, 2);
+            } else {
+                $subtotal = $totalAmount;
+                $ivaAmount = round($totalAmount * 0.19, 2);
+                $totalAmount = $subtotal + $ivaAmount;
+            }
+
+            // Generar número de orden único
+            $orderNumber = 'ORD-' . str_pad(PurchaseOrder::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT);
+
+            // Crear la nueva orden alternativa
+            $newOrder = PurchaseOrder::create([
+                'order_number' => $orderNumber,
+                'purchase_request_id' => $purchaseOrder->purchase_request_id,
+                'provider_id' => $provider->id,
+                'user_id' => auth()->id(),
+                'created_by' => auth()->id(),
+                'order_date' => now()->toDateString(),
+                'payment_terms' => $purchaseOrder->payment_terms ?? 'Contado',
+                'delivery_date' => $purchaseOrder->delivery_date ?? now()->addDays(15),
+                'observations' => "Orden alternativa de {$purchaseOrder->order_number} - Proveedor: {$providerName}",
+                'total_amount' => $totalAmount,
+                'file_path' => 'pending_generation',
+                'status' => 'pending',
+                'additional_items' => [],
+                'includes_iva' => $includesIva,
+                'subtotal' => $subtotal,
+                'iva_amount' => $ivaAmount,
+                'selected_quotation_id' => $quotationId,
+            ]);
+
+            // Crear selecciones de items basadas en la cotización
+            foreach ($quotation->items as $item) {
+                \App\Models\QuotationItemSelection::create([
+                    'purchase_request_id' => $purchaseOrder->purchase_request_id,
+                    'quotation_id' => $quotationId,
+                    'item_description' => $item->description,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'total_price' => $item->total_price,
+                    'selected_by' => auth()->id(),
+                    'selected_at' => now(),
+                ]);
+            }
+
+            // Generar PDF para la nueva orden
+            $pdfService = app(PurchaseOrderPdfService::class);
+            $pdfPath = $pdfService->generatePdf($newOrder);
+            $newOrder->update(['file_path' => $pdfPath]);
+
+            DB::commit();
+
+            Log::info('Orden alternativa creada exitosamente', [
+                'original_order_id' => $purchaseOrder->id,
+                'new_order_id' => $newOrder->id,
+                'new_order_number' => $newOrder->order_number,
+                'provider' => $providerName,
+                'total_amount' => $totalAmount
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Se creó exitosamente la orden alternativa {$newOrder->order_number} para el proveedor {$providerName}.",
+                'new_order_number' => $newOrder->order_number,
+                'redirect_url' => route('purchase-orders.show', $newOrder->id)
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            Log::error('Error al crear orden alternativa', [
+                'order_id' => $purchaseOrder->id,
+                'quotation_id' => $quotationId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear la orden alternativa: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Revertir una orden de compra a selección múltiple
+     */
+    public function revertToMixedSelection(PurchaseOrder $purchaseOrder)
+    {
+        // Verificar que el usuario sea administrador o personal de compras
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
+            abort(403, 'No tienes permisos para revertir órdenes de compra.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            Log::info('Iniciando reversión de orden a selección múltiple', [
+                'order_id' => $purchaseOrder->id,
+                'order_number' => $purchaseOrder->order_number,
+                'purchase_request_id' => $purchaseOrder->purchase_request_id,
+                'user_id' => auth()->id()
+            ]);
+
+            // Verificar que la orden tenga cotizaciones alternativas
+            $purchaseRequest = $purchaseOrder->purchaseRequest;
+            $allQuotations = $purchaseRequest->quotations()->count();
+            
+            if ($allQuotations < 2) {
+                throw new \Exception('Esta orden no tiene cotizaciones alternativas disponibles para revertir.');
+            }
+
+            // Verificar que no sea una orden mixta (sería contradictorio revertirla)
+            $isMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
+            if ($isMixedSelection) {
+                throw new \Exception('Esta orden ya es una selección mixta. No se puede revertir.');
+            }
+
+            // Guardar información para el log
+            $originalOrderData = [
+                'order_number' => $purchaseOrder->order_number,
+                'provider_name' => $purchaseOrder->provider->nombre ?? 'N/A',
+                'total_amount' => $purchaseOrder->total_amount,
+                'selected_quotation_id' => $purchaseOrder->selected_quotation_id
+            ];
+
+            // Restaurar el estado de la solicitud de compra
+            $purchaseRequest->update([
+                'selected_quotation_id' => null,
+                'status' => 'approved', // Volver al estado aprobado pero sin selección
+                'selection_notes' => ($purchaseRequest->selection_notes ?? '') . 
+                    "\n[" . now()->format('Y-m-d H:i:s') . "] Orden {$purchaseOrder->order_number} revertida por " . auth()->user()->name
+            ]);
+
+            // Eliminar la orden de compra actual
+            $purchaseOrder->update([
+                'observations' => ($purchaseOrder->observations ?? '') . 
+                    "\n[REVERTIDA] Esta orden fue revertida a selección múltiple el " . now()->format('Y-m-d H:i:s') . " por " . auth()->user()->name
+            ]);
+            
+            // Soft delete de la orden
+            $purchaseOrder->delete();
+
+            DB::commit();
+
+            Log::info('Orden revertida exitosamente a selección múltiple', [
+                'original_order_data' => $originalOrderData,
+                'purchase_request_id' => $purchaseRequest->id,
+                'quotations_available' => $allQuotations,
+                'reverted_by' => auth()->user()->name,
+                'reverted_at' => now()->toDateTimeString()
+            ]);
+
+            return redirect()->route('purchase-requests.show', $purchaseRequest->id)
+                ->with('success', 
+                    "La orden {$originalOrderData['order_number']} ha sido revertida exitosamente. " .
+                    "Ahora puede realizar una nueva selección múltiple entre los {$allQuotations} proveedores disponibles."
+                );
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            Log::error('Error al revertir orden a selección múltiple', [
+                'order_id' => $purchaseOrder->id,
+                'purchase_request_id' => $purchaseOrder->purchase_request_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Error al revertir la orden: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Marcar/desmarcar una orden de compra como vista (solo contabilidad/tesorería/admin)
+     */
+    public function toggleViewed(PurchaseOrder $purchaseOrder)
+    {
+        // Verificar permisos: admin o usuarios específicos de contabilidad/tesorería
+        $allowedEmails = [
+            'asistentecontabilidad@tvs.edu.co',
+            'contabilidad@tvs.edu.co',
+            'tesoreria@tvs.edu.co'
+        ];
+        
+        if (!auth()->user()->hasRole('admin') && !in_array(auth()->user()->email, $allowedEmails)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para marcar órdenes como vistas.'
+            ], 403);
+        }
+
+        try {
+            // Toggle del estado visto
+            $newViewedStatus = !$purchaseOrder->is_viewed;
+            
+            $purchaseOrder->update([
+                'is_viewed' => $newViewedStatus,
+                'viewed_by' => $newViewedStatus ? auth()->id() : null,
+                'viewed_at' => $newViewedStatus ? now() : null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'is_viewed' => $newViewedStatus,
+                'message' => $newViewedStatus ? 'Orden marcada como vista' : 'Orden desmarcada como vista',
+                'viewed_by' => $newViewedStatus ? auth()->user()->name : null,
+                'viewed_at' => $newViewedStatus ? $purchaseOrder->viewed_at->format('d/m/Y H:i') : null
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error al cambiar estado visto de orden', [
+                'order_id' => $purchaseOrder->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar el estado de la orden.'
+            ], 500);
+        }
     }
 }

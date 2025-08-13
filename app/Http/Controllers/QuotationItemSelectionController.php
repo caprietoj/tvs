@@ -16,10 +16,26 @@ class QuotationItemSelectionController extends Controller
      */
     public function show(PurchaseRequest $purchaseRequest)
     {
-        // Verificar que la solicitud no esté ya aprobada
-        if ($purchaseRequest->status === 'approved') {
+        // Verificar el estado de la solicitud y órdenes de compra
+        $hasActivePurchaseOrders = $purchaseRequest->purchaseOrders()->whereNull('deleted_at')->exists();
+        $hasDeletedOrdersOnly = $purchaseRequest->purchaseOrders()->onlyTrashed()->exists() && !$hasActivePurchaseOrders;
+        
+        // Verificar que la solicitud permita selección mixta
+        if ($purchaseRequest->status === 'approved' && $hasActivePurchaseOrders) {
             return redirect()->route('purchase-requests.show', $purchaseRequest)
-                ->with('error', 'No se puede realizar la selección mixta porque la solicitud ya está aprobada.');
+                ->with('error', 'No se puede realizar la selección mixta porque la solicitud ya tiene órdenes de compra generadas.');
+        }
+        
+        // Permitir selección mixta si la solicitud está aprobada pero solo tiene órdenes eliminadas (reversión)
+        if ($purchaseRequest->status === 'approved' && $hasDeletedOrdersOnly) {
+            // Esto es válido - una orden fue revertida y se permite nueva selección
+            session()->flash('info', 'Realizando nueva selección después de revertir orden anterior.');
+        }
+        
+        // Bloquear si está en un estado no válido para selección
+        if (!in_array($purchaseRequest->status, ['pending_selection', 'approved'])) {
+            return redirect()->route('purchase-requests.show', $purchaseRequest)
+                ->with('error', 'No se puede realizar la selección mixta en el estado actual de la solicitud.');
         }
         
         // Verificar que la solicitud tenga cotizaciones
@@ -116,11 +132,14 @@ class QuotationItemSelectionController extends Controller
 
         $purchaseRequest = PurchaseRequest::findOrFail($request->purchase_request_id);
         
-        // Verificar que la solicitud no esté ya aprobada
-        if ($purchaseRequest->status === 'approved') {
+        // Verificar el estado de la solicitud y órdenes de compra
+        $hasActivePurchaseOrders = $purchaseRequest->purchaseOrders()->whereNull('deleted_at')->exists();
+        
+        // Verificar que la solicitud permita selección mixta
+        if ($purchaseRequest->status === 'approved' && $hasActivePurchaseOrders) {
             return response()->json([
                 'success' => false,
-                'message' => 'No se puede realizar la selección porque la solicitud ya está aprobada.'
+                'message' => 'No se puede realizar la selección porque la solicitud ya tiene órdenes de compra generadas.'
             ], 403);
         }
         
@@ -251,11 +270,14 @@ class QuotationItemSelectionController extends Controller
 
         $purchaseRequest = PurchaseRequest::findOrFail($request->purchase_request_id);
         
-        // Verificar que la solicitud no esté ya aprobada
-        if ($purchaseRequest->status === 'approved') {
+        // Verificar el estado de la solicitud y órdenes de compra
+        $hasActivePurchaseOrders = $purchaseRequest->purchaseOrders()->whereNull('deleted_at')->exists();
+        
+        // Verificar que la solicitud permita selección mixta
+        if ($purchaseRequest->status === 'approved' && $hasActivePurchaseOrders) {
             return response()->json([
                 'success' => false,
-                'message' => 'No se puede eliminar la selección porque la solicitud ya está aprobada.'
+                'message' => 'No se puede eliminar la selección porque la solicitud ya tiene órdenes de compra generadas.'
             ], 403);
         }
 

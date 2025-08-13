@@ -48,7 +48,6 @@
                     cuando se realizaron más copias de las originalmente solicitadas. Los cambios quedarán registrados en el historial.
                 </div>
                 @endif
-
                 <!-- Datos del usuario -->
                 <table class="table table-bordered mb-4">
                     <tr>
@@ -373,9 +372,9 @@
                                             <label class="font-weight-bold">
                                                 <i class="fas fa-paperclip mr-2"></i>
                                                 @if($purchaseRequest->attached_files && count($purchaseRequest->attached_files) > 0)
-                                                    Reemplazar Archivos - Archivo #1 (PDF, DOC, DOCX, JPG, PNG - Máx. 20MB)
+                                                    Reemplazar Archivos - Archivo #1 (PDF, DOC, DOCX, JPG, PNG - Máx. 512MB)
                                                 @else
-                                                    Archivo Original #1 (PDF, DOC, DOCX, JPG, PNG - Máx. 20MB)
+                                                    Archivo Original #1 (PDF, DOC, DOCX, JPG, PNG - Máx. 512MB)
                                                 @endif
                                             </label>
                                             <div class="input-group">
@@ -629,7 +628,7 @@
                 <div class="attached-file-row" data-index="${newIndex}">
                     <div class="form-group">
                         <label class="font-weight-bold">
-                            <i class="fas fa-paperclip mr-2"></i>Archivo Original #${currentFiles + 1} (PDF, DOC, DOCX, JPG, PNG - Máx. 20MB)
+                            <i class="fas fa-paperclip mr-2"></i>Archivo Original #${currentFiles + 1} (PDF, DOC, DOCX, JPG, PNG - Máx. 512MB)
                         </label>
                         <div class="input-group">
                             <div class="custom-file">
@@ -665,7 +664,7 @@
         function updateFileLabels() {
             $('.attached-file-row').each(function(index) {
                 $(this).find('label').html(`
-                    <i class="fas fa-paperclip mr-2"></i>Archivo Original #${index + 1} (PDF, DOC, DOCX, JPG, PNG - Máx. 20MB)
+                    <i class="fas fa-paperclip mr-2"></i>Archivo Original #${index + 1} (PDF, DOC, DOCX, JPG, PNG - Máx. 512MB)
                 `);
             });
         }
