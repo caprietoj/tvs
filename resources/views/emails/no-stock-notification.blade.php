@@ -87,6 +87,8 @@
                         <tr>
                             <th>Artículo</th>
                             <th>Cantidad solicitada</th>
+                            <th>Stock disponible</th>
+                            <th>Estado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -94,6 +96,14 @@
                         <tr>
                             <td>{{ $item['article'] }}</td>
                             <td>{{ $item['quantity'] }}</td>
+                            <td>{{ $item['available'] ?? 0 }}</td>
+                            <td>
+                                @if(($item['available'] ?? 0) == 0)
+                                    <span style="color: #dc3545; font-weight: bold;">Sin stock</span>
+                                @else
+                                    <span style="color: #ffc107; font-weight: bold;">Stock insuficiente</span>
+                                @endif
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>

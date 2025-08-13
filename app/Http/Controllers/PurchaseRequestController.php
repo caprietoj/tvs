@@ -590,27 +590,55 @@ class PurchaseRequestController extends Controller
     ->withInput();
     }
 
-    // Verificar stock de productos solicitados
+    // Verificar stock de productos solicitados y separar disponibles de no disponibles
     $outOfStockItems = [];
+    $availableItems = [];
+    $noStockItems = []; // Productos con stock = 0
     
     if (isset($request->material_items) && is_array($request->material_items)) {
         foreach ($request->material_items as $item) {
             if (!empty($item['article']) && !empty($item['quantity'])) {
                 $inventoryItem = \App\Models\InventoryItem::where('producto', $item['article'])->first();
                 
-                // Verificar si el producto existe y si hay suficiente stock
-                if (!$inventoryItem || $inventoryItem->stock < $item['quantity']) {
+                if (!$inventoryItem) {
+                    // Producto no existe en inventario
                     $outOfStockItems[] = [
                         'article' => $item['article'],
                         'quantity' => $item['quantity'],
-                        'available' => $inventoryItem ? $inventoryItem->stock : 0
+                        'available' => 0,
+                        'reason' => 'No existe en inventario'
                     ];
+                } elseif ($inventoryItem->stock == 0) {
+                    // Stock igual a 0
+                    $noStockItems[] = [
+                        'article' => $item['article'],
+                        'quantity' => $item['quantity'],
+                        'available' => 0,
+                        'reason' => 'Sin stock disponible'
+                    ];
+                    $outOfStockItems[] = [
+                        'article' => $item['article'],
+                        'quantity' => $item['quantity'],
+                        'available' => 0,
+                        'reason' => 'Sin stock disponible'
+                    ];
+                } elseif ($inventoryItem->stock < $item['quantity']) {
+                    // Stock insuficiente
+                    $outOfStockItems[] = [
+                        'article' => $item['article'],
+                        'quantity' => $item['quantity'],
+                        'available' => $inventoryItem->stock,
+                        'reason' => 'Stock insuficiente'
+                    ];
+                } else {
+                    // Stock suficiente - producto disponible
+                    $availableItems[] = $item;
                 }
             }
         }
     }
     
-    // Si hay productos sin stock, enviar correo de notificación
+    // Si hay productos sin stock, enviar correo y manejar según el caso
     if (!empty($outOfStockItems)) {
         try {
             $userEmail = \App\Services\EmailTestModeService::interceptEmail(auth()->user()->email);
@@ -620,13 +648,34 @@ class PurchaseRequestController extends Controller
             
             \Log::info('Email de notificación de productos sin stock enviado a: ' . $userEmail . ' (original: ' . auth()->user()->email . ')');
             
-            return redirect()->route('purchase-requests.create-materials')
-                ->with('warning', 'Algunos productos solicitados no tienen stock suficiente. Se ha enviado un correo con los detalles.')
-                ->withInput();
-                
         } catch (\Exception $e) {
             \Log::error('Error al enviar email de notificación de stock: ' . $e->getMessage());
-            // Continuar con la creación de la solicitud
+        }
+        
+        // Si hay productos disponibles, crear solicitud solo con esos productos
+        if (!empty($availableItems)) {
+            // Actualizar los material_items para incluir solo productos disponibles
+            $request->merge(['material_items' => $availableItems]);
+            
+            // Preparar información de productos sin stock para el modal
+            $outOfStockInfo = [];
+            foreach ($outOfStockItems as $item) {
+                $outOfStockInfo[] = $item['article'] . ' (solicitado: ' . $item['quantity'] . ', disponible: ' . $item['available'] . ')';
+            }
+            
+            // Continuar con la creación de la solicitud solo para productos disponibles
+            // Los productos sin stock se informarán en un modal de éxito
+        } else {
+            // No hay productos disponibles, retornar con error y modal
+            $outOfStockInfo = [];
+            foreach ($outOfStockItems as $item) {
+                $outOfStockInfo[] = $item['article'] . ' (' . $item['reason'] . ')';
+            }
+            
+            return redirect()->route('purchase-requests.create-materials')
+                ->with('out_of_stock_error', $outOfStockInfo)
+                ->with('error', 'No se pudo procesar la solicitud. Ninguno de los productos solicitados tiene stock disponible.')
+                ->withInput();
         }
     }
 
@@ -634,7 +683,7 @@ class PurchaseRequestController extends Controller
     \DB::beginTransaction();
     
     try {
-        // Crear la solicitud de materiales
+        // Crear la solicitud de materiales solo con productos disponibles
         $materialsRequest = PurchaseRequest::create([
             'type' => 'materials',
             'user_id' => Auth::id(),
@@ -644,7 +693,7 @@ class PurchaseRequestController extends Controller
             'section' => $request->section,
             'section_area' => $request->section, // También se guarda en section_area para consistencia
             'delivery_date' => $request->delivery_date,
-            'material_items' => $request->material_items,
+            'material_items' => $request->material_items, // Ahora solo contiene productos disponibles
             'status' => 'pending',
         ]);
         
@@ -723,6 +772,19 @@ class PurchaseRequestController extends Controller
         } else {
             $totalMaterials = $materialsRequest->getTotalMaterialsQuantity();
             $message .= " (Total: {$totalMaterials} materiales > 15 - Requiere aprobación manual)";
+        }
+        
+        // Si había productos sin stock, incluir información en el éxito
+        if (!empty($outOfStockItems)) {
+            $outOfStockInfo = [];
+            foreach ($outOfStockItems as $item) {
+                $outOfStockInfo[] = $item['article'] . ' (solicitado: ' . $item['quantity'] . ', disponible: ' . $item['available'] . ')';
+            }
+            
+            return redirect()->route('purchase-requests.index')
+                ->with('success', $message)
+                ->with('out_of_stock_warning', $outOfStockInfo)
+                ->with('partial_success', true);
         }
         
         return redirect()->route('purchase-requests.index')

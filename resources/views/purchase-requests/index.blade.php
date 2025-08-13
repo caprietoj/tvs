@@ -21,6 +21,12 @@
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     {{ session('success') }}
+                    @if(session('partial_success') && session('out_of_stock_warning'))
+                        <br><br>
+                        <button type="button" class="btn btn-warning btn-sm" id="showPartialSuccessModal">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>Ver productos sin stock
+                        </button>
+                    @endif
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -34,6 +40,51 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
+            @endif
+
+            <!-- Modal para éxito parcial -->
+            @if(session('partial_success') && session('out_of_stock_warning'))
+            <div class="modal fade" id="partialSuccessModal" tabindex="-1" role="dialog" aria-labelledby="partialSuccessModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #ffc107; color: #212529;">
+                            <h5 class="modal-title" id="partialSuccessModalLabel">
+                                <i class="fas fa-check-circle mr-2"></i>Solicitud Creada con Productos Excluidos
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-success">
+                                <i class="fas fa-check mr-2"></i>
+                                <strong>¡Solicitud creada exitosamente!</strong> Se guardaron únicamente los productos con stock disponible.
+                            </div>
+                            <div class="alert alert-warning">
+                                <strong>Los siguientes productos fueron excluidos por falta de stock:</strong>
+                            </div>
+                            <ul class="list-group mb-3">
+                                @foreach(session('out_of_stock_warning') as $item)
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><strong>{{ $item }}</strong></span>
+                                    <span class="badge badge-warning badge-pill">Sin Stock</span>
+                                </li>
+                                @endforeach
+                            </ul>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <strong>Recomendación:</strong> Para obtener estos productos, deberá crear una Solicitud de Compra siguiendo el procedimiento establecido.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                            <a href="{{ route('purchase-requests.create-purchase') }}" class="btn btn-primary">
+                                <i class="fas fa-shopping-cart mr-2"></i>Crear Solicitud de Compra
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
             @endif
 
             <!-- Filtros -->
@@ -442,6 +493,18 @@
             html: true,
             container: 'body'
         });
+        
+        // Manejar modal de éxito parcial
+        $('#showPartialSuccessModal').on('click', function() {
+            $('#partialSuccessModal').modal('show');
+        });
+        
+        // Si hay un éxito parcial, mostrar automáticamente después de 2 segundos
+        @if(session('partial_success'))
+            setTimeout(function() {
+                $('#partialSuccessModal').modal('show');
+            }, 2000);
+        @endif
     });
 </script>
 @stop
