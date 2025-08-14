@@ -174,6 +174,28 @@
                                 </div>
                             </div>
                         </div>
+                        <hr>
+                        <div class="d-flex align-items-center" id="electronic-resources-section" style="{{ $space->is_library ? '' : 'display: none;' }}">
+                            <div class="mr-3 text-success">
+                                <i class="fas fa-laptop fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1">Recursos Electrónicos</h5>
+                                <p class="text-muted mb-2">Recursos electrónicos disponibles para este espacio (solo visible si es espacio de biblioteca)</p>
+                                <div class="custom-control custom-switch mb-2">
+                                    <input type="hidden" name="has_electronic_resources" value="0">
+                                    <input type="checkbox" class="custom-control-input" id="has_electronic_resources" name="has_electronic_resources" value="1"
+                                           {{ $space->electronic_resources ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="has_electronic_resources">
+                                        <span class="text-success">Activar Recursos Electrónicos</span>
+                                    </label>
+                                </div>
+                                <div id="electronic-resources-container" style="{{ $space->electronic_resources ? '' : 'display: none;' }}">
+                                    <textarea class="form-control" id="electronic_resources" name="electronic_resources" rows="3" placeholder="Ingrese la lista de recursos electrónicos disponibles">{{ $space->electronic_resources }}</textarea>
+                                    <small class="text-muted">Separe cada recurso con una nueva línea</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -360,24 +382,56 @@
                 });
             };
 
-            // Función para manejar la visibilidad de la sección de habilidades
+            // Función para manejar la visibilidad de la sección de habilidades y recursos electrónicos
             const initLibrarySection = () => {
                 const isLibrarySwitch = document.getElementById('is_library');
                 const skillsSection = document.getElementById('skills-section');
+                const electronicResourcesSection = document.getElementById('electronic-resources-section');
                 if (!isLibrarySwitch || !skillsSection) return;
 
                 isLibrarySwitch.addEventListener('change', function() {
                     if (this.checked) {
                         skillsSection.style.display = '';
+                        if (electronicResourcesSection) {
+                            electronicResourcesSection.style.display = '';
+                        }
                     } else {
                         if (confirm('Al desactivar esta opción se eliminarán todas las habilidades asociadas al espacio. ¿Desea continuar?')) {
                             skillsSection.style.display = 'none';
+                            if (electronicResourcesSection) {
+                                electronicResourcesSection.style.display = 'none';
+                                // Desactivar recursos electrónicos si se desactiva biblioteca
+                                const hasElectronicResourcesSwitch = document.getElementById('has_electronic_resources');
+                                if (hasElectronicResourcesSwitch && hasElectronicResourcesSwitch.checked) {
+                                    hasElectronicResourcesSwitch.click();
+                                }
+                            }
                             // Limpiar todas las habilidades
                             document.querySelectorAll('.remove-skill-item').forEach(button => {
                                 if (button) button.click();
                             });
                         } else {
                             this.checked = true;
+                        }
+                    }
+                });
+            };
+
+            // Función para manejar la visibilidad de los recursos electrónicos
+            const initElectronicResourcesSection = () => {
+                const hasElectronicResourcesSwitch = document.getElementById('has_electronic_resources');
+                const electronicResourcesContainer = document.getElementById('electronic-resources-container');
+                if (!hasElectronicResourcesSwitch || !electronicResourcesContainer) return;
+
+                hasElectronicResourcesSwitch.addEventListener('change', function() {
+                    if (this.checked) {
+                        electronicResourcesContainer.style.display = '';
+                    } else {
+                        electronicResourcesContainer.style.display = 'none';
+                        // Limpiar el textarea
+                        const textarea = document.getElementById('electronic_resources');
+                        if (textarea) {
+                            textarea.value = '';
                         }
                     }
                 });
@@ -520,6 +574,7 @@
             try {
                 initImagePreview();
                 initLibrarySection();
+                initElectronicResourcesSection();
                 initSkillHandlers();
             } catch (error) {
                 console.error('Error al inicializar componentes:', error);
