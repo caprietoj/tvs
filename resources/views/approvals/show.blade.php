@@ -401,10 +401,15 @@
                         <label for="budget">Presupuesto asignado <span class="text-danger">*</span></label>
                         <select class="form-control" id="budget" name="budget" required>
                             <option value="">Seleccione un rubro presupuestal...</option>
-                            @foreach($budgetOptions as $option)
-                                <option value="{{ $option }}" {{ old('budget', $request->budget) == $option ? 'selected' : '' }}>
-                                    {{ $option }}
-                                </option>
+                            @php $budgetHierarchy = \App\Helpers\BudgetHelper::getBudgetHierarchy(); @endphp
+                            @foreach($budgetHierarchy as $section => $budgets)
+                                <optgroup label="{{ $section }}" style="font-weight: bold;">
+                                    @foreach($budgets as $budget)
+                                        <option value="{{ $budget }}" {{ old('budget', $request->budget) == $budget ? 'selected' : '' }}>
+                                            {{ $budget }}
+                                        </option>
+                                    @endforeach
+                                </optgroup>
                             @endforeach
                         </select>
                         <small class="form-text text-muted">Seleccione el rubro presupuestal donde se cargará esta orden de servicio.</small>

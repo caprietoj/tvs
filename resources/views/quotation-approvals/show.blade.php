@@ -516,34 +516,82 @@
                     
                     <div class="form-group">
                         <label for="budget">Presupuesto al que se cargará esta compra *:</label>
-                        <select class="form-control" id="budget" name="budget" required>
-                            <option value="">Seleccione un rubro presupuestal...</option>
-                            <option value="Capacitación">Capacitación</option>
-                            <option value="Gastos Importación/Material Importado">Gastos Importación/Material Importado</option>
-                            <option value="Biblioteca institucional">Biblioteca institucional</option>
-                            <option value="Biblioteca">Biblioteca</option>
-                            <option value="Materiales">Materiales</option>
-                            <option value="Deportes-Dotación">Deportes-Dotación</option>
-                            <option value="Musicales">Musicales</option>
-                            <option value="Part time teacher- reemplazos">Part time teacher- reemplazos</option>
-                            <option value="Dotación">Dotación</option>
-                            <option value="Exhibición PEP">Exhibición PEP</option>
-                            <option value="Monografia">Monografia</option>
-                            <option value="Personal Project PAI">Personal Project PAI</option>
-                            <option value="Proyecto Comunitario">Proyecto Comunitario</option>
-                            <option value="CAS / Intercas">CAS / Intercas</option>
-                            <option value="MUN TVS-Otros Colegios- GLY">MUN TVS-Otros Colegios- GLY</option>
-                            <option value="Preparación Pruebas saber">Preparación Pruebas saber</option>
-                            <option value="Psicología Institucional">Psicología Institucional</option>
-                            <option value="Eventos Académicos y Sociales">Eventos Académicos y Sociales</option>
-                            <option value="material para clases">material para clases</option>
-                            <option value="insumos tecnologicos">insumos tecnologicos</option>
-                            <option value="salidas academicas sección">salidas academicas sección</option>
-                            <option value="Reemplazos docentes">Reemplazos docentes</option>
-                            <option value="Alimentación">Alimentación</option>
-                            <option value="Transporte">Transporte</option>
-                            <option value="Insumos de la sección">Insumos de la sección</option>
-                        </select>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="accordion compact-accordion" id="budgetAccordionLeft">
+                                    @php 
+                                        $budgetHierarchy = \App\Helpers\BudgetHelper::getBudgetHierarchy(); 
+                                        $sections = array_keys($budgetHierarchy);
+                                        $halfCount = ceil(count($sections) / 2);
+                                        $leftSections = array_slice($sections, 0, $halfCount, true);
+                                    @endphp
+                                    @foreach($leftSections as $index => $section)
+                                        @php $budgets = $budgetHierarchy[$section]; @endphp
+                                        <div class="card">
+                                            <div class="card-header" id="heading{{ $index }}">
+                                                <h2 class="mb-0">
+                                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse{{ $index }}" aria-expanded="false" aria-controls="collapse{{ $index }}">
+                                                        <i class="fas fa-chevron-down"></i> {{ $section }}
+                                                    </button>
+                                                </h2>
+                                            </div>
+                                            <div id="collapse{{ $index }}" class="collapse" aria-labelledby="heading{{ $index }}" data-parent="#budgetAccordionLeft">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        @foreach($budgets as $budgetIndex => $budget)
+                                                            <div class="col-12">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input budget-radio" type="radio" name="budget" id="budget_{{ $index }}_{{ $budgetIndex }}" value="{{ $budget }}">
+                                                                    <label class="form-check-label" for="budget_{{ $index }}_{{ $budgetIndex }}">
+                                                                        {{ $budget }}
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="accordion compact-accordion" id="budgetAccordionRight">
+                                    @php $rightSections = array_slice($sections, $halfCount, null, true); @endphp
+                                    @foreach($rightSections as $index => $section)
+                                        @php 
+                                            $budgets = $budgetHierarchy[$section]; 
+                                            $rightIndex = $index + $halfCount;
+                                        @endphp
+                                        <div class="card">
+                                            <div class="card-header" id="heading{{ $rightIndex }}">
+                                                <h2 class="mb-0">
+                                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse{{ $rightIndex }}" aria-expanded="false" aria-controls="collapse{{ $rightIndex }}">
+                                                        <i class="fas fa-chevron-down"></i> {{ $section }}
+                                                    </button>
+                                                </h2>
+                                            </div>
+                                            <div id="collapse{{ $rightIndex }}" class="collapse" aria-labelledby="heading{{ $rightIndex }}" data-parent="#budgetAccordionRight">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        @foreach($budgets as $budgetIndex => $budget)
+                                                            <div class="col-12">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input budget-radio" type="radio" name="budget" id="budget_{{ $rightIndex }}_{{ $budgetIndex }}" value="{{ $budget }}">
+                                                                    <label class="form-check-label" for="budget_{{ $rightIndex }}_{{ $budgetIndex }}">
+                                                                        {{ $budget }}
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                         <small class="form-text text-muted">Seleccione el rubro presupuestal donde se cargará esta compra.</small>
                     </div>
                 </div>
@@ -584,34 +632,82 @@
                     
                     <div class="form-group">
                         <label for="budget_line_no_quotation">Rubro Presupuestal *</label>
-                        <select name="budget_line" id="budget_line_no_quotation" class="form-control" required>
-                            <option value="">Seleccione un rubro presupuestal</option>
-                            <option value="Capacitación">Capacitación</option>
-                            <option value="Gastos Importación/Material Importado">Gastos Importación/Material Importado</option>
-                            <option value="Biblioteca institucional">Biblioteca institucional</option>
-                            <option value="Biblioteca">Biblioteca</option>
-                            <option value="Materiales">Materiales</option>
-                            <option value="Deportes-Dotación">Deportes-Dotación</option>
-                            <option value="Musicales">Musicales</option>
-                            <option value="Part time teacher- reemplazos">Part time teacher- reemplazos</option>
-                            <option value="Dotación">Dotación</option>
-                            <option value="Exhibición PEP">Exhibición PEP</option>
-                            <option value="Monografia">Monografia</option>
-                            <option value="Personal Project PAI">Personal Project PAI</option>
-                            <option value="Proyecto Comunitario">Proyecto Comunitario</option>
-                            <option value="CAS / Intercas">CAS / Intercas</option>
-                            <option value="MUN TVS-Otros Colegios- GLY">MUN TVS-Otros Colegios- GLY</option>
-                            <option value="Preparación Pruebas saber">Preparación Pruebas saber</option>
-                            <option value="Psicología Institucional">Psicología Institucional</option>
-                            <option value="Eventos Académicos y Sociales">Eventos Académicos y Sociales</option>
-                            <option value="material para clases">material para clases</option>
-                            <option value="insumos tecnologicos">insumos tecnologicos</option>
-                            <option value="salidas academicas sección">salidas academicas sección</option>
-                            <option value="Reemplazos docentes">Reemplazos docentes</option>
-                            <option value="Alimentación">Alimentación</option>
-                            <option value="Transporte">Transporte</option>
-                            <option value="Insumos de la sección">Insumos de la sección</option>
-                        </select>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="accordion compact-accordion" id="budgetAccordionNoQuotationLeft">
+                                    @php 
+                                        $budgetHierarchy = \App\Helpers\BudgetHelper::getBudgetHierarchy(); 
+                                        $sections = array_keys($budgetHierarchy);
+                                        $halfCount = ceil(count($sections) / 2);
+                                        $leftSections = array_slice($sections, 0, $halfCount, true);
+                                    @endphp
+                                    @foreach($leftSections as $index => $section)
+                                        @php $budgets = $budgetHierarchy[$section]; @endphp
+                                        <div class="card">
+                                            <div class="card-header" id="headingNoQuotation{{ $index }}">
+                                                <h2 class="mb-0">
+                                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapseNoQuotation{{ $index }}" aria-expanded="false" aria-controls="collapseNoQuotation{{ $index }}">
+                                                        <i class="fas fa-chevron-down"></i> {{ $section }}
+                                                    </button>
+                                                </h2>
+                                            </div>
+                                            <div id="collapseNoQuotation{{ $index }}" class="collapse" aria-labelledby="headingNoQuotation{{ $index }}" data-parent="#budgetAccordionNoQuotationLeft">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        @foreach($budgets as $budgetIndex => $budget)
+                                                            <div class="col-12">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input budget-radio-no-quotation" type="radio" name="budget_line" id="budget_no_quotation_{{ $index }}_{{ $budgetIndex }}" value="{{ $budget }}">
+                                                                    <label class="form-check-label" for="budget_no_quotation_{{ $index }}_{{ $budgetIndex }}">
+                                                                        {{ $budget }}
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="accordion compact-accordion" id="budgetAccordionNoQuotationRight">
+                                    @php $rightSections = array_slice($sections, $halfCount, null, true); @endphp
+                                    @foreach($rightSections as $index => $section)
+                                        @php 
+                                            $budgets = $budgetHierarchy[$section]; 
+                                            $rightIndex = $index + $halfCount;
+                                        @endphp
+                                        <div class="card">
+                                            <div class="card-header" id="headingNoQuotation{{ $rightIndex }}">
+                                                <h2 class="mb-0">
+                                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapseNoQuotation{{ $rightIndex }}" aria-expanded="false" aria-controls="collapseNoQuotation{{ $rightIndex }}">
+                                                        <i class="fas fa-chevron-down"></i> {{ $section }}
+                                                    </button>
+                                                </h2>
+                                            </div>
+                                            <div id="collapseNoQuotation{{ $rightIndex }}" class="collapse" aria-labelledby="headingNoQuotation{{ $rightIndex }}" data-parent="#budgetAccordionNoQuotationRight">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        @foreach($budgets as $budgetIndex => $budget)
+                                                            <div class="col-12">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input budget-radio-no-quotation" type="radio" name="budget_line" id="budget_no_quotation_{{ $rightIndex }}_{{ $budgetIndex }}" value="{{ $budget }}">
+                                                                    <label class="form-check-label" for="budget_no_quotation_{{ $rightIndex }}_{{ $budgetIndex }}">
+                                                                        {{ $budget }}
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                         <small class="form-text text-muted">Seleccione el rubro presupuestal donde se cargará esta solicitud.</small>
                     </div>
                     
@@ -697,34 +793,82 @@
                     
                     <div class="form-group">
                         <label for="mixed_selection_budget">Rubro Presupuestal *</label>
-                        <select name="budget_line" id="mixed_selection_budget" class="form-control" required>
-                            <option value="">Seleccione un rubro presupuestal</option>
-                            <option value="Capacitación">Capacitación</option>
-                            <option value="Gastos Importación/Material Importado">Gastos Importación/Material Importado</option>
-                            <option value="Biblioteca institucional">Biblioteca institucional</option>
-                            <option value="Biblioteca">Biblioteca</option>
-                            <option value="Materiales">Materiales</option>
-                            <option value="Deportes-Dotación">Deportes-Dotación</option>
-                            <option value="Musicales">Musicales</option>
-                            <option value="Part time teacher- reemplazos">Part time teacher- reemplazos</option>
-                            <option value="Dotación">Dotación</option>
-                            <option value="Exhibición PEP">Exhibición PEP</option>
-                            <option value="Monografia">Monografia</option>
-                            <option value="Personal Project PAI">Personal Project PAI</option>
-                            <option value="Proyecto Comunitario">Proyecto Comunitario</option>
-                            <option value="CAS / Intercas">CAS / Intercas</option>
-                            <option value="MUN TVS-Otros Colegios- GLY">MUN TVS-Otros Colegios- GLY</option>
-                            <option value="Preparación Pruebas saber">Preparación Pruebas saber</option>
-                            <option value="Psicología Institucional">Psicología Institucional</option>
-                            <option value="Eventos Académicos y Sociales">Eventos Académicos y Sociales</option>
-                            <option value="material para clases">material para clases</option>
-                            <option value="insumos tecnologicos">insumos tecnologicos</option>
-                            <option value="salidas academicas sección">salidas academicas sección</option>
-                            <option value="Reemplazos docentes">Reemplazos docentes</option>
-                            <option value="Alimentación">Alimentación</option>
-                            <option value="Transporte">Transporte</option>
-                            <option value="Insumos de la sección">Insumos de la sección</option>
-                        </select>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="accordion compact-accordion" id="budgetAccordionMixedLeft">
+                                    @php 
+                                        $budgetHierarchy = \App\Helpers\BudgetHelper::getBudgetHierarchy(); 
+                                        $sections = array_keys($budgetHierarchy);
+                                        $halfCount = ceil(count($sections) / 2);
+                                        $leftSections = array_slice($sections, 0, $halfCount, true);
+                                    @endphp
+                                    @foreach($leftSections as $index => $section)
+                                        @php $budgets = $budgetHierarchy[$section]; @endphp
+                                        <div class="card">
+                                            <div class="card-header" id="headingMixed{{ $index }}">
+                                                <h2 class="mb-0">
+                                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapseMixed{{ $index }}" aria-expanded="false" aria-controls="collapseMixed{{ $index }}">
+                                                        <i class="fas fa-chevron-down"></i> {{ $section }}
+                                                    </button>
+                                                </h2>
+                                            </div>
+                                            <div id="collapseMixed{{ $index }}" class="collapse" aria-labelledby="headingMixed{{ $index }}" data-parent="#budgetAccordionMixedLeft">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        @foreach($budgets as $budgetIndex => $budget)
+                                                            <div class="col-12">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input budget-radio-mixed" type="radio" name="budget_line" id="budget_mixed_{{ $index }}_{{ $budgetIndex }}" value="{{ $budget }}">
+                                                                    <label class="form-check-label" for="budget_mixed_{{ $index }}_{{ $budgetIndex }}">
+                                                                        {{ $budget }}
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="accordion compact-accordion" id="budgetAccordionMixedRight">
+                                    @php $rightSections = array_slice($sections, $halfCount, null, true); @endphp
+                                    @foreach($rightSections as $index => $section)
+                                        @php 
+                                            $budgets = $budgetHierarchy[$section]; 
+                                            $rightIndex = $index + $halfCount;
+                                        @endphp
+                                        <div class="card">
+                                            <div class="card-header" id="headingMixed{{ $rightIndex }}">
+                                                <h2 class="mb-0">
+                                                    <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapseMixed{{ $rightIndex }}" aria-expanded="false" aria-controls="collapseMixed{{ $rightIndex }}">
+                                                        <i class="fas fa-chevron-down"></i> {{ $section }}
+                                                    </button>
+                                                </h2>
+                                            </div>
+                                            <div id="collapseMixed{{ $rightIndex }}" class="collapse" aria-labelledby="headingMixed{{ $rightIndex }}" data-parent="#budgetAccordionMixedRight">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        @foreach($budgets as $budgetIndex => $budget)
+                                                            <div class="col-12">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input budget-radio-mixed" type="radio" name="budget_line" id="budget_mixed_{{ $rightIndex }}_{{ $budgetIndex }}" value="{{ $budget }}">
+                                                                    <label class="form-check-label" for="budget_mixed_{{ $rightIndex }}_{{ $budgetIndex }}">
+                                                                        {{ $budget }}
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                         <small class="form-text text-muted">Seleccione el rubro presupuestal donde se cargará esta compra.</small>
                     </div>
                     
@@ -757,6 +901,74 @@
         }
         .info-box-content {
             padding: 0;
+        }
+        
+        /* Estilos para acordeón de presupuesto */
+        .accordion .card {
+            margin-bottom: 5px;
+        }
+        
+        .accordion .card-header {
+            padding: 0.5rem 1rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .accordion .btn-link {
+            color: #495057;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .accordion .btn-link:hover {
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        .accordion .card-body {
+            padding: 0.75rem 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        /* Estilos específicos para acordeón compacto */
+        .compact-accordion .card-body {
+            max-height: 150px;
+            padding: 0.5rem 1rem;
+        }
+        
+        .compact-accordion .form-check {
+            margin-bottom: 0.25rem;
+        }
+        
+        .compact-accordion .form-check-label {
+            font-size: 0.9rem;
+            font-weight: normal;
+            cursor: pointer;
+            line-height: 1.3;
+        }
+        
+        .accordion .form-check {
+            margin-bottom: 0.5rem;
+        }
+        
+        .accordion .form-check-label {
+            font-weight: normal;
+            cursor: pointer;
+        }
+        
+        .accordion .form-check-input:checked + .form-check-label {
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        /* Rotar icono del acordeón */
+        .accordion .btn-link[aria-expanded="true"] i {
+            transform: rotate(180deg);
+        }
+        
+        .accordion .btn-link i {
+            transition: transform 0.3s ease;
         }
     </style>
 
@@ -904,18 +1116,17 @@
             $('#preApproveSubmitBtn').prop('disabled', !hasBudget);
         });
         
-        // Validación para el modal de pre-aprobación normal
-        $('#budget').on('change', function() {
-            const hasBudget = $(this).val() !== '';
-            // Habilitar/deshabilitar botón solo si hay budget seleccionado
+        // Validación para el modal de pre-aprobación normal (radio buttons)
+        $('.budget-radio').on('change', function() {
+            const hasBudget = $('input[name="budget"]:checked').length > 0;
             $('#preApproveSubmitBtn').prop('disabled', !hasBudget);
         });
         
         // Limpiar modal de pre-aprobación normal al cerrar
         $('#preApproveModal').on('hidden.bs.modal', function () {
             $('#comments').val('');
-            $('#budget').val('');
-            // No deshabilitar aquí, se hace en show.bs.modal
+            $('.budget-radio').prop('checked', false);
+            $('#preApproveSubmitBtn').prop('disabled', true);
         });
         
         // Agregar evento de depuración para el formulario de pre-aprobación normal
@@ -925,7 +1136,7 @@
             
             const quotationId = $('#quotation_id').val();
             const comments = $('#comments').val();
-            const budget = $('#budget').val();
+            const budget = $('input[name="budget"]:checked').val();
             
             console.log('Quotation ID:', quotationId);
             console.log('Comentarios:', comments);
@@ -946,46 +1157,53 @@
             console.log('Formulario válido, enviando...');
         });
         
-        // Manejar el modal de pre-aprobación sin cotización
+        // Manejar el modal de pre-aprobación sin cotización (radio buttons)
         $('#confirm_no_quotation').on('change', function() {
             const isChecked = $(this).is(':checked');
             const hasComments = $('#approval_comments').val().trim().length > 0;
-            const hasBudgetLine = $('#budget_line_no_quotation').val() !== '';
+            const hasBudgetLine = $('input[name="budget_line"]:checked').length > 0;
             $('#confirmPreApproveBtn').prop('disabled', !(isChecked && hasComments && hasBudgetLine));
         });
         
-        $('#approval_comments, #budget_line_no_quotation').on('input change', function() {
+        $('#approval_comments').on('input', function() {
+            const isChecked = $('#confirm_no_quotation').is(':checked');
+            const hasComments = $(this).val().trim().length > 0;
+            const hasBudgetLine = $('input[name="budget_line"]:checked').length > 0;
+            $('#confirmPreApproveBtn').prop('disabled', !(isChecked && hasComments && hasBudgetLine));
+        });
+        
+        $('.budget-radio-no-quotation').on('change', function() {
             const isChecked = $('#confirm_no_quotation').is(':checked');
             const hasComments = $('#approval_comments').val().trim().length > 0;
-            const hasBudgetLine = $('#budget_line_no_quotation').val() !== '';
+            const hasBudgetLine = $('input[name="budget_line"]:checked').length > 0;
             $('#confirmPreApproveBtn').prop('disabled', !(isChecked && hasComments && hasBudgetLine));
         });
         
         // Limpiar modal al cerrar
         $('#preApproveWithoutQuotationModal').on('hidden.bs.modal', function () {
             $('#approval_comments').val('');
-            $('#budget_line_no_quotation').val('');
+            $('.budget-radio-no-quotation').prop('checked', false);
             $('#confirm_no_quotation').prop('checked', false);
             $('#confirmPreApproveBtn').prop('disabled', true);
         });
         
-        // Manejar el modal de pre-aprobación de selección mixta
+        // Manejar el modal de pre-aprobación de selección mixta (radio buttons)
         $('#confirm_mixed_selection').on('change', function() {
             const isChecked = $(this).is(':checked');
-            const hasBudget = $('#mixed_selection_budget').val() !== '';
+            const hasBudget = $('input[name="budget_line"]:checked').length > 0;
             $('#confirmMixedSelectionBtn').prop('disabled', !(isChecked && hasBudget));
         });
         
-        $('#mixed_selection_budget').on('change', function() {
+        $('.budget-radio-mixed').on('change', function() {
             const isChecked = $('#confirm_mixed_selection').is(':checked');
-            const hasBudget = $(this).val() !== '';
+            const hasBudget = $('input[name="budget_line"]:checked').length > 0;
             $('#confirmMixedSelectionBtn').prop('disabled', !(isChecked && hasBudget));
         });
         
         // Limpiar modal de selección mixta al cerrar
         $('#preApproveMixedSelectionModal').on('hidden.bs.modal', function () {
             $('#mixed_selection_comments').val('');
-            $('#mixed_selection_budget').val('');
+            $('.budget-radio-mixed').prop('checked', false);
             $('#confirm_mixed_selection').prop('checked', false);
             $('#confirmMixedSelectionBtn').prop('disabled', true);
         });

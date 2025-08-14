@@ -332,31 +332,14 @@
                         <label for="budget">Presupuesto al que se cargará esta compra *:</label>
                         <select class="form-control" id="budget" name="budget" required>
                             <option value="">Seleccione un rubro presupuestal...</option>
-                            <option value="Capacitación">Capacitación</option>
-                            <option value="Gastos Importación/Material Importado">Gastos Importación/Material Importado</option>
-                            <option value="Biblioteca institucional">Biblioteca institucional</option>
-                            <option value="Biblioteca">Biblioteca</option>
-                            <option value="Materiales">Materiales</option>
-                            <option value="Deportes-Dotación">Deportes-Dotación</option>
-                            <option value="Musicales">Musicales</option>
-                            <option value="Part time teacher- reemplazos">Part time teacher- reemplazos</option>
-                            <option value="Dotación">Dotación</option>
-                            <option value="Exhibición PEP">Exhibición PEP</option>
-                            <option value="Monografia">Monografia</option>
-                            <option value="Personal Project PAI">Personal Project PAI</option>
-                            <option value="Proyecto Comunitario">Proyecto Comunitario</option>
-                            <option value="CAS / Intercas">CAS / Intercas</option>
-                            <option value="MUN TVS-Otros Colegios- GLY">MUN TVS-Otros Colegios- GLY</option>
-                            <option value="Preparación Pruebas saber">Preparación Pruebas saber</option>
-                            <option value="Psicología Institucional">Psicología Institucional</option>
-                            <option value="Eventos Académicos y Sociales">Eventos Académicos y Sociales</option>
-                            <option value="material para clases">material para clases</option>
-                            <option value="insumos tecnologicos">insumos tecnologicos</option>
-                            <option value="salidas academicas sección">salidas academicas sección</option>
-                            <option value="Reemplazos docentes">Reemplazos docentes</option>
-                            <option value="Alimentación">Alimentación</option>
-                            <option value="Transporte">Transporte</option>
-                            <option value="Insumos de la sección">Insumos de la sección</option>
+                            @php $budgetHierarchy = \App\Helpers\BudgetHelper::getBudgetHierarchy(); @endphp
+                            @foreach($budgetHierarchy as $section => $budgets)
+                                <optgroup label="{{ $section }}" style="font-weight: bold;">
+                                    @foreach($budgets as $budget)
+                                        <option value="{{ $budget }}">{{ $budget }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
                         </select>
                         <small class="form-text text-muted">Seleccione el rubro presupuestal donde se cargará esta compra.</small>
                     </div>

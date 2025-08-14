@@ -561,14 +561,20 @@
                         <tr>
                             <td style="font-weight: bold; border: 1px solid #000; padding: 4px;">PRESUPUESTO:</td>
                             <td style="border: 1px solid #000; padding: 4px;">
-                                <select name="budget" class="form-control form-control-sm border-0" 
+                                <select name="budget" class="form-control form-control-sm border-0" id="budget-select"
                                         style="width: 100%; border: none; background: transparent;">
                                     <option value="">Seleccionar presupuesto...</option>
-                                    @foreach($budgetOptions as $option)
-                                        <option value="{{ $option }}" 
-                                                {{ ($customData['budget'] ?? $order->purchaseRequest->budget ?? '') == $option ? 'selected' : '' }}>
-                                            {{ $option }}
-                                        </option>
+                                    @php $budgetHierarchy = \App\Helpers\BudgetHelper::getBudgetHierarchy(); @endphp
+                                    @foreach($budgetHierarchy as $section => $budgets)
+                                        <optgroup label="{{ $section }}" style="font-weight: bold;">
+                                            @foreach($budgets as $budget)
+                                                <option value="{{ $budget }}" 
+                                                        data-section="{{ $section }}"
+                                                        {{ ($customData['budget'] ?? $order->purchaseRequest->budget ?? '') == $budget ? 'selected' : '' }}>
+                                                    {{ $budget }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
                                     @endforeach
                                 </select>
                             </td>
@@ -1454,6 +1460,49 @@ $(document).ready(function() {
         
         console.log('Form being submitted successfully');
     });
+
+    // Funcionalidad para el selector de presupuesto
+    let originalOptions = {};
+    
+    // Guardar los textos originales al cargar
+    $('#budget-select option[data-section]').each(function() {
+        const value = $(this).val();
+        if (value) {
+            originalOptions[value] = $(this).text();
+        }
+    });
+
+    $('#budget-select').on('focus', function() {
+        // Restaurar textos originales cuando se abra el select
+        $('#budget-select option[data-section]').each(function() {
+            const value = $(this).val();
+            if (value && originalOptions[value]) {
+                $(this).text(originalOptions[value]);
+            }
+        });
+    });
+
+    $('#budget-select').on('change', function() {
+        const selectedOption = $(this).find('option:selected');
+        const budgetValue = selectedOption.val();
+        const sectionName = selectedOption.attr('data-section');
+        
+        if (budgetValue && sectionName) {
+            // Mostrar formato "Sección - Item" solo en la opción seleccionada
+            const displayText = sectionName + ' - ' + budgetValue;
+            selectedOption.text(displayText);
+        }
+    });
+
+    // Al cargar la página, si ya hay un presupuesto seleccionado, formatearlo
+    const initialBudget = $('#budget-select').val();
+    if (initialBudget) {
+        const selectedOption = $('#budget-select').find('option:selected');
+        const sectionName = selectedOption.attr('data-section');
+        if (sectionName && !selectedOption.text().includes(' - ')) {
+            selectedOption.text(sectionName + ' - ' + initialBudget);
+        }
+    }
 });
 </script>
 @stop
