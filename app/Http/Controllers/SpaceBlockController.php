@@ -78,14 +78,33 @@ class SpaceBlockController extends Controller
         $errors = [];
         
         foreach ($request->cycle_days as $cycleDay) {
-            // Verificar si ya existe un bloqueo para este espacio, ciclo y día
-            $existingBlock = SpaceBlock::where('space_id', $validated['space_id'])
+            // Verificar si ya existe un bloqueo para este MISMO espacio, ciclo y día con horarios superpuestos
+            $existingBlocks = SpaceBlock::where('space_id', $validated['space_id'])
                 ->where('school_cycle_id', $validated['school_cycle_id'])
                 ->where('cycle_day', $cycleDay)
-                ->first();
+                ->get();
 
-            if ($existingBlock) {
-                $errors[] = 'Ya existe un bloqueo para este espacio en el día ' . $cycleDay . ' del ciclo.';
+            $hasConflict = false;
+            $conflictMessage = '';
+            
+            foreach ($existingBlocks as $existingBlock) {
+                // Verificar si hay superposición de horarios
+                if ($this->hasTimeOverlap(
+                    $validated['start_time'], 
+                    $validated['end_time'], 
+                    $existingBlock->start_time, 
+                    $existingBlock->end_time
+                )) {
+                    $hasConflict = true;
+                    $conflictMessage = 'Ya existe un bloqueo para este espacio en el día ' . $cycleDay . 
+                                     ' del ciclo con horario superpuesto (' . 
+                                     $existingBlock->start_time . ' - ' . $existingBlock->end_time . ').';
+                    break;
+                }
+            }
+
+            if ($hasConflict) {
+                $errors[] = $conflictMessage;
                 continue;
             }
 
@@ -145,6 +164,41 @@ class SpaceBlockController extends Controller
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['weekdays' => 'Debe seleccionar al menos un día de la semana.']);
+        }
+        
+        // Verificar conflictos con bloqueos semanales existentes para el mismo espacio
+        $weekdaysToCheck = [];
+        foreach ($weekdays as $day) {
+            if ($request->has($day)) {
+                $weekdaysToCheck[] = $day;
+            }
+        }
+        
+        $existingWeeklyBlocks = SpaceBlock::where('space_id', $validated['space_id'])
+            ->where('school_cycle_id', $schoolCycle->id)
+            ->where('is_weekday_block', true)
+            ->get();
+            
+        foreach ($existingWeeklyBlocks as $existingBlock) {
+            // Verificar si hay superposición de días y horarios
+            $hasOverlapDays = false;
+            foreach ($weekdaysToCheck as $day) {
+                if ($existingBlock->$day) {
+                    $hasOverlapDays = true;
+                    break;
+                }
+            }
+            
+            if ($hasOverlapDays && $this->hasTimeOverlap(
+                $validated['start_time'], 
+                $validated['end_time'], 
+                $existingBlock->start_time, 
+                $existingBlock->end_time
+            )) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['general' => 'Ya existe un bloqueo semanal para este espacio con días y horarios superpuestos.']);
+            }
         }
         
         // Crear el bloqueo con los días de la semana seleccionados
@@ -286,7 +340,23 @@ class SpaceBlockController extends Controller
             'space' => $space->name,
             'cycle_id' => $activeSchoolCycle->id,
             'cycle_length' => $activeSchoolCycle->cycle_length,
-            'blocks' => $blocks
+            'blocked_days' => $blocks
         ]);
+    }
+
+    /**
+     * Verifica si dos rangos de tiempo se superponen
+     */
+    private function hasTimeOverlap($start1, $end1, $start2, $end2)
+    {
+        // Convertir a objetos Carbon para comparación
+        $start1 = \Carbon\Carbon::createFromFormat('H:i', $start1);
+        $end1 = \Carbon\Carbon::createFromFormat('H:i', $end1);
+        $start2 = \Carbon\Carbon::createFromFormat('H:i', $start2);
+        $end2 = \Carbon\Carbon::createFromFormat('H:i', $end2);
+
+        // Verificar si hay superposición
+        // Los rangos se superponen si el inicio de uno es menor que el final del otro y viceversa
+        return $start1->lt($end2) && $start2->lt($end1);
     }
 }

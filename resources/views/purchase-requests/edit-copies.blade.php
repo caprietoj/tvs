@@ -76,6 +76,7 @@
                                 <option value="Primaria" {{ old('section', $purchaseRequest->section) == 'Primaria' ? 'selected' : '' }}>Primaria</option>
                                 <option value="Bachillerato" {{ old('section', $purchaseRequest->section) == 'Bachillerato' ? 'selected' : '' }}>Bachillerato</option>
                                 <option value="Administración" {{ old('section', $purchaseRequest->section) == 'Administración' ? 'selected' : '' }}>Administración</option>
+                                <option value="Biblioteca" {{ old('section', $purchaseRequest->section) == 'Biblioteca' ? 'selected' : '' }}>Biblioteca</option>
                             </select>
                             @error('section')
                                 <div class="invalid-feedback">{{ $message }}</div>

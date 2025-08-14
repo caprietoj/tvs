@@ -163,11 +163,23 @@
                     method: 'GET',
                     success: function(response) {
                         if (response.cycle_id == cycleId) {
-                            // Marcar los checkboxes de los días ya bloqueados
+                            // Limpiar marcas anteriores
+                            $('.day-blocked-warning').remove();
+                            $('input[name="cycle_days[]"]').removeClass('border-warning');
+                            
+                            // Mostrar información sobre los días ya bloqueados
                             response.blocked_days.forEach(function(day) {
-                                $(`#cycle_day_${day}`).prop('checked', true);
+                                let checkbox = $(`#cycle_day_${day}`);
+                                let container = checkbox.closest('.custom-control');
+                                
+                                // Agregar advertencia visual sin marcar el checkbox
+                                checkbox.addClass('border-warning');
+                                container.append('<small class="text-warning day-blocked-warning"><i class="fas fa-exclamation-triangle"></i> Este día ya tiene bloqueos para este espacio</small>');
                             });
                         }
+                    },
+                    error: function() {
+                        console.log('Error al cargar bloqueos existentes');
                     }
                 });
             }
@@ -202,6 +214,22 @@
                     e.preventDefault();
                     alert('La hora de fin debe ser posterior a la hora de inicio.');
                     return false;
+                }
+                
+                // Advertir sobre días que ya tienen bloqueos (pero permitir continuar)
+                let hasWarnings = false;
+                $('input[name="cycle_days[]"]:checked').each(function() {
+                    if ($(this).hasClass('border-warning')) {
+                        hasWarnings = true;
+                        return false;
+                    }
+                });
+                
+                if (hasWarnings) {
+                    if (!confirm('Algunos días seleccionados ya tienen bloqueos para este espacio. ¿Desea continuar? (Se verificarán conflictos de horarios)')) {
+                        e.preventDefault();
+                        return false;
+                    }
                 }
             });
         });
