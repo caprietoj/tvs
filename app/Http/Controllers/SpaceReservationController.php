@@ -97,14 +97,8 @@ class SpaceReservationController extends Controller
             return redirect()->back()->withInput()->with('error', 'No se puede reservar en esta fecha: ' . $canReserve[1]);
         }
         
-        // Obtener el espacio para verificar si es una biblioteca
+        // Obtener el espacio
         $space = Space::findOrFail($validated['space_id']);
-        $isLibrary = stripos($space->name, 'biblioteca') !== false;
-        
-        // Validar que se hayan seleccionado recursos electrónicos si es una biblioteca
-        if ($isLibrary && empty($validated['selected_electronic_resources'])) {
-            return redirect()->back()->withInput()->with('error', 'Debe seleccionar al menos un recurso electrónico para este espacio de biblioteca.');
-        }
         
         // Verificar conflictos de horario
         if (SpaceReservation::hasTimeConflict(

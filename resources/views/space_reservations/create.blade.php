@@ -418,6 +418,53 @@
         left: 0;
         width: 100%;
         border-radius: 3px;
+    }
+    
+    /* Estilos para el acordeón de habilidades */
+    #skillsAccordion .card-header {
+        padding: 0;
+    }
+    
+    #skillsAccordion .btn-link {
+        text-decoration: none;
+        padding: 15px 20px;
+        border-radius: 0;
+        transition: all 0.3s ease;
+    }
+    
+    #skillsAccordion .btn-link:hover {
+        background-color: #f8f9fa;
+        text-decoration: none;
+    }
+    
+    #skillsAccordion .btn-link:focus {
+        box-shadow: none;
+        text-decoration: none;
+    }
+    
+    #skillsAccordion .btn-link .fas.fa-chevron-right {
+        transition: transform 0.3s ease;
+    }
+    
+    #skillsAccordion .btn-link[aria-expanded="true"] .fas.fa-chevron-right {
+        transform: rotate(90deg);
+    }
+    
+    #skillsAccordion .card-body {
+        background-color: #fafafa;
+    }
+    
+    #skillsAccordion .form-check {
+        padding-left: 1.5rem;
+    }
+    
+    #skillsAccordion .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    
+    #skillsAccordion .border-bottom {
+        border-color: #dee2e6 !important;
         padding: 2px 5px;
         font-size: 12px;
         color: #fff;
@@ -1265,35 +1312,68 @@
                                 });
                             });
 
-                            // Crear elementos para cada categoría de habilidades
+                            // Crear acordeón para las categorías de habilidades
+                            const accordionContainer = document.createElement('div');
+                            accordionContainer.className = 'accordion';
+                            accordionContainer.id = 'skillsAccordion';
+                            
+                            let categoryIndex = 0;
                             Object.values(skillsByCategory).forEach(category => {
-                                // Crear el encabezado de la categoría
-                                const categoryHeader = document.createElement('div');
-                                categoryHeader.className = 'mb-3';
-                                categoryHeader.innerHTML = `
-                                    <h6 class="text-primary font-weight-bold">
-                                        <i class="fas fa-layer-group"></i> ${category.name}
-                                    </h6>
+                                categoryIndex++;
+                                
+                                // Crear la tarjeta del acordeón para cada categoría
+                                const categoryCard = document.createElement('div');
+                                categoryCard.className = 'card mb-2';
+                                
+                                // Crear el encabezado del acordeón
+                                const cardHeader = document.createElement('div');
+                                cardHeader.className = 'card-header bg-light';
+                                cardHeader.id = `heading${categoryIndex}`;
+                                
+                                const headerButton = document.createElement('button');
+                                headerButton.className = 'btn btn-link btn-block text-left text-primary collapsed';
+                                headerButton.type = 'button';
+                                headerButton.setAttribute('data-toggle', 'collapse');
+                                headerButton.setAttribute('data-target', `#collapse${categoryIndex}`);
+                                headerButton.setAttribute('aria-expanded', 'false');
+                                headerButton.setAttribute('aria-controls', `collapse${categoryIndex}`);
+                                
+                                headerButton.innerHTML = `
+                                    <i class="fas fa-chevron-right mr-2"></i>
+                                    <i class="fas fa-layer-group mr-2"></i>
+                                    ${category.name}
                                 `;
-                                spaceSkillsList.appendChild(categoryHeader);
-
+                                
+                                cardHeader.appendChild(headerButton);
+                                categoryCard.appendChild(cardHeader);
+                                
+                                // Crear el contenido colapsable
+                                const collapseDiv = document.createElement('div');
+                                collapseDiv.id = `collapse${categoryIndex}`;
+                                collapseDiv.className = 'collapse';
+                                collapseDiv.setAttribute('aria-labelledby', `heading${categoryIndex}`);
+                                collapseDiv.setAttribute('data-parent', '#skillsAccordion');
+                                
+                                const cardBody = document.createElement('div');
+                                cardBody.className = 'card-body';
+                                
                                 // Crear elementos para cada subcategoría
                                 Object.values(category.subcategories).forEach(subcategory => {
                                     // Crear el encabezado de la subcategoría
                                     const subcategoryHeader = document.createElement('div');
-                                    subcategoryHeader.className = 'mb-2 ml-3';
+                                    subcategoryHeader.className = 'mb-3';
                                     subcategoryHeader.innerHTML = `
-                                        <div class="text-secondary">
-                                            <strong>${subcategory.name}</strong>
-                                            ${subcategory.description ? ` (${subcategory.description})` : ''}
-                                        </div>
+                                        <h6 class="text-secondary font-weight-bold border-bottom pb-2">
+                                            <i class="fas fa-tags mr-2"></i>${subcategory.name}
+                                            ${subcategory.description ? `<small class="text-muted d-block font-weight-normal">${subcategory.description}</small>` : ''}
+                                        </h6>
                                     `;
-                                    spaceSkillsList.appendChild(subcategoryHeader);
+                                    cardBody.appendChild(subcategoryHeader);
 
                                     // Crear elementos para cada habilidad de la subcategoría
                                     subcategory.skills.forEach(skill => {
                                         const skillElement = document.createElement('div');
-                                        skillElement.className = 'form-check mb-2 ml-4';
+                                        skillElement.className = 'form-check mb-2 ml-3';
                                         
                                         const skillHtml = `
                                             <input class="form-check-input" type="checkbox" 
@@ -1309,10 +1389,16 @@
                                         `;
                                         
                                         skillElement.innerHTML = skillHtml;
-                                        spaceSkillsList.appendChild(skillElement);
+                                        cardBody.appendChild(skillElement);
                                     });
                                 });
+                                
+                                collapseDiv.appendChild(cardBody);
+                                categoryCard.appendChild(collapseDiv);
+                                accordionContainer.appendChild(categoryCard);
                             });
+                            
+                            spaceSkillsList.appendChild(accordionContainer);
                         } else {
                             spaceSkillsContent.classList.add('d-none');
                             noSpaceSkills.classList.remove('d-none');
@@ -1394,6 +1480,19 @@
             }
             
             return true;
+        });
+        
+        // Manejar eventos del acordeón de habilidades
+        $(document).on('show.bs.collapse', '#skillsAccordion .collapse', function() {
+            const button = $(this).prev('.card-header').find('button');
+            button.attr('aria-expanded', 'true');
+            button.removeClass('collapsed');
+        });
+        
+        $(document).on('hide.bs.collapse', '#skillsAccordion .collapse', function() {
+            const button = $(this).prev('.card-header').find('button');
+            button.attr('aria-expanded', 'false');
+            button.addClass('collapsed');
         });
     });
 </script>
