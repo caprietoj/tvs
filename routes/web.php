@@ -25,7 +25,7 @@ use App\Http\Controllers\SistemasThresholdController;
 
 // contabilidad
 use App\Http\Controllers\BudgetExecutionController; // Add this line
-// use App\Http\Controllers\PresupuestoController; // Comentado temporalmente - archivo faltante
+use App\Http\Controllers\PresupuestoController;
 // use App\Http\Controllers\ParametrizacionController; // Comentado temporalmente - archivo faltante
 
 // Documentos
@@ -195,12 +195,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/budget/create', [BudgetExecutionController::class, 'create'])->name('budget.create');
         Route::post('/budget', [BudgetExecutionController::class, 'store'])->name('budget.store');
     
-        // Presupuesto routes - Comentadas temporalmente (archivo faltante)
-        // Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.index');
-        // Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.update');
-        // Route::post('/presupuesto/guardar-ejecucion', [PresupuestoController::class, 'guardarEjecucion'])->name('presupuesto.guardar-ejecucion');
-        // Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.export');
-        // Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.procesar-extracto-contable');
+        // Presupuesto routes - Solo para administradores
+        Route::group(['middleware' => ['can:admin']], function () {
+            Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.index');
+            Route::post('/presupuesto', [PresupuestoController::class, 'store'])->name('presupuesto.store');
+            Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.update');
+            Route::delete('/presupuesto/{id}', [PresupuestoController::class, 'destroy'])->name('presupuesto.destroy');
+            Route::post('/presupuesto/guardar-ejecucion', [PresupuestoController::class, 'guardarEjecucion'])->name('presupuesto.guardar-ejecucion');
+            Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.export');
+            Route::get('/presupuesto/data', [PresupuestoController::class, 'getData'])->name('presupuesto.data');
+            Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.procesar-extracto-contable');
+        });
         
         // Parametrización routes - Comentadas temporalmente (archivo faltante)
         // Route::get('/parametrizacion', [App\Http\Controllers\ParametrizacionController::class, 'index'])->name('parametrizacion.index');
@@ -1066,8 +1071,13 @@ Route::middleware(['auth', 'admin'])->prefix('surveys')->name('surveys.')->group
     });
 });
 
-// Ruta principal para presupuesto (temporal sin auth para pruebas) - Comentadas (archivo faltante)
-// Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.main');
-// Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.main.update');
-// Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.main.export');
-// Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.main.procesar-extracto-contable');
+// Rutas principales para presupuesto - Solo para administradores
+Route::group(['middleware' => ['auth', 'can:admin']], function () {
+    Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.main');
+    Route::post('/presupuesto', [PresupuestoController::class, 'store'])->name('presupuesto.main.store');
+    Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.main.update');
+    Route::delete('/presupuesto/{id}', [PresupuestoController::class, 'destroy'])->name('presupuesto.main.destroy');
+    Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.main.export');
+    Route::get('/presupuesto/data', [PresupuestoController::class, 'getData'])->name('presupuesto.main.data');
+    Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.main.procesar-extracto-contable');
+});

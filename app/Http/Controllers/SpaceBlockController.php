@@ -283,17 +283,27 @@ class SpaceBlockController extends Controller
                 ->withErrors(['cycle_day' => 'El día de ciclo debe ser menor o igual a la longitud del ciclo escolar (' . $schoolCycle->cycle_length . ').']);
         }
 
-        // Verificar si ya existe un bloqueo para este espacio, ciclo y día (excluyendo el actual)
-        $existingBlock = SpaceBlock::where('space_id', $validated['space_id'])
+        // Verificar si ya existe un bloqueo para este espacio, ciclo y día con horarios superpuestos (excluyendo el actual)
+        $existingBlocks = SpaceBlock::where('space_id', $validated['space_id'])
             ->where('school_cycle_id', $validated['school_cycle_id'])
             ->where('cycle_day', $validated['cycle_day'])
             ->where('id', '!=', $spaceBlock->id)
-            ->first();
+            ->get();
 
-        if ($existingBlock) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['cycle_day' => 'Ya existe un bloqueo para este espacio en este día del ciclo.']);
+        foreach ($existingBlocks as $existingBlock) {
+            // Verificar si hay superposición de horarios
+            if ($this->hasTimeOverlap(
+                $validated['start_time'], 
+                $validated['end_time'], 
+                $existingBlock->start_time, 
+                $existingBlock->end_time
+            )) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['general' => 'Ya existe un bloqueo para este espacio en el día ' . $validated['cycle_day'] . 
+                                             ' del ciclo con horario superpuesto (' . 
+                                             $existingBlock->start_time . ' - ' . $existingBlock->end_time . ').']);
+            }
         }
 
         // Actualizar el bloqueo con los campos de horario

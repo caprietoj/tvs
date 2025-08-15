@@ -4,6 +4,273 @@
 
 @section('content_header')
     <h1 style="color: #364E76;"><i class="fas fa-copy mr-2"></i>Editar Solicitud de Materiales y/o Fotocopias</h1>
+    }
+    
+    .table th {
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .table td {
+        font-size: 0.875rem;
+        vertical-align: middle;
+    }
+    
+    /* Mejoras visuales para filas de advertencia */
+    .table-warning {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+    
+    .table-danger {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+</style>
+@stop
+
+@section('js')
+<script>
+    $(document).ready(function() {
+        console.log('🚀 Sistema de autocompletado con datalist iniciado (Edición)');
+        
+        // Lista de productos válidos para validación con información de stock
+        const validProducts = [
+            @foreach($inventoryItems as $item)
+                "{{ addslashes($item->producto) }}",
+            @endforeach
+        ];
+        
+        // Mapa de productos con su stock para referencia rápida
+        const productStockMap = {
+            @foreach($inventoryItems as $item)
+                "{{ addslashes($item->producto) }}": {{ $item->stock }},
+            @endforeach
+        };
+        
+        console.log('📦 Total productos válidos:', validProducts.length);
+        
+        let itemCounter = {{ count($purchaseRequest->material_items ?? []) }};
+        
+        // Función para validar selección de producto y mostrar stock
+        function validateProduct(input) {
+            const value = input.val().trim();
+            const isValid = validProducts.includes(value);
+            const stockInfo = input.siblings('.stock-info');
+            const stockAmount = stockInfo.find('.stock-amount');
+            
+            input.removeClass('valid-selection invalid-selection');
+            
+            if (value === '') {
+                // Campo vacío, ocultar información de stock
+                stockInfo.hide();
+                return false;
+            } else if (isValid) {
+                input.addClass('valid-selection');
+                
+                // Mostrar información de stock
+                const stock = productStockMap[value] || 0;
+                stockAmount.text(stock);
+                stockInfo.show();
+                
+                // Cambiar color según el stock
+                if (stock === 0) {
+                    stockInfo.removeClass('text-muted text-warning').addClass('text-danger');
+                    stockAmount.html('<strong>' + stock + '</strong> <span class="badge badge-danger badge-sm">Sin Stock</span>');
+                } else if (stock <= 5) {
+                    stockInfo.removeClass('text-muted text-danger').addClass('text-warning');
+                    stockAmount.html('<strong>' + stock + '</strong> <span class="badge badge-warning badge-sm">Stock Bajo</span>');
+                } else {
+                    stockInfo.removeClass('text-danger text-warning').addClass('text-success');
+                    stockAmount.html('<strong>' + stock + '</strong> <span class="badge badge-success badge-sm">Disponible</span>');
+                }
+                
+                console.log('✅ Producto válido:', value, 'Stock:', stock);
+                return true;
+            } else {
+                input.addClass('invalid-selection');
+                stockInfo.hide();
+                console.log('❌ Producto no válido:', value);
+                return false;
+            }
+        }
+        
+        // Evento para validar productos en tiempo real
+        $(document).on('input change blur', '.product-input', function() {
+            validateProduct($(this));
+        });
+        
+        // Validación de cantidad en tiempo real
+        $(document).on('input change', 'input[name*="[quantity]"]', function() {
+            const quantityInput = $(this);
+            const productInput = quantityInput.closest('tr').find('.product-input');
+            const productValue = productInput.val().trim();
+            const quantity = parseInt(quantityInput.val()) || 0;
+            
+            if (productValue && validProducts.includes(productValue)) {
+                const availableStock = productStockMap[productValue] || 0;
+                
+                // Remover clases anteriores
+                quantityInput.removeClass('border-warning border-danger');
+                
+                if (quantity > availableStock) {
+                    quantityInput.addClass('border-danger');
+                    quantityInput.attr('title', `Cantidad excede el stock disponible (${availableStock})`);
+                } else if (quantity === availableStock && quantity > 0) {
+                    quantityInput.addClass('border-warning');
+                    quantityInput.attr('title', `Utilizará todo el stock disponible (${availableStock})`);
+                } else {
+                    quantityInput.removeAttr('title');
+                }
+            }
+        });
+        
+        // Función para crear datalist único con información de stock
+        function createUniqueDatalist(index) {
+            const datalistId = `products-datalist-${index}`;
+            const options = [
+                @foreach($inventoryItems as $item)
+                    '<option value="{{ addslashes($item->producto) }}" data-stock="{{ $item->stock }}">{{ addslashes($item->producto) }} (Stock: {{ $item->stock }})</option>',
+                @endforeach
+            ].join('');
+            
+            return `<datalist id="${datalistId}">${options}</datalist>`;
+        }
+        
+        // Función para agregar nuevo material
+        $('#addMaterialItem').click(function() {
+            itemCounter++;
+            const newIndex = $('#materialItemsBody tr').length;
+            const datalistId = `products-datalist-${newIndex}`;
+            
+            console.log('➕ Agregando material #' + itemCounter);
+            
+            const newRow = `
+                <tr id="materialItem-${itemCounter}">
+                    <td>${itemCounter}</td>
+                    <td>
+                        <input type="text" 
+                               class="form-control form-control-sm product-input" 
+                               name="material_items[${newIndex}][article]"
+                               list="${datalistId}"
+                               placeholder="Escriba para buscar producto..."
+                               autocomplete="off"
+                               data-stock-info="">
+                        ${createUniqueDatalist(newIndex)}
+                        <input type="hidden" name="material_items[${newIndex}][item]" value="${itemCounter}">
+                        <small class="text-muted stock-info" style="display: none;">
+                            <i class="fas fa-box mr-1"></i>Stock disponible: <span class="stock-amount">0</span>
+                        </small>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" name="material_items[${newIndex}][quantity]" min="0">
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" name="material_items[${newIndex}][objective]">
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-danger delete-row">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            
+            $('#materialItemsBody').append(newRow);
+            console.log('✅ Material #' + itemCounter + ' agregado con datalist');
+        });
+        
+        // Eliminar fila
+        $(document).on('click', '.delete-row', function() {
+            const rowCount = $('#materialItemsBody tr').length;
+            
+            if (rowCount > 1) {
+                $(this).closest('tr').remove();
+                
+                // Renumerar filas
+                $('#materialItemsBody tr').each(function(index) {
+                    $(this).find('td:first').text(index + 1);
+                });
+                
+                console.log('🗑️ Fila eliminada');
+            } else {
+                alert('Debe mantener al menos un ítem en la tabla.');
+            }
+        });
+        
+        // Validar productos existentes al cargar la página
+        $('.product-input').each(function() {
+            validateProduct($(this));
+        });
+    });
+</script>
+@stop
+
+@section('css')
+<style>
+    /* Estilos para validación de productos */
+    .product-input.valid-selection {
+        border-color: #28a745 !important;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+    }
+    
+    .product-input.invalid-selection {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+    
+    .stock-info {
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+    
+    .stock-info.text-danger {
+        color: #dc3545 !important;
+    }
+    
+    .stock-info.text-warning {
+        color: #ffc107 !important;
+    }
+    
+    .stock-info.text-success {
+        color: #28a745 !important;
+    }
+    
+    input[title] {
+        cursor: help;
+    }
+    
+    /* Estilos para modales */
+    .modal-header {
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .modal-footer {
+        border-top: 1px solid #dee2e6;
+    }
+    
+    /* Estilos para tabla de advertencias */
+    .table-responsive {
+        border-radius: 0.25rem;
+    }
+    
+    .table th {
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .table td {
+        font-size: 0.875rem;
+        vertical-align: middle;
+    }
+    
+    /* Mejoras visuales para filas de advertencia */
+    .table-warning {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+    
+    .table-danger {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+</style>
 @stop
 
 @section('content')
@@ -102,25 +369,25 @@
                                     </tr>
                                 </thead>
                                 <tbody id="copyItemsBody">
-                                    @if($purchaseRequest->copyItems && count($purchaseRequest->copyItems) > 0)
-                                        @foreach($purchaseRequest->copyItems as $index => $item)
-                                            <tr id="copyItem-{{ $item->item }}">
-                                                <td>{{ $item->item }}</td>
+                                    @if($purchaseRequest->copy_items && count($purchaseRequest->copy_items) > 0)
+                                        @foreach($purchaseRequest->copy_items as $index => $item)
+                                            <tr id="copyItem-{{ $item['item'] }}">
+                                                <td>{{ $item['item'] }}</td>
                                                 <td>
-                                                    <input type="text" class="form-control form-control-sm" name="copy_items[{{ $index }}][original]" value="{{ $item->original }}">
-                                                    <input type="hidden" name="copy_items[{{ $index }}][item]" value="{{ $item->item }}">
+                                                    <input type="text" class="form-control form-control-sm" name="copy_items[{{ $index }}][original]" value="{{ $item['original'] }}">
+                                                    <input type="hidden" name="copy_items[{{ $index }}][item]" value="{{ $item['item'] }}">
                                                 </td>
                                                 <td>
-                                                    <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][copies_required]" min="0" value="{{ $item->copies_required }}">
+                                                    <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][copies_required]" min="0" value="{{ $item['copies_required'] }}">
                                                 </td>
                                                 <td>
-                                                    <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][double_letter_color]" min="0" value="{{ $item->double_letter_color ?? '' }}" placeholder="0">
+                                                    <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][double_letter_color]" min="0" value="{{ $item['double_letter_color'] ?? '' }}" placeholder="0">
                                                 </td>
                                                 <td>
-                                                    <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][black_white]" min="0" value="{{ $item->black_white ?? '' }}" placeholder="0">
+                                                    <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][black_white]" min="0" value="{{ $item['black_white'] ?? '' }}" placeholder="0">
                                                 </td>
                                                 <td>
-                                                    <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][color]" min="0" value="{{ $item->color ?? '' }}" placeholder="0">
+                                                    <input type="number" class="form-control form-control-sm" name="copy_items[{{ $index }}][color]" min="0" value="{{ $item['color'] ?? '' }}" placeholder="0">
                                                 </td>
                                                 <td class="text-center">
                                                     <button type="button" class="btn btn-sm btn-danger delete-row" {{ $index == 0 ? 'disabled' : '' }}>
@@ -194,26 +461,36 @@
                                     </tr>
                                 </thead>
                                 <tbody id="materialItemsBody">
-                                    @if($purchaseRequest->materialItems && count($purchaseRequest->materialItems) > 0)
-                                        @foreach($purchaseRequest->materialItems as $index => $item)
-                                            <tr id="materialItem-{{ $item->item }}">
-                                                <td>{{ $item->item }}</td>
+                                    @if($purchaseRequest->material_items && count($purchaseRequest->material_items) > 0)
+                                        @foreach($purchaseRequest->material_items as $index => $item)
+                                            <tr id="materialItem-{{ $item['item'] }}">
+                                                <td>{{ $item['item'] }}</td>
                                                 <td>
-                                                    <select class="form-control form-control-sm material-select" name="material_items[{{ $index }}][article]">
-                                                        <option value="">Seleccione un producto...</option>
+                                                    <input type="text" 
+                                                           class="form-control form-control-sm product-input" 
+                                                           name="material_items[{{ $index }}][article]"
+                                                           list="products-datalist-{{ $index }}"
+                                                           value="{{ $item['article'] }}"
+                                                           placeholder="Escriba para buscar producto..."
+                                                           autocomplete="off"
+                                                           data-stock-info="">
+                                                    <datalist id="products-datalist-{{ $index }}">
                                                         @foreach($inventoryItems as $inventoryItem)
-                                                            <option value="{{ $inventoryItem->producto }}" {{ $item->article == $inventoryItem->producto ? 'selected' : '' }}>
-                                                                {{ $inventoryItem->producto }}
+                                                            <option value="{{ $inventoryItem->producto }}" data-stock="{{ $inventoryItem->stock }}">
+                                                                {{ $inventoryItem->producto }} (Stock: {{ $inventoryItem->stock }})
                                                             </option>
                                                         @endforeach
-                                                    </select>
-                                                    <input type="hidden" name="material_items[{{ $index }}][item]" value="{{ $item->item }}">
+                                                    </datalist>
+                                                    <input type="hidden" name="material_items[{{ $index }}][item]" value="{{ $item['item'] }}">
+                                                    <small class="text-muted stock-info" style="display: none;">
+                                                        <i class="fas fa-box mr-1"></i>Stock disponible: <span class="stock-amount">0</span>
+                                                    </small>
                                                 </td>
                                                 <td>
-                                                    <input type="number" class="form-control form-control-sm" name="material_items[{{ $index }}][quantity]" min="0" value="{{ $item->quantity }}">
+                                                    <input type="number" class="form-control form-control-sm" name="material_items[{{ $index }}][quantity]" min="0" value="{{ $item['quantity'] }}">
                                                 </td>
                                                 <td>
-                                                    <input type="text" class="form-control form-control-sm" name="material_items[{{ $index }}][objective]" value="{{ $item->objective }}">
+                                                    <input type="text" class="form-control form-control-sm" name="material_items[{{ $index }}][objective]" value="{{ $item['objective'] }}">
                                                 </td>
                                                 <td class="text-center">
                                                     <button type="button" class="btn btn-sm btn-danger delete-row" {{ $index == 0 ? 'disabled' : '' }}>
@@ -226,13 +503,24 @@
                                         <tr id="materialItem-1">
                                             <td>1</td>
                                             <td>
-                                                <select class="form-control form-control-sm material-select" name="material_items[0][article]">
-                                                    <option value="">Seleccione un producto...</option>
+                                                <input type="text" 
+                                                       class="form-control form-control-sm product-input" 
+                                                       name="material_items[0][article]"
+                                                       list="products-datalist-0"
+                                                       placeholder="Escriba para buscar producto..."
+                                                       autocomplete="off"
+                                                       data-stock-info="">
+                                                <datalist id="products-datalist-0">
                                                     @foreach($inventoryItems as $item)
-                                                        <option value="{{ $item->producto }}">{{ $item->producto }}</option>
+                                                        <option value="{{ $item->producto }}" data-stock="{{ $item->stock }}">
+                                                            {{ $item->producto }} (Stock: {{ $item->stock }})
+                                                        </option>
                                                     @endforeach
-                                                </select>
+                                                </datalist>
                                                 <input type="hidden" name="material_items[0][item]" value="1">
+                                                <small class="text-muted stock-info" style="display: none;">
+                                                    <i class="fas fa-box mr-1"></i>Stock disponible: <span class="stock-amount">0</span>
+                                                </small>
                                             </td>
                                             <td>
                                                 <input type="number" class="form-control form-control-sm" name="material_items[0][quantity]" min="0">
@@ -449,8 +737,8 @@
         }
         
         // Variables para contadores de filas
-        let copyItemCounter = {{ $purchaseRequest->copyItems && count($purchaseRequest->copyItems) > 0 ? $purchaseRequest->copyItems->max('item') : 1 }};
-        let materialItemCounter = {{ $purchaseRequest->materialItems && count($purchaseRequest->materialItems) > 0 ? $purchaseRequest->materialItems->max('item') : 1 }};
+        let copyItemCounter = {{ $purchaseRequest->copy_items && count($purchaseRequest->copy_items) > 0 ? collect($purchaseRequest->copy_items)->max('item') : 1 }};
+        let materialItemCounter = {{ $purchaseRequest->material_items && count($purchaseRequest->material_items) > 0 ? collect($purchaseRequest->material_items)->max('item') : 1 }};
         
         // Función para agregar nueva fotocopia
         $('#addCopyItem').click(function() {
