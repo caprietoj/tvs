@@ -139,14 +139,14 @@
 
                 <!-- Información de Compra Compartida (si aplica) -->
                 @if($sharedPurchaseInfo && $sharedPurchaseInfo['is_shared'])
-                    <div class="alert alert-info alert-dismissible">
+                    <div class="alert alert-info alert-dismissible" style="color: white;">
                         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
                         <h5><i class="icon fas fa-share-alt"></i> ¡Compra Compartida Detectada!</h5>
                         <p><strong>Esta solicitud es compartida entre dos secciones y afectará los siguientes presupuestos:</strong></p>
                         
                         <div class="row mt-3">
                             <div class="col-md-6">
-                                <div class="card card-outline card-primary">
+                                <div class="card card-outline card-primary" style="color: black;">
                                     <div class="card-header">
                                         <h6 class="card-title mb-0">
                                             <i class="fas fa-building mr-1"></i>
@@ -162,7 +162,7 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="card card-outline card-success">
+                                <div class="card card-outline card-success" style="color: black;">
                                     <div class="card-header">
                                         <h6 class="card-title mb-0">
                                             <i class="fas fa-building mr-1"></i>
@@ -180,13 +180,13 @@
                         </div>
                         
                         @if($sharedPurchaseInfo['budget_impact']['total'] > 0)
-                            <div class="mt-2">
+                            <div class="mt-2" style="color: white;">
                                 <p class="mb-0"><strong>Total estimado de la compra:</strong> ${{ number_format($sharedPurchaseInfo['budget_impact']['total'], 2) }}</p>
-                                <small class="text-muted">* Los montos son estimados basados en la cotización más baja disponible.</small>
+                                <small style="color: white; opacity: 0.8;">* Los montos son estimados basados en la cotización más baja disponible.</small>
                             </div>
                         @else
-                            <div class="mt-2">
-                                <small class="text-muted">* Los montos específicos se determinarán una vez que se reciban las cotizaciones.</small>
+                            <div class="mt-2" style="color: white;">
+                                <small style="color: white; opacity: 0.8;">* Los montos específicos se determinarán una vez que se reciban las cotizaciones.</small>
                             </div>
                         @endif
                     </div>

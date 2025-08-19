@@ -664,6 +664,14 @@ Route::middleware(['auth'])->group(function () {
             ->name('purchase-orders.update-pdf');
         Route::post('purchase-orders/{purchaseOrder}/regenerate-pdf', [PurchaseOrdersController::class, 'regeneratePdf'])
             ->name('purchase-orders.regenerate-pdf');
+        Route::post('purchase-orders/{purchaseOrder}/separate-mixed-order', [PurchaseOrdersController::class, 'separateMixedOrder'])
+            ->name('purchase-orders.separate-mixed-order');
+        Route::post('purchase-orders/{purchaseOrder}/remove-provider-items', [PurchaseOrdersController::class, 'removeProviderItems'])
+            ->name('purchase-orders.remove-provider-items');
+        Route::post('purchase-orders/{purchaseOrder}/create-alternative-order', [PurchaseOrdersController::class, 'createAlternativeOrder'])
+            ->name('purchase-orders.create-alternative-order');
+        Route::post('purchase-orders/{purchaseOrder}/revert-to-mixed-selection', [PurchaseOrdersController::class, 'revertToMixedSelection'])
+            ->name('purchase-orders.revert-to-mixed-selection');
     });
     
     Route::delete('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'destroy'])
