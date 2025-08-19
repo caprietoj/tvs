@@ -167,15 +167,23 @@
                             $('.day-blocked-warning').remove();
                             $('input[name="cycle_days[]"]').removeClass('border-warning');
                             
-                            // Mostrar información sobre los días ya bloqueados
-                            response.blocked_days.forEach(function(day) {
-                                let checkbox = $(`#cycle_day_${day}`);
-                                let container = checkbox.closest('.custom-control');
-                                
-                                // Agregar advertencia visual sin marcar el checkbox
-                                checkbox.addClass('border-warning');
-                                container.append('<small class="text-warning day-blocked-warning"><i class="fas fa-exclamation-triangle"></i> Este día ya tiene bloqueos para este espacio</small>');
-                            });
+                            // Mostrar información detallada sobre los bloqueos existentes
+                            if (response.blocks_detail && response.blocks_detail.length > 0) {
+                                response.blocks_detail.forEach(function(block) {
+                                    let checkbox = $(`#cycle_day_${block.cycle_day}`);
+                                    let container = checkbox.closest('.custom-control');
+                                    
+                                    // Agregar advertencia visual con información de horario
+                                    checkbox.addClass('border-warning');
+                                    let warningMessage = `<small class="text-warning day-blocked-warning">`;
+                                    warningMessage += `<i class="fas fa-clock"></i> Bloqueado de ${block.start_time} a ${block.end_time}`;
+                                    if (block.reason) {
+                                        warningMessage += ` (${block.reason})`;
+                                    }
+                                    warningMessage += `</small>`;
+                                    container.append(warningMessage);
+                                });
+                            }
                         }
                     },
                     error: function() {

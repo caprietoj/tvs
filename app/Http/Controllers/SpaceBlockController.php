@@ -341,16 +341,29 @@ class SpaceBlockController extends Controller
 
         $blocks = SpaceBlock::where('space_id', $spaceId)
             ->where('school_cycle_id', $activeSchoolCycle->id)
+            ->where('is_weekday_block', false) // Solo bloqueos de días específicos, no semanales
+            ->where('cycle_day', '>', 0) // Excluir cycle_day = 0 que es para bloqueos semanales
             ->get()
-            ->pluck('cycle_day')
+            ->map(function($block) {
+                return [
+                    'cycle_day' => $block->cycle_day,
+                    'start_time' => substr($block->start_time, 0, 5), // Formato HH:MM
+                    'end_time' => substr($block->end_time, 0, 5),     // Formato HH:MM
+                    'reason' => $block->reason
+                ];
+            })
             ->toArray();
+
+        // También mantener la lista simple de días para compatibilidad
+        $blockedDays = array_unique(array_column($blocks, 'cycle_day'));
 
         return response()->json([
             'success' => true,
             'space' => $space->name,
             'cycle_id' => $activeSchoolCycle->id,
             'cycle_length' => $activeSchoolCycle->cycle_length,
-            'blocked_days' => $blocks
+            'blocked_days' => $blockedDays, // Para compatibilidad con código existente
+            'blocks_detail' => $blocks      // Nueva información detallada con horarios
         ]);
     }
 
