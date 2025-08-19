@@ -26,7 +26,7 @@ use App\Http\Controllers\SistemasThresholdController;
 // contabilidad
 use App\Http\Controllers\BudgetExecutionController; // Add this line
 use App\Http\Controllers\PresupuestoController;
-// use App\Http\Controllers\ParametrizacionController; // Comentado temporalmente - archivo faltante
+use App\Http\Controllers\ParametrizacionController;
 
 // Documentos
 use App\Http\Controllers\DocumentController;
@@ -195,22 +195,23 @@ Route::middleware('auth')->group(function () {
         Route::get('/budget/create', [BudgetExecutionController::class, 'create'])->name('budget.create');
         Route::post('/budget', [BudgetExecutionController::class, 'store'])->name('budget.store');
     
-        // Presupuesto routes - Solo para administradores
-        Route::group(['middleware' => ['can:admin']], function () {
-            Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.index');
-            Route::post('/presupuesto', [PresupuestoController::class, 'store'])->name('presupuesto.store');
-            Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.update');
-            Route::delete('/presupuesto/{id}', [PresupuestoController::class, 'destroy'])->name('presupuesto.destroy');
-            Route::post('/presupuesto/guardar-ejecucion', [PresupuestoController::class, 'guardarEjecucion'])->name('presupuesto.guardar-ejecucion');
-            Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.export');
-            Route::get('/presupuesto/data', [PresupuestoController::class, 'getData'])->name('presupuesto.data');
-            Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.procesar-extracto-contable');
-        });
+        // Presupuesto routes
+        Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.index');
+        Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.update');
+        Route::post('/presupuesto/guardar-ejecucion', [PresupuestoController::class, 'guardarEjecucion'])->name('presupuesto.guardar-ejecucion');
+        Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.export');
+        Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.procesar-extracto-contable');
         
-        // Parametrización routes - Comentadas temporalmente (archivo faltante)
-        // Route::get('/parametrizacion', [App\Http\Controllers\ParametrizacionController::class, 'index'])->name('parametrizacion.index');
-        // Route::post('/parametrizacion', [App\Http\Controllers\ParametrizacionController::class, 'store'])->name('parametrizacion.store');
-        // Route::post('/parametrizacion/reset', [App\Http\Controllers\ParametrizacionController::class, 'resetearSistema'])->name('parametrizacion.reset');
+        // Nuevas rutas para funcionalidad Excel
+        Route::post('/presupuesto/upload-excel', [PresupuestoController::class, 'uploadExcel'])->name('presupuesto.upload-excel');
+        Route::post('/presupuesto/update-excel-data', [PresupuestoController::class, 'updateExcelData'])->name('presupuesto.update-excel-data');
+        Route::get('/presupuesto/download-excel', [PresupuestoController::class, 'downloadExcel'])->name('presupuesto.download-excel');
+        Route::post('/presupuesto/clear-excel', [PresupuestoController::class, 'clearExcel'])->name('presupuesto.clear-excel');
+        
+        // Parametrización routes
+        Route::get('/parametrizacion', [App\Http\Controllers\ParametrizacionController::class, 'index'])->name('parametrizacion.index');
+        Route::post('/parametrizacion', [App\Http\Controllers\ParametrizacionController::class, 'store'])->name('parametrizacion.store');
+        Route::post('/parametrizacion/reset', [App\Http\Controllers\ParametrizacionController::class, 'resetearSistema'])->name('parametrizacion.reset');
     
         // Contabilidad Document Management
         Route::group(['middleware' => ['auth']], function () {
@@ -663,21 +664,7 @@ Route::middleware(['auth'])->group(function () {
             ->name('purchase-orders.update-pdf');
         Route::post('purchase-orders/{purchaseOrder}/regenerate-pdf', [PurchaseOrdersController::class, 'regeneratePdf'])
             ->name('purchase-orders.regenerate-pdf');
-        
-        // Rutas para manejo de selección mixta
-        Route::post('purchase-orders/{purchaseOrder}/separate-mixed-order', [PurchaseOrdersController::class, 'separateMixedOrder'])
-            ->name('purchase-orders.separate-mixed-order');
-        Route::delete('purchase-orders/{purchaseOrder}/remove-provider-items', [PurchaseOrdersController::class, 'removeProviderItems'])
-            ->name('purchase-orders.remove-provider-items');
-        Route::post('purchase-orders/{purchaseOrder}/create-alternative-order', [PurchaseOrdersController::class, 'createAlternativeOrder'])
-            ->name('purchase-orders.create-alternative-order');
-        Route::delete('purchase-orders/{purchaseOrder}/revert-to-mixed-selection', [PurchaseOrdersController::class, 'revertToMixedSelection'])
-            ->name('purchase-orders.revert-to-mixed-selection');
     });
-    
-    // Ruta para marcar como vista (contabilidad/tesorería/admin)
-    Route::post('purchase-orders/{purchaseOrder}/toggle-viewed', [PurchaseOrdersController::class, 'toggleViewed'])
-        ->name('purchase-orders.toggle-viewed');
     
     Route::delete('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'destroy'])
         ->name('purchase-orders.destroy');
@@ -1071,13 +1058,8 @@ Route::middleware(['auth', 'admin'])->prefix('surveys')->name('surveys.')->group
     });
 });
 
-// Rutas principales para presupuesto - Solo para administradores
-Route::group(['middleware' => ['auth', 'can:admin']], function () {
-    Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.main');
-    Route::post('/presupuesto', [PresupuestoController::class, 'store'])->name('presupuesto.main.store');
-    Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.main.update');
-    Route::delete('/presupuesto/{id}', [PresupuestoController::class, 'destroy'])->name('presupuesto.main.destroy');
-    Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.main.export');
-    Route::get('/presupuesto/data', [PresupuestoController::class, 'getData'])->name('presupuesto.main.data');
-    Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.main.procesar-extracto-contable');
-});
+// Ruta principal para presupuesto (temporal sin auth para pruebas)
+Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.main');
+Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.main.update');
+Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.main.export');
+Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.main.procesar-extracto-contable');

@@ -523,7 +523,7 @@ class ApprovalController extends Controller
                 'payment_terms' => $quotation->payment_terms ?? 'Contado',
                 'delivery_date' => now()->addDays(15),
                 'file_path' => 'pending_generation',
-                'observations' => 'Orden creada automáticamente - Proveedor: ' . $quotation->provider_name,
+                'observations' => $this->generateObservationsForSharedPurchase($purchaseRequest, $quotation->provider_name),
                 'created_by' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
                 'status' => 'pending'
             ]);
@@ -615,7 +615,7 @@ class ApprovalController extends Controller
             'payment_terms' => $paymentTerms,
             'delivery_date' => now()->addDays(15),
             'file_path' => 'pending_generation',
-            'observations' => 'Orden creada automáticamente al aprobar solicitud',
+            'observations' => $this->generateObservationsForSharedPurchase($purchaseRequest),
             'created_by' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
             'status' => 'pending'
         ]);
@@ -776,5 +776,30 @@ class ApprovalController extends Controller
         }
         
         return $info;
+    }
+
+    /**
+     * Generar observaciones específicas para compras compartidas
+     */
+    private function generateObservationsForSharedPurchase($purchaseRequest, $providerName = null)
+    {
+        if ($purchaseRequest->is_shared) {
+            $observations = "Esta solicitud de compra es compartida entre las secciones: " . 
+                           $purchaseRequest->section_area . " (" . $purchaseRequest->my_percentage . "%) y " . 
+                           $purchaseRequest->shared_section . " (" . $purchaseRequest->shared_percentage . "%)";
+            
+            if ($providerName) {
+                $observations .= " - Proveedor: " . $providerName;
+            }
+            
+            return $observations;
+        }
+        
+        // Si no es compartida, usar las observaciones estándar
+        if ($providerName) {
+            return 'Orden creada automáticamente - Proveedor: ' . $providerName;
+        }
+        
+        return 'Orden creada automáticamente al aprobar solicitud';
     }
 }

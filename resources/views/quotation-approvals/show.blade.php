@@ -137,6 +137,61 @@
                     </div>
                 </div>
 
+                <!-- Información de Compra Compartida (si aplica) -->
+                @if($sharedPurchaseInfo && $sharedPurchaseInfo['is_shared'])
+                    <div class="alert alert-info alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        <h5><i class="icon fas fa-share-alt"></i> ¡Compra Compartida Detectada!</h5>
+                        <p><strong>Esta solicitud es compartida entre dos secciones y afectará los siguientes presupuestos:</strong></p>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="card card-outline card-primary">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">
+                                            <i class="fas fa-building mr-1"></i>
+                                            {{ $sharedPurchaseInfo['my_section'] }}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <p class="mb-1"><strong>Porcentaje:</strong> {{ $sharedPurchaseInfo['my_percentage'] }}%</p>
+                                        @if($sharedPurchaseInfo['budget_impact']['total'] > 0)
+                                            <p class="mb-0"><strong>Monto estimado:</strong> ${{ number_format($sharedPurchaseInfo['budget_impact']['my_section']['amount'], 2) }}</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card card-outline card-success">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">
+                                            <i class="fas fa-building mr-1"></i>
+                                            {{ $sharedPurchaseInfo['shared_section'] }}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <p class="mb-1"><strong>Porcentaje:</strong> {{ $sharedPurchaseInfo['shared_percentage'] }}%</p>
+                                        @if($sharedPurchaseInfo['budget_impact']['total'] > 0)
+                                            <p class="mb-0"><strong>Monto estimado:</strong> ${{ number_format($sharedPurchaseInfo['budget_impact']['shared_section']['amount'], 2) }}</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        @if($sharedPurchaseInfo['budget_impact']['total'] > 0)
+                            <div class="mt-2">
+                                <p class="mb-0"><strong>Total estimado de la compra:</strong> ${{ number_format($sharedPurchaseInfo['budget_impact']['total'], 2) }}</p>
+                                <small class="text-muted">* Los montos son estimados basados en la cotización más baja disponible.</small>
+                            </div>
+                        @else
+                            <div class="mt-2">
+                                <small class="text-muted">* Los montos específicos se determinarán una vez que se reciban las cotizaciones.</small>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
                 <!-- Productos/Servicios solicitados -->
                 @if($request->type === 'purchase')
                     <!-- Productos (si hay) -->
@@ -1261,7 +1316,7 @@
             
             // Verificar que todos los campos requeridos estén completos
             const comments = $('#mixed_selection_comments').val();
-            const budget = $('#mixed_selection_budget').val();
+            const budget = $('input[name="budget_line"]:checked').val();
             const confirmed = $('#confirm_mixed_selection').is(':checked');
             
             console.log('Comentarios:', comments);

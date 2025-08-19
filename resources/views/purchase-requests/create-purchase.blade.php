@@ -39,17 +39,18 @@
                         <label for="section_area">SECCIÓN Y/O ÁREA:</label>
                         <select class="form-control @error('section_area') is-invalid @enderror" id="section_area" name="section_area">
                             <option value="">Seleccione...</option>
-                            <option value="Pre Escolar" {{ old('section_area') == 'Pre Escolar' ? 'selected' : '' }}>Pre Escolar</option>
-                            <option value="Primaria" {{ old('section_area') == 'Primaria' ? 'selected' : '' }}>Primaria</option>
-                            <option value="Bachillerato" {{ old('section_area') == 'Bachillerato' ? 'selected' : '' }}>Bachillerato</option>
-                            <option value="PEP" {{ old('section_area') == 'PEP' ? 'selected' : '' }}>PEP</option>
+                            <option value="Preescolar y Primaria" {{ old('section_area') == 'Preescolar y Primaria' ? 'selected' : '' }}>Preescolar y Primaria</option>
+                            <option value="Escuela Media" {{ old('section_area') == 'Escuela Media' ? 'selected' : '' }}>Escuela Media</option>
+                            <option value="Escuela Alta / DP" {{ old('section_area') == 'Escuela Alta / DP' ? 'selected' : '' }}>Escuela Alta / DP</option>
                             <option value="PAI" {{ old('section_area') == 'PAI' ? 'selected' : '' }}>PAI</option>
-                            <option value="Diploma" {{ old('section_area') == 'Diploma' ? 'selected' : '' }}>Diploma</option>
-                            <option value="Administración" {{ old('section_area') == 'Administración' ? 'selected' : '' }}>Administración</option>
+                            <option value="PEP" {{ old('section_area') == 'PEP' ? 'selected' : '' }}>PEP</option>
+                            <option value="Deportes" {{ old('section_area') == 'Deportes' ? 'selected' : '' }}>Deportes</option>
+                            <option value="Psicología Institucional" {{ old('section_area') == 'Psicología Institucional' ? 'selected' : '' }}>Psicología Institucional</option>
+                            <option value="Biblioteca" {{ old('section_area') == 'Biblioteca' ? 'selected' : '' }}>Biblioteca</option>
                             <option value="Dirección General" {{ old('section_area') == 'Dirección General' ? 'selected' : '' }}>Dirección General</option>
                             <option value="CAS" {{ old('section_area') == 'CAS' ? 'selected' : '' }}>CAS</option>
-                            <option value="Departamento de Apoyo" {{ old('section_area') == 'Departamento de Apoyo' ? 'selected' : '' }}>Departamento de Apoyo</option>
-                            <option value="Biblioteca" {{ old('section_area') == 'Biblioteca' ? 'selected' : '' }}>Biblioteca</option>
+                            <option value="Administración" {{ old('section_area') == 'Administración' ? 'selected' : '' }}>Administración</option>
+                            <option value="Tecnología Institucional" {{ old('section_area') == 'Tecnología Institucional' ? 'selected' : '' }}>Tecnología Institucional</option>
                         </select>
                         @error('section_area')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -172,6 +173,124 @@
         </form>
     </div>
 </div>
+
+<!-- Modal de Compra Compartida -->
+<div class="modal fade shared-purchase-modal" id="sharedPurchaseModal" tabindex="-1" role="dialog" aria-labelledby="sharedPurchaseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #364E76; color: white;">
+                <h5 class="modal-title" id="sharedPurchaseModalLabel">
+                    <i class="fas fa-share-alt"></i> Configuración de Compra Compartida
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>¿Esta compra será compartida con otra sección?</strong>
+                </div>
+                
+                <!-- Pregunta inicial -->
+                <div class="form-group">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="is_shared" id="is_shared_no" value="no" checked>
+                        <label class="form-check-label" for="is_shared_no">
+                            <i class="fas fa-times text-danger"></i> No, esta compra es solo para mi sección
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="is_shared" id="is_shared_yes" value="yes">
+                        <label class="form-check-label" for="is_shared_yes">
+                            <i class="fas fa-check text-success"></i> Sí, esta compra será compartida
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Configuración de compra compartida -->
+                <div id="sharedConfig" style="display: none;">
+                    <hr>
+                    <h6><i class="fas fa-cogs"></i> Configuración de la Compra Compartida</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-user"></i> Mi Sección</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-1"><strong>Sección:</strong></p>
+                                    <p class="section-display" id="currentSection">-</p>
+                                    <p class="mb-1"><strong>Porcentaje a pagar:</strong></p>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control percentage-input" id="myPercentage" min="1" max="99" value="50">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-users"></i> Sección Compartida</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-1"><strong>Seleccionar sección:</strong></p>
+                                    <select class="form-control" id="sharedSection">
+                                        <option value="">Seleccione una sección...</option>
+                                        <option value="Preescolar y Primaria">Preescolar y Primaria</option>
+                                        <option value="Escuela Media">Escuela Media</option>
+                                        <option value="Escuela Alta / DP">Escuela Alta / DP</option>
+                                        <option value="PAI">PAI</option>
+                                        <option value="PEP">PEP</option>
+                                        <option value="Deportes">Deportes</option>
+                                        <option value="Psicología Institucional">Psicología Institucional</option>
+                                        <option value="Biblioteca">Biblioteca</option>
+                                        <option value="Dirección General">Dirección General</option>
+                                        <option value="CAS">CAS</option>
+                                        <option value="Administración">Administración</option>
+                                        <option value="Tecnología Institucional">Tecnología Institucional</option>
+                                    </select>
+                                    <p class="mb-1 mt-2"><strong>Porcentaje a pagar:</strong></p>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control percentage-input" id="sharedPercentage" readonly>
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Importante:</strong> El total entre ambas secciones debe ser 100%. 
+                        El porcentaje de la sección compartida se calculará automáticamente.
+                    </div>
+
+                    <!-- Campos ocultos para enviar con el formulario -->
+                    <input type="hidden" id="hidden_is_shared" name="is_shared" value="no">
+                    <input type="hidden" id="hidden_shared_section" name="shared_section" value="">
+                    <input type="hidden" id="hidden_my_percentage" name="my_percentage" value="100">
+                    <input type="hidden" id="hidden_shared_percentage" name="shared_percentage" value="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmSharedPurchase" style="background-color: #364E76; border-color: #364E76;">
+                    <i class="fas fa-check"></i> Continuar con la Solicitud
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('css')
@@ -207,6 +326,54 @@
     .form-control:focus {
         border-color: #364E76;
         box-shadow: 0 0 0 0.2rem rgba(54, 78, 118, 0.25);
+    }
+
+    /* Estilos específicos para el modal de compra compartida */
+    .shared-purchase-modal .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .shared-purchase-modal .card {
+        border: 2px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+    
+    .shared-purchase-modal .card:hover {
+        border-color: #364E76;
+        box-shadow: 0 0 10px rgba(54, 78, 118, 0.2);
+    }
+    
+    .shared-purchase-modal .form-check-label {
+        cursor: pointer;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        margin: 0.25rem;
+        transition: all 0.2s ease;
+    }
+    
+    .shared-purchase-modal .form-check-label:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .shared-purchase-modal .form-check-input:checked + label {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+    
+    .percentage-input {
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .section-display {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #364E76;
+        background-color: #f8f9fa;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        border: 1px solid #dee2e6;
     }
 </style>
 @stop
@@ -291,8 +458,20 @@
             purchaseItemCounter = $('#purchaseItemsBody tr').length;
         }
         
+        // Variables para manejar el modal
+        let formIsValidated = false;
+        let formReadyToSubmit = false;
+        
         // Validación del formulario
         $('#purchaseForm').submit(function(e) {
+            // Si el formulario ya fue validado y está listo para enviar, permitir el submit
+            if (formReadyToSubmit) {
+                return true;
+            }
+            
+            // Prevenir el submit inicialmente
+            e.preventDefault();
+            
             let hasPurchaseItems = false;
             
             // Verificar si hay items de compra con descripción
@@ -304,14 +483,12 @@
             });
             
             if (!hasPurchaseItems) {
-                e.preventDefault();
                 alert('Debe ingresar al menos un artículo de compra para la solicitud.');
                 return false;
             }
             
             // Validar justificación (ahora siempre requerida)
             if (!$('#purchase_justification').val().trim()) {
-                e.preventDefault();
                 alert('Debe ingresar una justificación para la compra.');
                 $('#purchase_justification').focus();
                 return false;
@@ -319,13 +496,96 @@
 
             // Validar sección/área
             if (!$('#section_area').val()) {
-                e.preventDefault();
                 alert('Debe seleccionar una sección y/o área.');
                 $('#section_area').focus();
                 return false;
             }
             
-            return true;
+            // Si todas las validaciones pasaron, mostrar el modal
+            formIsValidated = true;
+            showSharedPurchaseModal();
+            return false;
+        });
+
+        // Función para mostrar el modal de compra compartida
+        function showSharedPurchaseModal() {
+            // Mostrar la sección actual en el modal
+            const currentSection = $('#section_area option:selected').text();
+            $('#currentSection').text(currentSection);
+            
+            // Resetear el modal
+            $('input[name="is_shared"][value="no"]').prop('checked', true);
+            $('#sharedConfig').hide();
+            $('#sharedSection').val('');
+            $('#myPercentage').val(50);
+            $('#sharedPercentage').val(50);
+            
+            // Filtrar la sección actual del dropdown de sección compartida
+            $('#sharedSection option').show();
+            $('#sharedSection option').each(function() {
+                if ($(this).val() === $('#section_area').val()) {
+                    $(this).hide();
+                }
+            });
+            
+            // Mostrar el modal
+            $('#sharedPurchaseModal').modal('show');
+        }
+
+        // Manejar cambio en la pregunta inicial del modal
+        $('input[name="is_shared"]').change(function() {
+            if ($(this).val() === 'yes') {
+                $('#sharedConfig').slideDown();
+            } else {
+                $('#sharedConfig').slideUp();
+            }
+        });
+
+        // Calcular porcentaje automáticamente
+        $('#myPercentage').on('input', function() {
+            const myPercentage = parseInt($(this).val()) || 0;
+            const sharedPercentage = 100 - myPercentage;
+            
+            if (myPercentage < 1) {
+                $(this).val(1);
+                $('#sharedPercentage').val(99);
+            } else if (myPercentage > 99) {
+                $(this).val(99);
+                $('#sharedPercentage').val(1);
+            } else {
+                $('#sharedPercentage').val(sharedPercentage);
+            }
+        });
+
+        // Confirmar compra compartida y enviar formulario
+        $('#confirmSharedPurchase').click(function() {
+            const isShared = $('input[name="is_shared"]:checked').val();
+            
+            if (isShared === 'yes') {
+                const sharedSection = $('#sharedSection').val();
+                
+                if (!sharedSection) {
+                    alert('Por favor seleccione la sección con la que compartirá esta compra.');
+                    return;
+                }
+                
+                // Actualizar campos ocultos
+                $('#hidden_is_shared').val('yes');
+                $('#hidden_shared_section').val(sharedSection);
+                $('#hidden_my_percentage').val($('#myPercentage').val());
+                $('#hidden_shared_percentage').val($('#sharedPercentage').val());
+            } else {
+                // Actualizar campos ocultos para compra no compartida
+                $('#hidden_is_shared').val('no');
+                $('#hidden_shared_section').val('');
+                $('#hidden_my_percentage').val(100);
+                $('#hidden_shared_percentage').val(0);
+            }
+            
+            // Cerrar modal y enviar formulario
+            $('#sharedPurchaseModal').modal('hide');
+            formReadyToSubmit = true;
+            $('#purchaseForm').submit();
         });
 
         // Inicializar botones

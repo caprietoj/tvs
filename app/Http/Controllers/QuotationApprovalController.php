@@ -74,6 +74,19 @@ class QuotationApprovalController extends Controller
                 ->with('info', 'Este servicio no requiere cotización. Redirigiendo al flujo de aprobación directa.');
         }
         
+        // Detectar automáticamente si es una compra compartida y preparar información
+        $sharedPurchaseInfo = null;
+        if ($request->is_shared) {
+            $sharedPurchaseInfo = [
+                'is_shared' => true,
+                'my_section' => $request->section_area,
+                'my_percentage' => $request->my_percentage,
+                'shared_section' => $request->shared_section,
+                'shared_percentage' => $request->shared_percentage,
+                'budget_impact' => $this->calculateBudgetImpact($request)
+            ];
+        }
+        
         // Verificar si hay selecciones mixtas
         $mixedSelections = \App\Models\QuotationItemSelection::where('purchase_request_id', $id)
             ->with(['quotation', 'selectedBy'])
@@ -113,7 +126,7 @@ class QuotationApprovalController extends Controller
             $approvalInfo = $this->checkApprovalStatus($request);
         }
         
-        return view('quotation-approvals.show', compact('request', 'mixedSelections', 'hasMixedSelections', 'purchaseItems', 'selectedQuotations', 'approvalInfo'));
+        return view('quotation-approvals.show', compact('request', 'mixedSelections', 'hasMixedSelections', 'purchaseItems', 'selectedQuotations', 'approvalInfo', 'sharedPurchaseInfo'));
     }
 
     /**
@@ -815,5 +828,48 @@ class QuotationApprovalController extends Controller
         \Log::warning("✗ No se encontró email configurado para la sección: '$section_area'. Usando predeterminado: $defaultEmail");
         
         return [$defaultEmail];
+    }
+
+    /**
+     * Calcular el impacto en los presupuestos para compras compartidas
+     */
+    private function calculateBudgetImpact($request)
+    {
+        $budgetImpact = [];
+        
+        // Obtener el total estimado de la solicitud
+        $totalEstimado = 0;
+        
+        // Si hay cotizaciones, usar el menor precio
+        if ($request->quotations && $request->quotations->count() > 0) {
+            $minPrice = $request->quotations->min('total_amount');
+            $totalEstimado = $minPrice ?: 0;
+        } 
+        // Si no hay cotizaciones pero hay un presupuesto de servicio
+        elseif ($request->service_budget) {
+            $totalEstimado = $request->service_budget;
+        }
+        // Fallback: intentar calcular desde items si están disponibles
+        elseif ($request->purchase_items && is_array($request->purchase_items)) {
+            // Este es un estimado muy básico ya que no tenemos precios en los items
+            $totalEstimado = 0; // Mantenemos en 0 si no hay información de precios
+        }
+        
+        // Calcular el impacto por sección
+        $budgetImpact['my_section'] = [
+            'name' => $request->section_area,
+            'percentage' => $request->my_percentage,
+            'amount' => $totalEstimado * ($request->my_percentage / 100)
+        ];
+        
+        $budgetImpact['shared_section'] = [
+            'name' => $request->shared_section,
+            'percentage' => $request->shared_percentage,
+            'amount' => $totalEstimado * ($request->shared_percentage / 100)
+        ];
+        
+        $budgetImpact['total'] = $totalEstimado;
+        
+        return $budgetImpact;
     }
 }

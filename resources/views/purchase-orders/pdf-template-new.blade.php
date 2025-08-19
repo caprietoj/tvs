@@ -373,11 +373,29 @@
                             IMPTO AL CONSUMO (4%)
                         @endif
                     </td>
-                    <td class="right">${{ number_format($ipoconsumoCalculado, 0, ',', '.') }}</td>
+                    <td class="right">${{ number_format($ipoconsumo8Amount + $ipoconsumo4Amount, 0, ',', '.') }}</td>
                 @else
-                    <td class="bold">IMPTO AL CONSUMO</td>
-                    <td class="right">${{ number_format($ipoconsumoCalculado, 0, ',', '.') }}</td>
+                    <td></td>
+                    <td></td>
                 @endif
+            </tr>
+            
+            {{-- Fila adicional para compras compartidas --}}
+            @if($order->purchaseRequest->is_shared)
+            <tr>
+                <td class="bold">PRESUPUESTO COMPARTIDO:</td>
+                <td>{{ $order->purchaseRequest->shared_section }}</td>
+                <td class="bold">IMPTO AL CONSUMO</td>
+                <td class="right">${{ number_format($ipoconsumoCalculado, 0, ',', '.') }}</td>
+            </tr>
+            @else
+            <tr>
+                <td></td>
+                <td></td>
+                <td class="bold">IMPTO AL CONSUMO</td>
+                <td class="right">${{ number_format($ipoconsumoCalculado, 0, ',', '.') }}</td>
+            </tr>
+            @endif
             </tr>
             <tr>
                 <td class="bold">SECCIÓN / DPTO:</td>

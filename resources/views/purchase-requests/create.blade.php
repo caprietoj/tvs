@@ -111,9 +111,16 @@
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Elementos de organización</li>
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Materiales pedagógicos</li>
                                     </ul>
-                                    <button type="button" id="materialsButton" class="btn btn-info btn-block">
-                                        <i class="fas fa-box mr-2"></i> Crear Solicitud de Materiales
-                                    </button>
+                                    @if(isset($canAccessMaterials) && $canAccessMaterials)
+                                        <button type="button" id="materialsButton" class="btn btn-info btn-block">
+                                            <i class="fas fa-box mr-2"></i> Crear Solicitud de Materiales
+                                        </button>
+                                    @else
+                                        <button type="button" class="btn btn-secondary btn-block" disabled title="No tiene permisos para crear solicitudes de materiales">
+                                            <i class="fas fa-lock mr-2"></i> Acceso Restringido - Materiales
+                                        </button>
+                                        <small class="text-muted mt-2 d-block">Solo disponible para administradores y usuarios autorizados</small>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -138,9 +145,16 @@
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Copias en blanco y negro</li>
                                         <li class="list-group-item"><i class="fas fa-check text-success mr-2"></i>Copias a color</li>
                                     </ul>
-                                    <button type="button" id="copiesButton" class="btn btn-warning btn-block">
-                                        <i class="fas fa-copy mr-2"></i> Crear Solicitud de Fotocopias
-                                    </button>
+                                    @if(isset($canAccessCopies) && $canAccessCopies)
+                                        <button type="button" id="copiesButton" class="btn btn-warning btn-block">
+                                            <i class="fas fa-copy mr-2"></i> Crear Solicitud de Fotocopias
+                                        </button>
+                                    @else
+                                        <button type="button" class="btn btn-secondary btn-block" disabled title="No tiene permisos para crear solicitudes de fotocopias">
+                                            <i class="fas fa-lock mr-2"></i> Acceso Restringido - Fotocopias
+                                        </button>
+                                        <small class="text-muted mt-2 d-block">Solo disponible para administradores y usuarios autorizados</small>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -329,6 +343,42 @@
     .text-institutional {
         color: var(--institutional-blue);
     }
+    
+    /* Estilos para botones deshabilitados/restringidos */
+    .btn-block[disabled] {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+        color: #fff !important;
+        cursor: not-allowed !important;
+        opacity: 0.65;
+    }
+    
+    .btn-block[disabled]:hover {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Efectos visuales para tarjetas con botones deshabilitados */
+    .card-type-selector:has(.btn-block[disabled]) {
+        opacity: 0.7;
+        position: relative;
+    }
+    
+    .card-type-selector:has(.btn-block[disabled]):hover {
+        transform: none;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .card-type-selector:has(.btn-block[disabled])::after {
+        content: "🔒";
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 20px;
+        opacity: 0.6;
+    }
 </style>
 @stop
 
@@ -373,12 +423,18 @@
             window.location.href = '{{ route("purchase-requests.create-services") }}';
         });
         
+        // Solo manejar click de materiales si el botón está habilitado
         $('#materialsButton').click(function() {
-            window.location.href = '{{ route("purchase-requests.create-materials") }}';
+            if (!$(this).prop('disabled')) {
+                window.location.href = '{{ route("purchase-requests.create-materials") }}';
+            }
         });
         
+        // Solo manejar click de fotocopias si el botón está habilitado
         $('#copiesButton').click(function() {
-            window.location.href = '{{ route("purchase-requests.create-copies") }}';
+            if (!$(this).prop('disabled')) {
+                window.location.href = '{{ route("purchase-requests.create-copies") }}';
+            }
         });
         
         // Añadir efecto hover en las tarjetas

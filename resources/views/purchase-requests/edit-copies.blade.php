@@ -72,11 +72,18 @@
                         <td>
                             <select class="form-control @error('section') is-invalid @enderror" name="section">
                                 <option value="">Seleccione...</option>
-                                <option value="Pre Escolar" {{ old('section', $purchaseRequest->section) == 'Pre Escolar' ? 'selected' : '' }}>Pre Escolar</option>
-                                <option value="Primaria" {{ old('section', $purchaseRequest->section) == 'Primaria' ? 'selected' : '' }}>Primaria</option>
-                                <option value="Bachillerato" {{ old('section', $purchaseRequest->section) == 'Bachillerato' ? 'selected' : '' }}>Bachillerato</option>
-                                <option value="Administración" {{ old('section', $purchaseRequest->section) == 'Administración' ? 'selected' : '' }}>Administración</option>
+                                <option value="Preescolar y Primaria" {{ old('section', $purchaseRequest->section) == 'Preescolar y Primaria' ? 'selected' : '' }}>Preescolar y Primaria</option>
+                                <option value="Escuela Media" {{ old('section', $purchaseRequest->section) == 'Escuela Media' ? 'selected' : '' }}>Escuela Media</option>
+                                <option value="Escuela Alta / DP" {{ old('section', $purchaseRequest->section) == 'Escuela Alta / DP' ? 'selected' : '' }}>Escuela Alta / DP</option>
+                                <option value="PAI" {{ old('section', $purchaseRequest->section) == 'PAI' ? 'selected' : '' }}>PAI</option>
+                                <option value="PEP" {{ old('section', $purchaseRequest->section) == 'PEP' ? 'selected' : '' }}>PEP</option>
+                                <option value="Deportes" {{ old('section', $purchaseRequest->section) == 'Deportes' ? 'selected' : '' }}>Deportes</option>
+                                <option value="Psicología Institucional" {{ old('section', $purchaseRequest->section) == 'Psicología Institucional' ? 'selected' : '' }}>Psicología Institucional</option>
                                 <option value="Biblioteca" {{ old('section', $purchaseRequest->section) == 'Biblioteca' ? 'selected' : '' }}>Biblioteca</option>
+                                <option value="Dirección General" {{ old('section', $purchaseRequest->section) == 'Dirección General' ? 'selected' : '' }}>Dirección General</option>
+                                <option value="CAS" {{ old('section', $purchaseRequest->section) == 'CAS' ? 'selected' : '' }}>CAS</option>
+                                <option value="Administración" {{ old('section', $purchaseRequest->section) == 'Administración' ? 'selected' : '' }}>Administración</option>
+                                <option value="Tecnología Institucional" {{ old('section', $purchaseRequest->section) == 'Tecnología Institucional' ? 'selected' : '' }}>Tecnología Institucional</option>
                             </select>
                             @error('section')
                                 <div class="invalid-feedback">{{ $message }}</div>

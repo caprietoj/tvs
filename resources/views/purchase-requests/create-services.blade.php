@@ -39,17 +39,18 @@
                         <label for="section_area">SECCIÓN Y/O ÁREA:</label>
                         <select class="form-control @error('section_area') is-invalid @enderror" id="section_area" name="section_area">
                             <option value="">Seleccione...</option>
-                            <option value="Pre Escolar" {{ old('section_area') == 'Pre Escolar' ? 'selected' : '' }}>Pre Escolar</option>
-                            <option value="Primaria" {{ old('section_area') == 'Primaria' ? 'selected' : '' }}>Primaria</option>
-                            <option value="Bachillerato" {{ old('section_area') == 'Bachillerato' ? 'selected' : '' }}>Bachillerato</option>
-                            <option value="PEP" {{ old('section_area') == 'PEP' ? 'selected' : '' }}>PEP</option>
+                            <option value="Preescolar y Primaria" {{ old('section_area') == 'Preescolar y Primaria' ? 'selected' : '' }}>Preescolar y Primaria</option>
+                            <option value="Escuela Media" {{ old('section_area') == 'Escuela Media' ? 'selected' : '' }}>Escuela Media</option>
+                            <option value="Escuela Alta / DP" {{ old('section_area') == 'Escuela Alta / DP' ? 'selected' : '' }}>Escuela Alta / DP</option>
                             <option value="PAI" {{ old('section_area') == 'PAI' ? 'selected' : '' }}>PAI</option>
-                            <option value="Diploma" {{ old('section_area') == 'Diploma' ? 'selected' : '' }}>Diploma</option>
-                            <option value="Administración" {{ old('section_area') == 'Administración' ? 'selected' : '' }}>Administración</option>
+                            <option value="PEP" {{ old('section_area') == 'PEP' ? 'selected' : '' }}>PEP</option>
+                            <option value="Deportes" {{ old('section_area') == 'Deportes' ? 'selected' : '' }}>Deportes</option>
+                            <option value="Psicología Institucional" {{ old('section_area') == 'Psicología Institucional' ? 'selected' : '' }}>Psicología Institucional</option>
+                            <option value="Biblioteca" {{ old('section_area') == 'Biblioteca' ? 'selected' : '' }}>Biblioteca</option>
                             <option value="Dirección General" {{ old('section_area') == 'Dirección General' ? 'selected' : '' }}>Dirección General</option>
                             <option value="CAS" {{ old('section_area') == 'CAS' ? 'selected' : '' }}>CAS</option>
-                            <option value="Departamento de Apoyo" {{ old('section_area') == 'Departamento de Apoyo' ? 'selected' : '' }}>Departamento de Apoyo</option>
-                            <option value="Biblioteca" {{ old('section_area') == 'Biblioteca' ? 'selected' : '' }}>Biblioteca</option>
+                            <option value="Administración" {{ old('section_area') == 'Administración' ? 'selected' : '' }}>Administración</option>
+                            <option value="Tecnología Institucional" {{ old('section_area') == 'Tecnología Institucional' ? 'selected' : '' }}>Tecnología Institucional</option>
                         </select>
                         @error('section_area')
                             <div class="invalid-feedback">{{ $message }}</div>

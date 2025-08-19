@@ -17,7 +17,26 @@ use App\Services\SectionClassifierService;
 use App\Services\PurchaseRequestPermissionService;
 
 class PurchaseRequestController extends Controller
-{    /**
+{    
+    /**
+     * Usuarios autorizados para materiales y fotocopias
+     * Solo estos usuarios y los administradores pueden crear solicitudes
+     * de materiales y fotocopias
+     */
+    private $authorizedEmails = ['compras@tvs.edu.co', 'auxiliaralmacen@tvs.edu.co'];
+    
+    /**
+     * Verificar si el usuario puede acceder a materiales y fotocopias
+     * 
+     * @return bool True si el usuario es admin o está en la lista de emails autorizados
+     */
+    private function canAccessRestrictedActions()
+    {
+        $currentUserEmail = auth()->user()->email;
+        return auth()->user()->can('admin') || in_array($currentUserEmail, $this->authorizedEmails);
+    }
+    
+    /**
     * Constructor
     */
     public function __construct()
@@ -32,35 +51,54 @@ class PurchaseRequestController extends Controller
     {
         // Cargar la relación user si no está cargada
         $purchaseRequest->load('user');
-        
+
         try {
             // Email para el usuario solicitante (sin botón)
             $userEmail = \App\Services\EmailTestModeService::interceptEmail(auth()->user()->email);
-            
+
             Mail::to($userEmail)
                 ->send(new PurchaseRequestCreatedUsuario($purchaseRequest));
-            
+
             \Log::info('Email de confirmación enviado al usuario: ' . $userEmail . ' (original: ' . auth()->user()->email . ') para solicitud #' . $purchaseRequest->id);
         } catch (\Exception $e) {
             \Log::error('Error al enviar email de confirmación al usuario para solicitud #' . $purchaseRequest->id . ': ' . $e->getMessage());
         }
 
         try {
-            // Email para el área de compras (con botón de acción)
-            // Usar configuración dinámica para el correo de compras
-            $comprasEmail = config(\App\Services\DynamicSectionEmailsService::getCurrentConfigSource() . '.default');
-            $comprasEmail = \App\Services\EmailTestModeService::interceptEmail($comprasEmail);
-            
-            Mail::to($comprasEmail)
-                ->send(new PurchaseRequestCreatedCompras($purchaseRequest));
-            
-            \Log::info('Email de acción enviado al área de compras para solicitud #' . $purchaseRequest->id . ' a: ' . $comprasEmail);
+            // Para solicitudes de materiales y fotocopias, restringir emails
+            if ($purchaseRequest->isMaterialsRequest() || $purchaseRequest->isCopiesRequest()) {
+                // Obtener usuarios con rol admin
+                $adminUsers = \App\Models\User::role('admin')->pluck('email')->toArray();
+                
+                // Correos específicos autorizados
+                $authorizedEmails = ['compras@tvs.edu.co', 'auxiliaralmacen@tvs.edu.co'];
+                
+                // Combinar y eliminar duplicados
+                $restrictedEmails = array_unique(array_merge($adminUsers, $authorizedEmails));
+                
+                // Enviar a cada email autorizado
+                foreach ($restrictedEmails as $email) {
+                    $interceptedEmail = \App\Services\EmailTestModeService::interceptEmail($email);
+                    Mail::to($interceptedEmail)
+                        ->send(new PurchaseRequestCreatedCompras($purchaseRequest));
+                }
+                
+                $requestType = $purchaseRequest->isCopiesRequest() ? 'fotocopias' : 'materiales';
+                \Log::info("Email de acción restringido enviado para solicitud de {$requestType} #{$purchaseRequest->id} a: " . implode(', ', $restrictedEmails));
+            } else {
+                // Para solicitudes regulares (compras/servicios), enviar al correo normal
+                $comprasEmail = config(\App\Services\DynamicSectionEmailsService::getCurrentConfigSource() . '.default');
+                $comprasEmail = \App\Services\EmailTestModeService::interceptEmail($comprasEmail);
+                
+                Mail::to($comprasEmail)
+                    ->send(new PurchaseRequestCreatedCompras($purchaseRequest));
+                
+                \Log::info('Email de acción enviado al área de compras para solicitud #' . $purchaseRequest->id . ' a: ' . $comprasEmail);
+            }
         } catch (\Exception $e) {
             \Log::error('Error al enviar email al área de compras para solicitud #' . $purchaseRequest->id . ': ' . $e->getMessage());
         }
-    }
-    
-    /**
+    }    /**
      * Enviar emails de aprobación específicos para solicitudes de materiales basados en la sección
      */
     private function sendMaterialsApprovalEmails(PurchaseRequest $purchaseRequest)
@@ -328,8 +366,11 @@ class PurchaseRequestController extends Controller
     */
     public function create()
     {
-    // Mostrar la página de selección de tipo de solicitud
-    return view('purchase-requests.create');
+        // Verificar si el usuario puede ver los botones restringidos
+        $canAccessMaterials = $this->canAccessRestrictedActions();
+        $canAccessCopies = $this->canAccessRestrictedActions();
+        
+        return view('purchase-requests.create', compact('canAccessMaterials', 'canAccessCopies'));
     }
 
     /**
@@ -354,10 +395,15 @@ class PurchaseRequestController extends Controller
     */
     public function createMaterialsForm()
     {
-    $user = auth()->user();
-    // Obtener los productos del inventario para el campo de artículo
-    $inventoryItems = \App\Models\InventoryItem::orderBy('producto')->get();
-    return view('purchase-requests.create-materials', compact('user', 'inventoryItems'));
+        // Verificar autorización
+        if (!$this->canAccessRestrictedActions()) {
+            abort(403, 'No tiene permisos para crear solicitudes de materiales. Solo disponible para administradores y usuarios autorizados (compras@tvs.edu.co, auxiliaralmacen@tvs.edu.co).');
+        }
+        
+        $user = auth()->user();
+        // Obtener los productos del inventario para el campo de artículo
+        $inventoryItems = \App\Models\InventoryItem::orderBy('producto')->get();
+        return view('purchase-requests.create-materials', compact('user', 'inventoryItems'));
     }
 
     /**
@@ -365,8 +411,13 @@ class PurchaseRequestController extends Controller
     */
     public function createCopiesForm()
     {
-    $user = auth()->user();
-    return view('purchase-requests.create-copies', compact('user'));
+        // Verificar autorización
+        if (!$this->canAccessRestrictedActions()) {
+            abort(403, 'No tiene permisos para crear solicitudes de fotocopias. Solo disponible para administradores y usuarios autorizados (compras@tvs.edu.co, auxiliaralmacen@tvs.edu.co).');
+        }
+        
+        $user = auth()->user();
+        return view('purchase-requests.create-copies', compact('user'));
     }
 
     /**
@@ -423,6 +474,11 @@ class PurchaseRequestController extends Controller
             'purchase_items.*.description' => 'required|string',
             'purchase_items.*.unit' => 'required|string',
             'purchase_items.*.observations' => 'nullable|string',
+            // Reglas para compra compartida
+            'is_shared' => 'required|in:yes,no',
+            'shared_section' => 'nullable|string|max:255',
+            'my_percentage' => 'nullable|integer|min:1|max:99',
+            'shared_percentage' => 'nullable|integer|min:1|max:99',
         ];
         
         $validator = Validator::make($request->all(), $rules);
@@ -443,6 +499,11 @@ class PurchaseRequestController extends Controller
             'purchase_justification' => $request->purchase_justification,
             'purchase_items' => $request->purchase_items,
             'status' => 'pending',
+            // Campos de compra compartida
+            'is_shared' => $request->is_shared === 'yes' ? true : false,
+            'shared_section' => $request->is_shared === 'yes' ? $request->shared_section : null,
+            'my_percentage' => $request->is_shared === 'yes' ? (int)$request->my_percentage : 100,
+            'shared_percentage' => $request->is_shared === 'yes' ? (int)$request->shared_percentage : 0,
         ]);
 
         // Enviar emails diferenciados

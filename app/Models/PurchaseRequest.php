@@ -79,6 +79,11 @@ class PurchaseRequest extends Model
         'subtotal_amount',
         'tax_amount',
         'total_amount',
+        // Campos para compra compartida
+        'is_shared',
+        'shared_section',
+        'my_percentage',
+        'shared_percentage',
     ];
 
     /**
@@ -102,6 +107,7 @@ class PurchaseRequest extends Model
         'requires_lamination' => 'boolean',
         'requires_cutting' => 'boolean',
         'applied_taxes' => 'array',
+        'is_shared' => 'boolean',
     ];
 
     /**

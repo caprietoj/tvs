@@ -414,6 +414,14 @@
                 <td class="bold" style="color: #2c5282;">{{ $purchaseRequest->budget }}</td>
             </tr>
             @endif
+            
+            {{-- Fila adicional para compras compartidas --}}
+            @if($purchaseRequest->is_shared)
+            <tr>
+                <td class="bold header-section">PRESUPUESTO COMPARTIDO:</td>
+                <td class="bold" style="color: #2c5282;">{{ $purchaseRequest->shared_section }}</td>
+            </tr>
+            @endif
         </table>
         @endif
     </div>

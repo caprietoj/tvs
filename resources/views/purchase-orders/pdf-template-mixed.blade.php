@@ -294,6 +294,17 @@
                 <td class="bold">IMPTO AL CONSUMO</td>
                 <td class="right">$0</td>
             </tr>
+            
+            {{-- Fila adicional para compras compartidas --}}
+            @if($order->purchaseRequest->is_shared)
+            <tr>
+                <td class="bold">PRESUPUESTO COMPARTIDO:</td>
+                <td>{{ $order->purchaseRequest->shared_section }}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            @endif
+            </tr>
             <tr>
                 <td class="bold">SECCIÓN / DPTO:</td>
                 <td>{{ $order->purchaseRequest->section_area ?? '' }}</td>

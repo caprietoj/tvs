@@ -67,42 +67,30 @@ class SectionClassifierService
 
     /**
      * Obtener los correos de aprobación para solicitudes de materiales según la sección
+     * RESTRINGIDO: Solo para administradores + compras@tvs.edu.co + auxiliaralmacen@tvs.edu.co
      *
      * @param string $sectionName Nombre de la sección
      * @return array Lista de correos electrónicos para aprobación
      */
     public function getMaterialsApprovalEmails(string $sectionName): array
     {
-        $materialsEmails = DynamicSectionEmailsService::getConfig('materials_approval_emails', []);
-        $result = [];
+        // Para solicitudes de materiales y fotocopias, restringir a usuarios autorizados únicamente
+        $restrictedEmails = [];
         
-        // Buscar coincidencia exacta primero
-        if (isset($materialsEmails[$sectionName])) {
-            $result = (array) $materialsEmails[$sectionName];
-        } else {
-            // Buscar coincidencias parciales
-            foreach ($materialsEmails as $section => $emails) {
-                if (stripos($sectionName, $section) !== false || stripos($section, $sectionName) !== false) {
-                    $result = (array) $emails;
-                    break;
-                }
-            }
-        }
+        // Obtener correos de usuarios con rol admin
+        $adminUsers = \App\Models\User::role('admin')->pluck('email')->toArray();
+        $restrictedEmails = array_merge($restrictedEmails, $adminUsers);
         
-        // Si no se encuentra configuración específica, intentar con sección normal
-        if (empty($result)) {
-            $result = $this->getSectionEmails($sectionName);
-        }
+        // Agregar correos específicos autorizados
+        $authorizedEmails = ['compras@tvs.edu.co', 'auxiliaralmacen@tvs.edu.co'];
+        $restrictedEmails = array_merge($restrictedEmails, $authorizedEmails);
         
-        // Asegurarse que el correo de compras esté siempre incluido según la configuración activa
-        $alwaysNotify = DynamicSectionEmailsService::getConfig('always_notify', []);
-        foreach ($alwaysNotify as $email) {
-            if (!in_array($email, $result)) {
-                $result[] = $email;
-            }
-        }
+        // Eliminar duplicados
+        $restrictedEmails = array_unique($restrictedEmails);
         
-        return $result;
+        \Log::info("Notificaciones de materiales/fotocopias restringidas para sección {$sectionName}: " . implode(', ', $restrictedEmails));
+        
+        return $restrictedEmails;
     }
 
     /**
