@@ -373,10 +373,30 @@ class SpaceBlockController extends Controller
     private function hasTimeOverlap($start1, $end1, $start2, $end2)
     {
         // Convertir a objetos Carbon para comparación
-        $start1 = \Carbon\Carbon::createFromFormat('H:i', $start1);
-        $end1 = \Carbon\Carbon::createFromFormat('H:i', $end1);
-        $start2 = \Carbon\Carbon::createFromFormat('H:i', $start2);
-        $end2 = \Carbon\Carbon::createFromFormat('H:i', $end2);
+        // Intentar primero con formato H:i:s (desde base de datos) y luego H:i (desde formulario)
+        try {
+            $start1 = \Carbon\Carbon::createFromFormat('H:i:s', $start1);
+        } catch (\Exception $e) {
+            $start1 = \Carbon\Carbon::createFromFormat('H:i', $start1);
+        }
+        
+        try {
+            $end1 = \Carbon\Carbon::createFromFormat('H:i:s', $end1);
+        } catch (\Exception $e) {
+            $end1 = \Carbon\Carbon::createFromFormat('H:i', $end1);
+        }
+        
+        try {
+            $start2 = \Carbon\Carbon::createFromFormat('H:i:s', $start2);
+        } catch (\Exception $e) {
+            $start2 = \Carbon\Carbon::createFromFormat('H:i', $start2);
+        }
+        
+        try {
+            $end2 = \Carbon\Carbon::createFromFormat('H:i:s', $end2);
+        } catch (\Exception $e) {
+            $end2 = \Carbon\Carbon::createFromFormat('H:i', $end2);
+        }
 
         // Verificar si hay superposición
         // Los rangos se superponen si el inicio de uno es menor que el final del otro y viceversa
