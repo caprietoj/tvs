@@ -1066,8 +1066,6 @@ Route::middleware(['auth', 'admin'])->prefix('surveys')->name('surveys.')->group
     });
 });
 
-// Ruta principal para presupuesto (temporal sin auth para pruebas)
-Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.main');
-Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.main.update');
-Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.main.export');
-Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.main.procesar-extracto-contable');
+// Ruta temporal para presupuesto sin autenticación
+Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.public');
+

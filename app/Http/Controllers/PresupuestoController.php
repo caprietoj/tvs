@@ -110,6 +110,9 @@ class PresupuestoController extends Controller
             'total_departments' => $budgetExecutions->unique('department')->count(),
             'average_execution_percentage' => $departmentData->avg('execution_percentage'),
             
+            // Datos de Excel (sesión)
+            'excel_data' => session('excel_data', []),
+            
             // Datos para gráficos
             'chart_data' => [
                 'departments' => $departmentData->pluck('department'),

@@ -248,6 +248,154 @@
                             </table>
                         </div>
                     @endif
+
+                    <!-- Nueva sección: Análisis de Cotizaciones -->
+                    @if($request->quotations && $request->quotations->count() > 0)
+                        <h5 class="text-muted mt-4">
+                            <i class="fas fa-file-invoice-dollar mr-2"></i>Análisis de Cotizaciones
+                        </h5>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card card-outline card-info">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-search mr-1"></i>Cotizaciones Analizadas ({{ $request->quotations->count() }})
+                                        </h3>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-hover">
+                                                <thead class="table-dark">
+                                                    <tr>
+                                                        <th style="width: 5%">#</th>
+                                                        <th style="width: 25%">Proveedor</th>
+                                                        <th style="width: 15%">Monto Total</th>
+                                                        <th style="width: 15%">Estado</th>
+                                                        <th style="width: 20%">Fecha Recibida</th>
+                                                        <th style="width: 20%">Archivos Adjuntos</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($request->quotations as $index => $quotation)
+                                                        <tr class="{{ 
+                                                            $request->preApprovedQuotation && $request->preApprovedQuotation->id === $quotation->id ? 'table-success' : 
+                                                            ($request->quotationItemSelections && 
+                                                             $request->quotationItemSelections->where('quotation_id', $quotation->id)->count() > 0 ? 'table-warning' : '') 
+                                                        }}">
+                                                            <td>
+                                                                <strong>{{ $index + 1 }}</strong>
+                                                                @if($request->preApprovedQuotation && $request->preApprovedQuotation->id === $quotation->id)
+                                                                    <br><span class="badge badge-success">
+                                                                        <i class="fas fa-check-circle"></i> SELECCIONADA
+                                                                    </span>
+                                                                @elseif($request->quotationItemSelections && 
+                                                                        $request->quotationItemSelections->where('quotation_id', $quotation->id)->count() > 0)
+                                                                    <br><span class="badge badge-warning">
+                                                                        <i class="fas fa-star"></i> MIXTA
+                                                                    </span>
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                <strong>{{ $quotation->provider_name }}</strong>
+                                                                @if($quotation->provider_contact)
+                                                                    <br><small class="text-muted">
+                                                                        <i class="fas fa-user"></i> {{ $quotation->provider_contact }}
+                                                                    </small>
+                                                                @endif
+                                                                @if($quotation->provider_email)
+                                                                    <br><small class="text-muted">
+                                                                        <i class="fas fa-envelope"></i> {{ $quotation->provider_email }}
+                                                                    </small>
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                <strong class="text-primary">
+                                                                    ${{ number_format($quotation->total_amount, 2) }}
+                                                                </strong>
+                                                            </td>
+                                                            <td>
+                                                                @if($request->preApprovedQuotation && $request->preApprovedQuotation->id === $quotation->id)
+                                                                    <span class="badge badge-lg badge-success">
+                                                                        <i class="fas fa-medal"></i> Cotización Seleccionada
+                                                                    </span>
+                                                                @elseif($request->quotationItemSelections && 
+                                                                        $request->quotationItemSelections->where('quotation_id', $quotation->id)->count() > 0)
+                                                                    <span class="badge badge-lg badge-warning">
+                                                                        <i class="fas fa-puzzle-piece"></i> Selección Mixta
+                                                                    </span>
+                                                                @else
+                                                                    <span class="badge badge-lg badge-secondary">
+                                                                        <i class="fas fa-eye"></i> Analizada
+                                                                    </span>
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                <i class="fas fa-calendar"></i> 
+                                                                {{ $quotation->created_at->format('d/m/Y') }}
+                                                                <br><small class="text-muted">
+                                                                    {{ $quotation->created_at->format('H:i') }}
+                                                                </small>
+                                                            </td>
+                                                            <td>
+                                                                @if($quotation->file_path)
+                                                                    <a href="{{ url('storage/' . str_replace('public/', '', $quotation->file_path)) }}" 
+                                                                       target="_blank" 
+                                                                       class="btn btn-sm btn-outline-primary">
+                                                                        <i class="fas fa-file-pdf"></i> Ver Archivo
+                                                                    </a>
+                                                                @else
+                                                                    <span class="text-muted">
+                                                                        <i class="fas fa-times"></i> Sin archivo
+                                                                    </span>
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <!-- Resumen de la selección -->
+                                        @if($request->preApprovedQuotation || ($request->quotationItemSelections && $request->quotationItemSelections->count() > 0))
+                                            <div class="mt-3 p-3 bg-light rounded">
+                                                <h6><i class="fas fa-clipboard-check text-success"></i> Resumen de Selección:</h6>
+                                                @if($request->preApprovedQuotation)
+                                                    <p class="mb-1">
+                                                        <strong>Cotización Completa Seleccionada:</strong> 
+                                                        {{ $request->preApprovedQuotation->provider_name }} - 
+                                                        <span class="text-success">${{ number_format($request->preApprovedQuotation->total_amount, 2) }}</span>
+                                                    </p>
+                                                @elseif($request->quotationItemSelections && $request->quotationItemSelections->count() > 0)
+                                                    <p class="mb-1">
+                                                        <strong>Selección Mixta:</strong> Items seleccionados de múltiples proveedores
+                                                    </p>
+                                                    @php
+                                                        $totalMixed = $request->quotationItemSelections->sum(function($selection) {
+                                                            return $selection->quantity * $selection->unit_price;
+                                                        });
+                                                    @endphp
+                                                    <p class="mb-1">
+                                                        <strong>Total Selección Mixta:</strong> 
+                                                        <span class="text-warning">${{ number_format($totalMixed, 2) }}</span>
+                                                    </p>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Información:</strong> Esta solicitud no tiene cotizaciones asociadas o fue aprobada sin cotización.
+                        </div>
+                    @endif
                 @endif
 
                 @if(($request->preApprovedQuotation && !$request->isNoQuotationService()) || ($request->quotationItemSelections && $request->quotationItemSelections->count() > 0))
