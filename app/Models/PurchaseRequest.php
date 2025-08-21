@@ -34,6 +34,7 @@ class PurchaseRequest extends Model
         'delivery_date',
         'copy_items',
         'material_items',
+        'observations',
         'status',
         'approved_by',
         'approval_date',

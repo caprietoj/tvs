@@ -560,6 +560,26 @@
                     </div>
                 </div>
 
+                <!-- Observaciones -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label for="observations" style="color: #364E76; font-weight: bold;">
+                                <i class="fas fa-comment mr-1"></i>Observaciones:
+                            </label>
+                            <textarea class="form-control" 
+                                      id="observations" 
+                                      name="observations" 
+                                      rows="3" 
+                                      placeholder="Agregue cualquier observación o comentario adicional sobre la solicitud..."
+                                      style="resize: vertical;">{{ old('observations', $purchaseRequest->observations) }}</textarea>
+                            <small class="form-text text-muted">
+                                Campo opcional para agregar comentarios adicionales sobre la solicitud.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Firmas -->
                 <div class="row mt-4">
                     <div class="col-md-6">

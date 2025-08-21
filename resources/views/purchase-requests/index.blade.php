@@ -186,7 +186,7 @@
                             <th>Solicitante</th>
                             <th>Área/Sección</th>
                             <th>Fecha</th>
-                            @if($typeFilter === 'copies')
+                            @if(in_array($typeFilter, ['copies', 'materials']))
                                 <th>Observaciones</th>
                             @endif
                             <th>Estado</th>
@@ -214,16 +214,25 @@
                                 <td>{{ $request->requester }}</td>
                                 <td>{{ $request->section_area }}</td>
                                 <td>{{ $request->request_date->format('d/m/Y') }}</td>
-                                @if($typeFilter === 'copies')
+                                @if(in_array($typeFilter, ['copies', 'materials']))
                                     <td class="text-center">
-                                        @if($request->special_details)
+                                        @if($typeFilter === 'copies' && $request->special_details)
                                             <button type="button" class="btn btn-sm btn-outline-info" 
                                                     data-toggle="popover" 
                                                     data-trigger="hover" 
                                                     data-placement="left"
                                                     data-content="{{ $request->special_details }}" 
-                                                    title="Observaciones">
+                                                    title="Observaciones de Fotocopias">
                                                 <i class="fas fa-comment-alt"></i>
+                                            </button>
+                                        @elseif($typeFilter === 'materials' && $request->observations)
+                                            <button type="button" class="btn btn-sm btn-outline-success" 
+                                                    data-toggle="popover" 
+                                                    data-trigger="hover" 
+                                                    data-placement="left"
+                                                    data-content="{{ $request->observations }}" 
+                                                    title="Observaciones de Materiales">
+                                                <i class="fas fa-sticky-note"></i>
                                             </button>
                                         @else
                                             <span class="text-muted">-</span>

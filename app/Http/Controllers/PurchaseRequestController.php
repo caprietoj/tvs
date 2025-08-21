@@ -668,6 +668,7 @@ class PurchaseRequestController extends Controller
     'material_items.*.article' => 'required|string',
     'material_items.*.quantity' => 'required|integer|min:1',
     'material_items.*.objective' => 'nullable|string',
+    'observations' => 'nullable|string|max:1000',
     ]);
     
     if ($validator->fails()) {
@@ -780,6 +781,7 @@ class PurchaseRequestController extends Controller
             'section_area' => $request->section, // También se guarda en section_area para consistencia
             'delivery_date' => $request->delivery_date,
             'material_items' => $request->material_items, // Ahora solo contiene productos disponibles
+            'observations' => $request->observations,
             'status' => 'pending',
         ]);
         
@@ -1054,6 +1056,7 @@ class PurchaseRequestController extends Controller
     'material_items.*.article' => 'required_with:material_items|string',
     'material_items.*.quantity' => 'required_with:material_items|integer|min:1',
     'material_items.*.objective' => 'nullable|string',
+    'observations' => 'nullable|string|max:1000',
     ]);
     
     if ($validator->fails()) {
@@ -1072,6 +1075,7 @@ class PurchaseRequestController extends Controller
     'delivery_date' => $request->delivery_date,
     'copy_items' => $request->copy_items,
     'material_items' => $request->material_items,
+    'observations' => $request->observations,
     ]);
     
     return redirect()->route('purchase-requests.show', $purchaseRequest)
