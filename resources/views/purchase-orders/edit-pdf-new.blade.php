@@ -11,7 +11,10 @@
         // Obtener datos personalizados si existen
         $customData = [];
         if (!empty($order->pdf_custom_data)) {
-            $customData = json_decode($order->pdf_custom_data, true);
+            // Si pdf_custom_data ya es un array (por el cast del modelo), usarlo directamente
+            $customData = is_array($order->pdf_custom_data) 
+                ? $order->pdf_custom_data 
+                : json_decode($order->pdf_custom_data, true);
         }
 
         // Obtener la cotización seleccionada si existe
@@ -58,6 +61,109 @@
             $alternativeQuotations = $quotations->filter(function($quotation) use ($order) {
                 return $quotation->provider_name !== $order->provider->nombre;
             });
+        }
+
+        // Detectar compra compartida basándose en presupuesto y sección
+        $isSharedPurchase = false;
+        $sharedSections = [];
+        $purchaseRequestData = $order->purchaseRequest;
+        
+        // Verificar si la solicitud tiene indicios de compra compartida
+        if ($purchaseRequestData) {
+            // Buscar en las observaciones de la orden o de la solicitud
+            $observations = $order->observations ?? $purchaseRequestData->observations ?? '';
+            $customObservations = $customData['observations'] ?? '';
+            $allObservations = strtolower($observations . ' ' . $customObservations);
+            
+            // Debug temporal
+            // dd('Observaciones encontradas: ' . $allObservations);
+            
+            // Buscar patrones de compra compartida en las observaciones
+            if (strpos($allObservations, 'compartida') !== false || 
+                strpos($allObservations, 'compartido') !== false ||
+                strpos($allObservations, 'shared') !== false ||
+                strpos($allObservations, 'secciones:') !== false) {
+                
+                $isSharedPurchase = true;
+                
+                // Extraer secciones mencionadas en las observaciones
+                $sections = ['preescolar', 'primaria', 'media', 'alta', 'pai', 'pep', 'dp', 'biblioteca', 'deportes', 'escuela alta', 'escuela media'];
+                foreach ($sections as $section) {
+                    if (strpos($allObservations, strtolower($section)) !== false) {
+                        if ($section === 'escuela alta') {
+                            $sharedSections[] = 'Escuela Alta / DP';
+                        } elseif ($section === 'escuela media') {
+                            $sharedSections[] = 'Escuela Media';
+                        } else {
+                            $sharedSections[] = strtoupper($section);
+                        }
+                    }
+                }
+                
+                // Si no se encontraron secciones específicas, usar información general
+                if (empty($sharedSections)) {
+                    $requestSection = $purchaseRequestData->section_area;
+                    if ($requestSection) {
+                        $sharedSections[] = $requestSection;
+                        $sharedSections[] = 'Múltiples secciones';
+                    }
+                }
+            }
+            
+            // Buscar en los items de compra información de secciones
+            $purchaseItems = $purchaseRequestData->purchase_items ? 
+                (is_array($purchaseRequestData->purchase_items) ? $purchaseRequestData->purchase_items : json_decode($purchaseRequestData->purchase_items, true)) : [];
+            
+            // Verificar si hay múltiples secciones mencionadas en los items
+            $mentionedSections = [];
+            if (is_array($purchaseItems)) {
+                foreach ($purchaseItems as $item) {
+                    $description = strtolower($item['description'] ?? '');
+                    $justification = strtolower($item['justification'] ?? '');
+                    $combined = $description . ' ' . $justification;
+                    
+                    // Buscar menciones de secciones
+                    $sections = ['preescolar', 'primaria', 'media', 'alta', 'pai', 'pep', 'dp', 'biblioteca', 'deportes'];
+                    foreach ($sections as $section) {
+                        if (strpos($combined, $section) !== false) {
+                            $mentionedSections[] = ucfirst($section);
+                        }
+                    }
+                }
+            }
+            
+            // Si hay múltiples secciones mencionadas, es una compra compartida
+            $mentionedSections = array_unique($mentionedSections);
+            if (count($mentionedSections) > 1) {
+                $isSharedPurchase = true;
+                $sharedSections = array_merge($sharedSections, $mentionedSections);
+            }
+            
+            // También verificar el presupuesto seleccionado vs la sección solicitante
+            $requestSection = $purchaseRequestData->section_area;
+            $selectedBudget = $customData['budget'] ?? $purchaseRequestData->budget ?? '';
+            
+            // Si el presupuesto no corresponde típicamente a la sección solicitante
+            if ($selectedBudget && $requestSection) {
+                $budgetHierarchy = \App\Helpers\BudgetHelper::getBudgetHierarchy();
+                $budgetOwnerSection = null;
+                
+                foreach ($budgetHierarchy as $section => $budgets) {
+                    if (in_array($selectedBudget, $budgets)) {
+                        $budgetOwnerSection = $section;
+                        break;
+                    }
+                }
+                
+                // Si el presupuesto pertenece a una sección diferente, podría ser compartida
+                if ($budgetOwnerSection && $budgetOwnerSection !== $requestSection) {
+                    $isSharedPurchase = true;
+                    $sharedSections = array_unique(array_merge($sharedSections, [$requestSection, $budgetOwnerSection]));
+                }
+            }
+            
+            // Limpiar y normalizar las secciones encontradas
+            $sharedSections = array_unique(array_filter($sharedSections));
         }
 
         // Obtener purchase_items como fallback si no hay quotationItemSelections
@@ -112,13 +218,20 @@
         }
     @endphp
 
-    <!-- Alerta sobre selección mixta -->
+    <!-- Alerta sobre selección mixta o compra compartida -->
     @if($isMixedSelection && count($providerGroups) > 1)
         <div class="alert alert-warning">
             <i class="fas fa-exclamation-triangle mr-2"></i>
             <strong>Selección Mixta Detectada:</strong> Esta orden contiene productos de {{ count($providerGroups) }} proveedores diferentes.
             Si necesita separar esta orden por proveedor, puede utilizar las herramientas disponibles más abajo.
             <br><small>Proveedores: {{ implode(', ', array_keys($providerGroups->toArray())) }}</small>
+        </div>
+    @elseif($isSharedPurchase && count($sharedSections) > 0)
+        <div class="alert alert-success">
+            <i class="fas fa-handshake mr-2"></i>
+            <strong>Compra Compartida Detectada:</strong> Esta orden involucra recursos de múltiples secciones.
+            <br><small><strong>Secciones compartidas:</strong> {{ implode(' y ', $sharedSections) }}</small>
+            <br><small class="text-muted">Asegúrese de que el presupuesto seleccionado refleje correctamente esta distribución.</small>
         </div>
     @elseif($hasMultipleQuotations && $alternativeQuotations->count() > 0)
         <div class="alert alert-info">
@@ -288,7 +401,7 @@
                                                data-index="{{ $loop->index }}">
                                     </td>
                                     <td style="text-align: right; border: 1px solid #000; padding: 4px;">
-                                        <input type="number" name="items[{{ $loop->index }}][unit_price]" 
+                                        <input type="text" name="items[{{ $loop->index }}][unit_price]" 
                                                class="form-control form-control-sm border-0 item-price" 
                                                value="{{ $customData['items'][$loop->index]['unit_price'] ?? $item->unit_price ?? 0 }}" 
                                                style="width: 100%; border: none; background: transparent; text-align: right;"
@@ -333,7 +446,7 @@
                                                    data-index="{{ $index }}">
                                         </td>
                                         <td style="text-align: right; border: 1px solid #000; padding: 4px;">
-                                            <input type="number" name="items[{{ $index }}][unit_price]" 
+                                            <input type="text" name="items[{{ $index }}][unit_price]" 
                                                    class="form-control form-control-sm border-0 item-price" 
                                                    value="{{ floatval($item['unit_price'] ?? 0) }}" 
                                                    style="width: 100%; border: none; background: transparent; text-align: right;"
@@ -378,7 +491,7 @@
                                                data-index="{{ $index }}">
                                     </td>
                                     <td style="text-align: right; border: 1px solid #000; padding: 4px;">
-                                        <input type="number" name="items[{{ $index }}][unit_price]" 
+                                        <input type="text" name="items[{{ $index }}][unit_price]" 
                                                class="form-control form-control-sm border-0 item-price" 
                                                value="{{ $order->total_amount && count($purchaseItems) > 0 ? round($order->total_amount / array_sum(array_column($purchaseItems, 'quantity'))) : 0 }}" 
                                                style="width: 100%; border: none; background: transparent; text-align: right;"
@@ -427,7 +540,7 @@
                                            data-index="0">
                                 </td>
                                 <td style="text-align: right; border: 1px solid #000; padding: 4px;">
-                                    <input type="number" name="items[0][unit_price]" 
+                                    <input type="text" name="items[0][unit_price]" 
                                            class="form-control form-control-sm border-0 item-price" 
                                            value="0" 
                                            style="width: 100%; border: none; background: transparent; text-align: right;"
@@ -479,7 +592,7 @@
                                                data-index="{{ $i }}">
                                     </td>
                                     <td style="text-align: right; border: 1px solid #000; padding: 4px;">
-                                        <input type="number" name="additional_items[{{ $i }}][unit_price]" 
+                                        <input type="text" name="additional_items[{{ $i }}][unit_price]" 
                                                class="form-control form-control-sm border-0 additional-price" 
                                                value="{{ floatval($customData['additional_items'][$i]['unit_price'] ?? 0) ?: '' }}" 
                                                style="width: 100%; border: none; background: transparent; text-align: right;"
@@ -602,6 +715,23 @@
                         </tr>
                     </table>
 
+                    @if($isSharedPurchase && count($sharedSections) > 0)
+                    <!-- Información de compra compartida -->
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; background-color: #f0f8ff;">
+                        <tr>
+                            <td style="font-weight: bold; border: 1px solid #000; padding: 4px; text-align: center; background-color: #e7f3ff;">
+                                📋 COMPRA COMPARTIDA ENTRE SECCIONES
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 8px; text-align: center;">
+                                <strong>Secciones participantes:</strong> {{ implode(' • ', $sharedSections) }}
+                                <br><small style="color: #666;">Esta compra beneficia a múltiples secciones según lo indicado en la solicitud</small>
+                            </td>
+                        </tr>
+                    </table>
+                    @endif
+
                     <!-- Información adicional -->
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
                         <tr>
@@ -679,7 +809,7 @@
                                 <tr>
                                     <td><strong>{{ $group['provider_name'] }}</strong></td>
                                     <td>{{ $group['items']->count() }} items</td>
-                                    <td>${{ number_format($group['total'], 0, ',', '.') }}</td>
+                                    <td>${{ number_format($group['total'], 0, '.', ',') }}</td>
                                     <td>
                                         <button type="button" 
                                                 class="btn btn-sm btn-primary"
@@ -721,8 +851,8 @@
                                                 <tr>
                                                     <td>{{ $item->item_description }}</td>
                                                     <td>{{ $item->quantity }}</td>
-                                                    <td>${{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                                                    <td>${{ number_format($item->total_price, 0, ',', '.') }}</td>
+                                                    <td>${{ number_format($item->unit_price, 0, '.', ',') }}</td>
+                                                    <td>${{ number_format($item->total_price, 0, '.', ',') }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -789,10 +919,10 @@
                                 @endphp
                                 <tr>
                                     <td><strong>{{ $quotation->provider_name }}</strong></td>
-                                    <td>${{ number_format($quotation->total_amount, 0, ',', '.') }}</td>
+                                    <td>${{ number_format($quotation->total_amount, 0, '.', ',') }}</td>
                                     <td class="{{ $differenceClass }}">
                                         <i class="{{ $differenceIcon }}"></i>
-                                        ${{ number_format(abs($difference), 0, ',', '.') }}
+                                        ${{ number_format(abs($difference), 0, '.', ',') }}
                                         {{ $difference < 0 ? '(Ahorro)' : '(Adicional)' }}
                                     </td>
                                     <td>
@@ -912,7 +1042,7 @@
                                 }
                             @endphp
                             @if($maxSaving > 0)
-                                Hasta ${{ number_format($maxSaving, 0, ',', '.') }}
+                                Hasta ${{ number_format($maxSaving, 0, '.', ',') }}
                             @else
                                 No estimado
                             @endif
@@ -945,14 +1075,77 @@
 $(document).ready(function() {
     // Función para formatear números
     function formatNumber(num) {
-        return new Intl.NumberFormat('es-CO').format(Math.round(num || 0));
+        if (!num || num === 0) return '';
+        return new Intl.NumberFormat('es-CO', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(Math.round(num));
     }
+
+    // Función para limpiar formato de número (solo quitar puntos separadores de miles)
+    function unformatNumber(str) {
+        if (!str) return '';
+        // Solo quitar puntos (separadores de miles en formato colombiano)
+        return str.toString().replace(/\./g, '');
+    }
+
+    // Función para formatear inputs de precio al cargar la página
+    function formatPriceInputs() {
+        $('.item-price, .additional-price').each(function() {
+            const currentValue = $(this).val();
+            if (currentValue && currentValue !== '0' && currentValue !== '') {
+                const numericValue = parseFloat(currentValue.replace(/\./g, ''));
+                if (numericValue > 0) {
+                    $(this).val(formatNumber(numericValue));
+                }
+            }
+        });
+    }
+
+    // Formatear inputs al cargar la página
+    formatPriceInputs();
+
+    // Evento para formatear al perder el foco (blur)
+    $(document).on('blur', '.item-price, .additional-price', function() {
+        const inputValue = $(this).val();
+        if (inputValue && inputValue !== '') {
+            const numericValue = parseFloat(unformatNumber(inputValue));
+            if (!isNaN(numericValue) && numericValue > 0) {
+                $(this).val(formatNumber(numericValue));
+                
+                // Recalcular totales después del formateo
+                const index = $(this).data('index');
+                const isAdditional = $(this).hasClass('additional-price');
+                calculateItemTotal(index, isAdditional);
+            }
+        }
+    });
+
+    // Evento para limpiar formato al enfocar (focus)
+    $(document).on('focus', '.item-price, .additional-price', function() {
+        const currentValue = $(this).val();
+        if (currentValue && currentValue !== '') {
+            const numericValue = unformatNumber(currentValue);
+            $(this).val(numericValue);
+        }
+    });
 
     // Función para calcular total de un item
     function calculateItemTotal(index, isAdditional = false) {
         const prefix = isAdditional ? 'additional' : 'item';
         const quantity = parseFloat($(`input[data-index="${index}"].${prefix}-quantity`).val()) || 0;
-        const price = parseFloat($(`input[data-index="${index}"].${prefix}-price`).val()) || 0;
+        
+        // Obtener el valor del precio y limpiarlo
+        const priceInput = $(`input[data-index="${index}"].${prefix}-price`);
+        const priceValue = priceInput.val();
+        let price = 0;
+        
+        if (priceValue && priceValue !== '') {
+            // Si el campo está enfocado, el valor ya está sin formato
+            // Si no está enfocado, puede tener formato que necesitamos limpiar
+            price = parseFloat(unformatNumber(priceValue)) || 0;
+        }
+        
         const total = quantity * price;
         
         $(`.${prefix}-total[data-index="${index}"]`).text('$' + formatNumber(total));
@@ -1023,14 +1216,14 @@ $(document).ready(function() {
     }
 
     // Event listeners para items regulares
-    $('.item-quantity, .item-price').on('input', function() {
+    $(document).on('input', '.item-quantity, .item-price', function() {
         const index = $(this).data('index');
         calculateItemTotal(index);
         calculateTotal();
     });
 
     // Event listeners para items adicionales
-    $('.additional-quantity, .additional-price').on('input', function() {
+    $(document).on('input', '.additional-quantity, .additional-price', function() {
         const index = $(this).data('index');
         calculateItemTotal(index, true);
         calculateTotal();
