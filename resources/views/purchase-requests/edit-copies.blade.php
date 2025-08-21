@@ -228,6 +228,7 @@
                                         <option value="Propalcote 150g" {{ old('paper_type', $purchaseRequest->paper_type) == 'Propalcote 150g' ? 'selected' : '' }}>Propalcote 150g</option>
                                         <option value="Cartulina" {{ old('paper_type', $purchaseRequest->paper_type) == 'Cartulina' ? 'selected' : '' }}>Cartulina</option>
                                         <option value="Opalina" {{ old('paper_type', $purchaseRequest->paper_type) == 'Opalina' ? 'selected' : '' }}>Opalina</option>
+                                        <option value="Papel adhesivo" {{ old('paper_type', $purchaseRequest->paper_type) == 'Papel adhesivo' ? 'selected' : '' }}>Papel adhesivo</option>
                                     </select>
                                     @error('paper_type')
                                         <div class="invalid-feedback">{{ $message }}</div>

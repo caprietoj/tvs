@@ -274,7 +274,7 @@
                                                 </div>
                                                 <div class="card-body">
                                                     <p class="mb-1"><strong>Seleccionar sección:</strong></p>
-                                                    <select class="form-control" id="thirdSharedSection" name="third_shared_section">
+                                                    <select class="form-control" id="thirdSharedSection" name="third_shared_section" {{ empty($purchaseRequest->third_shared_section) ? 'disabled tabindex="-1"' : '' }}>
                                                         <option value="">Seleccione una sección...</option>
                                                         <option value="Preescolar y Primaria" {{ ($purchaseRequest->third_shared_section ?? '') == 'Preescolar y Primaria' ? 'selected' : '' }}>Preescolar y Primaria</option>
                                                         <option value="Escuela Media" {{ ($purchaseRequest->third_shared_section ?? '') == 'Escuela Media' ? 'selected' : '' }}>Escuela Media</option>
@@ -291,7 +291,7 @@
                                                     </select>
                                                     <p class="mb-1 mt-2"><strong>Porcentaje a pagar:</strong></p>
                                                     <div class="input-group">
-                                                        <input type="number" class="form-control percentage-input" id="thirdSharedPercentage" name="third_shared_percentage" min="1" max="97" value="{{ $purchaseRequest->third_shared_percentage ?? '0' }}">
+                                                        <input type="number" class="form-control percentage-input" id="thirdSharedPercentage" name="third_shared_percentage" min="1" max="97" value="{{ $purchaseRequest->third_shared_percentage ?? '0' }}" {{ empty($purchaseRequest->third_shared_section) ? 'disabled tabindex="-1"' : '' }}>
                                                         <div class="input-group-append">
                                                             <span class="input-group-text">%</span>
                                                         </div>
@@ -367,6 +367,21 @@
     .form-control:focus {
         border-color: #364E76;
         box-shadow: 0 0 0 0.2rem rgba(54, 78, 118, 0.25);
+    }
+    
+    /* Prevenir focus en campos disabled */
+    input:disabled, select:disabled {
+        pointer-events: none !important;
+        outline: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+    }
+    
+    input:disabled:focus, select:disabled:focus {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: #ced4da !important;
     }
     
     .percentage-input {
@@ -543,6 +558,13 @@
                 $('#sharedConfig').slideDown();
             } else {
                 $('#sharedConfig').slideUp();
+                // Limpiar también los campos de tercera sección cuando se deshabilita la compra compartida
+                $('#thirdSectionConfig').hide();
+                $('#addThirdSection').show();
+                
+                // Deshabilitar y limpiar los campos de la tercera sección
+                $('#thirdSharedSection').prop('disabled', true).attr('tabindex', '-1').val('');
+                $('#thirdSharedPercentage').prop('disabled', true).attr('tabindex', '-1').val(0);
             }
         });
 
@@ -597,6 +619,10 @@
             $('#thirdSectionConfig').slideDown();
             $(this).hide();
             
+            // Habilitar los campos de la tercera sección
+            $('#thirdSharedSection').prop('disabled', false).removeAttr('tabindex');
+            $('#thirdSharedPercentage').prop('disabled', false).removeAttr('tabindex');
+            
             // Redistribuir porcentajes equitativamente
             const newPercentage = Math.floor(100 / 3);
             $('#myPercentage').val(newPercentage);
@@ -610,6 +636,10 @@
         $('#removeThirdSection').click(function() {
             $('#thirdSectionConfig').slideUp();
             $('#addThirdSection').show();
+            
+            // Deshabilitar y limpiar los campos de la tercera sección
+            $('#thirdSharedSection').prop('disabled', true).attr('tabindex', '-1');
+            $('#thirdSharedPercentage').prop('disabled', true).attr('tabindex', '-1');
             
             // Resetear a dos secciones (50-50)
             $('#myPercentage').val(50);
@@ -649,6 +679,28 @@
 
         // Validación del formulario para compra compartida
         $('#purchaseForm').submit(function(e) {
+            // Antes de validar, asegurar que los campos estén visibles y habilitados si tienen datos
+            const hasThirdSectionData = $('#thirdSharedSection').val() || 
+                                       parseInt($('#thirdSharedPercentage').val()) > 0;
+            
+            if (hasThirdSectionData && $('#thirdSectionConfig').is(':hidden')) {
+                $('#thirdSectionConfig').show();
+                $('#addThirdSection').hide();
+                $('#thirdSharedSection').prop('disabled', false).removeAttr('tabindex');
+                $('#thirdSharedPercentage').prop('disabled', false).removeAttr('tabindex');
+            }
+            
+            // Antes del envío, habilitar temporalmente todos los campos para que se envíen sus valores
+            const wasDisabled = {
+                section: $('#thirdSharedSection').prop('disabled'),
+                percentage: $('#thirdSharedPercentage').prop('disabled')
+            };
+            
+            if (hasThirdSectionData) {
+                $('#thirdSharedSection').prop('disabled', false);
+                $('#thirdSharedPercentage').prop('disabled', false);
+            }
+            
             // Validar configuración de compra compartida
             const isShared = $('input[name="is_shared"]:checked').val();
             if (isShared === 'yes') {
@@ -690,6 +742,39 @@
         // Inicializar filtros al cargar la página
         $(document).ready(function() {
             updateSectionFilters();
+            
+            // Interceptar eventos de focus en campos disabled
+            $(document).on('focus', 'input:disabled, select:disabled', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).blur();
+                return false;
+            });
+            
+            // Verificar si hay errores de validación al cargar la página
+            if ($('.alert-danger').length > 0) {
+                // Si third_shared_percentage tiene error pero el campo está oculto, mostrar la sección
+                if ($('input[name="third_shared_percentage"]').closest('#thirdSectionConfig').is(':hidden')) {
+                    var hasThirdSectionData = $('select[name="third_shared_section"]').val() || 
+                                            $('input[name="third_shared_percentage"]').val() > 0;
+                    if (hasThirdSectionData) {
+                        $('#thirdSectionConfig').show();
+                        $('#addThirdSection').hide();
+                        $('#thirdSharedSection').prop('disabled', false).removeAttr('tabindex');
+                        $('#thirdSharedPercentage').prop('disabled', false).removeAttr('tabindex');
+                    }
+                }
+            }
+            
+            // Manejar errores de validación en campos ocultos
+            @if($errors->has('third_shared_percentage') && old('third_shared_section', $purchaseRequest->third_shared_section))
+                // Si hay error en third_shared_percentage y hay valor en third_shared_section,
+                // mostrar la tercera sección automáticamente y habilitar los campos
+                $('#thirdSectionConfig').show();
+                $('#addThirdSection').hide();
+                $('#thirdSharedSection').prop('disabled', false).removeAttr('tabindex');
+                $('#thirdSharedPercentage').prop('disabled', false).removeAttr('tabindex');
+            @endif
         });
     });
 </script>

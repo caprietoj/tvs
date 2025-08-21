@@ -961,7 +961,8 @@ class PurchaseRequestController extends Controller
     */
     private function updatePurchaseRequest(Request $request, PurchaseRequest $purchaseRequest)
     {
-        $validator = Validator::make($request->all(), [
+        // Definir reglas de validación base
+        $rules = [
             'requester' => 'required|string|max:255',
             'section_area' => 'required|string|max:255',
             'purchase_justification' => 'required|string',
@@ -972,12 +973,31 @@ class PurchaseRequestController extends Controller
             'purchase_items.*.unit' => 'required|string',
             'purchase_items.*.observations' => 'nullable|string',
             'is_shared' => 'required|in:yes,no',
-            'shared_section' => 'nullable|string|max:255',
-            'my_percentage' => 'nullable|integer|min:1|max:97',
-            'shared_percentage' => 'nullable|integer|min:1|max:97',
-            'third_shared_section' => 'nullable|string|max:255',
-            'third_shared_percentage' => 'nullable|integer|min:1|max:97',
-        ]);
+        ];
+        
+        // Solo agregar validaciones de compra compartida si is_shared es 'yes'
+        if ($request->input('is_shared') === 'yes') {
+            $rules['shared_section'] = 'required|string|max:255';
+            $rules['my_percentage'] = 'required|integer|min:1|max:97';
+            $rules['shared_percentage'] = 'required|integer|min:1|max:97';
+            $rules['third_shared_section'] = 'nullable|string|max:255';
+            
+            // Solo validar third_shared_percentage si se proporciona third_shared_section
+            if ($request->filled('third_shared_section')) {
+                $rules['third_shared_percentage'] = 'required|integer|min:1|max:97';
+            }
+        } else {
+            // Si no es compartida, limpiar los campos para evitar validaciones innecesarias
+            $request->merge([
+                'shared_section' => null,
+                'my_percentage' => 100,
+                'shared_percentage' => 0,
+                'third_shared_section' => null,
+                'third_shared_percentage' => 0,
+            ]);
+        }
+        
+        $validator = Validator::make($request->all(), $rules);
         
         if ($validator->fails()) {
             return redirect()->route('purchase-requests.edit', $purchaseRequest)
@@ -1075,7 +1095,7 @@ class PurchaseRequestController extends Controller
             'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:524288', // 20MB máximo cada archivo
             // Validaciones para especificaciones
             'paper_size' => 'nullable|string|in:Carta,Oficio,A4,A3,Tabloid',
-            'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina',
+            'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina,Papel adhesivo',
             'paper_color' => 'nullable|string|in:Blanco,Amarillo,Rosa,Verde,Azul,Gris,Otro',
             'requires_binding' => 'nullable|boolean',
             'requires_lamination' => 'nullable|boolean',
@@ -1375,7 +1395,7 @@ class PurchaseRequestController extends Controller
             'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:524288', // 20MB máximo cada archivo
             // Validaciones para especificaciones
             'paper_size' => 'nullable|string|in:Carta,Oficio,A4,A3,Tabloid',
-            'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina',
+            'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina,Papel adhesivo',
             'paper_color' => 'nullable|string|in:Blanco,Amarillo,Rosa,Verde,Azul,Gris,Otro',
             'requires_binding' => 'nullable|boolean',
             'requires_lamination' => 'nullable|boolean',
