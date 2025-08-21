@@ -33,7 +33,7 @@ class QuotationItemSelectionController extends Controller
         }
         
         // Bloquear si está en un estado no válido para selección
-        if (!in_array($purchaseRequest->status, ['pending_selection', 'approved'])) {
+        if (!in_array($purchaseRequest->status, ['pending_selection', 'approved', 'En Cotización'])) {
             return redirect()->route('purchase-requests.show', $purchaseRequest)
                 ->with('error', 'No se puede realizar la selección mixta en el estado actual de la solicitud.');
         }
@@ -215,6 +215,105 @@ class QuotationItemSelectionController extends Controller
                     'quantity' => $selection->quantity
                 ],
                 'grand_total' => $grandTotal
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar la selección: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Guardar selección de proveedor (versión simplificada para selects directos)
+     */
+    public function saveSelection(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        $request->validate([
+            'item_index' => 'required|integer|min:0',
+            'quotation_id' => 'required|exists:quotations,id',
+            'unit_price' => 'required|numeric|min:0'
+        ]);
+
+        // Verificar el estado de la solicitud y órdenes de compra
+        $hasActivePurchaseOrders = $purchaseRequest->purchaseOrders()->whereNull('deleted_at')->exists();
+        
+        // Verificar que la solicitud permita selección mixta
+        if ($purchaseRequest->status === 'approved' && $hasActivePurchaseOrders) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede realizar la selección porque la solicitud ya tiene órdenes de compra generadas.'
+            ], 403);
+        }
+        
+        $quotation = Quotation::findOrFail($request->quotation_id);
+        
+        // Obtener items de la solicitud según el tipo
+        $purchaseItems = [];
+        
+        if ($purchaseRequest->type === 'purchase') {
+            // Para compras, usar purchase_items
+            $purchaseItems = is_array($purchaseRequest->purchase_items) 
+                ? $purchaseRequest->purchase_items 
+                : json_decode($purchaseRequest->purchase_items, true);
+        } elseif ($purchaseRequest->type === 'services' && $purchaseRequest->service_type === 'regular') {
+            // Para servicios regulares, usar service_items
+            $purchaseItems = is_array($purchaseRequest->service_items) 
+                ? $purchaseRequest->service_items 
+                : json_decode($purchaseRequest->service_items, true);
+        }
+        
+        // Verificar que el item existe
+        if (!isset($purchaseItems[$request->item_index])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item no encontrado'
+            ], 404);
+        }
+
+        $item = $purchaseItems[$request->item_index];
+
+        try {
+            DB::beginTransaction();
+
+            // Eliminar selección anterior del mismo item si existe
+            QuotationItemSelection::where('purchase_request_id', $purchaseRequest->id)
+                                 ->where('item_index', $request->item_index)
+                                 ->delete();
+
+            // Crear nueva selección
+            $selection = QuotationItemSelection::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'quotation_id' => $request->quotation_id,
+                'item_index' => $request->item_index,
+                'item_description' => $item['description'] ?? $item['item'] ?? 'Item sin descripción',
+                'quantity' => $item['quantity'] ?? 1,
+                'unit_price' => $request->unit_price,
+                'total_price' => ($item['quantity'] ?? 1) * $request->unit_price,
+                'justification' => null, // No requerimos justificación en la selección directa
+                'selected_by' => auth()->id(),
+                'selected_at' => now()
+            ]);
+
+            DB::commit();
+
+            // Cargar relaciones
+            $selection->load(['quotation', 'selectedBy']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proveedor seleccionado correctamente',
+                'data' => [
+                    'provider_name' => $selection->quotation->provider_name,
+                    'selected_by' => $selection->selectedBy->name,
+                    'selected_at' => $selection->selected_at->format('d/m/Y H:i'),
+                    'unit_price' => $selection->unit_price,
+                    'total_price' => $selection->total_price,
+                    'item_description' => $selection->item_description,
+                    'quantity' => $selection->quantity
+                ]
             ]);
 
         } catch (\Exception $e) {

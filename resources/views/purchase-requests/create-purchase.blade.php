@@ -221,10 +221,58 @@
                                         </div>
                                     </div>
 
+                                    <!-- Botón para agregar tercera sección -->
+                                    <div class="text-center mt-3">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="addThirdSection">
+                                            <i class="fas fa-plus mr-1"></i> Agregar otra sección
+                                        </button>
+                                    </div>
+
+                                    <!-- Tercera sección compartida (oculta por defecto) -->
+                                    <div id="thirdSectionConfig" style="display: none;" class="mt-3">
+                                        <div class="col-12">
+                                            <div class="card">
+                                                <div class="card-header bg-warning text-dark">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-users mr-1"></i> Tercera Sección Compartida
+                                                        <button type="button" class="btn btn-sm btn-outline-danger float-right" id="removeThirdSection">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="mb-1"><strong>Seleccionar sección:</strong></p>
+                                                    <select class="form-control" id="thirdSharedSection" name="third_shared_section">
+                                                        <option value="">Seleccione una sección...</option>
+                                                        <option value="Preescolar y Primaria">Preescolar y Primaria</option>
+                                                        <option value="Escuela Media">Escuela Media</option>
+                                                        <option value="Escuela Alta / DP">Escuela Alta / DP</option>
+                                                        <option value="PAI">PAI</option>
+                                                        <option value="PEP">PEP</option>
+                                                        <option value="Deportes">Deportes</option>
+                                                        <option value="Psicología Institucional">Psicología Institucional</option>
+                                                        <option value="Biblioteca">Biblioteca</option>
+                                                        <option value="Dirección General">Dirección General</option>
+                                                        <option value="CAS">CAS</option>
+                                                        <option value="Administración">Administración</option>
+                                                        <option value="Tecnología Institucional">Tecnología Institucional</option>
+                                                    </select>
+                                                    <p class="mb-1 mt-2"><strong>Porcentaje a pagar:</strong></p>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control percentage-input" id="thirdSharedPercentage" name="third_shared_percentage" min="1" max="97" value="0">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text">%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="alert alert-warning mt-3">
                                         <i class="fas fa-exclamation-triangle mr-1"></i>
-                                        <strong>Importante:</strong> El total entre ambas secciones debe ser 100%. 
-                                        El porcentaje de la sección compartida se calculará automáticamente.
+                                        <strong>Importante:</strong> El total entre todas las secciones debe ser 100%. 
+                                        Los porcentajes se ajustarán automáticamente cuando agregue más secciones.
                                     </div>
                                 </div>
                             </div>
@@ -446,17 +494,7 @@
                 return false;
             }
 
-            // Validar configuración de compra compartida
-            const isShared = $('input[name="is_shared"]:checked').val();
-            if (isShared === 'yes') {
-                const sharedSection = $('#sharedSection').val();
-                if (!sharedSection) {
-                    alert('Por favor seleccione la sección con la que compartirá esta compra.');
-                    $('#sharedSection').focus();
-                    e.preventDefault();
-                    return false;
-                }
-            }
+            // Validar configuración de compra compartida se maneja más abajo en el nuevo código
             
             // Si todas las validaciones pasaron, permitir el envío
             return true;
@@ -490,20 +528,150 @@
             }
         });
 
-        // Calcular porcentaje automáticamente
+        // Calcular porcentaje automáticamente para dos secciones
         $('#myPercentage').on('input', function() {
-            const myPercentage = parseInt($(this).val()) || 0;
-            const sharedPercentage = 100 - myPercentage;
+            calculatePercentages();
+        });
+
+        // Manejar cambios en el porcentaje de la tercera sección
+        $('#thirdSharedPercentage').on('input', function() {
+            calculatePercentages();
+        });
+
+        // Función para calcular porcentajes automáticamente
+        function calculatePercentages() {
+            const hasThirdSection = $('#thirdSectionConfig').is(':visible');
+            const myPercentage = parseInt($('#myPercentage').val()) || 0;
             
-            if (myPercentage < 1) {
-                $(this).val(1);
-                $('#sharedPercentage').val(99);
-            } else if (myPercentage > 99) {
-                $(this).val(99);
-                $('#sharedPercentage').val(1);
+            if (hasThirdSection) {
+                const thirdPercentage = parseInt($('#thirdSharedPercentage').val()) || 0;
+                const sharedPercentage = 100 - myPercentage - thirdPercentage;
+                
+                // Validar que los porcentajes sean válidos
+                if (myPercentage + thirdPercentage > 99) {
+                    // Ajustar automáticamente
+                    const newThirdPercentage = 99 - myPercentage;
+                    $('#thirdSharedPercentage').val(Math.max(1, newThirdPercentage));
+                    $('#sharedPercentage').val(1);
+                } else if (sharedPercentage < 1) {
+                    $('#sharedPercentage').val(1);
+                } else {
+                    $('#sharedPercentage').val(sharedPercentage);
+                }
             } else {
-                $('#sharedPercentage').val(sharedPercentage);
+                // Solo dos secciones
+                const sharedPercentage = 100 - myPercentage;
+                
+                if (myPercentage < 1) {
+                    $('#myPercentage').val(1);
+                    $('#sharedPercentage').val(99);
+                } else if (myPercentage > 99) {
+                    $('#myPercentage').val(99);
+                    $('#sharedPercentage').val(1);
+                } else {
+                    $('#sharedPercentage').val(sharedPercentage);
+                }
             }
+        }
+
+        // Manejar agregar tercera sección
+        $('#addThirdSection').click(function() {
+            $('#thirdSectionConfig').slideDown();
+            $(this).hide();
+            
+            // Redistribuir porcentajes equitativamente
+            const newPercentage = Math.floor(100 / 3);
+            $('#myPercentage').val(newPercentage);
+            $('#sharedPercentage').val(newPercentage);
+            $('#thirdSharedPercentage').val(100 - (newPercentage * 2));
+            
+            updateSectionFilters();
+        });
+
+        // Manejar remover tercera sección
+        $('#removeThirdSection').click(function() {
+            $('#thirdSectionConfig').slideUp();
+            $('#addThirdSection').show();
+            
+            // Resetear a dos secciones (50-50)
+            $('#myPercentage').val(50);
+            $('#sharedPercentage').val(50);
+            $('#thirdSharedPercentage').val(0);
+            $('#thirdSharedSection').val('');
+            
+            updateSectionFilters();
+        });
+
+        // Función para actualizar filtros de secciones
+        function updateSectionFilters() {
+            const currentSection = $('#section_area').val();
+            const sharedSection = $('#sharedSection').val();
+            const thirdSection = $('#thirdSharedSection').val();
+            
+            // Filtrar opciones para evitar duplicados
+            $('#sharedSection option, #thirdSharedSection option').show();
+            
+            $('#sharedSection option').each(function() {
+                if ($(this).val() === currentSection || $(this).val() === thirdSection) {
+                    $(this).hide();
+                }
+            });
+            
+            $('#thirdSharedSection option').each(function() {
+                if ($(this).val() === currentSection || $(this).val() === sharedSection) {
+                    $(this).hide();
+                }
+            });
+        }
+
+        // Manejar cambios en las secciones para filtrar duplicados
+        $('#section_area, #sharedSection, #thirdSharedSection').change(function() {
+            updateSectionFilters();
+            
+            if ($(this).is('#section_area')) {
+                const currentSection = $(this).find('option:selected').text();
+                $('#currentSection').text(currentSection || '-');
+            }
+        });
+
+        // Actualizar validación del formulario
+        $('#purchaseForm').submit(function(e) {
+            // Validar configuración de compra compartida
+            const isShared = $('input[name="is_shared"]:checked').val();
+            if (isShared === 'yes') {
+                const sharedSection = $('#sharedSection').val();
+                if (!sharedSection) {
+                    alert('Por favor seleccione la segunda sección para compartir esta compra.');
+                    $('#sharedSection').focus();
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Si la tercera sección está visible, validar que esté seleccionada
+                if ($('#thirdSectionConfig').is(':visible')) {
+                    const thirdSection = $('#thirdSharedSection').val();
+                    if (!thirdSection) {
+                        alert('Por favor seleccione la tercera sección o remueva la opción de tercera sección.');
+                        $('#thirdSharedSection').focus();
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+                
+                // Validar que los porcentajes sumen 100%
+                const myPercentage = parseInt($('#myPercentage').val()) || 0;
+                const sharedPercentage = parseInt($('#sharedPercentage').val()) || 0;
+                const thirdPercentage = parseInt($('#thirdSharedPercentage').val()) || 0;
+                const total = myPercentage + sharedPercentage + thirdPercentage;
+                
+                if (total !== 100) {
+                    alert(`Los porcentajes deben sumar exactamente 100%. Actualmente suman ${total}%.`);
+                    e.preventDefault();
+                    return false;
+                }
+            }
+            
+            return true;
         });
 
         // Inicializar botones
@@ -515,6 +683,7 @@
         
         // Establecer valores iniciales para compra compartida
         $('#sharedPercentage').val(50);
+        updateSectionFilters();
     });
 </script>
 @stop

@@ -16,12 +16,14 @@ $(document).ready(function() {
         
         console.log('Creating chart...');
         
-        // Datos de ejemplo
+        // Obtener nombres reales de proveedores desde variables Blade
+        const providerLabels = window.providerLabels || ['Proveedor ABC', 'Proveedor XYZ'];
+        const providerAmounts = window.providerAmounts || [150000, 135000];
         const chartData = {
-            labels: ['Proveedor ABC', 'Proveedor XYZ'],
+            labels: providerLabels,
             datasets: [{
                 label: 'Monto Total',
-                data: [150000, 135000],
+                data: providerAmounts,
                 backgroundColor: [
                     'rgba(54, 162, 235, 0.8)',
                     'rgba(75, 192, 192, 0.8)'

@@ -403,6 +403,57 @@ class ApprovalController extends Controller
     }
 
     /**
+     * Actualizar el monto de la cotización seleccionada en una solicitud pre-aprobada.
+     */
+    public function updateQuotationAmount(Request $request, $id)
+    {
+        // Validar la entrada
+        $validated = $request->validate([
+            'quotation_amount' => 'required|numeric|min:0',
+        ]);
+
+        // Obtener la solicitud
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+
+        // Verificar que la solicitud esté en estado 'pre-approved' o 'Pre-aprobada'
+        if (!in_array($purchaseRequest->status, ['pre-approved', 'Pre-aprobada'])) {
+            return redirect()->back()
+                ->with('error', 'Solo se puede modificar el monto de cotizaciones en solicitudes que estén en estado "Pre-aprobada".');
+        }
+
+        // Verificar que tenga una cotización pre-aprobada
+        if (!$purchaseRequest->pre_approved_quotation_id) {
+            return redirect()->back()
+                ->with('error', 'Esta solicitud no tiene una cotización seleccionada para modificar.');
+        }
+
+        // Obtener la cotización
+        $quotation = $purchaseRequest->preApprovedQuotation;
+        if (!$quotation) {
+            return redirect()->back()
+                ->with('error', 'No se pudo encontrar la cotización seleccionada.');
+        }
+
+        $oldAmount = $quotation->total_amount;
+
+        // Actualizar el monto de la cotización
+        $quotation->update([
+            'total_amount' => $validated['quotation_amount']
+        ]);
+
+        // Registrar en el historial
+        RequestHistory::create([
+            'purchase_request_id' => $purchaseRequest->id,
+            'user_id' => Auth::id(),
+            'action' => 'Monto de cotización actualizado',
+            'notes' => "Monto cambiado de $" . number_format($oldAmount, 2, ',', '.') . " a $" . number_format($validated['quotation_amount'], 2, ',', '.')
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'El monto de la cotización ha sido actualizado correctamente.');
+    }
+
+    /**
      * Crear automáticamente la orden de compra para una solicitud aprobada
      */
     private function createPurchaseOrder(PurchaseRequest $purchaseRequest): void
@@ -801,5 +852,54 @@ class ApprovalController extends Controller
         }
         
         return 'Orden creada automáticamente al aprobar solicitud';
+    }
+
+    /**
+     * Reenviar solicitud de aprobación por correo.
+     */
+    public function resendRequest(Request $request, $id)
+    {
+        // Verificar que el usuario sea admin
+        if (!auth()->user()->hasRole('admin')) {
+            return redirect()->back()
+                ->with('error', 'No tienes permisos para reenviar solicitudes.');
+        }
+
+        // Validar la entrada
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'message' => 'nullable|string|max:500',
+        ]);
+
+        // Obtener la solicitud
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+
+        try {
+            // Enviar notificación por correo
+            $notification = new \App\Notifications\RequestResent(
+                $purchaseRequest,
+                $validated['message'] ?? 'Solicitud reenviada por el administrador.',
+                'approval'
+            );
+
+            Notification::route('mail', $validated['email'])
+                ->notify($notification);
+
+            // Registrar en el historial
+            RequestHistory::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'user_id' => Auth::id(),
+                'action' => 'Solicitud de aprobación reenviada',
+                'notes' => "Reenviada a: {$validated['email']}" . 
+                          ($validated['message'] ? " - Mensaje: {$validated['message']}" : '')
+            ]);
+
+            return redirect()->back()
+                ->with('success', 'La solicitud ha sido reenviada exitosamente a ' . $validated['email']);
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Error al enviar el correo: ' . $e->getMessage());
+        }
     }
 }

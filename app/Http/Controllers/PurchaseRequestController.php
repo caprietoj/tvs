@@ -109,13 +109,11 @@ class PurchaseRequestController extends Controller
         $sectionClassifier = new SectionClassifierService();
         $approvalEmails = $sectionClassifier->getMaterialsApprovalEmails($purchaseRequest->section);
         
-        // Si es una solicitud de fotocopias, agregar auxiliar almacén según configuración dinámica
-        if ($purchaseRequest->isCopiesRequest()) {
-            $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
-            $auxiliarEmail = config($configSource . '.sections.Auxiliar Almacén', 'auxiliaralmacen@tvs.edu.co');
-            $approvalEmails[] = $auxiliarEmail;
-            \Log::info("Email auxiliar almacén ({$auxiliarEmail}) agregado para solicitud de fotocopias #" . $purchaseRequest->id);
-        }
+        // Para solicitudes de fotocopias y materiales, los emails ya están definidos correctamente
+        // No necesitamos agregar emails adicionales
+        
+        // Eliminar duplicados por seguridad
+        $approvalEmails = array_unique($approvalEmails);
         
         if (!empty($approvalEmails)) {
             foreach ($approvalEmails as $email) {
@@ -477,8 +475,10 @@ class PurchaseRequestController extends Controller
             // Reglas para compra compartida
             'is_shared' => 'required|in:yes,no',
             'shared_section' => 'nullable|string|max:255',
-            'my_percentage' => 'nullable|integer|min:1|max:99',
-            'shared_percentage' => 'nullable|integer|min:1|max:99',
+            'my_percentage' => 'nullable|integer|min:1|max:97',
+            'shared_percentage' => 'nullable|integer|min:1|max:97',
+            'third_shared_section' => 'nullable|string|max:255',
+            'third_shared_percentage' => 'nullable|integer|min:1|max:97',
         ];
         
         $validator = Validator::make($request->all(), $rules);
@@ -504,6 +504,8 @@ class PurchaseRequestController extends Controller
             'shared_section' => $request->is_shared === 'yes' ? $request->shared_section : null,
             'my_percentage' => $request->is_shared === 'yes' ? (int)$request->my_percentage : 100,
             'shared_percentage' => $request->is_shared === 'yes' ? (int)$request->shared_percentage : 0,
+            'third_shared_section' => $request->is_shared === 'yes' ? $request->third_shared_section : null,
+            'third_shared_percentage' => $request->is_shared === 'yes' ? (int)$request->third_shared_percentage : 0,
         ]);
 
         // Enviar emails diferenciados
@@ -952,6 +954,12 @@ class PurchaseRequestController extends Controller
             'purchase_items.*.description' => 'required|string',
             'purchase_items.*.unit' => 'required|string',
             'purchase_items.*.observations' => 'nullable|string',
+            'is_shared' => 'required|in:yes,no',
+            'shared_section' => 'nullable|string|max:255',
+            'my_percentage' => 'nullable|integer|min:1|max:97',
+            'shared_percentage' => 'nullable|integer|min:1|max:97',
+            'third_shared_section' => 'nullable|string|max:255',
+            'third_shared_percentage' => 'nullable|integer|min:1|max:97',
         ]);
         
         if ($validator->fails()) {
@@ -966,6 +974,12 @@ class PurchaseRequestController extends Controller
             'section_area' => $request->section_area,
             'purchase_justification' => $request->purchase_justification,
             'purchase_items' => $request->purchase_items,
+            'is_shared' => $request->is_shared === 'yes' ? true : false,
+            'shared_section' => $request->is_shared === 'yes' ? $request->shared_section : null,
+            'my_percentage' => $request->is_shared === 'yes' ? (int)$request->my_percentage : 100,
+            'shared_percentage' => $request->is_shared === 'yes' ? (int)$request->shared_percentage : 0,
+            'third_shared_section' => $request->is_shared === 'yes' ? $request->third_shared_section : null,
+            'third_shared_percentage' => $request->is_shared === 'yes' ? (int)$request->third_shared_percentage : 0,
         ]);
         
         return redirect()->route('purchase-requests.show', $purchaseRequest)

@@ -196,6 +196,78 @@
                 </div>
             </div>
 
+            <!-- Información de Compra Compartida -->
+            @if($purchaseRequest->is_shared)
+                <div class="card card-info card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-share-alt mr-1"></i>
+                            Información de Compra Compartida
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Esta solicitud está configurada como compra compartida entre {{ !empty($purchaseRequest->third_shared_section) ? 'tres' : 'dos' }} secciones.</strong>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="{{ !empty($purchaseRequest->third_shared_section) ? 'col-md-4' : 'col-md-6' }}">
+                                <div class="card card-outline card-primary">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">
+                                            <i class="fas fa-building mr-1"></i>
+                                            {{ $purchaseRequest->section_area }}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="mb-1"><strong>Porcentaje:</strong> {{ $purchaseRequest->my_percentage }}%</p>
+                                        <p class="mb-0 text-muted"><small>Sección solicitante</small></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="{{ !empty($purchaseRequest->third_shared_section) ? 'col-md-4' : 'col-md-6' }}">
+                                <div class="card card-outline card-success">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">
+                                            <i class="fas fa-building mr-1"></i>
+                                            {{ $purchaseRequest->shared_section }}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="mb-1"><strong>Porcentaje:</strong> {{ $purchaseRequest->shared_percentage }}%</p>
+                                        <p class="mb-0 text-muted"><small>Segunda sección</small></p>
+                                    </div>
+                                </div>
+                            </div>
+                            @if(!empty($purchaseRequest->third_shared_section))
+                                <div class="col-md-4">
+                                    <div class="card card-outline card-warning">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">
+                                                <i class="fas fa-building mr-1"></i>
+                                                {{ $purchaseRequest->third_shared_section }}
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="mb-1"><strong>Porcentaje:</strong> {{ $purchaseRequest->third_shared_percentage }}%</p>
+                                            <p class="mb-0 text-muted"><small>Tercera sección</small></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                        
+                        <div class="alert alert-success mt-3 mb-0">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <strong>Total verificado:</strong> 
+                            {{ $purchaseRequest->my_percentage + $purchaseRequest->shared_percentage + ($purchaseRequest->third_shared_percentage ?? 0) }}% 
+                            ({{ $purchaseRequest->my_percentage + $purchaseRequest->shared_percentage + ($purchaseRequest->third_shared_percentage ?? 0) == 100 ? 'Correcto' : 'Error en distribución' }})
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <!-- Información adicional para materiales -->
             @if($purchaseRequest->type != 'purchase')
             <div class="card card-primary card-outline">
@@ -834,6 +906,28 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Observaciones de Fotocopias -->
+                    @if($purchaseRequest->isCopiesRequest() && !empty($purchaseRequest->general_observations))
+                        <div class="card card-warning card-outline mt-3">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-comments mr-1"></i>
+                                    Observaciones Adicionales
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-light border-left-warning">
+                                    <div class="d-flex align-items-start">
+                                        <i class="fas fa-sticky-note text-warning mr-2 mt-1"></i>
+                                        <div>
+                                            <p class="mb-0" style="white-space: pre-wrap;">{{ $purchaseRequest->general_observations }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     
                     <!-- Archivo Original -->
                     @if($purchaseRequest->original_file)
@@ -1374,6 +1468,27 @@
     .alert-warning {
         background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
         color: #856404;
+    }
+
+    /* Estilos para observaciones de fotocopias */
+    .border-left-warning {
+        border-left: 4px solid #ffc107 !important;
+    }
+    
+    .alert-light {
+        background-color: #fefefe;
+        border: 1px solid #dee2e6;
+        color: #495057;
+    }
+    
+    .card-warning .card-header {
+        background-color: #fff3cd;
+        border-bottom: 1px solid #ffeaa7;
+    }
+    
+    .card-warning .card-title {
+        color: #856404;
+        font-weight: 600;
     }
 
     /* Responsive improvements */

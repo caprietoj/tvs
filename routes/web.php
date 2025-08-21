@@ -723,6 +723,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('quotation-approvals.pre-approve-mixed-selection');
     Route::post('quotation-approvals/{id}/reject', [QuotationApprovalController::class, 'reject'])
         ->name('quotation-approvals.reject');
+    Route::post('quotation-approvals/{id}/resend', [QuotationApprovalController::class, 'resendRequest'])
+        ->name('quotation-approvals.resend');
 });
 
 // Rutas para las aprobaciones finales de solicitudes de compra
@@ -731,7 +733,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('approvals/{id}', [ApprovalController::class, 'show'])->name('approvals.show');
     Route::post('approvals/{id}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');
     Route::post('approvals/{id}/reject', [ApprovalController::class, 'reject'])->name('approvals.reject');
+    Route::post('approvals/{id}/resend', [ApprovalController::class, 'resendRequest'])->name('approvals.resend');
     Route::post('approvals/{id}/update-budget', [ApprovalController::class, 'updateBudget'])->name('approvals.update-budget');
+    Route::post('approvals/{id}/update-quotation-amount', [ApprovalController::class, 'updateQuotationAmount'])->name('approvals.update-quotation-amount');
 });
 
 // Add impersonation routes
@@ -930,6 +934,8 @@ Route::middleware('auth')->group(function () {
         ->name('quotation-selections.show');
     Route::post('/quotation-selections/select-item', [QuotationItemSelectionController::class, 'selectItem'])
         ->name('quotation-selections.select-item');
+    Route::post('/purchase-requests/{purchaseRequest}/save-selection', [QuotationItemSelectionController::class, 'saveSelection'])
+        ->name('quotation-selections.save-selection');
     Route::post('/quotation-selections/remove', [QuotationItemSelectionController::class, 'removeSelection'])
         ->name('quotation-selections.remove');
     Route::post('/purchase-requests/{purchaseRequest}/finalize-selection', [QuotationItemSelectionController::class, 'finalize'])

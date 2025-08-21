@@ -66,31 +66,24 @@ class SectionClassifierService
     }
 
     /**
-     * Obtener los correos de aprobación para solicitudes de materiales según la sección
-     * RESTRINGIDO: Solo para administradores + compras@tvs.edu.co + auxiliaralmacen@tvs.edu.co
+     * Obtener los correos de aprobación para solicitudes de materiales y fotocopias
+     * RESTRINGIDO: Solo para compras@tvs.edu.co + auxiliaralmacen@tvs.edu.co + administrativedirector@tvs.edu.co
      *
      * @param string $sectionName Nombre de la sección
      * @return array Lista de correos electrónicos para aprobación
      */
     public function getMaterialsApprovalEmails(string $sectionName): array
     {
-        // Para solicitudes de materiales y fotocopias, restringir a usuarios autorizados únicamente
-        $restrictedEmails = [];
+        // Para solicitudes de materiales y fotocopias, solo los correos específicos autorizados
+        $authorizedEmails = [
+            'compras@tvs.edu.co',
+            'auxiliaralmacen@tvs.edu.co',
+            'administrativedirector@tvs.edu.co'
+        ];
         
-        // Obtener correos de usuarios con rol admin
-        $adminUsers = \App\Models\User::role('admin')->pluck('email')->toArray();
-        $restrictedEmails = array_merge($restrictedEmails, $adminUsers);
+        \Log::info("Notificaciones de materiales/fotocopias para sección {$sectionName}: " . implode(', ', $authorizedEmails));
         
-        // Agregar correos específicos autorizados
-        $authorizedEmails = ['compras@tvs.edu.co', 'auxiliaralmacen@tvs.edu.co'];
-        $restrictedEmails = array_merge($restrictedEmails, $authorizedEmails);
-        
-        // Eliminar duplicados
-        $restrictedEmails = array_unique($restrictedEmails);
-        
-        \Log::info("Notificaciones de materiales/fotocopias restringidas para sección {$sectionName}: " . implode(', ', $restrictedEmails));
-        
-        return $restrictedEmails;
+        return $authorizedEmails;
     }
 
     /**

@@ -83,6 +83,9 @@ class QuotationApprovalController extends Controller
                 'my_percentage' => $request->my_percentage,
                 'shared_section' => $request->shared_section,
                 'shared_percentage' => $request->shared_percentage,
+                'third_shared_section' => $request->third_shared_section,
+                'third_shared_percentage' => $request->third_shared_percentage ?? 0,
+                'has_third_section' => !empty($request->third_shared_section),
                 'budget_impact' => $this->calculateBudgetImpact($request)
             ];
         }
@@ -868,8 +871,66 @@ class QuotationApprovalController extends Controller
             'amount' => $totalEstimado * ($request->shared_percentage / 100)
         ];
         
+        // Agregar tercera sección si existe
+        if (!empty($request->third_shared_section)) {
+            $budgetImpact['third_section'] = [
+                'name' => $request->third_shared_section,
+                'percentage' => $request->third_shared_percentage ?? 0,
+                'amount' => $totalEstimado * (($request->third_shared_percentage ?? 0) / 100)
+            ];
+        }
+        
         $budgetImpact['total'] = $totalEstimado;
         
         return $budgetImpact;
+    }
+
+    /**
+     * Reenviar solicitud de pre-aprobación por correo.
+     */
+    public function resendRequest(Request $request, $id)
+    {
+        // Verificar que el usuario sea admin
+        if (!auth()->user()->hasRole('admin')) {
+            return redirect()->back()
+                ->with('error', 'No tienes permisos para reenviar solicitudes.');
+        }
+
+        // Validar la entrada
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'message' => 'nullable|string|max:500',
+        ]);
+
+        // Obtener la solicitud
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+
+        try {
+            // Enviar notificación por correo
+            $notification = new \App\Notifications\RequestResent(
+                $purchaseRequest,
+                $validated['message'] ?? 'Solicitud reenviada por el administrador.',
+                'pre-approval'
+            );
+
+            Notification::route('mail', $validated['email'])
+                ->notify($notification);
+
+            // Registrar en el historial
+            RequestHistory::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'user_id' => Auth::id(),
+                'action' => 'Solicitud de pre-aprobación reenviada',
+                'notes' => "Reenviada a: {$validated['email']}" . 
+                          ($validated['message'] ? " - Mensaje: {$validated['message']}" : '')
+            ]);
+
+            return redirect()->back()
+                ->with('success', 'La solicitud ha sido reenviada exitosamente a ' . $validated['email']);
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Error al enviar el correo: ' . $e->getMessage());
+        }
     }
 }

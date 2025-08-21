@@ -167,7 +167,7 @@ class SpaceReservation extends Model
             return true;
         }
 
-        // Verificar conflictos con bloqueos semanales
+        // Verificar conflictos con bloqueos semanales y por ciclo
         $dateObj = Carbon::parse($date);
         $dayOfWeek = strtolower($dateObj->format('l')); // obtener el día de la semana en inglés y en minúsculas
         
@@ -187,6 +187,22 @@ class SpaceReservation extends Model
             
             if ($hasWeekdayBlock) {
                 return true;
+            }
+            
+            // Verificar si hay bloqueos por día de ciclo para este horario específico
+            $cycleDay = CycleDay::getCycleDayForDate($date, $activeCycle->id);
+            if ($cycleDay) {
+                $hasCycleDayBlock = SpaceBlock::isBlockedForCycleDayTime(
+                    $spaceId,
+                    $activeCycle->id,
+                    $cycleDay->cycle_day,
+                    $startTime,
+                    $endTime
+                );
+                
+                if ($hasCycleDayBlock) {
+                    return true;
+                }
             }
         }
 
@@ -226,13 +242,10 @@ class SpaceReservation extends Model
             return [false, 'La fecha seleccionada no está dentro del ciclo escolar.'];
         }
         
-        // Verificar si el espacio está bloqueado para ese día de ciclo
-        if (SpaceBlock::isBlocked($spaceId, $activeCycle->id, $cycleDay->cycle_day)) {
-            return [false, 'El espacio está bloqueado para este día del ciclo escolar.'];
-        }
-        
-        // Ya no verificamos bloqueos por días de la semana aquí, 
-        // esto se hará en la función hasTimeConflict según el horario específico
+        // Ya no verificamos bloqueos por días de ciclo aquí de forma general,
+        // esto se hará en la función hasTimeConflict según el horario específico.
+        // Esto permite que un espacio pueda ser reservado en horarios no bloqueados
+        // del mismo día de ciclo.
         
         return [true, ''];
     }

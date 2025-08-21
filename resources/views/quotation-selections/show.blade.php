@@ -145,105 +145,114 @@
             
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
-                    <thead style="background-color: #f8f9fa;">
+                    <thead style="background: linear-gradient(135deg, #364E76 0%, #4a5d8a 100%); color: white;">
                         <tr>
-                            <th style="width: 5%;">#</th>
-                            <th style="width: 30%;">Descripción del Item</th>
-                            <th style="width: 10%;">Cantidad</th>
-                            <th style="width: 25%;">Proveedor Seleccionado</th>
-                            <th style="width: 15%;">Precio Unitario</th>
-                            <th style="width: 15%;">Total</th>
-                            <th style="width: 10%;">Acciones</th>
+                            <th style="width: 8%; text-align: center; vertical-align: middle; font-weight: 600;">#</th>
+                            <th style="width: 45%; padding: 12px; font-weight: 600;">Descripción del Item</th>
+                            <th style="width: 12%; text-align: center; vertical-align: middle; font-weight: 600;">Cantidad</th>
+                            <th style="width: 35%; padding: 12px; font-weight: 600;">Seleccionar Proveedor</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($purchaseItems as $index => $item)
-                            <tr id="item-row-{{ $index }}">
-                                <td class="align-middle">{{ $index + 1 }}</td>
-                                <td class="align-middle">
-                                    <strong>{{ $item['description'] ?? $item['name'] ?? 'Sin descripción' }}</strong>
-                                    @if(isset($item['specification']))
-                                        <br><small class="text-muted">{{ $item['specification'] }}</small>
-                                    @endif
+                            <tr id="item-row-{{ $index }}" style="transition: all 0.2s ease;">
+                                <td class="align-middle text-center" style="font-weight: 600; color: #364E76; font-size: 1.1em;">
+                                    {{ $index + 1 }}
                                 </td>
-                                <td class="align-middle text-center">
-                                    <span class="badge badge-secondary">{{ $item['quantity'] ?? 1 }}</span>
+                                <td class="align-middle" style="padding: 15px;">
+                                    <div>
+                                        <strong style="color: #2c3e50; font-size: 1.05em;">{{ $item['description'] ?? $item['name'] ?? 'Sin descripción' }}</strong>
+                                        @if(isset($item['specification']))
+                                            <br><small class="text-muted" style="font-style: italic; margin-top: 5px; display: block;">{{ $item['specification'] }}</small>
+                                        @endif
+                                    </div>
                                 </td>
-                                <td class="align-middle">
+                                <td class="align-middle text-center" style="padding: 15px;">
+                                    <span class="badge badge-info" style="font-size: 1em; padding: 8px 12px; border-radius: 20px;">
+                                        {{ $item['quantity'] ?? 1 }}
+                                    </span>
+                                </td>
+                                <td class="align-middle" style="padding: 15px;">
                                     @if(isset($existingSelections[$index]))
                                         @php $selection = $existingSelections[$index]; @endphp
-                                        <div class="selected-provider" id="selected-{{ $index }}">
-                                            <strong class="text-success">{{ $selection->quotation->provider_name }}</strong>
-                                            <br>
-                                            <small class="text-muted">
-                                                Seleccionado por {{ $selection->selectedBy->name }}
-                                                <br>{{ $selection->selected_at->format('d/m/Y H:i') }}
+                                        <div class="provider-selection">
+                                            <!-- Input oculto para almacenar la selección -->
+                                            <input type="hidden" class="selected-provider-input" 
+                                                   data-item-index="{{ $index }}" 
+                                                   value="{{ $selection->quotation_id }}">
+                                            
+                                            <!-- Contenedor de proveedores -->
+                                            <div class="provider-options" data-item-index="{{ $index }}">
+                                                @foreach($quotations as $quotation)
+                                                    @php
+                                                        $unitPrice = 0;
+                                                        if (isset($quotation->quotation_items[$index]['unit_price'])) {
+                                                            $unitPrice = $quotation->quotation_items[$index]['unit_price'];
+                                                        } else {
+                                                            $totalItems = count($purchaseItems);
+                                                            $unitPrice = $totalItems > 0 ? ($quotation->total_amount / $totalItems) : 0;
+                                                        }
+                                                        $totalPrice = $unitPrice * ($item['quantity'] ?? 1);
+                                                        $isSelected = $selection->quotation_id == $quotation->id;
+                                                    @endphp
+                                                    <div class="provider-card {{ $isSelected ? 'selected' : '' }}" 
+                                                         data-quotation-id="{{ $quotation->id }}"
+                                                         data-provider-name="{{ $quotation->provider_name }}"
+                                                         data-unit-price="{{ $unitPrice }}"
+                                                         data-total-price="{{ $totalPrice }}"
+                                                         data-item-index="{{ $index }}"
+                                                         onclick="selectProvider(this)">
+                                                        <div class="provider-name">{{ $quotation->provider_name }}</div>
+                                                        <div class="provider-check">
+                                                            <span class="checkmark">✓</span>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            <small class="text-success mt-2 d-block" style="font-weight: 500;">
+                                                <i class="fas fa-check-circle"></i> Seleccionado por {{ $selection->selectedBy->name }} el {{ $selection->selected_at->format('d/m/Y H:i') }}
                                             </small>
-                                            @if($selection->justification)
-                                                <br><small class="text-info">
-                                                    <i class="fas fa-comment"></i> {{ $selection->justification }}
-                                                </small>
-                                            @endif
                                         </div>
                                     @else
-                                        <div class="selection-area" id="selection-{{ $index }}">
-                                            <button type="button" class="btn btn-primary btn-sm select-provider-btn" 
-                                                    data-item-index="{{ $index }}"
-                                                    data-item-description="{{ $item['description'] ?? $item['name'] ?? 'Sin descripción' }}"
-                                                    data-item-quantity="{{ $item['quantity'] ?? 1 }}">
-                                                <i class="fas fa-hand-pointer"></i> Seleccionar Proveedor
-                                            </button>
+                                        <div class="provider-selection">
+                                            <!-- Input oculto para almacenar la selección -->
+                                            <input type="hidden" class="selected-provider-input" 
+                                                   data-item-index="{{ $index }}" 
+                                                   value="">
+                                            
+                                            <!-- Contenedor de proveedores -->
+                                            <div class="provider-options" data-item-index="{{ $index }}">
+                                                @foreach($quotations as $quotation)
+                                                    @php
+                                                        $unitPrice = 0;
+                                                        if (isset($quotation->quotation_items[$index]['unit_price'])) {
+                                                            $unitPrice = $quotation->quotation_items[$index]['unit_price'];
+                                                        } else {
+                                                            $totalItems = count($purchaseItems);
+                                                            $unitPrice = $totalItems > 0 ? ($quotation->total_amount / $totalItems) : 0;
+                                                        }
+                                                        $totalPrice = $unitPrice * ($item['quantity'] ?? 1);
+                                                    @endphp
+                                                    <div class="provider-card" 
+                                                         data-quotation-id="{{ $quotation->id }}"
+                                                         data-provider-name="{{ $quotation->provider_name }}"
+                                                         data-unit-price="{{ $unitPrice }}"
+                                                         data-total-price="{{ $totalPrice }}"
+                                                         data-item-index="{{ $index }}"
+                                                         onclick="selectProvider(this)">
+                                                        <div class="provider-name">{{ $quotation->provider_name }}</div>
+                                                        <div class="provider-check">
+                                                            <span class="checkmark">✓</span>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         </div>
-                                    @endif
-                                </td>
-                                <td class="align-middle text-center">
-                                    <span id="unit-price-{{ $index }}">
-                                        @if(isset($existingSelections[$index]))
-                                            ${{ number_format($existingSelections[$index]->unit_price, 2, ',', '.') }}
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </span>
-                                </td>
-                                <td class="align-middle text-center">
-                                    <span id="total-price-{{ $index }}">
-                                        @if(isset($existingSelections[$index]))
-                                            <strong class="text-success">
-                                                ${{ number_format($existingSelections[$index]->total_price, 2, ',', '.') }}
-                                            </strong>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </span>
-                                </td>
-                                <td class="align-middle text-center">
-                                    @if(isset($existingSelections[$index]))
-                                        <button type="button" class="btn btn-warning btn-sm change-selection-btn"
-                                                data-item-index="{{ $index }}"
-                                                data-item-description="{{ $item['description'] ?? $item['name'] ?? 'Sin descripción' }}"
-                                                data-item-quantity="{{ $item['quantity'] ?? 1 }}">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-danger btn-sm remove-selection-btn"
-                                                data-item-index="{{ $index }}">
-                                            <i class="fas fa-times"></i>
-                                        </button>
                                     @endif
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
-                    <tfoot style="background-color: #f8f9fa;">
-                        <tr>
-                            <th colspan="5" class="text-right">Total Seleccionado:</th>
-                            <th class="text-center">
-                                <strong class="text-success" id="grand-total">
-                                    ${{ number_format($existingSelections->sum('total_price'), 2, ',', '.') }}
-                                </strong>
-                            </th>
-                            <th></th>
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
 
@@ -330,166 +339,7 @@
     </div>
 </div>
 
-<!-- Modal para selección de proveedor -->
-<div class="modal fade" id="providerSelectionModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header" style="background-color: #364E76; color: white;">
-                <h5 class="modal-title">
-                    <i class="fas fa-hand-pointer mr-2"></i>Seleccionar Proveedor
-                </h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <h6><strong>Item:</strong> <span id="modal-item-description"></span></h6>
-                    <p><strong>Cantidad:</strong> <span id="modal-item-quantity"></span></p>
-                </div>
-                
-                <form id="selectionForm">
-                    @csrf
-                    <input type="hidden" id="modal-purchase-request-id" value="{{ $purchaseRequest->id }}">
-                    <input type="hidden" id="modal-item-index">
-                    
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead style="background-color: #f8f9fa;">
-                                <tr>
-                                    <th>Seleccionar</th>
-                                    <th>Proveedor</th>
-                                    <th>
-                                        @if($purchaseRequest->type === 'purchase')
-                                            Descripción del Artículo
-                                        @else
-                                            Descripción del Servicio
-                                        @endif
-                                    </th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($quotations as $quotation)
-                                    <tr>
-                                        <td class="text-center">
-                                            <div class="form-check">
-                                                <input class="form-check-input quotation-radio" 
-                                                       type="radio" 
-                                                       name="quotation_id" 
-                                                       value="{{ $quotation->id }}"
-                                                       id="quotation-{{ $quotation->id }}">
-                                                <label class="form-check-label" for="quotation-{{ $quotation->id }}"></label>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <strong>{{ $quotation->provider_name }}</strong>
-                                        </td>
-                                        <td>
-                                            <div class="item-description" id="item-description-display">
-                                                <!-- La descripción se llenará dinámicamente via JavaScript -->
-                                                <em class="text-muted">Seleccione un item para ver la descripción</em>
-                                            </div>
-                                            <div class="input-group input-group-sm mt-2">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text">Precio: $</span>
-                                                </div>
-                                                <input type="number" 
-                                                       class="form-control unit-price-input" 
-                                                       step="0.01" 
-                                                       min="0"
-                                                       data-quotation-id="{{ $quotation->id }}"
-                                                       placeholder="0.00">
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <strong class="total-display" data-quotation-id="{{ $quotation->id }}">
-                                                $0.00
-                                            </strong>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="justification">Justificación (opcional):</label>
-                        <textarea class="form-control" 
-                                  id="justification" 
-                                  name="justification" 
-                                  rows="3" 
-                                  placeholder="Explique por qué seleccionó este proveedor para este item..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="saveSelectionBtn">
-                    <i class="fas fa-save mr-2"></i>Guardar Selección
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Modal de confirmación para envío a pre-aprobación -->
-<div class="modal fade" id="preapprovalConfirmModal" tabindex="-1" role="dialog" aria-labelledby="preapprovalConfirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header" style="background-color: #364E76; color: white;">
-                <h5 class="modal-title" id="preapprovalConfirmModalLabel">
-                    <i class="fas fa-paper-plane mr-2"></i>Enviar Selección Mixta a Pre-aprobación
-                </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-2 text-center">
-                        <i class="fas fa-balance-scale fa-3x text-primary mb-3"></i>
-                    </div>
-                    <div class="col-md-10">
-                        <h6 class="mb-3">¿Está seguro de enviar la selección mixta para pre-aprobación?</h6>
-                        <p class="mb-3">
-                            Se guardará su selección actual de proveedores y se enviará la solicitud al supervisor correspondiente.
-                        </p>
-                        <p class="text-muted mb-0">
-                            Una vez enviada, no podrá modificar la selección de proveedores.
-                        </p>
-                    </div>
-                </div>
-                
-                <div class="alert alert-info mt-3">
-                    <h6><i class="fas fa-info-circle mr-2"></i>¿Qué sucederá?</h6>
-                    <ul class="mb-0 small">
-                        <li>Se guardará la selección mixta de proveedores</li>
-                        <li>Se enviará un correo de notificación al supervisor de la sección <strong>{{ $purchaseRequest->section_area }}</strong></li>
-                        <li>La solicitud cambiará al estado <strong>"En pre-aprobación"</strong></li>
-                        <li>El supervisor podrá revisar y aprobar la selección realizada</li>
-                    </ul>
-                </div>
-                
-                <!-- Resumen de selección -->
-                <div class="mt-3">
-                    <h6><i class="fas fa-clipboard-list mr-2"></i>Resumen de su selección:</h6>
-                    <div id="selection-summary" class="small">
-                        <!-- Se llenará dinámicamente con JavaScript -->
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    <i class="fas fa-times mr-1"></i>Cancelar
-                </button>
-                <button type="button" class="btn btn-primary" onclick="confirmSaveAndSend()">
-                    <i class="fas fa-paper-plane mr-1"></i>Enviar a Pre-aprobación
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 @stop
 
@@ -519,8 +369,149 @@
         border-left: 3px solid #28a745;
     }
     
+    /* Estilos para las cards de proveedores */
+    .provider-options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .provider-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        min-height: 50px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .provider-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(54, 78, 118, 0.15);
+        border-color: #364E76;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .provider-card.selected {
+        background: linear-gradient(135deg, #364E76 0%, #4a5d8a 100%);
+        border-color: #364E76;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(54, 78, 118, 0.3);
+    }
+    
+    .provider-card.selected:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(54, 78, 118, 0.4);
+    }
+    
+    .provider-name {
+        font-weight: 600;
+        font-size: 0.95em;
+        flex: 1;
+        margin-right: 10px;
+        line-height: 1.3;
+    }
+    
+    .provider-check {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        background: white;
+        flex-shrink: 0;
+    }
+    
+    .provider-card:hover .provider-check {
+        border-color: #364E76;
+        background: #f8f9fa;
+    }
+    
+    .provider-card.selected .provider-check {
+        background: white;
+        border-color: white;
+        color: #364E76;
+    }
+    
+    .checkmark {
+        font-size: 14px;
+        font-weight: bold;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    
+    .provider-card.selected .checkmark {
+        opacity: 1;
+        transform: scale(1);
+    }
+    
+    /* Animación de selección */
+    @keyframes selectAnimation {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .provider-card.selecting {
+        animation: selectAnimation 0.3s ease;
+    }
+    
+    /* Responsivo para pantallas pequeñas */
+    @media (max-width: 768px) {
+        .provider-card {
+            padding: 10px 12px;
+            min-height: 45px;
+        }
+        
+        .provider-name {
+            font-size: 0.9em;
+        }
+        
+        .provider-check {
+            width: 20px;
+            height: 20px;
+        }
+    }
+    
     .table th {
         border-top: none;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .table td {
+        border-top: 1px solid #e3e6f0;
+        vertical-align: middle;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(54, 78, 118, 0.05);
+        transform: scale(1.01);
+        transition: all 0.2s ease;
+    }
+    
+    .badge-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
+    }
+    
+    .selection-confirmation {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     .btn-sm {
@@ -567,141 +558,228 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Definir funciones críticas ANTES de cargar otros scripts -->
+<!-- JavaScript simplificado para selección directa de proveedores -->
 <script>
-console.log('Definiendo funciones JavaScript críticas...');
+console.log('Inicializando selección directa de proveedores...');
 
-// Asegurar que las funciones estén disponibles inmediatamente, incluso antes de jQuery
-window.showPreapprovalConfirmModal = function() {
-    console.log('showPreapprovalConfirmModal llamada');
+// Función principal para seleccionar proveedor desde las cards
+function selectProvider(cardElement) {
+    const itemIndex = cardElement.dataset.itemIndex;
+    const quotationId = cardElement.dataset.quotationId;
+    const providerName = cardElement.dataset.providerName;
+    const unitPrice = cardElement.dataset.unitPrice;
     
-    try {
-        // Verificar si jQuery y el modal están disponibles
-        if (typeof $ === 'undefined') {
-            console.warn('jQuery no está disponible, reintentando en 100ms...');
-            setTimeout(window.showPreapprovalConfirmModal, 100);
-            return;
-        }
-        
-        if (!$.fn.modal) {
-            console.warn('Bootstrap modal no está disponible, reintentando en 100ms...');
-            setTimeout(window.showPreapprovalConfirmModal, 100);
-            return;
-        }
-        
-        // Actualizar resumen y mostrar modal
-        updateSelectionSummary();
-        $('#preapprovalConfirmModal').modal('show');
-        
-    } catch (error) {
-        console.error('Error en showPreapprovalConfirmModal:', error);
-        alert('Error al abrir el modal. Por favor, recargue la página e intente nuevamente.');
+    console.log('Proveedor seleccionado:', {
+        itemIndex: itemIndex,
+        quotationId: quotationId,
+        providerName: providerName,
+        unitPrice: unitPrice
+    });
+    
+    // Agregar animación de selección
+    cardElement.classList.add('selecting');
+    setTimeout(() => {
+        cardElement.classList.remove('selecting');
+    }, 300);
+    
+    // Actualizar el estado visual inmediatamente
+    const providerOptions = cardElement.parentElement;
+    const allCards = providerOptions.querySelectorAll('.provider-card');
+    
+    // Remover selección anterior
+    allCards.forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Agregar selección actual
+    cardElement.classList.add('selected');
+    
+    // Actualizar input oculto
+    const hiddenInput = providerOptions.parentElement.querySelector('.selected-provider-input');
+    if (hiddenInput) {
+        hiddenInput.value = quotationId;
     }
-};
-
-window.confirmSaveAndSend = function() {
-    console.log('confirmSaveAndSend llamada');
     
-    try {
-        // Buscar el formulario activo
-        const activeForm = document.querySelector('#save-and-send-form') ||
-                           document.querySelector('#partial-save-and-send-form') ||
-                           document.querySelector('#dynamic-save-and-send-form') ||
-                           document.querySelector('#dynamic-partial-save-and-send-form');
-        
-        if (!activeForm) {
-            console.error('No se encontró formulario activo para enviar');
-            alert('Error: No se pudo encontrar el formulario. Por favor, recargue la página e intente nuevamente.');
-            return;
-        }
-        
-        // Cerrar modal y enviar formulario
-        if (typeof $ !== 'undefined' && $.fn.modal) {
-            $('#preapprovalConfirmModal').modal('hide');
-        }
-        
-        console.log('Enviando formulario:', activeForm.id);
-        activeForm.submit();
-        
-    } catch (error) {
-        console.error('Error en confirmSaveAndSend:', error);
-        alert('Error al enviar el formulario. Por favor, recargue la página e intente nuevamente.');
+    // Guardar la selección automáticamente
+    saveProviderSelection(itemIndex, quotationId, unitPrice, providerName);
+}
+
+// Función para manejar el cambio de proveedor en los selects (compatibilidad)
+function handleProviderChange(selectElement) {
+    console.log('handleProviderChange llamado para compatibilidad - ya no se usa');
+    // Esta función se mantiene para compatibilidad pero ya no se usa
+}
+
+// Función para guardar la selección del proveedor
+function saveProviderSelection(itemIndex, quotationId, price, providerName) {
+    console.log('Iniciando saveProviderSelection con datos:', {
+        itemIndex: itemIndex,
+        quotationId: quotationId,
+        price: price,
+        priceType: typeof price,
+        providerName: providerName
+    });
+    
+    // Convertir price a número si es string
+    let numericPrice = price;
+    if (typeof price === 'string') {
+        numericPrice = parseFloat(price);
     }
-};
-
-// Función para actualizar el resumen de selección en el modal
-window.updateSelectionSummary = function() {
-    console.log('Actualizando resumen de selección...');
     
-    try {
-        const summaryContainer = document.getElementById('selection-summary');
-        if (!summaryContainer) {
-            console.warn('Container de resumen no encontrado');
-            return;
-        }
-        
-        let summaryHTML = '<div class="table-responsive"><table class="table table-sm">';
-        summaryHTML += '<thead><tr><th>Item</th><th>Proveedor Seleccionado</th><th>Precio</th></tr></thead><tbody>';
-        
-        // Obtener todas las selecciones actuales desde el DOM
-        const selectedProviders = document.querySelectorAll('.selected-provider');
-        let totalSelected = 0;
-        
-        selectedProviders.forEach(function(providerDiv, index) {
-            const row = providerDiv.closest('tr');
-            if (row) {
-                const description = row.querySelector('td:nth-child(2) strong')?.textContent || `Item ${index + 1}`;
-                const providerName = providerDiv.querySelector('strong')?.textContent || 'No seleccionado';
-                const priceElement = row.querySelector('[id^="total-price-"] strong');
-                const price = priceElement ? priceElement.textContent : '$0.00';
-                
-                summaryHTML += `<tr><td>${description}</td><td>${providerName}</td><td>${price}</td></tr>`;
-                totalSelected++;
-            }
+    console.log('Precio después de conversión:', {
+        original: price,
+        converted: numericPrice,
+        isNaN: isNaN(numericPrice)
+    });
+    
+    // Validar datos antes de enviar
+    if (!quotationId) {
+        console.error('quotationId está vacío:', quotationId);
+        alert('Error: ID de cotización no válido.');
+        return;
+    }
+    
+    if (!price && price !== 0) {
+        console.error('price está vacío o undefined:', price);
+        alert('Error: Precio no encontrado. Verifique que la cotización tenga precios definidos.');
+        return;
+    }
+    
+    if (isNaN(numericPrice) || numericPrice < 0) {
+        console.error('price no es un número válido:', {
+            price: price,
+            numericPrice: numericPrice,
+            isNaN: isNaN(numericPrice)
         });
+        alert('Error: Precio no válido (' + price + '). Por favor, recargue la página e intente nuevamente.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    formData.append('item_index', itemIndex);
+    formData.append('quotation_id', quotationId);
+    formData.append('unit_price', numericPrice);
+    
+    console.log('Enviando selección:', {
+        itemIndex: itemIndex,
+        quotationId: quotationId,
+        price: numericPrice,
+        providerName: providerName,
+        url: '{{ route("quotation-selections.save-selection", $purchaseRequest->id) }}'
+    });
+    
+    fetch('{{ route("quotation-selections.save-selection", $purchaseRequest->id) }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        console.log('Respuesta recibida:', response.status, response.statusText);
         
-        if (totalSelected === 0) {
-            summaryHTML += '<tr><td colspan="3" class="text-center text-muted">No hay selecciones realizadas</td></tr>';
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
         
-        summaryHTML += '</tbody></table></div>';
-        summaryHTML += `<div class="text-right"><strong>Total de items seleccionados: ${totalSelected}</strong></div>`;
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos recibidos:', data);
         
-        summaryContainer.innerHTML = summaryHTML;
-        
-    } catch (error) {
-        console.error('Error al actualizar resumen:', error);
+        if (data.success) {
+            console.log('Selección guardada exitosamente');
+            
+            // Mostrar confirmación en la card seleccionada
+            const selectedCard = document.querySelector(`.provider-card[data-item-index="${itemIndex}"][data-quotation-id="${quotationId}"]`);
+            if (selectedCard) {
+                // Agregar mensaje de confirmación a la card
+                let confirmMessage = selectedCard.querySelector('.selection-confirmation');
+                if (!confirmMessage) {
+                    confirmMessage = document.createElement('div');
+                    confirmMessage.className = 'selection-confirmation';
+                    confirmMessage.innerHTML = '<i class="fas fa-check-circle"></i> Guardado';
+                    selectedCard.appendChild(confirmMessage);
+                }
+                
+                // Hacer el mensaje visible temporalmente
+                confirmMessage.style.display = 'block';
+                setTimeout(() => {
+                    confirmMessage.style.display = 'none';
+                }, 3000);
+            }
+            
+            // Actualizar contadores y botones
+            updateSelectionCounts();
+        } else {
+            console.error('Error al guardar selección:', data.message);
+            alert('Error al guardar la selección: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error en la petición:', error);
+        console.error('Detalles del error:', error.message);
+        alert('Error de conexión al guardar la selección. Detalles: ' + error.message);
+    });
+}
+
+// Función para actualizar contadores usando las cards
+function updateSelectionCounts() {
+    const totalItems = {{ count($purchaseItems) }};
+    
+    // Contar cards seleccionadas
+    const selectedCards = document.querySelectorAll('.provider-card.selected');
+    const selectedCount = selectedCards.length;
+    
+    console.log(`Selecciones actuales: ${selectedCount}/${totalItems}`);
+    
+    // Ocultar todos los elementos dinámicos primero
+    const dynamicElements = [
+        'dynamic-complete-alert',
+        'dynamic-complete-buttons', 
+        'dynamic-partial-alert',
+        'dynamic-partial-buttons',
+        'dynamic-no-selection-alert'
+    ];
+    
+    dynamicElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.style.display = 'none';
+        }
+    });
+    
+    // Mostrar elementos apropiados según el estado
+    if (selectedCount === totalItems) {
+        // Selección completa
+        const completeAlert = document.getElementById('dynamic-complete-alert');
+        const completeButtons = document.getElementById('dynamic-complete-buttons');
+        if (completeAlert) completeAlert.style.display = 'block';
+        if (completeButtons) completeButtons.style.display = 'block';
+    } else if (selectedCount > 0) {
+        // Selección parcial
+        const partialAlert = document.getElementById('dynamic-partial-alert');
+        const partialButtons = document.getElementById('dynamic-partial-buttons');
+        if (partialAlert) partialAlert.style.display = 'block';
+        if (partialButtons) partialButtons.style.display = 'block';
+    } else {
+        // Sin selecciones
+        const noSelectionAlert = document.getElementById('dynamic-no-selection-alert');
+        if (noSelectionAlert) noSelectionAlert.style.display = 'block';
     }
-};
+}
 
-// Verificar que las funciones estén disponibles
-console.log('Funciones definidas:');
-console.log('- showPreapprovalConfirmModal:', typeof window.showPreapprovalConfirmModal);
-console.log('- confirmSaveAndSend:', typeof window.confirmSaveAndSend);
-console.log('- updateSelectionSummary:', typeof window.updateSelectionSummary);
-</script>
-
-<!-- JavaScript externo -->
-<script src="{{ asset('js/quotation-chart.js') }}"></script>
-<script src="{{ asset('js/quotation-buttons.js') }}"></script>
-
-<!-- JavaScript para configuración inicial -->
-<script>
-// Definir las versiones completas de las funciones cuando jQuery esté listo
-window.showPreapprovalConfirmModal_ready = function() {
-    updateSelectionSummary();
-    $('#preapprovalConfirmModal').modal('show');
-};
-
-window.confirmSaveAndSend_ready = function() {
-    // Buscar el formulario activo y enviarlo
+// Función para enviar a pre-aprobación (mantenemos para compatibilidad con botones existentes)
+window.confirmSaveAndSend = function() {
     const activeForm = document.querySelector('#save-and-send-form') ||
                        document.querySelector('#partial-save-and-send-form') ||
                        document.querySelector('#dynamic-save-and-send-form') ||
                        document.querySelector('#dynamic-partial-save-and-send-form');
     
     if (activeForm) {
-        $('#preapprovalConfirmModal').modal('hide');
+        console.log('Enviando formulario:', activeForm.id);
         activeForm.submit();
     } else {
         console.error('No se encontró formulario activo para enviar');
@@ -709,137 +787,44 @@ window.confirmSaveAndSend_ready = function() {
     }
 };
 
-// Redefinir las funciones principales para que usen las versiones _ready
-window.showPreapprovalConfirmModal = function() {
-    if (typeof $ !== 'undefined' && $.fn.modal) {
-        window.showPreapprovalConfirmModal_ready();
-    } else {
-        console.warn('jQuery no está listo, reintentando en 100ms');
-        setTimeout(window.showPreapprovalConfirmModal, 100);
-    }
-};
-
-window.confirmSaveAndSend = function() {
-    if (typeof $ !== 'undefined' && $.fn.modal) {
-        window.confirmSaveAndSend_ready();
-    } else {
-        console.warn('jQuery no está listo, reintentando en 100ms');
-        setTimeout(window.confirmSaveAndSend, 100);
-    }
-};
-
-// Función para actualizar el resumen de selección en el modal
-function updateSelectionSummary() {
-    const summaryContainer = document.getElementById('selection-summary');
-    if (!summaryContainer) {
-        console.warn('Container de resumen no encontrado');
-        return;
-    }
+// Inicialización cuando el DOM esté listo
+$(document).ready(function() {
+    console.log('DOM listo, configurando eventos para provider cards...');
     
-    let summaryHTML = '<div class="table-responsive"><table class="table table-sm">';
-    summaryHTML += '<thead><tr><th>Item</th><th>Proveedor Seleccionado</th><th>Precio</th></tr></thead><tbody>';
-    
-    // Obtener todas las selecciones actuales desde el DOM
-    const selectedProviders = document.querySelectorAll('.selected-provider');
-    let totalSelected = 0;
-    
-    selectedProviders.forEach(function(providerDiv, index) {
-        const row = providerDiv.closest('tr');
-        if (row) {
-            const description = row.querySelector('td:nth-child(2) strong')?.textContent || `Item ${index + 1}`;
-            const providerName = providerDiv.querySelector('strong')?.textContent || 'No seleccionado';
-            const priceElement = row.querySelector('[id^="total-price-"] strong');
-            const price = priceElement ? priceElement.textContent : '$0.00';
-            
-            summaryHTML += `<tr><td>${description}</td><td>${providerName}</td><td>${price}</td></tr>`;
-            totalSelected++;
-        }
+    // Agregar eventos click a todas las provider cards
+    document.querySelectorAll('.provider-card').forEach(card => {
+        card.addEventListener('click', function() {
+            selectProvider(this);
+        });
     });
     
-    if (totalSelected === 0) {
-        summaryHTML += '<tr><td colspan="3" class="text-center text-muted">No hay selecciones realizadas</td></tr>';
-    }
-    
-    summaryHTML += '</tbody></table></div>';
-    summaryHTML += `<div class="text-right"><strong>Total de items seleccionados: ${totalSelected}</strong></div>`;
-    
-    summaryContainer.innerHTML = summaryHTML;
-}
-
-$(document).ready(function() {
-    console.log('Vista de selección mixta cargada');
-    
-    // Contar elementos existentes desde el servidor (PHP)
-    const totalItems = {{ count($purchaseItems) }};
-    const existingSelections = {{ $existingSelections->count() }};
-    
-    console.log('Total items:', totalItems);
-    console.log('Selecciones existentes desde servidor:', existingSelections);
-    console.log('Elementos .selected-provider encontrados:', $('.selected-provider').length);
-    
-    // Función para forzar actualización manual (para debug)
-    window.debugButtons = function() {
-        console.log('=== DEBUG BUTTONS ===');
-        console.log('Total items:', totalItems);
-        console.log('Selecciones existentes desde servidor:', existingSelections);
-        console.log('Elementos .selected-provider encontrados:', $('.selected-provider').length);
-        console.log('Elementos dinámicos visibles:');
-        console.log('- Complete alert:', $('#dynamic-complete-alert').is(':visible'));
-        console.log('- Complete buttons:', $('#dynamic-complete-buttons').is(':visible'));
-        console.log('- Partial alert:', $('#dynamic-partial-alert').is(':visible'));
-        console.log('- Partial buttons:', $('#dynamic-partial-buttons').is(':visible'));
-        console.log('- No selection alert:', $('#dynamic-no-selection-alert').is(':visible'));
-        
-        if (window.quotationButtonManager) {
-            console.log('Forzando actualización del QuotationButtonManager');
-            window.quotationButtonManager.forceUpdate();
-        } else {
-            console.log('QuotationButtonManager no disponible');
-        }
-    };
-    
-    // Inicialización con múltiples intentos
-    function initializeButtonManager() {
-        if (window.quotationButtonManager) {
-            console.log('QuotationButtonManager encontrado, inicializando con datos del servidor');
-            
-            // Forzar el conteo correcto basado en datos del servidor
-            window.quotationButtonManager.selectedCount = existingSelections;
-            window.quotationButtonManager.totalItems = totalItems;
-            
-            // Actualizar inmediatamente
-            window.quotationButtonManager.forceUpdate();
-            
-            // También actualizar después de un breve delay por si acaso
-            setTimeout(() => {
-                window.quotationButtonManager.forceUpdate();
-            }, 100);
-            
-            return true;
-        }
-        return false;
-    }
-    
-    // Intentar inicializar inmediatamente
-    if (!initializeButtonManager()) {
-        // Si no está disponible, intentar varias veces
-        let attempts = 0;
-        const maxAttempts = 10;
-        const initInterval = setInterval(() => {
-            attempts++;
-            console.log(`Intento ${attempts} de inicialización del QuotationButtonManager`);
-            
-            if (initializeButtonManager() || attempts >= maxAttempts) {
-                clearInterval(initInterval);
-                if (attempts >= maxAttempts) {
-                    console.warn('No se pudo inicializar QuotationButtonManager después de', maxAttempts, 'intentos');
-                }
+    // Marcar cards preseleccionadas basándose en selecciones existentes
+    @if(isset($existingSelections) && is_array($existingSelections))
+        @foreach($existingSelections as $itemIndex => $quotationId)
+            const existingCard = document.querySelector('.provider-card[data-item-index="{{ $itemIndex }}"][data-quotation-id="{{ $quotationId }}"]');
+            if (existingCard) {
+                existingCard.classList.add('selected');
+                console.log('Card preseleccionada encontrada para item {{ $itemIndex }}');
             }
-        }, 100);
-    }
+        @endforeach
+    @endif
     
-    console.log('Debug función creada. Ejecuta debugButtons() en la consola para verificar el estado.');
-    console.log('Funciones globales definidas:', typeof window.showPreapprovalConfirmModal, typeof window.confirmSaveAndSend);
-    console.log('jQuery disponible:', typeof $ !== 'undefined');
+    // Actualizar contadores iniciales
+    updateSelectionCounts();
+    
+    console.log('Sistema de provider cards configurado correctamente');
+});
+</script>
+
+@php
+    $providerLabels = $quotations->pluck('provider_name')->toArray();
+    $providerAmounts = $quotations->pluck('total_amount')->toArray();
+@endphp
+<script>
+    window.providerLabels = @json($providerLabels);
+    window.providerAmounts = @json($providerAmounts);
+</script>
+<!-- JavaScript externo -->
+<script src="{{ asset('js/quotation-chart.js') }}"></script>
 </script>
 @stop

@@ -29,6 +29,12 @@
                             <small class="d-block">(Aprobada)</small>
                         </button>
                     @endif
+                    
+                    @if(auth()->user()->hasRole('admin'))
+                        <button type="button" class="btn btn-sm btn-outline-warning" data-toggle="modal" data-target="#resendRequestModal">
+                            <i class="fas fa-paper-plane"></i> Reenviar Solicitud
+                        </button>
+                    @endif
                 </div>
             </div>
             <div class="card-body">
@@ -142,10 +148,10 @@
                     <div class="alert alert-info alert-dismissible" style="color: white;">
                         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
                         <h5><i class="icon fas fa-share-alt"></i> ¡Compra Compartida Detectada!</h5>
-                        <p><strong>Esta solicitud es compartida entre dos secciones y afectará los siguientes presupuestos:</strong></p>
+                        <p><strong>Esta solicitud es compartida entre {{ $sharedPurchaseInfo['has_third_section'] ? 'tres' : 'dos' }} secciones y afectará los siguientes presupuestos:</strong></p>
                         
                         <div class="row mt-3">
-                            <div class="col-md-6">
+                            <div class="{{ $sharedPurchaseInfo['has_third_section'] ? 'col-md-4' : 'col-md-6' }}">
                                 <div class="card card-outline card-primary" style="color: black;">
                                     <div class="card-header">
                                         <h6 class="card-title mb-0">
@@ -161,7 +167,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="{{ $sharedPurchaseInfo['has_third_section'] ? 'col-md-4' : 'col-md-6' }}">
                                 <div class="card card-outline card-success" style="color: black;">
                                     <div class="card-header">
                                         <h6 class="card-title mb-0">
@@ -177,6 +183,24 @@
                                     </div>
                                 </div>
                             </div>
+                            @if($sharedPurchaseInfo['has_third_section'])
+                                <div class="col-md-4">
+                                    <div class="card card-outline card-warning" style="color: black;">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">
+                                                <i class="fas fa-building mr-1"></i>
+                                                {{ $sharedPurchaseInfo['third_shared_section'] }}
+                                            </h6>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <p class="mb-1"><strong>Porcentaje:</strong> {{ $sharedPurchaseInfo['third_shared_percentage'] }}%</p>
+                                            @if($sharedPurchaseInfo['budget_impact']['total'] > 0)
+                                                <p class="mb-0"><strong>Monto estimado:</strong> ${{ number_format($sharedPurchaseInfo['budget_impact']['third_section']['amount'] ?? 0, 2) }}</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                         
                         @if($sharedPurchaseInfo['budget_impact']['total'] > 0)
@@ -1025,6 +1049,30 @@
         .accordion .btn-link i {
             transition: transform 0.3s ease;
         }
+        
+        /* Estilos para modal de reenvío */
+        #resendRequestModal .modal-header {
+            border-radius: 0.375rem 0.375rem 0 0;
+        }
+        
+        #resendRequestModal .alert {
+            border-radius: 0.375rem;
+            border: none;
+        }
+        
+        #resendRequestModal .form-control:focus {
+            border-color: #ffc107;
+            box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+        }
+        
+        #resendRequestModal .list-unstyled li {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        #resendRequestModal .list-unstyled li:last-child {
+            border-bottom: none;
+        }
     </style>
 
 <!-- Modal de información de aprobación -->
@@ -1146,6 +1194,76 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para reenviar solicitud -->
+<div class="modal fade" id="resendRequestModal" tabindex="-1" role="dialog" aria-labelledby="resendRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title text-white" id="resendRequestModalLabel">
+                    <i class="fas fa-paper-plane mr-2"></i>Reenviar Solicitud de Pre-aprobación
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ route('quotation-approvals.resend', $request->id) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Información:</strong> Está a punto de reenviar la solicitud <strong>#{{ $request->request_number }}</strong> 
+                        para pre-aprobación a un correo específico.
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-file-alt mr-1"></i> Información de la Solicitud</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Número:</strong> {{ $request->request_number }}</li>
+                                <li><strong>Solicitante:</strong> {{ $request->requester }}</li>
+                                <li><strong>Sección:</strong> {{ $request->section_area }}</li>
+                                <li><strong>Estado:</strong> {{ $request->status }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="resend_email"><i class="fas fa-envelope mr-1"></i> Correo de destino <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="resend_email" name="email" 
+                                       placeholder="correo@ejemplo.com" required>
+                                <small class="form-text text-muted">
+                                    Ingrese el correo electrónico al cual enviar la solicitud para pre-aprobación.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="resend_message"><i class="fas fa-comment mr-1"></i> Mensaje adicional (opcional)</label>
+                        <textarea class="form-control" id="resend_message" name="message" rows="3" 
+                                  placeholder="Ingrese cualquier mensaje adicional para incluir en el correo..."></textarea>
+                        <small class="form-text text-muted">Máximo 500 caracteres.</small>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Nota:</strong> Al reenviar esta solicitud se enviará un correo electrónico con toda la información 
+                        necesaria y un enlace directo para revisar la solicitud.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-paper-plane mr-1"></i> Reenviar Solicitud
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @stop
 
 @section('js')

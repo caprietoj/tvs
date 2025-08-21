@@ -16,6 +16,11 @@
                     <a href="{{ route('approvals.index') }}" class="btn btn-sm btn-default">
                         <i class="fas fa-arrow-left"></i> Volver
                     </a>
+                    @if(auth()->user()->hasRole('admin'))
+                        <button type="button" class="btn btn-sm btn-outline-warning" data-toggle="modal" data-target="#resendApprovalModal">
+                            <i class="fas fa-paper-plane"></i> Reenviar Solicitud
+                        </button>
+                    @endif
                 </div>
             </div>
             <div class="card-body">
@@ -132,9 +137,46 @@
                                 <dt class="col-sm-5">Monto:</dt>
                                 <dd class="col-sm-7">
                                     @if($request->quotationItemSelections && $request->quotationItemSelections->count() > 0)
-                                        ${{ number_format($request->quotationItemSelections->sum('total_price'), 2, ',', '.') }}
+                                        <div class="d-flex align-items-center">
+                                            <div id="mixed-amount-display" class="mr-2">
+                                                <span class="badge badge-warning p-2">${{ number_format($request->quotationItemSelections->sum('total_price'), 2, ',', '.') }}</span>
+                                            </div>
+                                            <span class="text-muted small">(Selección mixta - no editable)</span>
+                                        </div>
                                     @elseif($request->preApprovedQuotation)
-                                        ${{ number_format($request->preApprovedQuotation->total_amount, 2, ',', '.') }}
+                                        <div class="d-flex align-items-center">
+                                            <div id="quotation-amount-display" class="mr-2">
+                                                <span class="badge badge-success p-2">${{ number_format($request->preApprovedQuotation->total_amount, 2, ',', '.') }}</span>
+                                            </div>
+                                            @if(in_array($request->status, ['pre-approved', 'Pre-aprobada']))
+                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editQuotationAmount()">
+                                                    <i class="fas fa-edit"></i> Modificar Monto
+                                                </button>
+                                            @endif
+                                        </div>
+                                        
+                                        @if(in_array($request->status, ['pre-approved', 'Pre-aprobada']))
+                                            <div id="quotation-amount-edit-form" style="display: none;" class="mt-2">
+                                                <form action="{{ route('approvals.update-quotation-amount', $request->id) }}" method="POST" class="d-flex align-items-center">
+                                                    @csrf
+                                                    <input type="number" 
+                                                           step="0.01"
+                                                           min="0"
+                                                           class="form-control form-control-sm mr-2" 
+                                                           name="quotation_amount" 
+                                                           value="{{ $request->preApprovedQuotation->total_amount }}" 
+                                                           style="width: 150px;"
+                                                           placeholder="Monto de cotización"
+                                                           required>
+                                                    <button type="submit" class="btn btn-sm btn-success mr-1">
+                                                        <i class="fas fa-check"></i> Guardar
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEditQuotationAmount()">
+                                                        <i class="fas fa-times"></i> Cancelar
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        @endif
                                     @else
                                         N/A
                                     @endif
@@ -315,7 +357,7 @@
                                                             </td>
                                                             <td>
                                                                 <strong class="text-primary">
-                                                                    ${{ number_format($quotation->total_amount, 2) }}
+                                                                    ${{ number_format($quotation->total_amount, 2, ',', '.') }}
                                                                 </strong>
                                                             </td>
                                                             <td>
@@ -368,7 +410,7 @@
                                                     <p class="mb-1">
                                                         <strong>Cotización Completa Seleccionada:</strong> 
                                                         {{ $request->preApprovedQuotation->provider_name }} - 
-                                                        <span class="text-success">${{ number_format($request->preApprovedQuotation->total_amount, 2) }}</span>
+                                                        <span class="text-success">${{ number_format($request->preApprovedQuotation->total_amount, 2, ',', '.') }}</span>
                                                     </p>
                                                 @elseif($request->quotationItemSelections && $request->quotationItemSelections->count() > 0)
                                                     <p class="mb-1">
@@ -381,7 +423,7 @@
                                                     @endphp
                                                     <p class="mb-1">
                                                         <strong>Total Selección Mixta:</strong> 
-                                                        <span class="text-warning">${{ number_format($totalMixed, 2) }}</span>
+                                                        <span class="text-warning">${{ number_format($totalMixed, 2, ',', '.') }}</span>
                                                     </p>
                                                 @endif
                                             </div>
@@ -628,6 +670,31 @@
     .timeline-body p {
         margin-bottom: 5px;
     }
+    
+    /* Estilos para el modal de reenvío */
+    #resendRequestModal .modal-header {
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
+    }
+    
+    #resendRequestModal .alert-warning {
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+        color: #856404;
+    }
+    
+    #resendRequestModal .form-control:focus {
+        border-color: #ffc107;
+        box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    }
+    
+    #resendRequestModal ul {
+        margin-bottom: 0;
+    }
+    
+    #resendRequestModal li {
+        margin-bottom: 0.25rem;
+    }
 </style>
 
 <!-- Modal de información de aprobación -->
@@ -714,5 +781,90 @@
         document.getElementById('budget-display').style.display = 'block';
         document.getElementById('budget-edit-form').style.display = 'none';
     }
+    
+    function editQuotationAmount() {
+        document.getElementById('quotation-amount-display').style.display = 'none';
+        document.getElementById('quotation-amount-edit-form').style.display = 'block';
+        // Enfocar el input
+        document.querySelector('#quotation-amount-edit-form input[name="quotation_amount"]').focus();
+    }
+    
+    function cancelEditQuotationAmount() {
+        document.getElementById('quotation-amount-display').style.display = 'block';
+        document.getElementById('quotation-amount-edit-form').style.display = 'none';
+    }
 </script>
+
+<!-- Modal para reenviar solicitud de aprobación -->
+<div class="modal fade" id="resendApprovalModal" tabindex="-1" role="dialog" aria-labelledby="resendApprovalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title text-white" id="resendApprovalModalLabel">
+                    <i class="fas fa-paper-plane mr-2"></i>Reenviar Solicitud de Aprobación
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ route('approvals.resend', $request->id) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Información:</strong> Está a punto de reenviar la solicitud <strong>#{{ $request->request_number }}</strong> 
+                        para aprobación final a un correo específico.
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-file-alt mr-1"></i> Información de la Solicitud</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Número:</strong> {{ $request->request_number }}</li>
+                                <li><strong>Solicitante:</strong> {{ $request->requester }}</li>
+                                <li><strong>Sección:</strong> {{ $request->section_area }}</li>
+                                <li><strong>Estado:</strong> {{ $request->status }}</li>
+                                @if($request->preApprovedQuotation)
+                                    <li><strong>Monto:</strong> ${{ number_format($request->preApprovedQuotation->total_amount, 2, ',', '.') }}</li>
+                                @endif
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="resend_approval_email"><i class="fas fa-envelope mr-1"></i> Correo de destino <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="resend_approval_email" name="email" 
+                                       placeholder="correo@ejemplo.com" required>
+                                <small class="form-text text-muted">
+                                    Ingrese el correo electrónico al cual enviar la solicitud para aprobación final.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="resend_approval_message"><i class="fas fa-comment mr-1"></i> Mensaje adicional (opcional)</label>
+                        <textarea class="form-control" id="resend_approval_message" name="message" rows="3" 
+                                  placeholder="Ingrese cualquier mensaje adicional para incluir en el correo..."></textarea>
+                        <small class="form-text text-muted">Máximo 500 caracteres.</small>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Nota:</strong> Al reenviar esta solicitud se enviará un correo electrónico con toda la información 
+                        necesaria y un enlace directo para revisar y aprobar la solicitud.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-paper-plane mr-1"></i> Reenviar Solicitud
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @stop

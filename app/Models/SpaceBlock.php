@@ -73,6 +73,31 @@ class SpaceBlock extends Model
     }
     
     /**
+     * Verifica si un espacio está bloqueado para un día específico de ciclo en un horario específico
+     * 
+     * @param int $spaceId ID del espacio
+     * @param int $schoolCycleId ID del ciclo escolar
+     * @param int $cycleDay Día del ciclo
+     * @param string $startTime Hora de inicio (HH:MM)
+     * @param string $endTime Hora de fin (HH:MM)
+     * @return bool
+     */
+    public static function isBlockedForCycleDayTime(int $spaceId, int $schoolCycleId, int $cycleDay, string $startTime, string $endTime): bool
+    {
+        return self::where('space_id', $spaceId)
+            ->where('school_cycle_id', $schoolCycleId)
+            ->where('cycle_day', $cycleDay)
+            ->where(function($query) use ($startTime, $endTime) {
+                // Verificar si hay superposición de horarios
+                $query->where(function($q) use ($startTime, $endTime) {
+                    $q->where('start_time', '<', $endTime)
+                      ->where('end_time', '>', $startTime);
+                });
+            })
+            ->exists();
+    }
+    
+    /**
      * Verifica si un espacio está bloqueado para un día de la semana en un horario específico
      * teniendo en cuenta las posibles excepciones
      * 

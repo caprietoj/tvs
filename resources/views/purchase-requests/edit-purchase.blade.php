@@ -170,6 +170,145 @@
                         <div class="alert alert-info mt-3">
                             <small>PARA EQUIPOS TECNOLÓGICOS SOLICITAMOS CONSULTAR LAS ESPECIFICACIONES TÉCNICAS DEFINIDAS POR EL EMC DEL COLEGIO VICTORIA.</small>
                         </div>
+
+                        <!-- Configuración de Compra Compartida -->
+                        <div class="card mt-3" style="border-left: 4px solid #364E76;">
+                            <div class="card-header" style="background-color: #f8f9fa;">
+                                <h6 class="mb-0"><i class="fas fa-share-alt mr-2"></i>Configuración de Compra Compartida</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label class="font-weight-bold">¿Esta compra será compartida con otra sección?</label>
+                                    <div class="mt-2">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="is_shared" id="is_shared_no" value="no" {{ ($purchaseRequest->is_shared ?? 'no') == 'no' ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="is_shared_no">
+                                                <i class="fas fa-times text-danger mr-1"></i> No, esta compra es solo para mi sección
+                                            </label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="is_shared" id="is_shared_yes" value="yes" {{ ($purchaseRequest->is_shared ?? 'no') == 'yes' ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="is_shared_yes">
+                                                <i class="fas fa-check text-success mr-1"></i> Sí, esta compra será compartida
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Configuración de compra compartida -->
+                                <div id="sharedConfig" style="{{ ($purchaseRequest->is_shared ?? 'no') == 'yes' ? 'display: block;' : 'display: none;' }}">
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card">
+                                                <div class="card-header bg-primary text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-user mr-1"></i> Mi Sección</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="mb-1"><strong>Sección:</strong></p>
+                                                    <p class="section-display" id="currentSection">{{ $purchaseRequest->section_area ?? '-' }}</p>
+                                                    <p class="mb-1"><strong>Porcentaje a pagar:</strong></p>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control percentage-input" id="myPercentage" name="my_percentage" min="1" max="99" value="{{ $purchaseRequest->my_percentage ?? '50' }}">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text">%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="card">
+                                                <div class="card-header bg-success text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-users mr-1"></i> Sección Compartida</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="mb-1"><strong>Seleccionar sección:</strong></p>
+                                                    <select class="form-control" id="sharedSection" name="shared_section">
+                                                        <option value="">Seleccione una sección...</option>
+                                                        <option value="Preescolar y Primaria" {{ ($purchaseRequest->shared_section ?? '') == 'Preescolar y Primaria' ? 'selected' : '' }}>Preescolar y Primaria</option>
+                                                        <option value="Escuela Media" {{ ($purchaseRequest->shared_section ?? '') == 'Escuela Media' ? 'selected' : '' }}>Escuela Media</option>
+                                                        <option value="Escuela Alta / DP" {{ ($purchaseRequest->shared_section ?? '') == 'Escuela Alta / DP' ? 'selected' : '' }}>Escuela Alta / DP</option>
+                                                        <option value="PAI" {{ ($purchaseRequest->shared_section ?? '') == 'PAI' ? 'selected' : '' }}>PAI</option>
+                                                        <option value="PEP" {{ ($purchaseRequest->shared_section ?? '') == 'PEP' ? 'selected' : '' }}>PEP</option>
+                                                        <option value="Deportes" {{ ($purchaseRequest->shared_section ?? '') == 'Deportes' ? 'selected' : '' }}>Deportes</option>
+                                                        <option value="Psicología Institucional" {{ ($purchaseRequest->shared_section ?? '') == 'Psicología Institucional' ? 'selected' : '' }}>Psicología Institucional</option>
+                                                        <option value="Biblioteca" {{ ($purchaseRequest->shared_section ?? '') == 'Biblioteca' ? 'selected' : '' }}>Biblioteca</option>
+                                                        <option value="Dirección General" {{ ($purchaseRequest->shared_section ?? '') == 'Dirección General' ? 'selected' : '' }}>Dirección General</option>
+                                                        <option value="CAS" {{ ($purchaseRequest->shared_section ?? '') == 'CAS' ? 'selected' : '' }}>CAS</option>
+                                                        <option value="Administración" {{ ($purchaseRequest->shared_section ?? '') == 'Administración' ? 'selected' : '' }}>Administración</option>
+                                                        <option value="Tecnología Institucional" {{ ($purchaseRequest->shared_section ?? '') == 'Tecnología Institucional' ? 'selected' : '' }}>Tecnología Institucional</option>
+                                                    </select>
+                                                    <p class="mb-1 mt-2"><strong>Porcentaje a pagar:</strong></p>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control percentage-input" id="sharedPercentage" name="shared_percentage" value="{{ $purchaseRequest->shared_percentage ?? '50' }}" readonly>
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text">%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Botón para agregar tercera sección -->
+                                    <div class="text-center mt-3">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="addThirdSection" 
+                                                style="{{ !empty($purchaseRequest->third_shared_section) ? 'display: none;' : '' }}">
+                                            <i class="fas fa-plus mr-1"></i> Agregar otra sección
+                                        </button>
+                                    </div>
+
+                                    <!-- Tercera sección compartida -->
+                                    <div id="thirdSectionConfig" style="{{ !empty($purchaseRequest->third_shared_section) ? 'display: block;' : 'display: none;' }}" class="mt-3">
+                                        <div class="col-12">
+                                            <div class="card">
+                                                <div class="card-header bg-warning text-dark">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-users mr-1"></i> Tercera Sección Compartida
+                                                        <button type="button" class="btn btn-sm btn-outline-danger float-right" id="removeThirdSection">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="mb-1"><strong>Seleccionar sección:</strong></p>
+                                                    <select class="form-control" id="thirdSharedSection" name="third_shared_section">
+                                                        <option value="">Seleccione una sección...</option>
+                                                        <option value="Preescolar y Primaria" {{ ($purchaseRequest->third_shared_section ?? '') == 'Preescolar y Primaria' ? 'selected' : '' }}>Preescolar y Primaria</option>
+                                                        <option value="Escuela Media" {{ ($purchaseRequest->third_shared_section ?? '') == 'Escuela Media' ? 'selected' : '' }}>Escuela Media</option>
+                                                        <option value="Escuela Alta / DP" {{ ($purchaseRequest->third_shared_section ?? '') == 'Escuela Alta / DP' ? 'selected' : '' }}>Escuela Alta / DP</option>
+                                                        <option value="PAI" {{ ($purchaseRequest->third_shared_section ?? '') == 'PAI' ? 'selected' : '' }}>PAI</option>
+                                                        <option value="PEP" {{ ($purchaseRequest->third_shared_section ?? '') == 'PEP' ? 'selected' : '' }}>PEP</option>
+                                                        <option value="Deportes" {{ ($purchaseRequest->third_shared_section ?? '') == 'Deportes' ? 'selected' : '' }}>Deportes</option>
+                                                        <option value="Psicología Institucional" {{ ($purchaseRequest->third_shared_section ?? '') == 'Psicología Institucional' ? 'selected' : '' }}>Psicología Institucional</option>
+                                                        <option value="Biblioteca" {{ ($purchaseRequest->third_shared_section ?? '') == 'Biblioteca' ? 'selected' : '' }}>Biblioteca</option>
+                                                        <option value="Dirección General" {{ ($purchaseRequest->third_shared_section ?? '') == 'Dirección General' ? 'selected' : '' }}>Dirección General</option>
+                                                        <option value="CAS" {{ ($purchaseRequest->third_shared_section ?? '') == 'CAS' ? 'selected' : '' }}>CAS</option>
+                                                        <option value="Administración" {{ ($purchaseRequest->third_shared_section ?? '') == 'Administración' ? 'selected' : '' }}>Administración</option>
+                                                        <option value="Tecnología Institucional" {{ ($purchaseRequest->third_shared_section ?? '') == 'Tecnología Institucional' ? 'selected' : '' }}>Tecnología Institucional</option>
+                                                    </select>
+                                                    <p class="mb-1 mt-2"><strong>Porcentaje a pagar:</strong></p>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control percentage-input" id="thirdSharedPercentage" name="third_shared_percentage" min="1" max="97" value="{{ $purchaseRequest->third_shared_percentage ?? '0' }}">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text">%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-warning mt-3">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        <strong>Importante:</strong> El total entre todas las secciones debe ser 100%. 
+                                        Los porcentajes se ajustarán automáticamente cuando agregue más secciones.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -223,6 +362,38 @@
     .btn-primary:hover {
         background-color: #2d4265;
         border-color: #2d4265;
+    }
+    
+    .form-control:focus {
+        border-color: #364E76;
+        box-shadow: 0 0 0 0.2rem rgba(54, 78, 118, 0.25);
+    }
+    
+    .percentage-input {
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .section-display {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #364E76;
+        background-color: #f8f9fa;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        border: 1px solid #dee2e6;
+    }
+
+    .form-check-label {
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-check-label:hover {
+        background-color: #f8f9fa;
     }
 </style>
 @stop
@@ -355,6 +526,170 @@
         // Eliminar fila (delegación de eventos)
         $(document).on('click', '.delete-row', function() {
             $(this).closest('tr').remove();
+        });
+
+        // ========== FUNCIONALIDAD DE COMPRA COMPARTIDA ==========
+        
+        // Función para actualizar la sección actual cuando cambie
+        $('#section_area').change(function() {
+            const currentSection = $(this).find('option:selected').text();
+            $('#currentSection').text(currentSection || '-');
+            updateSectionFilters();
+        });
+
+        // Manejar cambio en la pregunta inicial
+        $('input[name="is_shared"]').change(function() {
+            if ($(this).val() === 'yes') {
+                $('#sharedConfig').slideDown();
+            } else {
+                $('#sharedConfig').slideUp();
+            }
+        });
+
+        // Calcular porcentaje automáticamente para dos secciones
+        $('#myPercentage').on('input', function() {
+            calculatePercentages();
+        });
+
+        // Manejar cambios en el porcentaje de la tercera sección
+        $('#thirdSharedPercentage').on('input', function() {
+            calculatePercentages();
+        });
+
+        // Función para calcular porcentajes automáticamente
+        function calculatePercentages() {
+            const hasThirdSection = $('#thirdSectionConfig').is(':visible');
+            const myPercentage = parseInt($('#myPercentage').val()) || 0;
+            
+            if (hasThirdSection) {
+                const thirdPercentage = parseInt($('#thirdSharedPercentage').val()) || 0;
+                const sharedPercentage = 100 - myPercentage - thirdPercentage;
+                
+                // Validar que los porcentajes sean válidos
+                if (myPercentage + thirdPercentage > 99) {
+                    // Ajustar automáticamente
+                    const newThirdPercentage = 99 - myPercentage;
+                    $('#thirdSharedPercentage').val(Math.max(1, newThirdPercentage));
+                    $('#sharedPercentage').val(1);
+                } else if (sharedPercentage < 1) {
+                    $('#sharedPercentage').val(1);
+                } else {
+                    $('#sharedPercentage').val(sharedPercentage);
+                }
+            } else {
+                // Solo dos secciones
+                const sharedPercentage = 100 - myPercentage;
+                
+                if (myPercentage < 1) {
+                    $('#myPercentage').val(1);
+                    $('#sharedPercentage').val(99);
+                } else if (myPercentage > 99) {
+                    $('#myPercentage').val(99);
+                    $('#sharedPercentage').val(1);
+                } else {
+                    $('#sharedPercentage').val(sharedPercentage);
+                }
+            }
+        }
+
+        // Manejar agregar tercera sección
+        $('#addThirdSection').click(function() {
+            $('#thirdSectionConfig').slideDown();
+            $(this).hide();
+            
+            // Redistribuir porcentajes equitativamente
+            const newPercentage = Math.floor(100 / 3);
+            $('#myPercentage').val(newPercentage);
+            $('#sharedPercentage').val(newPercentage);
+            $('#thirdSharedPercentage').val(100 - (newPercentage * 2));
+            
+            updateSectionFilters();
+        });
+
+        // Manejar remover tercera sección
+        $('#removeThirdSection').click(function() {
+            $('#thirdSectionConfig').slideUp();
+            $('#addThirdSection').show();
+            
+            // Resetear a dos secciones (50-50)
+            $('#myPercentage').val(50);
+            $('#sharedPercentage').val(50);
+            $('#thirdSharedPercentage').val(0);
+            $('#thirdSharedSection').val('');
+            
+            updateSectionFilters();
+        });
+
+        // Función para actualizar filtros de secciones
+        function updateSectionFilters() {
+            const currentSection = $('#section_area').val();
+            const sharedSection = $('#sharedSection').val();
+            const thirdSection = $('#thirdSharedSection').val();
+            
+            // Filtrar opciones para evitar duplicados
+            $('#sharedSection option, #thirdSharedSection option').show();
+            
+            $('#sharedSection option').each(function() {
+                if ($(this).val() === currentSection || $(this).val() === thirdSection) {
+                    $(this).hide();
+                }
+            });
+            
+            $('#thirdSharedSection option').each(function() {
+                if ($(this).val() === currentSection || $(this).val() === sharedSection) {
+                    $(this).hide();
+                }
+            });
+        }
+
+        // Manejar cambios en las secciones para filtrar duplicados
+        $('#sharedSection, #thirdSharedSection').change(function() {
+            updateSectionFilters();
+        });
+
+        // Validación del formulario para compra compartida
+        $('#purchaseForm').submit(function(e) {
+            // Validar configuración de compra compartida
+            const isShared = $('input[name="is_shared"]:checked').val();
+            if (isShared === 'yes') {
+                const sharedSection = $('#sharedSection').val();
+                if (!sharedSection) {
+                    alert('Por favor seleccione la segunda sección para compartir esta compra.');
+                    $('#sharedSection').focus();
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Si la tercera sección está visible, validar que esté seleccionada
+                if ($('#thirdSectionConfig').is(':visible')) {
+                    const thirdSection = $('#thirdSharedSection').val();
+                    if (!thirdSection) {
+                        alert('Por favor seleccione la tercera sección o remueva la opción de tercera sección.');
+                        $('#thirdSharedSection').focus();
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+                
+                // Validar que los porcentajes sumen 100%
+                const myPercentage = parseInt($('#myPercentage').val()) || 0;
+                const sharedPercentage = parseInt($('#sharedPercentage').val()) || 0;
+                const thirdPercentage = parseInt($('#thirdSharedPercentage').val()) || 0;
+                const total = myPercentage + sharedPercentage + thirdPercentage;
+                
+                if (total !== 100) {
+                    alert(`Los porcentajes deben sumar exactamente 100%. Actualmente suman ${total}%.`);
+                    e.preventDefault();
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+
+        // Inicializar filtros al cargar la página
+        $(document).ready(function() {
+            updateSectionFilters();
         });
     });
 </script>
