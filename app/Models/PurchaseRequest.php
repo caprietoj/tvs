@@ -86,6 +86,8 @@ class PurchaseRequest extends Model
         'shared_percentage',
         'third_shared_section',
         'third_shared_percentage',
+        'shared_budget',
+        'third_shared_budget',
     ];
 
     /**

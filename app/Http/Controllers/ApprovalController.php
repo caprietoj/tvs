@@ -133,7 +133,8 @@ class ApprovalController extends Controller
                 return view('approvals.show', [
                     'request' => $request,
                     'approvalInfo' => $approvalInfo,
-                    'budgetOptions' => BudgetHelper::getBudgetOptions()
+                    'budgetOptions' => BudgetHelper::getBudgetOptions(),
+                    'budgetHierarchy' => BudgetHelper::getBudgetHierarchy()
                 ]);
             }
             
@@ -143,7 +144,8 @@ class ApprovalController extends Controller
 
         return view('approvals.show', [
             'request' => $request,
-            'budgetOptions' => BudgetHelper::getBudgetOptions()
+            'budgetOptions' => BudgetHelper::getBudgetOptions(),
+            'budgetHierarchy' => BudgetHelper::getBudgetHierarchy()
         ]);
     }
 
@@ -373,7 +375,7 @@ class ApprovalController extends Controller
     {
         // Validar la entrada
         $validated = $request->validate([
-            'budget' => 'required|string|max:255',
+            'budget' => 'required|string|' . BudgetHelper::getBudgetValidationRule(),
         ]);
 
         // Obtener la solicitud
@@ -400,6 +402,90 @@ class ApprovalController extends Controller
 
         return redirect()->back()
             ->with('success', 'El presupuesto ha sido actualizado correctamente.');
+    }
+
+    /**
+     * Actualizar el presupuesto compartido de una solicitud pre-aprobada.
+     */
+    public function updateSharedBudget(Request $request, $id)
+    {
+        // Validar la entrada
+        $validated = $request->validate([
+            'shared_budget' => 'required|string|' . BudgetHelper::getBudgetValidationRule(),
+        ]);
+
+        // Obtener la solicitud
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+
+        // Verificar que la solicitud esté en estado 'pre-approved' o 'Pre-aprobada'
+        if (!in_array($purchaseRequest->status, ['pre-approved', 'Pre-aprobada'])) {
+            return redirect()->back()
+                ->with('error', 'Solo se puede modificar el presupuesto de solicitudes que estén en estado "Pre-aprobada".');
+        }
+
+        // Verificar que sea una compra compartida
+        if (!$purchaseRequest->is_shared) {
+            return redirect()->back()
+                ->with('error', 'Esta solicitud no es una compra compartida.');
+        }
+
+        // Actualizar el presupuesto compartido
+        $purchaseRequest->update([
+            'shared_budget' => $validated['shared_budget']
+        ]);
+
+        // Registrar en el historial
+        RequestHistory::create([
+            'purchase_request_id' => $purchaseRequest->id,
+            'user_id' => Auth::id(),
+            'action' => 'Presupuesto compartido actualizado',
+            'notes' => "Presupuesto compartido cambiado a: {$validated['shared_budget']}"
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'El presupuesto compartido ha sido actualizado correctamente.');
+    }
+
+    /**
+     * Actualizar el tercer presupuesto compartido de una solicitud pre-aprobada.
+     */
+    public function updateThirdBudget(Request $request, $id)
+    {
+        // Validar la entrada
+        $validated = $request->validate([
+            'third_shared_budget' => 'required|string|' . BudgetHelper::getBudgetValidationRule(),
+        ]);
+
+        // Obtener la solicitud
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+
+        // Verificar que la solicitud esté en estado 'pre-approved' o 'Pre-aprobada'
+        if (!in_array($purchaseRequest->status, ['pre-approved', 'Pre-aprobada'])) {
+            return redirect()->back()
+                ->with('error', 'Solo se puede modificar el presupuesto de solicitudes que estén en estado "Pre-aprobada".');
+        }
+
+        // Verificar que sea una compra compartida con tercer presupuesto
+        if (!$purchaseRequest->is_shared || !$purchaseRequest->third_shared_section) {
+            return redirect()->back()
+                ->with('error', 'Esta solicitud no tiene un tercer presupuesto compartido.');
+        }
+
+        // Actualizar el tercer presupuesto compartido
+        $purchaseRequest->update([
+            'third_shared_budget' => $validated['third_shared_budget']
+        ]);
+
+        // Registrar en el historial
+        RequestHistory::create([
+            'purchase_request_id' => $purchaseRequest->id,
+            'user_id' => Auth::id(),
+            'action' => 'Tercer presupuesto compartido actualizado',
+            'notes' => "Tercer presupuesto compartido cambiado a: {$validated['third_shared_budget']}"
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'El tercer presupuesto compartido ha sido actualizado correctamente.');
     }
 
     /**

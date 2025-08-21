@@ -735,6 +735,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('approvals/{id}/reject', [ApprovalController::class, 'reject'])->name('approvals.reject');
     Route::post('approvals/{id}/resend', [ApprovalController::class, 'resendRequest'])->name('approvals.resend');
     Route::post('approvals/{id}/update-budget', [ApprovalController::class, 'updateBudget'])->name('approvals.update-budget');
+    Route::post('approvals/{id}/update-shared-budget', [ApprovalController::class, 'updateSharedBudget'])->name('approvals.update-shared-budget');
+    Route::post('approvals/{id}/update-third-budget', [ApprovalController::class, 'updateThirdBudget'])->name('approvals.update-third-budget');
     Route::post('approvals/{id}/update-quotation-amount', [ApprovalController::class, 'updateQuotationAmount'])->name('approvals.update-quotation-amount');
 });
 

@@ -185,39 +185,210 @@
                                 <dt class="col-sm-5">Comentarios:</dt>
                                 <dd class="col-sm-7">{{ $request->pre_approval_comments ?? 'Sin comentarios' }}</dd>
 
-                                <dt class="col-sm-5">Presupuesto asignado:</dt>
-                                <dd class="col-sm-7">
-                                    <div class="d-flex align-items-center">
-                                        <div id="budget-display" class="mr-2">
-                                            @if($request->budget)
-                                                <span class="badge badge-info p-2">{{ $request->budget }}</span>
-                                            @else
-                                                <span class="text-muted">No especificado</span>
-                                            @endif
+                                @if($request->is_shared)
+                                    <dt class="col-sm-5">Presupuestos asignados:</dt>
+                                    <dd class="col-sm-7">
+                                        <div class="alert alert-info mb-2">
+                                            <i class="fas fa-share-alt mr-2"></i>
+                                            <strong>Compra Compartida</strong>
                                         </div>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="editBudget()">
-                                            <i class="fas fa-edit"></i> Editar
-                                        </button>
-                                    </div>
-                                    
-                                    <!-- Formulario de edición oculto -->
-                                    <div id="budget-edit-form" style="display: none;" class="mt-2">
-                                        <form action="{{ route('approvals.update-budget', $request->id) }}" method="POST" class="d-flex align-items-center">
-                                            @csrf
-                                            <input type="text" 
-                                                   name="budget" 
-                                                   value="{{ $request->budget ?? '' }}" 
-                                                   class="form-control form-control-sm mr-2" 
-                                                   placeholder="Especificar presupuesto"
-                                                   required>
-                                            <button type="submit" class="btn btn-sm btn-success mr-1">
-                                                <i class="fas fa-check"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEditBudget()">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </form>
-                                </div>
+                                        
+                                        <!-- Presupuesto Principal -->
+                                        <div class="mb-2">
+                                            <strong>{{ $request->section_area }} ({{ $request->my_percentage }}%):</strong>
+                                            <div class="d-flex align-items-center mt-1">
+                                                <div id="budget-display" class="mr-2">
+                                                    @if($request->budget)
+                                                        <span class="badge badge-primary p-2">{{ $request->budget }}</span>
+                                                    @else
+                                                        <span class="text-muted">No especificado</span>
+                                                    @endif
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editBudget()">
+                                                    <i class="fas fa-edit"></i> Editar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Presupuesto Compartido -->
+                                        <div class="mb-2">
+                                            <strong>{{ $request->shared_section }} ({{ $request->shared_percentage }}%):</strong>
+                                            <div class="d-flex align-items-center mt-1">
+                                                <div id="shared-budget-display" class="mr-2">
+                                                    @if($request->shared_budget)
+                                                        <span class="badge badge-success p-2">{{ $request->shared_budget }}</span>
+                                                    @else
+                                                        <span class="text-muted">No especificado</span>
+                                                    @endif
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-success" onclick="editSharedBudget()">
+                                                    <i class="fas fa-edit"></i> Editar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        @if($request->third_shared_section)
+                                            <!-- Tercer Presupuesto -->
+                                            <div class="mb-2">
+                                                <strong>{{ $request->third_shared_section }} ({{ $request->third_shared_percentage }}%):</strong>
+                                                <div class="d-flex align-items-center mt-1">
+                                                    <div id="third-budget-display" class="mr-2">
+                                                        @if($request->third_shared_budget)
+                                                            <span class="badge badge-warning p-2">{{ $request->third_shared_budget }}</span>
+                                                        @else
+                                                            <span class="text-muted">No especificado</span>
+                                                        @endif
+                                                    </div>
+                                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="editThirdBudget()">
+                                                        <i class="fas fa-edit"></i> Editar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        @endif
+                                        
+                                        <!-- Formularios de edición ocultos -->
+                                        <div id="budget-edit-form" style="display: none;" class="mt-2">
+                                            <form action="{{ route('approvals.update-budget', $request->id) }}" method="POST">
+                                                @csrf
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold">Rubro Presupuestal - {{ $request->section_area }}:</label>
+                                                    <select name="budget" class="form-control" required>
+                                                        <option value="">Seleccionar rubro presupuestal...</option>
+                                                        @php
+                                                            $budgetHierarchy = App\Helpers\BudgetHelper::getBudgetHierarchy();
+                                                        @endphp
+                                                        @foreach($budgetHierarchy as $category => $items)
+                                                            <optgroup label="{{ $category }}">
+                                                                @foreach($items as $item)
+                                                                    <option value="{{ $item }}" {{ ($request->budget == $item) ? 'selected' : '' }}>
+                                                                        {{ $item }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </optgroup>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="d-flex">
+                                                    <button type="submit" class="btn btn-sm btn-success mr-1">
+                                                        <i class="fas fa-check"></i> Guardar
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEditBudget()">
+                                                        <i class="fas fa-times"></i> Cancelar
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        
+                                        <div id="shared-budget-edit-form" style="display: none;" class="mt-2">
+                                            <form action="{{ route('approvals.update-shared-budget', $request->id) }}" method="POST">
+                                                @csrf
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold">Rubro Presupuestal - {{ $request->shared_section }}:</label>
+                                                    <select name="shared_budget" class="form-control" required>
+                                                        <option value="">Seleccionar rubro presupuestal...</option>
+                                                        @foreach($budgetHierarchy as $category => $items)
+                                                            <optgroup label="{{ $category }}">
+                                                                @foreach($items as $item)
+                                                                    <option value="{{ $item }}" {{ ($request->shared_budget == $item) ? 'selected' : '' }}>
+                                                                        {{ $item }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </optgroup>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="d-flex">
+                                                    <button type="submit" class="btn btn-sm btn-success mr-1">
+                                                        <i class="fas fa-check"></i> Guardar
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEditSharedBudget()">
+                                                        <i class="fas fa-times"></i> Cancelar
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        
+                                        @if($request->third_shared_section)
+                                            <div id="third-budget-edit-form" style="display: none;" class="mt-2">
+                                                <form action="{{ route('approvals.update-third-budget', $request->id) }}" method="POST">
+                                                    @csrf
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Rubro Presupuestal - {{ $request->third_shared_section }}:</label>
+                                                        <select name="third_shared_budget" class="form-control" required>
+                                                            <option value="">Seleccionar rubro presupuestal...</option>
+                                                            @foreach($budgetHierarchy as $category => $items)
+                                                                <optgroup label="{{ $category }}">
+                                                                    @foreach($items as $item)
+                                                                        <option value="{{ $item }}" {{ ($request->third_shared_budget == $item) ? 'selected' : '' }}>
+                                                                            {{ $item }}
+                                                                        </option>
+                                                                    @endforeach
+                                                                </optgroup>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="d-flex">
+                                                        <button type="submit" class="btn btn-sm btn-success mr-1">
+                                                            <i class="fas fa-check"></i> Guardar
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEditThirdBudget()">
+                                                            <i class="fas fa-times"></i> Cancelar
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        @endif
+                                    </dd>
+                                @else
+                                    <dt class="col-sm-5">Presupuesto asignado:</dt>
+                                    <dd class="col-sm-7">
+                                        <div class="d-flex align-items-center">
+                                            <div id="budget-display" class="mr-2">
+                                                @if($request->budget)
+                                                    <span class="badge badge-info p-2">{{ $request->budget }}</span>
+                                                @else
+                                                    <span class="text-muted">No especificado</span>
+                                                @endif
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="editBudget()">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Formulario de edición oculto -->
+                                        <div id="budget-edit-form" style="display: none;" class="mt-2">
+                                            <form action="{{ route('approvals.update-budget', $request->id) }}" method="POST">
+                                                @csrf
+                                                <div class="form-group">
+                                                    <label class="font-weight-bold">Rubro Presupuestal:</label>
+                                                    <select name="budget" class="form-control" required>
+                                                        <option value="">Seleccionar rubro presupuestal...</option>
+                                                        @php
+                                                            $budgetHierarchy = App\Helpers\BudgetHelper::getBudgetHierarchy();
+                                                        @endphp
+                                                        @foreach($budgetHierarchy as $category => $items)
+                                                            <optgroup label="{{ $category }}">
+                                                                @foreach($items as $item)
+                                                                    <option value="{{ $item }}" {{ ($request->budget == $item) ? 'selected' : '' }}>
+                                                                        {{ $item }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </optgroup>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="d-flex">
+                                                    <button type="submit" class="btn btn-sm btn-success mr-1">
+                                                        <i class="fas fa-check"></i> Guardar
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEditBudget()">
+                                                        <i class="fas fa-times"></i> Cancelar
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </dd>
+                                @endif
                             </dd>
                         </dl>
                         @endif
@@ -773,13 +944,46 @@
     function editBudget() {
         document.getElementById('budget-display').style.display = 'none';
         document.getElementById('budget-edit-form').style.display = 'block';
-        // Enfocar el input
-        document.querySelector('#budget-edit-form input[name="budget"]').focus();
+        // Enfocar el select
+        const selectElement = document.querySelector('#budget-edit-form select[name="budget"]');
+        if (selectElement) {
+            selectElement.focus();
+        }
     }
     
     function cancelEditBudget() {
         document.getElementById('budget-display').style.display = 'block';
         document.getElementById('budget-edit-form').style.display = 'none';
+    }
+    
+    function editSharedBudget() {
+        document.getElementById('shared-budget-display').style.display = 'none';
+        document.getElementById('shared-budget-edit-form').style.display = 'block';
+        // Enfocar el select
+        const selectElement = document.querySelector('#shared-budget-edit-form select[name="shared_budget"]');
+        if (selectElement) {
+            selectElement.focus();
+        }
+    }
+    
+    function cancelEditSharedBudget() {
+        document.getElementById('shared-budget-display').style.display = 'block';
+        document.getElementById('shared-budget-edit-form').style.display = 'none';
+    }
+    
+    function editThirdBudget() {
+        document.getElementById('third-budget-display').style.display = 'none';
+        document.getElementById('third-budget-edit-form').style.display = 'block';
+        // Enfocar el select
+        const selectElement = document.querySelector('#third-budget-edit-form select[name="third_shared_budget"]');
+        if (selectElement) {
+            selectElement.focus();
+        }
+    }
+    
+    function cancelEditThirdBudget() {
+        document.getElementById('third-budget-display').style.display = 'block';
+        document.getElementById('third-budget-edit-form').style.display = 'none';
     }
     
     function editQuotationAmount() {

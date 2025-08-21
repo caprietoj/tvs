@@ -474,12 +474,29 @@ class PurchaseRequestController extends Controller
             'purchase_items.*.observations' => 'nullable|string',
             // Reglas para compra compartida
             'is_shared' => 'required|in:yes,no',
-            'shared_section' => 'nullable|string|max:255',
-            'my_percentage' => 'nullable|integer|min:1|max:97',
-            'shared_percentage' => 'nullable|integer|min:1|max:97',
-            'third_shared_section' => 'nullable|string|max:255',
-            'third_shared_percentage' => 'nullable|integer|min:1|max:97',
         ];
+        
+        // Solo agregar validaciones de compra compartida si is_shared es 'yes'
+        if ($request->input('is_shared') === 'yes') {
+            $rules['shared_section'] = 'required|string|max:255';
+            $rules['my_percentage'] = 'required|integer|min:1|max:97';
+            $rules['shared_percentage'] = 'required|integer|min:1|max:97';
+            $rules['third_shared_section'] = 'nullable|string|max:255';
+            
+            // Solo validar third_shared_percentage si se proporciona third_shared_section
+            if ($request->filled('third_shared_section')) {
+                $rules['third_shared_percentage'] = 'required|integer|min:1|max:97';
+            }
+        } else {
+            // Si no es compartida, limpiar los campos para evitar validaciones innecesarias
+            $request->merge([
+                'shared_section' => null,
+                'my_percentage' => 100,
+                'shared_percentage' => 0,
+                'third_shared_section' => null,
+                'third_shared_percentage' => 0,
+            ]);
+        }
         
         $validator = Validator::make($request->all(), $rules);
     
