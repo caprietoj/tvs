@@ -76,6 +76,9 @@ class PurchaseRequestController extends Controller
                 // Combinar y eliminar duplicados
                 $restrictedEmails = array_unique(array_merge($adminUsers, $authorizedEmails));
                 
+                // FILTRO EXPLÍCITO: Excluir el correo del director general de las notificaciones de materiales/fotocopias
+                $restrictedEmails = \App\Services\SectionClassifierService::filterExcludedEmailsForMaterialsAndCopies($restrictedEmails);
+                
                 // Enviar a cada email autorizado
                 foreach ($restrictedEmails as $email) {
                     $interceptedEmail = \App\Services\EmailTestModeService::interceptEmail($email);
@@ -111,6 +114,9 @@ class PurchaseRequestController extends Controller
         
         // Para solicitudes de fotocopias y materiales, los emails ya están definidos correctamente
         // No necesitamos agregar emails adicionales
+        
+        // FILTRO EXPLÍCITO: Excluir el correo del director general de las notificaciones de materiales/fotocopias
+        $approvalEmails = \App\Services\SectionClassifierService::filterExcludedEmailsForMaterialsAndCopies($approvalEmails);
         
         // Eliminar duplicados por seguridad
         $approvalEmails = array_unique($approvalEmails);

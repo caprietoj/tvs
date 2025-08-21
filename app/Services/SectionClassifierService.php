@@ -68,6 +68,7 @@ class SectionClassifierService
     /**
      * Obtener los correos de aprobación para solicitudes de materiales y fotocopias
      * RESTRINGIDO: Solo para compras@tvs.edu.co + auxiliaralmacen@tvs.edu.co + administrativedirector@tvs.edu.co
+     * EXCLUYE EXPLÍCITAMENTE: generaldirector@tvs.edu.co
      *
      * @param string $sectionName Nombre de la sección
      * @return array Lista de correos electrónicos para aprobación
@@ -81,9 +82,12 @@ class SectionClassifierService
             'administrativedirector@tvs.edu.co'
         ];
         
-        \Log::info("Notificaciones de materiales/fotocopias para sección {$sectionName}: " . implode(', ', $authorizedEmails));
+        // Usar el método centralizado para filtrar emails excluidos
+        $filteredEmails = self::filterExcludedEmailsForMaterialsAndCopies($authorizedEmails);
         
-        return $authorizedEmails;
+        \Log::info("Notificaciones de materiales/fotocopias para sección {$sectionName}: " . implode(', ', $filteredEmails));
+        
+        return $filteredEmails;
     }
 
     /**
@@ -142,5 +146,25 @@ class SectionClassifierService
         }
         
         return $result;
+    }
+
+    /**
+     * Filtrar emails excluidos de las notificaciones de materiales y fotocopias
+     * Este método centraliza la exclusión del director general de estas notificaciones
+     *
+     * @param array $emails Lista de emails a filtrar
+     * @return array Lista de emails filtrada
+     */
+    public static function filterExcludedEmailsForMaterialsAndCopies(array $emails): array
+    {
+        $excludedEmails = [
+            'generaldirector@tvs.edu.co'
+        ];
+        
+        $filteredEmails = array_diff($emails, $excludedEmails);
+        
+        \Log::info("Filtrado de emails para materiales/fotocopias - Originales: " . implode(', ', $emails) . " | Filtrados: " . implode(', ', $filteredEmails) . " | Excluidos: " . implode(', ', $excludedEmails));
+        
+        return array_values($filteredEmails); // Reindexar el array
     }
 }
