@@ -61,6 +61,7 @@ use App\Http\Controllers\SpaceBlockExceptionController; // Añadido para resolve
 use App\Http\Controllers\CopiesRequestController;
 use App\Http\Controllers\PhotocopiesDashboardController;
 use App\Http\Controllers\HelpVideoController;
+use App\Http\Controllers\PrevisitaConsolidadoController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -1072,6 +1073,21 @@ Route::middleware(['auth', 'admin'])->prefix('surveys')->name('surveys.')->group
         Route::get('/report', [App\Http\Controllers\ParentStudentSurveyController::class, 'generateReport'])->name('report');
         Route::get('/export', [App\Http\Controllers\ParentStudentSurveyController::class, 'exportData'])->name('export');
     });
+});
+
+// Rutas para Consolidado Previsitas
+Route::middleware(['auth'])->prefix('previsitas')->name('previsitas.')->group(function () {
+    Route::get('/', [PrevisitaConsolidadoController::class, 'index'])->name('index');
+    Route::get('/dashboard', [PrevisitaConsolidadoController::class, 'dashboard'])->name('dashboard');
+    Route::get('/create', [PrevisitaConsolidadoController::class, 'create'])->name('create');
+    Route::post('/', [PrevisitaConsolidadoController::class, 'store'])->name('store');
+    Route::get('/suggestions/lugares', [PrevisitaConsolidadoController::class, 'getLugarSuggestions'])->name('suggestions.lugares');
+    Route::get('/suggestions/responsables', [PrevisitaConsolidadoController::class, 'getResponsableSuggestions'])->name('suggestions.responsables');
+    Route::get('/{previsita}', [PrevisitaConsolidadoController::class, 'show'])->name('show');
+    Route::get('/{previsita}/edit', [PrevisitaConsolidadoController::class, 'edit'])->name('edit');
+    Route::put('/{previsita}', [PrevisitaConsolidadoController::class, 'update'])->name('update');
+    Route::delete('/{previsita}', [PrevisitaConsolidadoController::class, 'destroy'])->name('destroy');
+    Route::get('/{previsita}/download', [PrevisitaConsolidadoController::class, 'downloadFile'])->name('download');
 });
 
 // Ruta temporal para presupuesto sin autenticación

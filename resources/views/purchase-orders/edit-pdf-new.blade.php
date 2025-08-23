@@ -63,20 +63,32 @@
             });
         }
 
-        // Detectar compra compartida basándose en presupuesto y sección
+        // Detectar compra compartida basándose en datos guardados o presupuesto y sección
         $isSharedPurchase = false;
         $sharedSections = [];
-        $purchaseRequestData = $order->purchaseRequest;
         
-        // Verificar si la solicitud tiene indicios de compra compartida
-        if ($purchaseRequestData) {
-            // Buscar en las observaciones de la orden o de la solicitud
-            $observations = $order->observations ?? $purchaseRequestData->observations ?? '';
-            $customObservations = $customData['observations'] ?? '';
+        // Verificar primero si hay datos guardados en custom_data
+        if (!empty($customData['is_shared_purchase'])) {
+            $isSharedPurchase = (bool) $customData['is_shared_purchase'];
+            if ($isSharedPurchase && !empty($customData['shared_sections'])) {
+                // Si hay datos guardados como string, mantenerlos
+                $sharedSections = is_string($customData['shared_sections']) 
+                    ? explode(' • ', $customData['shared_sections']) 
+                    : (array) $customData['shared_sections'];
+            }
+        } else {
+            // Si no hay datos guardados, usar la detección automática
+            $purchaseRequestData = $order->purchaseRequest;
+            
+            // Verificar si la solicitud tiene indicios de compra compartida
+            if ($purchaseRequestData) {
+                // Buscar en las observaciones de la orden o de la solicitud
+                $observations = $order->observations ?? $purchaseRequestData->observations ?? '';
+                $customObservations = $customData['observations'] ?? '';
             $allObservations = strtolower($observations . ' ' . $customObservations);
             
             // Debug temporal
-            // dd('Observaciones encontradas: ' . $allObservations);
+            // dd('Observaciones encontradas: ' . $allObservations, 'Is shared purchase: ' . ($isSharedPurchase ? 'true' : 'false'), 'Shared sections: ', $sharedSections);
             
             // Buscar patrones de compra compartida en las observaciones
             if (strpos($allObservations, 'compartida') !== false || 
@@ -86,19 +98,36 @@
                 
                 $isSharedPurchase = true;
                 
-                // Extraer secciones mencionadas en las observaciones
-                $sections = ['preescolar', 'primaria', 'media', 'alta', 'pai', 'pep', 'dp', 'biblioteca', 'deportes', 'escuela alta', 'escuela media'];
-                foreach ($sections as $section) {
-                    if (strpos($allObservations, strtolower($section)) !== false) {
-                        if ($section === 'escuela alta') {
-                            $sharedSections[] = 'Escuela Alta / DP';
-                        } elseif ($section === 'escuela media') {
-                            $sharedSections[] = 'Escuela Media';
-                        } else {
-                            $sharedSections[] = strtoupper($section);
-                        }
-                    }
+                // Extraer secciones mencionadas en las observaciones con lógica mejorada
+                $detectedSections = [];
+                
+                // Buscar patrones específicos de secciones
+                if (strpos($allObservations, 'escuela alta') !== false || strpos($allObservations, 'dp') !== false) {
+                    $detectedSections[] = 'Escuela Alta / DP';
                 }
+                if (strpos($allObservations, 'escuela media') !== false || (strpos($allObservations, 'media') !== false && strpos($allObservations, 'escuela') !== false)) {
+                    $detectedSections[] = 'Escuela Media';
+                }
+                if (strpos($allObservations, 'pai') !== false) {
+                    $detectedSections[] = 'PAI';
+                }
+                if (strpos($allObservations, 'pep') !== false) {
+                    $detectedSections[] = 'PEP';
+                }
+                if (strpos($allObservations, 'preescolar') !== false) {
+                    $detectedSections[] = 'PREESCOLAR';
+                }
+                if (strpos($allObservations, 'primaria') !== false) {
+                    $detectedSections[] = 'PRIMARIA';
+                }
+                if (strpos($allObservations, 'biblioteca') !== false) {
+                    $detectedSections[] = 'BIBLIOTECA';
+                }
+                if (strpos($allObservations, 'deportes') !== false) {
+                    $detectedSections[] = 'DEPORTES';
+                }
+                
+                $sharedSections = array_unique($detectedSections);
                 
                 // Si no se encontraron secciones específicas, usar información general
                 if (empty($sharedSections)) {
@@ -164,6 +193,7 @@
             
             // Limpiar y normalizar las secciones encontradas
             $sharedSections = array_unique(array_filter($sharedSections));
+            }
         }
 
         // Obtener purchase_items como fallback si no hay quotationItemSelections
@@ -638,6 +668,22 @@
                             <td style="border: 1px solid #000; padding: 4px; text-align: right;">-</td>
                             <td style="border: 1px solid #000; padding: 4px; text-align: center;">-</td>
                         </tr>
+                        
+                        <!-- Presupuesto Compartido -->
+                        <tr>
+                            <td style="font-weight: bold; border: 1px solid #000; padding: 4px;">PRESUPUESTO COMPARTIDO:</td>
+                            <td colspan="3" style="border: 1px solid #000; padding: 4px;">
+                                <input type="text" name="shared_budget_info" 
+                                       class="form-control form-control-sm border-0" 
+                                       style="width: 100%; border: none; background: transparent;"
+                                       placeholder="Ej: PAI (50%) - Escuela Alta/DP (50%)"
+                                       value="{{ $customData['shared_budget_info'] ?? '' }}"
+                                       onchange="console.log('Campo presupuesto compartido cambiado:', this.value)">
+                            </td>
+                            <td style="border: 1px solid #000; padding: 4px; text-align: right;">-</td>
+                            <td style="border: 1px solid #000; padding: 4px; text-align: center;">-</td>
+                        </tr>
+                        
                         <tr>
                             <td style="border: 1px solid #000; padding: 4px;"></td>
                             <td colspan="3" style="border: 1px solid #000; padding: 4px;"></td>
@@ -714,23 +760,6 @@
                             </td>
                         </tr>
                     </table>
-
-                    @if($isSharedPurchase && count($sharedSections) > 0)
-                    <!-- Información de compra compartida -->
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; background-color: #f0f8ff;">
-                        <tr>
-                            <td style="font-weight: bold; border: 1px solid #000; padding: 4px; text-align: center; background-color: #e7f3ff;">
-                                📋 COMPRA COMPARTIDA ENTRE SECCIONES
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #000; padding: 8px; text-align: center;">
-                                <strong>Secciones participantes:</strong> {{ implode(' • ', $sharedSections) }}
-                                <br><small style="color: #666;">Esta compra beneficia a múltiples secciones según lo indicado en la solicitud</small>
-                            </td>
-                        </tr>
-                    </table>
-                    @endif
 
                     <!-- Información adicional -->
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
@@ -1635,10 +1664,19 @@ $(document).ready(function() {
         const subtotal = parseFloat($('#subtotal-input').val()) || 0;
         const providerName = $('input[name="provider_name"]').val().trim();
         
+        // Verificar datos de compra compartida
+        const isSharedPurchase = $('input[name="is_shared_purchase"]:checked').val();
+        const sharedSections = $('select[name="shared_sections"]').val();
+        const sharedBudgetInfo = $('input[name="shared_budget_info"]').val();
+        
         console.log('Form submission attempt:', {
             total: total,
             subtotal: subtotal,
-            providerName: providerName
+            providerName: providerName,
+            isSharedPurchase: isSharedPurchase,
+            sharedSections: sharedSections,
+            sharedBudgetInfo: sharedBudgetInfo,
+            formData: $(this).serializeArray()
         });
         
         if (!providerName) {
@@ -1697,6 +1735,8 @@ $(document).ready(function() {
         }
     }
 });
+
+
 </script>
 @stop
 

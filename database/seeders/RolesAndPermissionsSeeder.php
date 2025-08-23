@@ -130,7 +130,15 @@ class RolesAndPermissionsSeeder extends Seeder
             'export-performance-evaluations',
             'view-own-performance-evaluations', // Para ver y realizar sus propias evaluaciones
             'complete-own-performance-evaluations', // Para completar autoevaluaciones y evaluaciones asignadas
-            'evaluate-as-supervisor' // Para evaluar como supervisor/jefe inmediato
+            'evaluate-as-supervisor', // Para evaluar como supervisor/jefe inmediato
+            // Permisos para módulo de Consolidado Previsitas
+            'previsitas.view',
+            'previsitas.create',
+            'previsitas.edit',
+            'previsitas.delete',
+            'previsitas.show',
+            'previsitas.download',
+            'previsitas.dashboard'
         ];
        
         foreach ($ticketPermissions as $perm) {
@@ -247,6 +255,14 @@ class RolesAndPermissionsSeeder extends Seeder
             Permission::firstOrCreate(['name' => 'solicitudes_compra']),
             Permission::firstOrCreate(['name' => 'almacen']),
             Permission::firstOrCreate(['name' => 'fotocopias_list']),
+            // Permisos para módulo de Consolidado Previsitas
+            Permission::firstOrCreate(['name' => 'previsitas.view']),
+            Permission::firstOrCreate(['name' => 'previsitas.create']),
+            Permission::firstOrCreate(['name' => 'previsitas.edit']),
+            Permission::firstOrCreate(['name' => 'previsitas.delete']),
+            Permission::firstOrCreate(['name' => 'previsitas.show']),
+            Permission::firstOrCreate(['name' => 'previsitas.download']),
+            Permission::firstOrCreate(['name' => 'previsitas.dashboard']),
             // Agregar permisos de reserva de espacios consistentes con profesor
             Permission::firstOrCreate(['name' => 'view.space-reservations']),
             Permission::firstOrCreate(['name' => 'create.space-reservations']),

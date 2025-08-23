@@ -380,11 +380,22 @@
                 @endif
             </tr>
             
-            {{-- Fila adicional para compras compartidas --}}
-            @if($order->purchaseRequest->is_shared)
+            {{-- Fila para presupuesto compartido (editable o automático) --}}
+            @php
+                $customData = json_decode($order->pdf_custom_data ?? '{}', true);
+                $sharedBudgetInfo = $customData['shared_budget_info'] ?? '';
+                $isShared = $order->purchaseRequest->is_shared;
+                $sharedSection = $order->purchaseRequest->shared_section ?? '';
+                
+                // Mostrar si hay información personalizada o si es compartida automáticamente
+                $showSharedBudget = !empty($sharedBudgetInfo) || $isShared;
+                $displayText = !empty($sharedBudgetInfo) ? $sharedBudgetInfo : $sharedSection;
+            @endphp
+            
+            @if($showSharedBudget)
             <tr>
                 <td class="bold">PRESUPUESTO COMPARTIDO:</td>
-                <td>{{ $order->purchaseRequest->shared_section }}</td>
+                <td>{{ $displayText }}</td>
                 <td class="bold">IMPTO AL CONSUMO</td>
                 <td class="right">${{ number_format($ipoconsumoCalculado, 0, ',', '.') }}</td>
             </tr>

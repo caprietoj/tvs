@@ -415,11 +415,22 @@
             </tr>
             @endif
             
-            {{-- Fila adicional para compras compartidas --}}
-            @if($purchaseRequest->is_shared)
+            {{-- Fila para presupuesto compartido (editable o automático) --}}
+            @php
+                $customData = json_decode($order->pdf_custom_data ?? '{}', true);
+                $sharedBudgetInfo = $customData['shared_budget_info'] ?? '';
+                $isShared = $purchaseRequest->is_shared;
+                $sharedSection = $purchaseRequest->shared_section ?? '';
+                
+                // Mostrar si hay información personalizada o si es compartida automáticamente
+                $showSharedBudget = !empty($sharedBudgetInfo) || $isShared;
+                $displayText = !empty($sharedBudgetInfo) ? $sharedBudgetInfo : $sharedSection;
+            @endphp
+            
+            @if($showSharedBudget)
             <tr>
                 <td class="bold header-section">PRESUPUESTO COMPARTIDO:</td>
-                <td class="bold" style="color: #2c5282;">{{ $purchaseRequest->shared_section }}</td>
+                <td class="bold" style="color: #2c5282;">{{ $displayText }}</td>
             </tr>
             @endif
         </table>

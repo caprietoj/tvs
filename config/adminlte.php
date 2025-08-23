@@ -458,14 +458,14 @@ return [
                 ],
             ],
         ],
-        [
-            'text' => 'Solicitudes de Mantenimiento',
-            'url'  => 'maintenance',
-            'icon' => 'fas fa-tools',
-            'can'  => 'view.maintenance',
-            'active' => ['maintenance', 'maintenance/create', 'maintenance/*/edit', 'regex:@^maintenance/[0-9]+$@'], // Exclude dashboard routes
-            'classes' => 'menu-item'
-        ],
+        // [
+        //     'text' => 'Solicitudes de Mantenimiento',
+        //     'url'  => 'maintenance',
+        //     'icon' => 'fas fa-tools',
+        //     'can'  => 'view.maintenance',
+        //     'active' => ['maintenance', 'maintenance/create', 'maintenance/*/edit', 'regex:@^maintenance/[0-9]+$@'], // Exclude dashboard routes
+        //     'classes' => 'menu-item'
+        // ],
 
         [
             'text' => 'Proceso Administrativo',  // Changed from 'Gestión Administrativa' to 'Proceso Administrativo'
@@ -624,9 +624,17 @@ return [
                                 ],
                             ],
                         ],
-
                     ],
                 ],
+             
+                [
+                'text' => 'Consolidado Previsitas',
+                'url'  => 'previsitas',
+                'icon' => 'fas fa-list',
+                'can'  => 'previsitas.view',
+                'active' => ['previsitas', 'previsitas/*'],
+                 ],
+
                 [
                     'text' => 'Gestión Documental',
                     'icon' => 'fas fa-file-pdf',

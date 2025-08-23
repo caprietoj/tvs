@@ -987,17 +987,69 @@ class PurchaseOrdersController extends Controller
      */
     public function updatePdf(Request $request, PurchaseOrder $purchaseOrder)
     {
+        Log::info('=== UPDATE PDF METHOD CALLED ===', [
+            'order_id' => $purchaseOrder->id,
+            'user_id' => auth()->id(),
+            'request_data' => $request->all(),
+            'shared_budget_info' => $request->shared_budget_info
+        ]);
         // Verificar que el usuario sea administrador o personal de compras
         if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
             abort(403, 'No tienes permisos para editar PDFs de órdenes de compra.');
         }
 
+        // Validar los datos de entrada
+        $validator = Validator::make($request->all(), [
+            'provider_id' => 'nullable|exists:proveedors,id',
+            'provider_name' => 'required|string|max:255',
+            'provider_nit' => 'nullable|string|max:50',
+            'provider_email' => 'nullable|email|max:255',
+            'provider_phone' => 'nullable|string|max:50',
+            'provider_address' => 'nullable|string|max:500',
+            'provider_city' => 'nullable|string|max:255',
+            'delivery_address' => 'nullable|string|max:500',
+            'payment_method' => 'nullable|string|max:255',
+            'delivery_date' => 'nullable|date',
+            'budget' => ['nullable', 'string', 'max:255', BudgetHelper::getBudgetValidationRule()],
+            'subtotal' => 'required|numeric|min:0',
+            'iva_rate' => 'nullable|numeric|min:0|max:100',
+            'iva_amount' => 'nullable|numeric|min:0',
+            'ipoconsumo_rate' => 'nullable|numeric|min:0|max:100',
+            'ipoconsumo_amount' => 'nullable|numeric|min:0',
+            'total' => 'required|numeric|min:0',
+            'observations' => 'nullable|string|max:1000',
+            'items' => 'nullable|array',
+            'items.*.description' => 'nullable|string|max:255',
+            'items.*.quantity' => 'nullable|numeric|min:0',
+            'items.*.unit_price' => 'nullable|numeric|min:0',
+            'items.*.total' => 'nullable|numeric|min:0',
+            'additional_items' => 'nullable|array',
+            'additional_items.*.description' => 'nullable|string|max:255',
+            'additional_items.*.quantity' => 'nullable|numeric|min:0',
+            'additional_items.*.unit_price' => 'nullable|numeric|min:0',
+            'additional_items.*.total' => 'nullable|numeric|min:0',
+            'shared_budget_info' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
         try {
-            // Obtener datos actuales
-            $currentCustomData = json_decode($purchaseOrder->pdf_custom_data ?? '{}', true);
-            
-            // Preparar nuevos datos personalizados
-            $customData = array_merge($currentCustomData, [
+            DB::beginTransaction();
+
+            // Guardar datos originales para el log
+            $originalData = [
+                'order_number' => $purchaseOrder->order_number,
+                'total_amount' => $purchaseOrder->total_amount,
+                'provider_id' => $purchaseOrder->provider_id,
+                'pdf_custom_data' => $purchaseOrder->pdf_custom_data,
+            ];
+
+            // Preparar datos personalizados para guardar
+            $customData = [
                 'provider_name' => $request->provider_name,
                 'provider_nit' => $request->provider_nit,
                 'provider_email' => $request->provider_email,
@@ -1019,36 +1071,70 @@ class PurchaseOrdersController extends Controller
                 'shared_budget_info' => $request->shared_budget_info,
                 'edited_by' => auth()->user()->id,
                 'edited_at' => now()->toISOString(),
+            ];
+
+            Log::info('Datos a guardar en customData:', [
+                'shared_budget_info' => $request->shared_budget_info,
+                'customData' => $customData
             ]);
 
-            // Actualizar la orden de compra
-            $purchaseOrder->delivery_date = $request->delivery_date;
-            $purchaseOrder->subtotal = $request->subtotal;
-            $purchaseOrder->iva_amount = $request->iva_amount ?? 0;
-            $purchaseOrder->tax_amount = $request->iva_amount ?? 0;
-            $purchaseOrder->total_amount = $request->total;
-            $purchaseOrder->includes_iva = ($request->iva_amount ?? 0) > 0;
-            $purchaseOrder->observations = $request->observations;
-            $purchaseOrder->pdf_custom_data = json_encode($customData);
-            
-            if ($request->provider_id) {
-                $purchaseOrder->provider_id = $request->provider_id;
-            }
-            
-            $purchaseOrder->save();
+            // Actualizar el proveedor si se proporcionó un provider_id
+            $updateData = [
+                'delivery_date' => $request->delivery_date,
+                'subtotal' => $request->subtotal,
+                'iva_amount' => $request->iva_amount ?? 0,
+                'tax_amount' => $request->iva_amount ?? 0,
+                'total_amount' => $request->total,
+                'includes_iva' => ($request->iva_amount ?? 0) > 0,
+                'observations' => $request->observations,
+                'pdf_custom_data' => json_encode($customData),
+                'updated_at' => now()
+            ];
 
-            // Regenerar el PDF
+            // Si se proporcionó un provider_id, actualizar el proveedor
+            if ($request->provider_id) {
+                $updateData['provider_id'] = $request->provider_id;
+            }
+
+            // Actualizar los datos de la orden
+            $updateResult = $purchaseOrder->update($updateData);
+
+            Log::info('Datos guardados en la base de datos:', [
+                'update_result' => $updateResult,
+                'order_id' => $purchaseOrder->id,
+                'pdf_custom_data_saved' => $purchaseOrder->fresh()->pdf_custom_data
+            ]);
+
+            // Regenerar el PDF con los nuevos datos
             $pdfPath = $this->pdfService->generatePdf($purchaseOrder);
-            $purchaseOrder->file_path = $pdfPath;
-            $purchaseOrder->save();
+            $purchaseOrder->update(['file_path' => $pdfPath]);
+
+            // Registrar la edición en el log
+            Log::info('PDF de orden de compra editado por administrador', [
+                'order_id' => $purchaseOrder->id,
+                'order_number' => $purchaseOrder->order_number,
+                'edited_by' => auth()->user()->id,
+                'edited_by_name' => auth()->user()->name,
+                'original_data' => $originalData,
+                'new_subtotal' => $request->subtotal,
+                'new_iva_amount' => $request->iva_amount ?? 0,
+                'new_ipoconsumo_amount' => $request->ipoconsumo_amount ?? 0,
+                'new_total' => $request->total,
+                'pdf_path' => $pdfPath
+            ]);
+
+            DB::commit();
 
             return redirect()->route('purchase-orders.show', $purchaseOrder)
                 ->with('success', 'PDF de la orden de compra actualizado exitosamente.');
 
         } catch (\Exception $e) {
-            Log::error('Error al actualizar PDF', [
+            DB::rollback();
+            
+            Log::error('Error al actualizar PDF de orden de compra', [
                 'order_id' => $purchaseOrder->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'edited_by' => auth()->user()->id
             ]);
 
             return redirect()->back()

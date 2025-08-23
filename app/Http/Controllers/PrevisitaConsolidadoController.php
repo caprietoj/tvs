@@ -1,0 +1,313 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\PrevisitaConsolidado;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+
+class PrevisitaConsolidadoController extends Controller
+{
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:previsitas.view')->only(['index', 'show']);
+        $this->middleware('permission:previsitas.create')->only(['create', 'store']);
+        $this->middleware('permission:previsitas.edit')->only(['edit', 'update']);
+        $this->middleware('permission:previsitas.delete')->only(['destroy']);
+        $this->middleware('permission:previsitas.download')->only(['downloadFile']);
+        $this->middleware('permission:previsitas.dashboard')->only(['dashboard']);
+        // Las sugerencias solo requieren autenticación básica, no permisos específicos
+    }
+
+    /**
+     * Mostrar listado de consolidado previsitas
+     */
+    public function index(Request $request)
+    {
+        $query = PrevisitaConsolidado::with('user');
+
+        // Filtros
+        if ($request->filled('lugar')) {
+            $query->where('lugar', 'like', '%' . $request->lugar . '%');
+        }
+
+        if ($request->filled('responsable')) {
+            $query->where('responsable', 'like', '%' . $request->responsable . '%');
+        }
+
+        if ($request->filled('fecha_desde')) {
+            $query->where('fecha_visita', '>=', $request->fecha_desde);
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->where('fecha_visita', '<=', $request->fecha_hasta);
+        }
+
+        if ($request->filled('aprobacion_sitio')) {
+            $query->where('aprobacion_sitio', $request->aprobacion_sitio === 'si');
+        }
+
+        $previsitas = $query->orderBy('fecha_visita', 'desc')->paginate(15);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'data' => $previsitas->items(),
+                'pagination' => [
+                    'current_page' => $previsitas->currentPage(),
+                    'last_page' => $previsitas->lastPage(),
+                    'per_page' => $previsitas->perPage(),
+                    'total' => $previsitas->total()
+                ]
+            ]);
+        }
+
+        return view('previsitas.index', compact('previsitas'));
+    }
+
+    /**
+     * Mostrar formulario para crear nueva previsita
+     */
+    public function create()
+    {
+        return view('previsitas.create');
+    }
+
+    /**
+     * Almacenar nueva previsita
+     */
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lugar' => 'required|string|max:255',
+            'fecha_visita' => 'required|date',
+            'vencimiento' => 'nullable|date|after_or_equal:fecha_visita',
+            'responsable' => 'required|string|max:255',
+            'aprobacion_sitio' => 'required|boolean',
+            'observaciones_recomendaciones' => 'nullable|string',
+            'novedades_visita_archivo' => 'nullable|file|mimes:pdf|max:10240' // 10MB máximo
+        ], [
+            'lugar.required' => 'El lugar es obligatorio.',
+            'fecha_visita.required' => 'La fecha de visita es obligatoria.',
+            'fecha_visita.date' => 'La fecha de visita debe ser una fecha válida.',
+            'vencimiento.date' => 'El vencimiento debe ser una fecha válida.',
+            'vencimiento.after_or_equal' => 'El vencimiento debe ser igual o posterior a la fecha de visita.',
+            'responsable.required' => 'El responsable es obligatorio.',
+            'aprobacion_sitio.required' => 'La aprobación del sitio es obligatoria.',
+            'novedades_visita_archivo.file' => 'El archivo debe ser un archivo válido.',
+            'novedades_visita_archivo.mimes' => 'El archivo debe ser un PDF.',
+            'novedades_visita_archivo.max' => 'El archivo no debe superar los 10MB.'
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $data = $request->only([
+            'lugar',
+            'fecha_visita',
+            'vencimiento',
+            'responsable',
+            'aprobacion_sitio',
+            'observaciones_recomendaciones'
+        ]);
+
+        $data['user_id'] = Auth::id();
+
+        // Manejar subida de archivo PDF
+        if ($request->hasFile('novedades_visita_archivo')) {
+            $file = $request->file('novedades_visita_archivo');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('previsitas/novedades', $filename, 'public');
+            $data['novedades_visita_archivo'] = $path;
+        }
+
+        $previsita = PrevisitaConsolidado::create($data);
+
+        return redirect()->route('previsitas.index')
+            ->with('success', 'Consolidado previsita creado exitosamente.');
+    }
+
+    /**
+     * Mostrar detalles de una previsita
+     */
+    public function show(PrevisitaConsolidado $previsita)
+    {
+        $previsita->load('user');
+        return view('previsitas.show', compact('previsita'));
+    }
+
+    /**
+     * Mostrar formulario para editar previsita
+     */
+    public function edit(PrevisitaConsolidado $previsita)
+    {
+        return view('previsitas.edit', compact('previsita'));
+    }
+
+    /**
+     * Actualizar previsita
+     */
+    public function update(Request $request, PrevisitaConsolidado $previsita)
+    {
+        $validator = Validator::make($request->all(), [
+            'lugar' => 'required|string|max:255',
+            'fecha_visita' => 'required|date',
+            'vencimiento' => 'nullable|date|after_or_equal:fecha_visita',
+            'responsable' => 'required|string|max:255',
+            'aprobacion_sitio' => 'required|boolean',
+            'observaciones_recomendaciones' => 'nullable|string',
+            'novedades_visita_archivo' => 'nullable|file|mimes:pdf|max:10240'
+        ], [
+            'lugar.required' => 'El lugar es obligatorio.',
+            'fecha_visita.required' => 'La fecha de visita es obligatoria.',
+            'fecha_visita.date' => 'La fecha de visita debe ser una fecha válida.',
+            'vencimiento.date' => 'El vencimiento debe ser una fecha válida.',
+            'vencimiento.after_or_equal' => 'El vencimiento debe ser igual o posterior a la fecha de visita.',
+            'responsable.required' => 'El responsable es obligatorio.',
+            'aprobacion_sitio.required' => 'La aprobación del sitio es obligatoria.',
+            'novedades_visita_archivo.file' => 'El archivo debe ser un archivo válido.',
+            'novedades_visita_archivo.mimes' => 'El archivo debe ser un PDF.',
+            'novedades_visita_archivo.max' => 'El archivo no debe superar los 10MB.'
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $data = $request->only([
+            'lugar',
+            'fecha_visita',
+            'vencimiento',
+            'responsable',
+            'aprobacion_sitio',
+            'observaciones_recomendaciones'
+        ]);
+
+        // Manejar subida de nuevo archivo PDF
+        if ($request->hasFile('novedades_visita_archivo')) {
+            // Eliminar archivo anterior si existe
+            if ($previsita->novedades_visita_archivo) {
+                Storage::disk('public')->delete($previsita->novedades_visita_archivo);
+            }
+
+            $file = $request->file('novedades_visita_archivo');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('previsitas/novedades', $filename, 'public');
+            $data['novedades_visita_archivo'] = $path;
+        }
+
+        $previsita->update($data);
+
+        return redirect()->route('previsitas.index')
+            ->with('success', 'Consolidado previsita actualizado exitosamente.');
+    }
+
+    /**
+     * Eliminar previsita
+     */
+    public function destroy(PrevisitaConsolidado $previsita)
+    {
+        // Eliminar archivo asociado si existe
+        if ($previsita->novedades_visita_archivo) {
+            Storage::disk('public')->delete($previsita->novedades_visita_archivo);
+        }
+
+        $previsita->delete();
+
+        return redirect()->route('previsitas.index')
+            ->with('success', 'Consolidado previsita eliminado exitosamente.');
+    }
+
+    /**
+     * Descargar archivo PDF de novedades
+     */
+    public function downloadFile(PrevisitaConsolidado $previsita)
+    {
+        if (!$previsita->novedades_visita_archivo || !Storage::disk('public')->exists($previsita->novedades_visita_archivo)) {
+            return redirect()->back()->with('error', 'El archivo no existe.');
+        }
+
+        return Storage::disk('public')->download(
+            $previsita->novedades_visita_archivo,
+            'novedades_visita_' . $previsita->id . '.pdf'
+        );
+    }
+
+    /**
+     * Obtener estadísticas del dashboard
+     */
+    public function dashboard()
+    {
+        $totalPrevisitas = PrevisitaConsolidado::count();
+        $aprobadas = PrevisitaConsolidado::where('aprobacion_sitio', true)->count();
+        $pendientes = PrevisitaConsolidado::where('aprobacion_sitio', false)->count();
+        $vencidas = PrevisitaConsolidado::where('vencimiento', '<', now())->count();
+        
+        $proximasVencer = PrevisitaConsolidado::where('vencimiento', '>=', now())
+            ->where('vencimiento', '<=', now()->addDays(7))
+            ->with('user')
+            ->orderBy('vencimiento')
+            ->limit(5)
+            ->get();
+
+        return view('previsitas.dashboard', compact(
+            'totalPrevisitas',
+            'aprobadas',
+            'pendientes',
+            'vencidas',
+            'proximasVencer'
+        ));
+    }
+
+    /**
+     * Obtener sugerencias de lugares para autocompletado
+     */
+    public function getLugarSuggestions(Request $request)
+    {
+        $term = $request->get('term', '');
+        
+        if (strlen($term) < 2) {
+            return response()->json([]);
+        }
+
+        $lugares = PrevisitaConsolidado::where('lugar', 'like', '%' . $term . '%')
+            ->select('lugar')
+            ->distinct()
+            ->orderBy('lugar')
+            ->limit(10)
+            ->pluck('lugar');
+
+        return response()->json($lugares);
+    }
+
+    /**
+     * Obtener sugerencias de responsables para autocompletado
+     */
+    public function getResponsableSuggestions(Request $request)
+    {
+        $term = $request->get('term', '');
+        
+        if (strlen($term) < 2) {
+            return response()->json([]);
+        }
+
+        $responsables = PrevisitaConsolidado::where('responsable', 'like', '%' . $term . '%')
+            ->select('responsable')
+            ->distinct()
+            ->orderBy('responsable')
+            ->limit(10)
+            ->pluck('responsable');
+
+        return response()->json($responsables);
+    }
+}
