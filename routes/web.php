@@ -197,7 +197,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/budget', [BudgetExecutionController::class, 'store'])->name('budget.store');
     
         // Presupuesto routes
-        Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.index');
+        Route::get('/presupuesto', [PresupuestoController::class, 'spreadsheet'])->name('presupuesto.index');
+        Route::get('/presupuesto/old', [PresupuestoController::class, 'index'])->name('presupuesto.old');
         Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.update');
         Route::post('/presupuesto/guardar-ejecucion', [PresupuestoController::class, 'guardarEjecucion'])->name('presupuesto.guardar-ejecucion');
         Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.export');
@@ -207,7 +208,16 @@ Route::middleware('auth')->group(function () {
         Route::post('/presupuesto/upload-excel', [PresupuestoController::class, 'uploadExcel'])->name('presupuesto.upload-excel');
         Route::post('/presupuesto/update-excel-data', [PresupuestoController::class, 'updateExcelData'])->name('presupuesto.update-excel-data');
         Route::get('/presupuesto/download-excel', [PresupuestoController::class, 'downloadExcel'])->name('presupuesto.download-excel');
+
+        // Rutas para procesamiento de items Excel
+        Route::get('/presupuesto/items', [PresupuestoController::class, 'items'])->name('presupuesto.items');
+        Route::post('/presupuesto/upload', [PresupuestoController::class, 'upload'])->name('presupuesto.upload');
+        Route::get('/presupuesto/export-items', [PresupuestoController::class, 'exportItems'])->name('presupuesto.exportItems');
+        Route::delete('/presupuesto/clear-data', [PresupuestoController::class, 'clearData'])->name('presupuesto.clearData');
         Route::post('/presupuesto/clear-excel', [PresupuestoController::class, 'clearExcel'])->name('presupuesto.clear-excel');
+        Route::get('/presupuesto/load-more-data', [PresupuestoController::class, 'loadMoreData'])->name('presupuesto.load-more-data');
+        Route::post('/presupuesto/update-total', [PresupuestoController::class, 'updateTotal'])->name('presupuesto.update-total');
+        Route::post('/presupuesto/update-cell', [PresupuestoController::class, 'updateCell'])->name('presupuesto.update-cell');
         
         // Parametrización routes
         Route::get('/parametrizacion', [App\Http\Controllers\ParametrizacionController::class, 'index'])->name('parametrizacion.index');
@@ -1091,5 +1101,5 @@ Route::middleware(['auth'])->prefix('previsitas')->name('previsitas.')->group(fu
 });
 
 // Ruta temporal para presupuesto sin autenticación
-Route::get('/presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.public');
+Route::get('/presupuesto', [PresupuestoController::class, 'spreadsheet'])->name('presupuesto.public');
 
