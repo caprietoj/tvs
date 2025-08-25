@@ -1017,7 +1017,7 @@ class PresupuestoController extends Controller
                 'Transporte',
                 'Insumos de la Sección / Material para Clase'
             ],
-            'ESCUELA ALTA' => [
+            'ALTA' => [
                 'Capacitación',
                 'Material Importado',
                 'Material Deportivo',

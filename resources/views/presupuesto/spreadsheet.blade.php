@@ -318,7 +318,7 @@
                                     </thead>
                                     <tbody>
                                         @php
-                                            $seccion = 'ESCUELA ALTA';
+                                            $seccion = 'ALTA';
                                             $escuelaAltaConceptos = $seccionesData[$seccion] ?? [];
                                             $totalPresupuesto = 0;
                                             $totalEjecucion = 0;
