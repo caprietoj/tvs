@@ -689,7 +689,7 @@
 
                         <!-- TABLA 1: RESUMEN -->
                         <div class="budget-section filter-resumen" data-filter-category="resumen">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">RESUMEN</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">RESUMEN</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -786,7 +786,7 @@
 
                         <!-- TABLA 2: RESUMEN INGRESOS Y GASTOS -->
                         <div class="budget-section filter-resumen" data-filter-category="resumen">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">RESUMEN INGRESOS</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">RESUMEN INGRESOS</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -846,7 +846,7 @@
                         </div>
 
                         <div class="budget-section filter-resumen" data-filter-category="resumen">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">RESUMEN GASTOS</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">RESUMEN GASTOS</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -954,7 +954,7 @@
                         </div>
 
                         <div class="budget-section filter-ingresos" data-filter-category="ingresos">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">INGRESOS ESCOLARES</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">INGRESOS ESCOLARES</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -1063,30 +1063,27 @@
 
                         <!-- TABLA 3: OTROS ESCOLARES -->
                         <div class="budget-section filter-ingresos" data-filter-category="ingresos">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">OTROS ESCOLARES</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">OTROS ESCOLARES</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
                                         <tr>
                                             <th>CONCEPTO</th>
-                                            <th>ENERO</th>
-                                            <th>FEBRERO</th>
-                                            <th>MARZO</th>
-                                            <th>ABRIL</th>
-                                            <th>MAYO</th>
-                                            <th>JUNIO</th>
+                                            <th>PRESUPUESTO APROBADO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
                                             <th>OCTUBRE</th>
                                             <th>NOVIEMBRE</th>
                                             <th>DICIEMBRE</th>
-                                            <th>TOTAL AÑO</th>
+                                            <th>ENERO</th>
+                                            <th>FEBRERO</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
                                             <td><strong>Rendimientos/Intereses</strong></td>
+                                            <td class="number-cell">$0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1095,14 +1092,10 @@
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
                                         </tr>
                                         <tr>
                                             <td><strong>Agenda escolar</strong></td>
+                                            <td class="number-cell">$0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1111,14 +1104,10 @@
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
                                         </tr>
                                         <tr>
                                             <td><strong>Anuario</strong></td>
+                                            <td class="number-cell">$0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1127,14 +1116,10 @@
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
                                         </tr>
                                         <tr>
                                             <td><strong>Examenes de Admisión</strong></td>
+                                            <td class="number-cell">$0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1143,14 +1128,10 @@
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
                                         </tr>
                                         <tr>
                                             <td><strong>Ingresos Por Servicio Cafeteria</strong></td>
+                                            <td class="number-cell">$0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1159,14 +1140,10 @@
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
                                         </tr>
                                         <tr>
                                             <td><strong>Ingresos Por Servicio Transporte</strong></td>
+                                            <td class="number-cell">$0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1175,19 +1152,10 @@
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>TOTAL OTROS ESCOLARES</strong></td>
-                                            <td class="number-cell calculated">0</td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$0</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -1204,7 +1172,7 @@
 
                         <!-- TABLA 4: SALARIOS Y PRESTACIONES SOCIALES ACADEMIA -->
                         <div class="budget-section filter-salarios" data-filter-category="salarios">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">SALARIOS Y PRESTACIONES SOCIALES ACADEMIA</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">SALARIOS Y PRESTACIONES SOCIALES ACADEMIA</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -1265,7 +1233,7 @@
 
                         <!-- TABLA 4.1: SALARIOS Y PRESTACIONES SOCIALES ADMINISTRACION -->
                         <div class="budget-section filter-salarios" data-filter-category="salarios">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">SALARIOS Y PRESTACIONES SOCIALES ADMINISTRACION</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">SALARIOS Y PRESTACIONES SOCIALES ADMINISTRACION</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -1350,7 +1318,7 @@
 
                         <!-- TABLA 4.2: CAPACITACION E INDEMNIZACIONES -->
                         <div class="budget-section filter-salarios" data-filter-category="salarios">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">CAPACITACION E INDEMNIZACIONES</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">CAPACITACION E INDEMNIZACIONES</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -1447,7 +1415,7 @@
 
                         <!-- TABLA 5: RUBROS INSTITUCIONALES -->
                         <div class="budget-section filter-gastos" data-filter-category="gastos">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">RUBROS INSTITUCIONALES</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">RUBROS INSTITUCIONALES</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -1688,7 +1656,7 @@
 
                         <!-- TABLA 6: MEMBRESIAS Y CONVENIOS -->
                         <div class="budget-section filter-gastos" data-filter-category="gastos">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">MEMBRESIAS Y CONVENIOS</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">MEMBRESIAS Y CONVENIOS</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -1773,7 +1741,7 @@
 
                         <!-- TABLA 7: SERVICIOS PUBLICOS -->
                         <div class="budget-section filter-servicios" data-filter-category="servicios">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">SERVICIOS PUBLICOS</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">SERVICIOS PUBLICOS</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -1882,7 +1850,7 @@
 
                         <!-- TABLA 8: OTROS EGRESOS -->
                         <div class="budget-section filter-gastos" data-filter-category="gastos">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">OTROS EGRESOS</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">OTROS EGRESOS</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -2087,7 +2055,7 @@
 
                         <!-- TABLA 9: SECCIONES ACADEMIA GENERAL -->
                         <div class="budget-section filter-academia" data-filter-category="academia">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">SECCIONES ACADEMIA GENERAL</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">SECCIONES ACADEMIA GENERAL</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
@@ -2316,7 +2284,7 @@
 
                         <!-- TABLA 10: CONTRATOS EXTERNOS -->
                         <div class="budget-section filter-contratos" data-filter-category="contratos">
-                            <h5 style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center;">CONTRATOS EXTERNOS</h5>
+                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">CONTRATOS EXTERNOS</h5>
                             <div class="table-wrapper">
                                 <table class="data-table budget-table">
                                     <thead>
