@@ -683,7 +683,24 @@
                                     🔄 Mostrar Todo
                                 </button>
                                 
+                                <button id="toggle-editable" style="padding: 8px 15px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-left: 10px;">
+                                    ✏️ Hacer Editables
+                                </button>
+                                
+                                <button id="save-data" style="padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-left: 10px; display: none;">
+                                    💾 Guardar Datos
+                                </button>
+                                
+                                <button id="recalculate-totals" style="padding: 8px 15px; background-color: #17a2b8; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-left: 10px;">
+                                    🧮 Recalcular Totales
+                                </button>
+                                
+                                <button id="debug-structure" style="padding: 8px 15px; background-color: #6f42c1; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-left: 10px;">
+                                    🔍 Debug Estructura
+                                </button>
+                                
                                 <span id="filter-status" style="margin-left: 15px; font-size: 12px; color: #28a745; font-weight: 500;">Mostrando: Todas las tablas</span>
+                                <span id="editable-status" style="margin-left: 10px; font-size: 12px; color: #dc3545; font-weight: 500;">Modo: Solo Lectura</span>
                             </div>
                         </div>
 
@@ -2395,6 +2412,9 @@
 @stop
 
 @section('css')
+<!-- Meta tag para CSRF Token -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
 <style>
 /* Estilos específicos para el contenido de la página */
 .main-container * {
@@ -3521,6 +3541,106 @@ tr.editing {
     border-bottom: 2px solid #233E6C;
     padding-bottom: 5px;
 }
+
+/* Estilos para el modo editable */
+.editing-mode {
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.editing-mode:focus {
+    outline: none !important;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.editing-mode:hover {
+    background-color: #f8f9fa !important;
+}
+
+/* Estilos para el botón de toggle editable */
+#toggle-editable, #recalculate-totals, #save-data {
+    transition: all 0.3s ease;
+}
+
+#toggle-editable:hover, #recalculate-totals:hover, #save-data:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+#save-data {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+#save-data:disabled {
+    background-color: #6c757d !important;
+    cursor: not-allowed;
+    animation: none;
+}
+
+#recalculate-totals:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Indicador visual para celdas editables */
+.number-cell[contenteditable="true"]::before {
+    content: "✏️";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 8px;
+    opacity: 0.6;
+}
+
+.number-cell {
+    position: relative;
+}
+
+/* Estilos para celdas calculadas */
+.number-cell.calculated {
+    background-color: #e8f5e8 !important;
+    font-weight: bold;
+    border-left: 3px solid #28a745;
+}
+
+.number-cell.calculated::after {
+    content: "🧮";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 8px;
+    opacity: 0.7;
+}
+
+/* Animación para cuando se actualiza un cálculo */
+.number-cell.calculated.updated {
+    animation: calculatePulse 0.6s ease-in-out;
+}
+
+@keyframes calculatePulse {
+    0% { background-color: #e8f5e8; }
+    50% { background-color: #c3e6c3; transform: scale(1.02); }
+    100% { background-color: #e8f5e8; }
+}
+
+/* Estilo para filas de totales */
+.total-row {
+    background-color: #f8f9fa !important;
+    border-top: 2px solid #dee2e6;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.total-row .number-cell {
+    font-weight: bold;
+    color: #495057;
+}
 </style>
 @stop
 
@@ -4388,11 +4508,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterDropdown = document.getElementById('budget-filter');
     const resetButton = document.getElementById('reset-filter');
     const filterStatus = document.getElementById('filter-status');
+    const toggleEditableButton = document.getElementById('toggle-editable');
+    const editableStatus = document.getElementById('editable-status');
+    const recalculateButton = document.getElementById('recalculate-totals');
+    const debugButton = document.getElementById('debug-structure');
+    
+    let isEditableMode = false;
     
     console.log('Elementos encontrados:', {
         filterDropdown: !!filterDropdown,
         resetButton: !!resetButton,
-        filterStatus: !!filterStatus
+        filterStatus: !!filterStatus,
+        toggleEditableButton: !!toggleEditableButton,
+        editableStatus: !!editableStatus,
+        recalculateButton: !!recalculateButton,
+        debugButton: !!debugButton
     });
     
     if (filterDropdown) {
@@ -4415,6 +4545,68 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     } else {
         console.error('No se encontró el elemento reset-filter');
+    }
+    
+    // Manejo del botón para hacer editables las tablas
+    if (toggleEditableButton) {
+        toggleEditableButton.addEventListener('click', function() {
+            console.log('Botón toggle editable presionado');
+            isEditableMode = !isEditableMode;
+            toggleEditableModeWithCalculation(isEditableMode);
+            updateEditableStatus(isEditableMode);
+        });
+    } else {
+        console.error('No se encontró el elemento toggle-editable');
+    }
+    
+    // Manejo del botón de guardar datos
+    const saveButton = document.getElementById('save-data');
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            console.log('🚀 Iniciando guardado masivo de datos...');
+            saveAllData();
+        });
+    } else {
+        console.error('No se encontró el elemento save-data');
+    }
+    
+    // Manejo del botón para recalcular totales
+    if (recalculateButton) {
+        recalculateButton.addEventListener('click', function() {
+            console.log('Botón recalcular presionado');
+            
+            // Cambiar el texto del botón temporalmente
+            const originalText = this.textContent;
+            this.textContent = '🔄 Calculando...';
+            this.disabled = true;
+            
+            // Recalcular después de un pequeño delay para mostrar el feedback
+            setTimeout(() => {
+                calculateAllTotals();
+                
+                // Restaurar el botón
+                this.textContent = originalText;
+                this.disabled = false;
+                
+                // Mostrar confirmación temporal
+                this.textContent = '✅ ¡Calculado!';
+                setTimeout(() => {
+                    this.textContent = originalText;
+                }, 1500);
+            }, 200);
+        });
+    } else {
+        console.error('No se encontró el elemento recalculate-totals');
+    }
+    
+    // Manejo del botón de debug
+    if (debugButton) {
+        debugButton.addEventListener('click', function() {
+            console.log('🔍 Botón debug presionado');
+            debugTableStructure();
+        });
+    } else {
+        console.error('No se encontró el elemento debug-structure');
     }
     
     function filterTables(category) {
@@ -4480,6 +4672,766 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('No se encontró el elemento filter-status');
         }
     }
+    
+    function toggleEditableMode(isEditable) {
+        console.log('Cambiando modo editable:', isEditable);
+        
+        // Buscar todas las celdas que pueden ser editables
+        const editableCells = document.querySelectorAll('.number-cell');
+        const button = document.getElementById('toggle-editable');
+        
+        console.log('Celdas encontradas:', editableCells.length);
+        
+        editableCells.forEach(cell => {
+            if (isEditable) {
+                // Hacer editable
+                cell.contentEditable = true;
+                cell.style.backgroundColor = '#fff3cd';
+                cell.style.border = '1px solid #ffeaa7';
+                cell.style.cursor = 'text';
+                cell.classList.add('editing-mode');
+                
+                // Agregar event listeners para mejor UX
+                cell.addEventListener('focus', function() {
+                    this.style.backgroundColor = '#fff';
+                    this.style.border = '2px solid #007bff';
+                });
+                
+                cell.addEventListener('blur', function() {
+                    this.style.backgroundColor = '#fff3cd';
+                    this.style.border = '1px solid #ffeaa7';
+                });
+            } else {
+                // Hacer solo lectura
+                cell.contentEditable = false;
+                cell.style.backgroundColor = '';
+                cell.style.border = '';
+                cell.style.cursor = '';
+                cell.classList.remove('editing-mode');
+                
+                // Remover event listeners previos
+                cell.removeEventListener('focus', arguments.callee);
+                cell.removeEventListener('blur', arguments.callee);
+            }
+        });
+        
+        // Actualizar el texto del botón
+        const saveButton = document.getElementById('save-data');
+        
+        if (button) {
+            if (isEditable) {
+                button.textContent = '🔒 Bloquear Edición';
+                button.style.backgroundColor = '#dc3545';
+                
+                // Mostrar el botón de guardar
+                if (saveButton) {
+                    saveButton.style.display = 'inline-block';
+                }
+            } else {
+                button.textContent = '✏️ Hacer Editables';
+                button.style.backgroundColor = '#28a745';
+                
+                // Ocultar el botón de guardar
+                if (saveButton) {
+                    saveButton.style.display = 'none';
+                }
+            }
+        }
+    }
+    
+    function updateEditableStatus(isEditable) {
+        if (editableStatus) {
+            if (isEditable) {
+                editableStatus.textContent = 'Modo: Edición Activa';
+                editableStatus.style.color = '#28a745';
+            } else {
+                editableStatus.textContent = 'Modo: Solo Lectura';
+                editableStatus.style.color = '#dc3545';
+            }
+            console.log('Estado editable actualizado:', isEditable);
+        } else {
+            console.error('No se encontró el elemento editable-status');
+        }
+    }
+    
+    // Funcionalidad de cálculo automático
+    function initializeAutoCalculation() {
+        console.log('Inicializando cálculo automático...');
+        
+        // Buscar todas las celdas que pueden ser editables
+        const allNumberCells = document.querySelectorAll('.number-cell');
+        
+        console.log('Celdas numéricas encontradas:', allNumberCells.length);
+        
+        // Agregar event listeners a todas las celdas numéricas (no solo las que ya son editables)
+        allNumberCells.forEach((cell, index) => {
+            // Verificar que no sea una celda de total
+            const isInTotalRow = cell.closest('.total-row') !== null;
+            
+            if (!isInTotalRow) {
+                console.log(`Configurando listeners para celda ${index}:`, cell.textContent.trim());
+                
+                // Event listener para cambios inmediatos
+                cell.addEventListener('input', function() {
+                    console.log('🔄 Celda modificada:', this.textContent);
+                    console.log('Posición de la celda:', getColumnIndex(this));
+                    calculateTableTotals(this);
+                });
+                
+                // Event listener para cuando se termina de editar
+                cell.addEventListener('blur', function() {
+                    console.log('🔄 Evento blur disparado en celda:', this.textContent);
+                    console.log('✅ Celda editada finalizada:', this.textContent);
+                    const cellData = extractCellData(this);
+                    if (cellData) {
+                        console.log('🔢 Datos extraídos:', cellData);
+                        saveCellToDatabase(cellData, this);
+                    } else {
+                        console.log('❌ No se pudieron extraer datos de la celda');
+                    }
+                    calculateTableTotals(this);
+                    formatCurrency(this);
+                });
+                
+                // Event listener para Enter
+                cell.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        this.blur();
+                    }
+                });
+            }
+        });
+        
+        // Calcular totales iniciales
+        calculateAllTotals();
+    }
+    
+    // Función auxiliar para obtener el índice real de la columna
+    function getColumnIndex(cell) {
+        const row = cell.parentNode;
+        const cells = Array.from(row.querySelectorAll('td'));
+        const index = cells.indexOf(cell);
+        console.log(`Índice de columna encontrado: ${index}`);
+        return index;
+    }
+    
+    function calculateTableTotals(changedCell) {
+        // Encontrar la tabla que contiene la celda modificada
+        const table = changedCell.closest('table');
+        if (!table) return;
+        
+        console.log('Calculando totales para tabla...');
+        
+        // Encontrar todas las filas de totales en esta tabla
+        const totalRows = table.querySelectorAll('.total-row');
+        
+        totalRows.forEach(totalRow => {
+            // Obtener todas las celdas TD de la fila de totales (no solo number-cell)
+            const totalCells = totalRow.querySelectorAll('td');
+            
+            totalCells.forEach((totalCell, cellIndex) => {
+                // Saltar la primera columna (concepto) 
+                if (cellIndex === 0) return;
+                
+                // Solo procesar si es una celda numérica
+                if (totalCell.classList.contains('number-cell')) {
+                    // Calcular suma de la columna usando el índice real de la celda
+                    const columnTotal = calculateColumnSum(table, cellIndex);
+                    
+                    // Actualizar la celda de total con formato y animación
+                    updateTotalCell(totalCell, columnTotal);
+                    
+                    console.log(`Columna ${cellIndex} actualizada con total: ${columnTotal}`);
+                }
+            });
+        });
+    }
+    
+    function calculateColumnSum(table, columnIndex) {
+        let sum = 0;
+        
+        console.log(`Calculando suma para columna ${columnIndex}...`);
+        
+        // Obtener todas las filas de datos (excluir filas de total y header)
+        const dataRows = table.querySelectorAll('tbody tr:not(.total-row)');
+        
+        dataRows.forEach((row, rowIndex) => {
+            // Obtener todas las celdas TD de la fila (no solo number-cell)
+            const cells = row.querySelectorAll('td');
+            
+            if (cells[columnIndex]) {
+                // Solo sumar si la celda es numérica y no es la primera columna
+                if (cells[columnIndex].classList.contains('number-cell')) {
+                    const cellValue = extractNumericValue(cells[columnIndex].textContent);
+                    if (!isNaN(cellValue) && cellValue !== 0) {
+                        sum += cellValue;
+                        console.log(`Fila ${rowIndex}, Columna ${columnIndex}: Sumando ${cellValue} (total: ${sum})`);
+                    }
+                }
+            }
+        });
+        
+        console.log(`Total final para columna ${columnIndex}: ${sum}`);
+        return sum;
+    }
+    
+    function calculateAllTotals() {
+        console.log('Calculando todos los totales...');
+        
+        // Buscar todas las tablas del presupuesto
+        const budgetTables = document.querySelectorAll('.budget-table');
+        
+        budgetTables.forEach((table, tableIndex) => {
+            console.log(`Procesando tabla ${tableIndex + 1}...`);
+            const totalRows = table.querySelectorAll('.total-row');
+            
+            totalRows.forEach((totalRow, rowIndex) => {
+                console.log(`  Procesando fila de totales ${rowIndex + 1}...`);
+                
+                // Obtener todas las celdas TD de la fila de totales
+                const totalCells = totalRow.querySelectorAll('td');
+                
+                totalCells.forEach((totalCell, cellIndex) => {
+                    // Saltar la primera columna (concepto)
+                    if (cellIndex === 0) return;
+                    
+                    // Solo procesar si es una celda numérica
+                    if (totalCell.classList.contains('number-cell')) {
+                        const columnTotal = calculateColumnSum(table, cellIndex);
+                        updateTotalCell(totalCell, columnTotal);
+                        console.log(`    Celda [${cellIndex}] actualizada: ${columnTotal}`);
+                    }
+                });
+            });
+        });
+        
+        console.log('Cálculo de todos los totales completado.');
+    }
+    
+    function updateTotalCell(cell, value) {
+        const formattedValue = `<strong>$${formatNumber(value)}</strong>`;
+        
+        // Solo actualizar si el valor ha cambiado
+        if (cell.innerHTML !== formattedValue) {
+            cell.innerHTML = formattedValue;
+            
+            // Agregar clase para animación
+            cell.classList.add('updated');
+            
+            // Marcar como calculada
+            cell.classList.add('calculated');
+            
+            // Remover la clase de animación después de completarla
+            setTimeout(() => {
+                cell.classList.remove('updated');
+            }, 600);
+            
+            console.log(`Total actualizado: $${formatNumber(value)}`);
+        }
+    }
+    
+    function extractNumericValue(text) {
+        if (!text) return 0;
+        
+        // Remover tags HTML
+        const cleanHTML = text.replace(/<[^>]*>/g, '');
+        
+        // Remover símbolos de moneda, comas, puntos y espacios
+        let cleanText = cleanHTML.toString()
+            .replace(/[$\s]/g, '')          // Remover $ y espacios
+            .replace(/\./g, '')             // Remover puntos (separadores de miles)
+            .replace(/,/g, '.')             // Convertir comas a puntos decimales
+            .replace(/[^\d.-]/g, '');       // Mantener solo dígitos, punto decimal y signo negativo
+        
+        // Si está vacío o es solo símbolos, retornar 0
+        if (cleanText === '' || cleanText === '-' || cleanText === '.') return 0;
+        
+        const number = parseFloat(cleanText);
+        return isNaN(number) ? 0 : Math.round(number); // Redondear a entero
+    }
+    
+    function formatNumber(number) {
+        if (isNaN(number) || number === null || number === undefined) return '0';
+        
+        // Formatear con separadores de miles para Colombia
+        return Math.round(number).toLocaleString('es-CO');
+    }
+    
+    function formatCurrency(cell) {
+        const value = extractNumericValue(cell.textContent);
+        if (cell.contentEditable === 'true') {
+            // Si está en modo editable, solo mostrar el número
+            cell.textContent = formatNumber(value);
+        } else {
+            // Si no está editable, mostrar con símbolo de moneda
+            cell.textContent = `$${formatNumber(value)}`;
+        }
+    }
+    
+    // Actualizar la función toggleEditableMode para incluir auto-cálculo
+    function toggleEditableModeWithCalculation(isEditable) {
+        toggleEditableMode(isEditable);
+        
+        if (isEditable) {
+            // Reinicializar auto-cálculo cuando se activa el modo editable
+            setTimeout(() => {
+                initializeAutoCalculation();
+                // Agregar debugging de estructura de tablas
+                debugTableStructure();
+            }, 100);
+        }
+    }
+    
+    // Función de debugging para entender la estructura de las tablas
+    function debugTableStructure() {
+        console.log('=== DEBUG: Estructura de Tablas ===');
+        
+        const budgetTables = document.querySelectorAll('.budget-table');
+        
+        budgetTables.forEach((table, tableIndex) => {
+            console.log(`\nTabla ${tableIndex + 1}:`);
+            
+            // Headers
+            const headers = table.querySelectorAll('thead th');
+            console.log('Headers:', Array.from(headers).map((h, i) => `[${i}] ${h.textContent.trim()}`));
+            
+            // Primera fila de datos
+            const firstDataRow = table.querySelector('tbody tr:not(.total-row)');
+            if (firstDataRow) {
+                const dataCells = firstDataRow.querySelectorAll('td');
+                console.log('Primera fila datos:', Array.from(dataCells).map((c, i) => `[${i}] ${c.textContent.trim()} (${c.classList.toString()})`));
+            }
+            
+            // Fila de totales
+            const totalRow = table.querySelector('.total-row');
+            if (totalRow) {
+                const totalCells = totalRow.querySelectorAll('td');
+                console.log('Fila totales:', Array.from(totalCells).map((c, i) => `[${i}] ${c.textContent.trim()} (${c.classList.toString()})`));
+            }
+        });
+        
+        console.log('=== FIN DEBUG ===\n');
+    }
+    
+    function getColumnIndex(cell) {
+        const row = cell.closest('tr');
+        const cells = row.querySelectorAll('td');
+        return Array.from(cells).indexOf(cell);
+    }
+    
+    // Funciones para persistencia de datos
+    function extractCellData(cell) {
+        const row = cell.closest('tr');
+        const table = cell.closest('table');
+        const budgetSection = cell.closest('.budget-section');
+        
+        if (!row || !table || !budgetSection) {
+            console.error('No se pudo extraer información de contexto de la celda');
+            return null;
+        }
+        
+        // Obtener nombre de la tabla desde el título de la sección
+        const titleElement = budgetSection.querySelector('h5');
+        const tablaNombre = titleElement ? titleElement.textContent.trim() : 'Unknown';
+        
+        // Obtener concepto desde la primera celda de la fila
+        const firstCell = row.querySelector('td');
+        const concepto = firstCell ? firstCell.textContent.trim().replace(/\*\*/g, '') : 'Unknown';
+        
+        // Obtener nombre de la columna desde el header
+        const cellIndex = getColumnIndex(cell);
+        const headerRow = table.querySelector('thead tr');
+        const headerCells = headerRow ? headerRow.querySelectorAll('th') : [];
+        const columna = headerCells[cellIndex] ? headerCells[cellIndex].textContent.trim() : `Columna_${cellIndex}`;
+        
+        // Extraer valor numérico
+        const valor = extractNumericValue(cell.textContent);
+        
+        // Determinar si es una fila de total
+        const esTotal = row.classList.contains('total-row');
+        
+        const cellData = {
+            tabla_nombre: tablaNombre,
+            concepto: concepto,
+            columna: columna,
+            valor: valor,
+            fila_orden: Array.from(row.parentNode.children).indexOf(row),
+            columna_orden: cellIndex,
+            es_total: esTotal
+        };
+        
+        console.log('Datos extraídos de la celda:', cellData);
+        return cellData;
+    }
+    
+    function saveAllData() {
+        const saveButton = document.getElementById('save-data');
+        
+        // Deshabilitar botón y cambiar texto
+        if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '⏳ Guardando...';
+        }
+        
+        // Buscar todas las celdas editables que no sean totales
+        const editableCells = document.querySelectorAll('.number-cell:not(.total-row .number-cell)');
+        const dataToSave = [];
+        
+        console.log(`📊 Preparando guardado de ${editableCells.length} celdas...`);
+        
+        // Extraer datos de todas las celdas
+        editableCells.forEach((cell, index) => {
+            const cellData = extractCellData(cell);
+            if (cellData && !cellData.es_total) {
+                dataToSave.push(cellData);
+            }
+        });
+        
+        console.log(`💾 ${dataToSave.length} celdas válidas para guardar`);
+        
+        if (dataToSave.length === 0) {
+            console.log('⚠️ No hay datos para guardar');
+            if (saveButton) {
+                saveButton.disabled = false;
+                saveButton.innerHTML = '💾 Guardar Datos';
+            }
+            return;
+        }
+        
+        // Verificar CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfToken) {
+            console.error('❌ Token CSRF no encontrado');
+            if (saveButton) {
+                saveButton.disabled = false;
+                saveButton.innerHTML = '💾 Guardar Datos';
+            }
+            return;
+        }
+        
+        // Enviar datos al servidor
+        fetch('/contabilidad/presupuesto/guardar-celda-masivo', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken.getAttribute('content')
+            },
+            body: JSON.stringify({
+                celdas: dataToSave
+            })
+        })
+        .then(response => {
+            console.log('📨 Respuesta del servidor:', response.status, response.statusText);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📦 Datos recibidos:', data);
+            if (data.success) {
+                console.log(`✅ ${data.guardadas} celdas guardadas exitosamente`);
+                
+                // Mostrar mensaje de éxito
+                if (saveButton) {
+                    saveButton.innerHTML = '✅ ¡Guardado!';
+                    saveButton.style.backgroundColor = '#28a745';
+                    
+                    setTimeout(() => {
+                        saveButton.innerHTML = '💾 Guardar Datos';
+                        saveButton.style.backgroundColor = '#007bff';
+                        saveButton.disabled = false;
+                    }, 3000);
+                }
+                
+                // Agregar indicador visual a todas las celdas guardadas
+                editableCells.forEach(cell => {
+                    cell.style.borderLeft = '3px solid #28a745';
+                    setTimeout(() => {
+                        cell.style.borderLeft = '';
+                    }, 5000);
+                });
+                
+            } else {
+                console.error('❌ Error al guardar:', data.message);
+                if (saveButton) {
+                    saveButton.innerHTML = '❌ Error';
+                    saveButton.style.backgroundColor = '#dc3545';
+                    
+                    setTimeout(() => {
+                        saveButton.innerHTML = '💾 Guardar Datos';
+                        saveButton.style.backgroundColor = '#007bff';
+                        saveButton.disabled = false;
+                    }, 3000);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error de conexión:', error);
+            if (saveButton) {
+                saveButton.innerHTML = '❌ Error';
+                saveButton.style.backgroundColor = '#dc3545';
+                
+                setTimeout(() => {
+                    saveButton.innerHTML = '💾 Guardar Datos';
+                    saveButton.style.backgroundColor = '#007bff';
+                    saveButton.disabled = false;
+                }, 3000);
+            }
+        });
+    }
+    function extractCellData(cell) {
+        const row = cell.closest('tr');
+        const table = cell.closest('table');
+        const budgetSection = cell.closest('.budget-section');
+        
+        if (!row || !table || !budgetSection) {
+            console.error('No se pudo extraer información de contexto de la celda');
+            return null;
+        }
+        
+        // Obtener nombre de la tabla desde el título de la sección
+        const titleElement = budgetSection.querySelector('h5');
+        const tablaNombre = titleElement ? titleElement.textContent.trim() : 'Unknown';
+        
+        // Obtener concepto desde la primera celda de la fila
+        const firstCell = row.querySelector('td');
+        const concepto = firstCell ? firstCell.textContent.trim().replace(/\*\*/g, '') : 'Unknown';
+        
+        // Obtener nombre de la columna desde el header
+        const cellIndex = getColumnIndex(cell);
+        const headerRow = table.querySelector('thead tr');
+        const headerCells = headerRow ? headerRow.querySelectorAll('th') : [];
+        const columna = headerCells[cellIndex] ? headerCells[cellIndex].textContent.trim() : `Columna_${cellIndex}`;
+        
+        // Extraer valor numérico
+        const valor = extractNumericValue(cell.textContent);
+        
+        // Determinar si es una fila de total
+        const esTotal = row.classList.contains('total-row');
+        
+        const cellData = {
+            tabla_nombre: tablaNombre,
+            concepto: concepto,
+            columna: columna,
+            valor: valor,
+            fila_orden: Array.from(row.parentNode.children).indexOf(row),
+            columna_orden: cellIndex,
+            es_total: esTotal
+        };
+        
+        console.log('Datos extraídos de la celda:', cellData);
+        return cellData;
+    }
+    
+    function saveCellToDatabase(cellData, cellElement) {
+        // No guardar celdas de totales (se calculan automáticamente)
+        if (cellData.es_total) {
+            console.log('Saltando guardado de celda de total');
+            return;
+        }
+        
+        console.log('🔄 Iniciando guardado de celda:', cellData);
+        
+        // Verificar CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfToken) {
+            console.error('❌ Token CSRF no encontrado');
+            return;
+        }
+        
+        console.log('🔑 Token CSRF encontrado:', csrfToken.getAttribute('content').substring(0, 10) + '...');
+        
+        // Añadir indicador visual de guardado
+        cellElement.style.borderLeft = '3px solid #007bff';
+        
+        // Enviar datos al servidor
+        fetch('/contabilidad/presupuesto/guardar-celda', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken.getAttribute('content')
+            },
+            body: JSON.stringify(cellData)
+        })
+        .then(response => {
+            console.log('📨 Respuesta del servidor:', response.status, response.statusText);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📦 Datos recibidos:', data);
+            if (data.success) {
+                console.log('✅ Celda guardada exitosamente:', data.message);
+                // Indicador visual de éxito
+                cellElement.style.borderLeft = '3px solid #28a745';
+                setTimeout(() => {
+                    cellElement.style.borderLeft = '';
+                }, 2000);
+            } else {
+                console.error('❌ Error al guardar celda:', data.message);
+                // Indicador visual de error
+                cellElement.style.borderLeft = '3px solid #dc3545';
+                setTimeout(() => {
+                    cellElement.style.borderLeft = '';
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error de conexión al guardar celda:', error);
+            // Indicador visual de error
+            cellElement.style.borderLeft = '3px solid #dc3545';
+            setTimeout(() => {
+                cellElement.style.borderLeft = '';
+            }, 3000);
+        });
+    }
+    
+    // Función para cargar datos desde la base de datos
+    function loadDataFromDatabase() {
+        // Los datos ya vienen desde el servidor con la variable $spreadsheetData
+        @if(isset($spreadsheetData))
+            const spreadsheetData = @json($spreadsheetData);
+            console.log('Datos cargados desde la base de datos:', spreadsheetData);
+            populateTableWithData(spreadsheetData);
+        @else
+            console.log('No hay datos guardados para cargar');
+        @endif
+    }
+    
+    function populateTableWithData(spreadsheetData) {
+        // Iterar sobre todas las tablas y llenar con datos guardados
+        Object.keys(spreadsheetData).forEach(tablaNombre => {
+            const tabla = spreadsheetData[tablaNombre];
+            
+            Object.keys(tabla).forEach(concepto => {
+                const conceptoData = tabla[concepto];
+                
+                Object.keys(conceptoData).forEach(columna => {
+                    const cellData = conceptoData[columna];
+                    
+                    // Buscar la celda correspondiente en el DOM
+                    const cell = findCellInDOM(tablaNombre, concepto, columna);
+                    if (cell && !cellData.es_total) {
+                        // Solo llenar celdas no-totales (los totales se calculan)
+                        cell.textContent = `$${formatNumber(cellData.valor)}`;
+                        cell.style.backgroundColor = '#e8f5e8'; // Indicar que viene de BD
+                    }
+                });
+            });
+        });
+        
+        // Recalcular totales después de cargar datos
+        setTimeout(() => {
+            calculateAllTotals();
+        }, 500);
+    }
+    
+    function findCellInDOM(tablaNombre, concepto, columna) {
+        // Buscar la sección de presupuesto correspondiente
+        const sections = document.querySelectorAll('.budget-section');
+        
+        for (let section of sections) {
+            const titleElement = section.querySelector('h5');
+            if (titleElement && titleElement.textContent.trim() === tablaNombre) {
+                const table = section.querySelector('table');
+                if (table) {
+                    // Buscar la fila con el concepto
+                    const rows = table.querySelectorAll('tbody tr');
+                    for (let row of rows) {
+                        const firstCell = row.querySelector('td');
+                        if (firstCell && firstCell.textContent.trim().replace(/\*\*/g, '') === concepto) {
+                            // Encontrar la columna correspondiente
+                            const headerCells = table.querySelectorAll('thead th');
+                            for (let i = 0; i < headerCells.length; i++) {
+                                if (headerCells[i].textContent.trim() === columna) {
+                                    const targetCell = row.querySelectorAll('td')[i];
+                                    if (targetCell && targetCell.classList.contains('number-cell')) {
+                                        return targetCell;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    // Cargar datos al inicializar la página
+    loadDataFromDatabase();
+    
+    // Inicializar sistema completo después de cargar datos
+    setTimeout(() => {
+        console.log('🚀 Inicializando sistema completo...');
+        
+        // Solo inicializar auto-cálculo si ya hay modo editable activado
+        const editButton = document.querySelector('[onclick="toggleEditable()"]');
+        if (editButton && editButton.textContent.includes('Solo Lectura')) {
+            console.log('📝 Modo editable detectado, inicializando auto-cálculo...');
+            initializeAutoCalculation();
+        } else {
+            console.log('📖 Modo solo lectura, esperando activación manual');
+        }
+    }, 1000);
+    
+    // Función de test para debug
+    window.testSaveFunction = function() {
+        console.log('🧪 Iniciando test de función de guardado...');
+        
+        // Simular datos de celda
+        const testCellData = {
+            tabla_nombre: 'Test Table',
+            concepto: 'Test Concepto',
+            columna: 'Enero',
+            valor: 12345,
+            fila_orden: 1,
+            columna_orden: 1,
+            es_total: false
+        };
+        
+        // Crear elemento de prueba
+        const testElement = document.createElement('div');
+        testElement.textContent = '$12,345';
+        
+        console.log('🔢 Datos de prueba:', testCellData);
+        saveCellToDatabase(testCellData, testElement);
+    };
+    
+    // Función para test directo de edición
+    window.testDirectEdit = function() {
+        console.log('🧪 Test directo de edición...');
+        
+        // Buscar la primera celda editable
+        const firstCell = document.querySelector('.number-cell:not(.total-row .number-cell)');
+        if (firstCell) {
+            console.log('🎯 Celda encontrada:', firstCell.textContent);
+            
+            // Hacer la celda editable
+            firstCell.contentEditable = true;
+            firstCell.style.backgroundColor = '#fff3cd';
+            
+            // Simular edición
+            firstCell.textContent = '$99,999';
+            
+            // Extraer datos
+            const cellData = extractCellData(firstCell);
+            console.log('📊 Datos extraídos:', cellData);
+            
+            if (cellData) {
+                saveCellToDatabase(cellData, firstCell);
+            }
+        } else {
+            console.log('❌ No se encontró celda editable');
+        }
+    };
+    
+    console.log('🎯 Funciones de test disponibles:');
+    console.log('- testSaveFunction() - Prueba función de guardado');
+    console.log('- testDirectEdit() - Prueba edición directa');
 });
 </script>
 @stop

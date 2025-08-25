@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\BudgetExecution;
 use App\Models\PresupuestoItem;
+use App\Models\PresupuestoSpreadsheet;
 use App\Services\PresupuestoProcessorService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -312,6 +313,221 @@ class PresupuestoController extends Controller
     }
 
     /**
+     * Guardar datos de una celda del spreadsheet
+     */
+    public function guardarCelda(Request $request)
+    {
+        try {
+            // Log de debug
+            \Log::info('🔄 Recibida petición para guardar celda', [
+                'datos' => $request->all(),
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+
+            // Validar los datos de entrada
+            $validatedData = $request->validate([
+                'tabla_nombre' => 'required|string|max:255',
+                'concepto' => 'required|string|max:255',
+                'columna' => 'required|string|max:100',
+                'valor' => 'required|numeric',
+                'fila_orden' => 'nullable|integer',
+                'columna_orden' => 'nullable|integer',
+                'es_total' => 'boolean'
+            ]);
+
+            \Log::info('✅ Datos validados correctamente', $validatedData);
+
+            // Buscar si ya existe la celda
+            $celda = PresupuestoSpreadsheet::where('tabla_nombre', $validatedData['tabla_nombre'])
+                                        ->where('concepto', $validatedData['concepto'])
+                                        ->where('columna', $validatedData['columna'])
+                                        ->first();
+
+            if ($celda) {
+                // Actualizar celda existente
+                $celda->update([
+                    'valor' => $validatedData['valor'],
+                    'fila_orden' => $validatedData['fila_orden'] ?? $celda->fila_orden,
+                    'columna_orden' => $validatedData['columna_orden'] ?? $celda->columna_orden,
+                    'es_total' => $validatedData['es_total'] ?? false,
+                    'tipo_dato' => 'manual'
+                ]);
+                $message = 'Celda actualizada correctamente';
+            } else {
+                // Crear nueva celda
+                $celda = PresupuestoSpreadsheet::create([
+                    'tabla_nombre' => $validatedData['tabla_nombre'],
+                    'concepto' => $validatedData['concepto'],
+                    'columna' => $validatedData['columna'],
+                    'valor' => $validatedData['valor'],
+                    'fila_orden' => $validatedData['fila_orden'] ?? 0,
+                    'columna_orden' => $validatedData['columna_orden'] ?? 0,
+                    'es_total' => $validatedData['es_total'] ?? false,
+                    'tipo_dato' => 'manual'
+                ]);
+                $message = 'Celda guardada correctamente';
+            }
+
+            \Log::info('💾 Celda guardada exitosamente', [
+                'id' => $celda->id,
+                'tabla' => $celda->tabla_nombre,
+                'concepto' => $celda->concepto,
+                'valor' => $celda->valor
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => [
+                    'id' => $celda->id,
+                    'valor' => $celda->valor,
+                    'tabla_nombre' => $celda->tabla_nombre,
+                    'concepto' => $celda->concepto,
+                    'columna' => $celda->columna
+                ]
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('❌ Error de validación al guardar celda', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('❌ Error crítico al guardar celda', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar la celda: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Guardar datos de múltiples celdas del spreadsheet
+     */
+    public function guardarCeldaMasivo(Request $request)
+    {
+        try {
+            // Log de debug
+            \Log::info('🔄 Recibida petición para guardado masivo', [
+                'total_celdas' => count($request->input('celdas', [])),
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+
+            // Validar los datos de entrada
+            $validatedData = $request->validate([
+                'celdas' => 'required|array',
+                'celdas.*.tabla_nombre' => 'required|string|max:255',
+                'celdas.*.concepto' => 'required|string|max:255',
+                'celdas.*.columna' => 'required|string|max:100',
+                'celdas.*.valor' => 'required|numeric',
+                'celdas.*.fila_orden' => 'nullable|integer',
+                'celdas.*.columna_orden' => 'nullable|integer',
+                'celdas.*.es_total' => 'boolean'
+            ]);
+
+            \Log::info('✅ Datos validados correctamente', ['total_celdas' => count($validatedData['celdas'])]);
+
+            $celdasGuardadas = 0;
+            $celdasActualizadas = 0;
+            $errores = [];
+
+            foreach ($validatedData['celdas'] as $index => $celdaData) {
+                try {
+                    // Buscar si ya existe la celda
+                    $celda = PresupuestoSpreadsheet::where('tabla_nombre', $celdaData['tabla_nombre'])
+                                                ->where('concepto', $celdaData['concepto'])
+                                                ->where('columna', $celdaData['columna'])
+                                                ->first();
+
+                    if ($celda) {
+                        // Actualizar celda existente
+                        $celda->update([
+                            'valor' => $celdaData['valor'],
+                            'fila_orden' => $celdaData['fila_orden'] ?? $celda->fila_orden,
+                            'columna_orden' => $celdaData['columna_orden'] ?? $celda->columna_orden,
+                            'es_total' => $celdaData['es_total'] ?? false,
+                            'tipo_dato' => 'manual'
+                        ]);
+                        $celdasActualizadas++;
+                    } else {
+                        // Crear nueva celda
+                        PresupuestoSpreadsheet::create([
+                            'tabla_nombre' => $celdaData['tabla_nombre'],
+                            'concepto' => $celdaData['concepto'],
+                            'columna' => $celdaData['columna'],
+                            'valor' => $celdaData['valor'],
+                            'fila_orden' => $celdaData['fila_orden'] ?? 0,
+                            'columna_orden' => $celdaData['columna_orden'] ?? 0,
+                            'es_total' => $celdaData['es_total'] ?? false,
+                            'tipo_dato' => 'manual'
+                        ]);
+                        $celdasGuardadas++;
+                    }
+                } catch (\Exception $e) {
+                    $errores[] = [
+                        'celda_index' => $index,
+                        'tabla' => $celdaData['tabla_nombre'],
+                        'concepto' => $celdaData['concepto'],
+                        'error' => $e->getMessage()
+                    ];
+                }
+            }
+
+            $totalProcesadas = $celdasGuardadas + $celdasActualizadas;
+
+            \Log::info('💾 Guardado masivo completado', [
+                'nuevas' => $celdasGuardadas,
+                'actualizadas' => $celdasActualizadas,
+                'total_procesadas' => $totalProcesadas,
+                'errores' => count($errores)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Guardado completado: {$celdasGuardadas} nuevas, {$celdasActualizadas} actualizadas",
+                'data' => [
+                    'guardadas' => $celdasGuardadas,
+                    'actualizadas' => $celdasActualizadas,
+                    'total_procesadas' => $totalProcesadas,
+                    'errores' => $errores
+                ]
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('❌ Error de validación en guardado masivo', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('❌ Error crítico en guardado masivo', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar las celdas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Export budget data to Excel.
      *
      * @return \Illuminate\Http\Response
@@ -500,7 +716,10 @@ class PresupuestoController extends Controller
         // Obtener datos del budget principal
         $budgetData = $this->getBudgetData();
         
-        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData'));
+        // Cargar datos guardados del spreadsheet
+        $spreadsheetData = $this->loadSpreadsheetData();
+        
+        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData', 'spreadsheetData'));
     }
 
     /**
@@ -1483,5 +1702,43 @@ class PresupuestoController extends Controller
         $numericValue = floatval($cleanValue);
         
         return $numericValue;
+    }
+
+    /**
+     * Cargar datos guardados del spreadsheet desde la base de datos
+     */
+    private function loadSpreadsheetData()
+    {
+        // Obtener todos los datos guardados organizados por tabla
+        $allData = PresupuestoSpreadsheet::orderBy('tabla_nombre')
+                                        ->orderBy('fila_orden')
+                                        ->orderBy('columna_orden')
+                                        ->get();
+
+        // Organizar datos por tabla -> concepto -> columna
+        $organizedData = [];
+        
+        foreach ($allData as $registro) {
+            $tabla = $registro->tabla_nombre;
+            $concepto = $registro->concepto;
+            $columna = $registro->columna;
+            
+            if (!isset($organizedData[$tabla])) {
+                $organizedData[$tabla] = [];
+            }
+            
+            if (!isset($organizedData[$tabla][$concepto])) {
+                $organizedData[$tabla][$concepto] = [];
+            }
+            
+            $organizedData[$tabla][$concepto][$columna] = [
+                'valor' => $registro->valor,
+                'es_total' => $registro->es_total,
+                'tipo_dato' => $registro->tipo_dato,
+                'id' => $registro->id
+            ];
+        }
+
+        return $organizedData;
     }
 }
