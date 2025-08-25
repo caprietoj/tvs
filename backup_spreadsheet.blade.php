@@ -662,6 +662,372 @@
                             <p class="sheet-key">En construcción...</p>
                         </div>
                     </div>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>PRESUPUESTO</strong></td>
+                                            <td class="number-cell">{{ $budgetData['estudiantes']['presupuesto'] }}</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>PERIODO ESCOLAR - Becas</strong></td>
+                                            <td class="number-cell">{{ $budgetData['estudiantes']['becas'] }}</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                            <td class="number-cell">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Pagando</strong></td>
+                                            <td class="number-cell">{{ $budgetData['estudiantes']['presupuesto'] }}</td>
+                                            <td class="number-cell">{{ $budgetData['estudiantes']['pagando'] }}</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Resumen Ingresos -->
+                        <div class="resumen-section">
+                            <h4>Resumen Ingresos</h4>
+                            <div class="table-wrapper">
+                                <table class="data-table budget-table">
+                                    <thead>
+                                        <tr>
+                                            <th>CONCEPTO</th>
+                                            <th>PRESUPUESTO 2025-2026</th>
+                                            <th>JULIO</th>
+                                            <th>AGOSTO</th>
+                                            <th>SEPTIEMBRE</th>
+                                            <th>OCTUBRE</th>
+                                            <th>NOVIEMBRE</th>
+                                            <th>DICIEMBRE</th>
+                                            <th>ENERO</th>
+                                            <th>FEBRERO</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Ingresos Escolares</strong></td>
+                                            <td class="number-cell">${{ number_format($budgetData['resumen_ingresos']['ingresos_escolares']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="ingresos_escolares" data-month="julio">${{ number_format($budgetData['resumen_ingresos']['ingresos_escolares']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="ingresos_escolares" data-month="agosto">${{ number_format($budgetData['resumen_ingresos']['ingresos_escolares']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Ingresos otros escolares</strong></td>
+                                            <td class="number-cell">${{ number_format($budgetData['resumen_ingresos']['ingresos_otros_escolares']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="ingresos_otros_escolares" data-month="julio">${{ number_format($budgetData['resumen_ingresos']['ingresos_otros_escolares']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">0</td>
+                                        </tr>
+                                        <tr class="total-row">
+                                            <td><strong>TOTAL INGRESOS</strong></td>
+                                            <td class="number-cell"><strong>${{ number_format($budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($budgetData['resumen_ingresos']['total_ingresos']['julio'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($budgetData['resumen_ingresos']['total_ingresos']['agosto'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Resumen Gastos -->
+                        <div class="resumen-section">
+                            <h4>Resumen Gastos</h4>
+                            <div class="table-wrapper">
+                                <table class="data-table budget-table">
+                                    <thead>
+                                        <tr>
+                                            <th>CONCEPTO</th>
+                                            <th>PRESUPUESTO 2025-2026</th>
+                                            <th>JULIO</th>
+                                            <th>AGOSTO</th>
+                                            <th>SEPTIEMBRE</th>
+                                            <th>OCTUBRE</th>
+                                            <th>NOVIEMBRE</th>
+                                            <th>DICIEMBRE</th>
+                                            <th>ENERO</th>
+                                            <th>FEBRERO</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Total Salarios, Prestaciones Academia</strong></td>
+                                            <td class="number-cell">${{ number_format($budgetData['resumen_gastos']['total_salarios_prestaciones_academia']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_salarios_prestaciones_academia" data-month="julio">${{ number_format($budgetData['resumen_gastos']['total_salarios_prestaciones_academia']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_salarios_prestaciones_academia" data-month="agosto">${{ number_format($budgetData['resumen_gastos']['total_salarios_prestaciones_academia']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Total Salarios, Prestaciones Administrativos y Sena</strong></td>
+                                            <td class="number-cell">${{ number_format($budgetData['resumen_gastos']['total_salarios_prestaciones_administrativos_sena']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_salarios_prestaciones_administrativos_sena" data-month="julio">${{ number_format($budgetData['resumen_gastos']['total_salarios_prestaciones_administrativos_sena']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_salarios_prestaciones_administrativos_sena" data-month="agosto">${{ number_format($budgetData['resumen_gastos']['total_salarios_prestaciones_administrativos_sena']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Total Rubros Institucionales</strong></td>
+                                            <td class="number-cell">${{ number_format($budgetData['resumen_gastos']['total_rubros_institucionales']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_rubros_institucionales" data-month="julio">${{ number_format($budgetData['resumen_gastos']['total_rubros_institucionales']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_rubros_institucionales" data-month="agosto">${{ number_format($budgetData['resumen_gastos']['total_rubros_institucionales']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Total Seccion Academia</strong></td>
+                                            <td class="number-cell">${{ number_format($budgetData['resumen_gastos']['total_seccion_academia']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_seccion_academia" data-month="julio">${{ number_format($budgetData['resumen_gastos']['total_seccion_academia']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_seccion_academia" data-month="agosto">${{ number_format($budgetData['resumen_gastos']['total_seccion_academia']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Total Servicios Públicos y Otros Egresos</strong></td>
+                                            <td class="number-cell">${{ number_format($budgetData['resumen_gastos']['total_servicios_publicos_otros_egresos']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_servicios_publicos_otros_egresos" data-month="julio">${{ number_format($budgetData['resumen_gastos']['total_servicios_publicos_otros_egresos']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_servicios_publicos_otros_egresos" data-month="agosto">${{ number_format($budgetData['resumen_gastos']['total_servicios_publicos_otros_egresos']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Total Costos Contratos Externos</strong></td>
+                                            <td class="number-cell">${{ number_format($budgetData['resumen_gastos']['total_costos_contratos_externos']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_costos_contratos_externos" data-month="julio">${{ number_format($budgetData['resumen_gastos']['total_costos_contratos_externos']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="total_costos_contratos_externos" data-month="agosto">${{ number_format($budgetData['resumen_gastos']['total_costos_contratos_externos']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr class="total-row">
+                                            <td><strong>TOTAL GASTOS</strong></td>
+                                            <td class="number-cell"><strong>${{ number_format($budgetData['resumen_gastos']['total_gastos']['presupuesto_aprobado'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($budgetData['resumen_gastos']['total_gastos']['julio'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($budgetData['resumen_gastos']['total_gastos']['agosto'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Saldo Contable y Diferencia -->
+                        <div class="resumen-section">
+                            <div class="table-wrapper">
+                                <table class="data-table budget-table">
+                                    <thead>
+                                        <tr>
+                                            <th>SALDO / DIFERENCIA</th>
+                                            <th>PRESUPUESTO 2025-2026</th>
+                                            <th>JULIO</th>
+                                            <th>AGOSTO</th>
+                                            <th>SEPTIEMBRE</th>
+                                            <th>OCTUBRE</th>
+                                            <th>NOVIEMBRE</th>
+                                            <th>DICIEMBRE</th>
+                                            <th>ENERO</th>
+                                            <th>FEBRERO</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="saldo-contable-row">
+                                            <td><strong>SALDO CONTABLE</strong></td>
+                                            <td class="number-cell"></td>
+                                            <td class="number-cell"></td>
+                                            <td class="number-cell"></td>
+                                            <td class="number-cell"></td>
+                                            <td class="number-cell"><strong>${{ number_format($budgetData['saldo_diferencia']['saldo_contable'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell"></td>
+                                            <td class="number-cell"></td>
+                                            <td class="number-cell"></td>
+                                            <td class="number-cell"></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>DIFERENCIA</strong></td>
+                                            <td class="number-cell">${{ number_format($budgetData['saldo_diferencia']['diferencia']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($budgetData['saldo_diferencia']['diferencia']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($budgetData['saldo_diferencia']['diferencia']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($budgetData['saldo_diferencia']['diferencia']['septiembre'], 0, ',', '.') }}</td>
+                                            <td class="number-cell negative"><strong>${{ number_format($budgetData['saldo_diferencia']['diferencia']['octubre'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell">${{ number_format($budgetData['saldo_diferencia']['diferencia']['noviembre'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($budgetData['saldo_diferencia']['diferencia']['diciembre'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($budgetData['saldo_diferencia']['diferencia']['enero'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($budgetData['saldo_diferencia']['diferencia']['febrero'], 0, ',', '.') }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Ingresos Escolares Detalle -->
+                        <div class="resumen-section">
+                            <h4>INGRESOS ESCOLARES</h4>
+                            <div class="table-wrapper">
+                                <table class="data-table budget-table">
+                                    <thead>
+                                        <tr>
+                                            <th>CONCEPTO</th>
+                                            <th>2025-2026</th>
+                                            <th>JULIO</th>
+                                            <th>AGOSTO</th>
+                                            <th>SEPTIEMBRE</th>
+                                            <th>OCTUBRE</th>
+                                            <th>NOVIEMBRE</th>
+                                            <th>DICIEMBRE</th>
+                                            <th>ENERO</th>
+                                            <th>FEBRERO</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Matriculas</strong></td>
+                                            <td class="number-cell editable" data-concept="matriculas" data-type="presupuesto">${{ number_format($budgetData['ingresos_escolares_detalle']['matriculas']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="matriculas" data-month="julio">${{ number_format($budgetData['ingresos_escolares_detalle']['matriculas']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="matriculas" data-month="agosto">${{ number_format($budgetData['ingresos_escolares_detalle']['matriculas']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Pensiones</strong></td>
+                                            <td class="number-cell editable" data-concept="pensiones" data-type="presupuesto">${{ number_format($budgetData['ingresos_escolares_detalle']['pensiones']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="pensiones" data-month="julio">${{ number_format($budgetData['ingresos_escolares_detalle']['pensiones']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="pensiones" data-month="agosto">${{ number_format($budgetData['ingresos_escolares_detalle']['pensiones']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Seguros Estudiantiles</strong></td>
+                                            <td class="number-cell editable" data-concept="seguros_estudiantiles" data-type="presupuesto">${{ number_format($budgetData['ingresos_escolares_detalle']['seguros_estudiantiles']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="seguros_estudiantiles" data-month="julio">${{ number_format($budgetData['ingresos_escolares_detalle']['seguros_estudiantiles']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="seguros_estudiantiles" data-month="agosto">${{ number_format($budgetData['ingresos_escolares_detalle']['seguros_estudiantiles']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Desarrollo curricular bilingüe / Bibliobanco</strong></td>
+                                            <td class="number-cell editable" data-concept="desarrollo_curricular_bilingue_bibliobanco" data-type="presupuesto">${{ number_format($budgetData['ingresos_escolares_detalle']['desarrollo_curricular_bilingue_bibliobanco']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="desarrollo_curricular_bilingue_bibliobanco" data-month="julio">${{ number_format($budgetData['ingresos_escolares_detalle']['desarrollo_curricular_bilingue_bibliobanco']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="desarrollo_curricular_bilingue_bibliobanco" data-month="agosto">${{ number_format($budgetData['ingresos_escolares_detalle']['desarrollo_curricular_bilingue_bibliobanco']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Sistematización de Notas</strong></td>
+                                            <td class="number-cell editable" data-concept="sistematizacion_notas" data-type="presupuesto">${{ number_format($budgetData['ingresos_escolares_detalle']['sistematizacion_notas']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="sistematizacion_notas" data-month="julio">${{ number_format($budgetData['ingresos_escolares_detalle']['sistematizacion_notas']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="sistematizacion_notas" data-month="agosto">${{ number_format($budgetData['ingresos_escolares_detalle']['sistematizacion_notas']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Materiales generales</strong></td>
+                                            <td class="number-cell editable" data-concept="materiales_generales" data-type="presupuesto">${{ number_format($budgetData['ingresos_escolares_detalle']['materiales_generales']['presupuesto_aprobado'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="materiales_generales" data-month="julio">${{ number_format($budgetData['ingresos_escolares_detalle']['materiales_generales']['julio'], 0, ',', '.') }}</td>
+                                            <td class="number-cell editable" data-concept="materiales_generales" data-month="agosto">${{ number_format($budgetData['ingresos_escolares_detalle']['materiales_generales']['agosto'], 0, ',', '.') }}</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                            <td class="number-cell">$-</td>
+                                        </tr>
+                                        <tr class="total-row">
+                                            <td><strong>TOTAL INGRESOS ESCOLARES</strong></td>
+                                            <td class="number-cell"><strong>${{ number_format($budgetData['ingresos_escolares_detalle']['total_ingresos_escolares']['presupuesto_aprobado'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($budgetData['ingresos_escolares_detalle']['total_ingresos_escolares']['julio'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($budgetData['ingresos_escolares_detalle']['total_ingresos_escolares']['agosto'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 @else
                     <!-- Otras hojas - SIN DATOS POR AHORA -->
                     <div class="table-wrapper">

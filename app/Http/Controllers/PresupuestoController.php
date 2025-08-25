@@ -9,6 +9,7 @@ use App\Models\PresupuestoItem;
 use App\Services\PresupuestoProcessorService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Facades\Excel;
 use Exception;
 
@@ -490,7 +491,545 @@ class PresupuestoController extends Controller
         // Calcular el número máximo de filas necesarias basado en todos los datos
         $maxRows = $presupuestoItems->count() + 20; // Todos los registros + filas extra
         
-        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems'));
+        // Obtener datos dinámicos para las secciones
+        $seccionesData = $this->getSectionData();
+        
+        // Obtener resumen consolidado por concepto
+        $resumenConceptos = $this->getConceptSummary();
+        
+        // Obtener datos del budget principal
+        $budgetData = $this->getBudgetData();
+        
+        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData'));
+    }
+
+    /**
+     * Get budget principal data
+     */
+    private function getBudgetData()
+    {
+        return [
+            'estudiantes' => [
+                'presupuesto' => 260,
+                'becas' => 14,
+                'pagando' => 246
+            ],
+            'resumen_ingresos' => [
+                'ingresos_escolares' => [
+                    'presupuesto_aprobado' => 10487847718,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'ingresos_otros_escolares' => [
+                    'presupuesto_aprobado' => 2369132369,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'total_ingresos' => [
+                    'presupuesto_aprobado' => 12856980087,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ]
+            ],
+            'resumen_gastos' => [
+                'total_salarios_prestaciones_academia' => [
+                    'presupuesto_aprobado' => 6600731523,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'total_salarios_prestaciones_administrativos_sena' => [
+                    'presupuesto_aprobado' => 1453226337,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'total_rubros_institucionales' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'total_seccion_academia' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'total_servicios_publicos_otros_egresos' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'total_costos_contratos_externos' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'total_gastos' => [
+                    'presupuesto_aprobado' => 8053957860,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ]
+            ],
+            'saldo_diferencia' => [
+                'saldo_contable' => 1557567499,
+                'diferencia' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => -1557567499,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ]
+            ],
+            'ingresos_escolares_detalle' => [
+                'matriculas' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'pensiones' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'seguros_estudiantiles' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'desarrollo_curricular_bilingue_bibliobanco' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'sistematizacion_notas' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'materiales_generales' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ],
+                'total_ingresos_escolares' => [
+                    'presupuesto_aprobado' => 0,
+                    'julio' => 0,
+                    'agosto' => 0,
+                    'septiembre' => 0,
+                    'octubre' => 0,
+                    'noviembre' => 0,
+                    'diciembre' => 0,
+                    'enero' => 0,
+                    'febrero' => 0
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Get dynamic section data with concept mapping
+     */
+    private function getSectionData()
+    {
+        // Mapeo de conceptos antiguos a nuevos
+        $conceptMapping = [
+            'Capacitación' => 'Capacitación',
+            'Gastos Importación/Material Importado' => 'Material Importado',
+            'Material Importado' => 'Material Importado',
+            'Biblioteca institucional' => 'Biblioteca Institucional',
+            'Biblioteca' => 'Biblioteca Institucional',
+            'Materiales' => 'Material Deportivo',
+            'Deportes-Dotación' => 'Dotación - Deportes',
+            'Dotación - Deportes' => 'Dotación - Deportes',
+            'Musicales' => 'Musicales',
+            'Part time teacher- reemplazos' => 'Part time teacher - reemplazos',
+            'Part time teacher - reemplazos' => 'Part time teacher - reemplazos',
+            'Dotación' => 'Dotación',
+            'Exhibición PEP' => 'Exhibición PEP',
+            'Monografia' => 'Monografía',
+            'Monografía' => 'Monografía',
+            'Personal Project PAI' => 'Proyecto Personal',
+            'Proyecto Personal' => 'Proyecto Personal',
+            'Proyecto Comunitario' => 'Proyecto Comunitario',
+            'CAS / Intercas' => 'CAS / Intercas',
+            'MUN TVS-Otros Colegios- GLY' => 'MUN TVS - Otros Colegios - GLY',
+            'MUN TVS - Otros Colegios - GLY' => 'MUN TVS - Otros Colegios - GLY',
+            'Preparación Pruebas saber' => 'Preparación Pruebas Saber',
+            'Preparación Pruebas Saber' => 'Preparación Pruebas Saber',
+            'Psicología Institucional' => 'Psicología Institucional',
+            'Eventos Académicos y Sociales' => 'Eventos Académicos y Sociales',
+            'Material Deportivo' => 'Material Deportivo',
+            'Apoyo Institucional' => 'Apoyo Institucional',
+            'Insumos Tecnológicos' => 'Insumos Tecnológicos',
+            'Salidas Académicas Sección' => 'Salidas Académicas Sección',
+            'Alimentación' => 'Alimentación',
+            'Transporte' => 'Transporte',
+            'Insumos de la Sección / Material para Clase' => 'Insumos de la Sección / Material para Clase',
+            'Participación en Eventos' => 'Participación en Eventos'
+        ];
+
+        // Definir conceptos por sección
+        $sectionConcepts = [
+            'PREESCOLAR Y PRIMARIA' => [
+                'Capacitación',
+                'Material Importado',
+                'Material Deportivo',
+                'Musicales',
+                'Part time teacher - reemplazos',
+                'Apoyo Institucional',
+                'Eventos Académicos y Sociales',
+                'Insumos Tecnológicos',
+                'Salidas Académicas Sección',
+                'Alimentación',
+                'Transporte',
+                'Insumos de la Sección / Material para Clase'
+            ],
+            'ESCUELA MEDIA' => [
+                'Capacitación',
+                'Material Importado',
+                'Material Deportivo',
+                'Musicales',
+                'Part time teacher - reemplazos',
+                'Proyecto Comunitario',
+                'MUN TVS - Otros Colegios - GLY',
+                'Apoyo Institucional',
+                'Eventos Académicos y Sociales',
+                'Insumos Tecnológicos',
+                'Salidas Académicas Sección',
+                'Alimentación',
+                'Transporte',
+                'Insumos de la Sección / Material para Clase'
+            ],
+            'ESCUELA ALTA' => [
+                'Capacitación',
+                'Material Importado',
+                'Material Deportivo',
+                'Musicales',
+                'Part time teacher - reemplazos',
+                'Monografía',
+                'MUN TVS - Otros Colegios - GLY',
+                'Preparación Pruebas Saber',
+                'Apoyo Institucional',
+                'Eventos Académicos y Sociales',
+                'Insumos Tecnológicos',
+                'Salidas Académicas Sección',
+                'Alimentación',
+                'Transporte',
+                'Insumos de la Sección / Material para Clase'
+            ],
+            'PAI' => [
+                'Capacitación',
+                'Material Importado',
+                'Proyecto Comunitario',
+                'Proyecto Personal'
+            ],
+            'PEP' => [
+                'Capacitación',
+                'Material Importado',
+                'Exhibición PEP'
+            ],
+            'DEPORTES' => [
+                'Dotación - Deportes',
+                'Transporte',
+                'Alimentación',
+                'Participación en Eventos'
+            ],
+            'BIBLIOTECA' => [
+                'Biblioteca Institucional'
+            ],
+            'PSICOLOGÍA INSTITUCIONAL' => [
+                'Psicología Institucional'
+            ]
+        ];
+
+        // Obtener datos de presupuesto y ejecución para cada sección
+        $sectionData = [];
+        
+        foreach ($sectionConcepts as $seccion => $conceptos) {
+            $sectionData[$seccion] = [];
+            
+            foreach ($conceptos as $concepto) {
+                // Inicializar valores
+                $presupuesto = 0;
+                $ejecutado = 0;
+                
+                // Buscar por concepto exacto
+                $items = PresupuestoItem::where('seccion', $seccion)
+                    ->where('rubro', $concepto)
+                    ->get();
+                
+                if ($items->count() > 0) {
+                    $presupuesto = $items->sum('presupuesto') ?? 0;
+                    $ejecutado = $items->sum('valor') ?? 0;
+                } else {
+                    // Buscar conceptos mapeados
+                    foreach ($conceptMapping as $conceptoAntiguo => $conceptoNuevo) {
+                        if ($conceptoNuevo === $concepto) {
+                            $itemsMapeados = PresupuestoItem::where('seccion', $seccion)
+                                ->where('rubro', $conceptoAntiguo)
+                                ->get();
+                            
+                            if ($itemsMapeados->count() > 0) {
+                                $presupuesto = $itemsMapeados->sum('presupuesto') ?? 0;
+                                $ejecutado = $itemsMapeados->sum('valor') ?? 0;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                $sectionData[$seccion][$concepto] = [
+                    'presupuesto' => $presupuesto,
+                    'ejecutado' => $ejecutado,
+                    'saldo' => $presupuesto - $ejecutado
+                ];
+            }
+        }
+        
+        return $sectionData;
+    }
+
+    /**
+     * Get consolidated concept summary with old and new concept mapping
+     */
+    private function getConceptSummary()
+    {
+        // Obtener datos de las secciones primero
+        $seccionesData = $this->getSectionData();
+        
+        // Mapeo de conceptos de secciones a conceptos de resumen
+        $conceptMappingToSummary = [
+            // Conceptos que mantienen el mismo nombre
+            'Capacitación' => 'Capacitación',
+            'Musicales' => 'Musicales',
+            'Dotación' => 'Dotación',
+            'Proyecto Comunitario' => 'Proyecto Comunitario',
+            'CAS / Intercas' => 'CAS / Intercas',
+            'Psicología Institucional' => 'Psicología Institucional',
+            'Eventos Académicos y Sociales' => 'Eventos Académicos y Sociales',
+            
+            // Conceptos que se mapean a otros nombres en el resumen
+            'Material Importado' => 'Gastos Importación/Material Importado',
+            'Biblioteca Institucional' => 'Biblioteca institucional',
+            'Material Deportivo' => 'Materiales',
+            'Dotación - Deportes' => 'Deportes-Dotación',
+            'Part time teacher - reemplazos' => 'Part time teacher- reemplazos',
+            'Exhibición PEP' => 'Exhibición PEP',
+            'Monografía' => 'Monografia',
+            'Proyecto Personal' => 'Personal Project PAI',
+            'MUN TVS - Otros Colegios - GLY' => 'MUN TVS-Otros Colegios- GLY',
+            'Preparación Pruebas Saber' => 'Preparación Pruebas saber',
+            
+            // Conceptos adicionales que aparecen en el resumen pero no están en las secciones
+            'Biblioteca' => 'Biblioteca',
+            
+            // Conceptos de secciones que no aparecen en el resumen se ignoran:
+            // 'Apoyo Institucional', 'Insumos Tecnológicos', 'Salidas Académicas Sección',
+            // 'Alimentación', 'Transporte', 'Insumos de la Sección / Material para Clase',
+            // 'Participación en Eventos'
+        ];
+
+        // Conceptos principales que queremos mostrar en el resumen
+        $conceptosResumen = [
+            'Capacitación',
+            'Gastos Importación/Material Importado', 
+            'Biblioteca institucional',
+            'Biblioteca',
+            'Materiales',
+            'Deportes-Dotación',
+            'Musicales',
+            'Part time teacher- reemplazos',
+            'Dotación',
+            'Exhibición PEP',
+            'Monografia',
+            'Personal Project PAI',
+            'Proyecto Comunitario',
+            'CAS / Intercas',
+            'MUN TVS-Otros Colegios- GLY',
+            'Preparación Pruebas saber',
+            'Psicología Institucional',
+            'Eventos Académicos y Sociales'
+        ];
+
+        $resumen = [];
+        
+        foreach ($conceptosResumen as $conceptoResumen) {
+            $totalPresupuesto = 0;
+            $totalEjecutado = 0;
+            
+            // Recorrer todas las secciones y sumar los valores de cada concepto
+            foreach ($seccionesData as $seccion => $conceptos) {
+                foreach ($conceptos as $conceptoSeccion => $datos) {
+                    // Verificar si este concepto de sección corresponde al concepto de resumen
+                    $conceptoMapeado = $conceptMappingToSummary[$conceptoSeccion] ?? null;
+                    
+                    if ($conceptoMapeado === $conceptoResumen) {
+                        $totalPresupuesto += $datos['presupuesto'] ?? 0;
+                        $totalEjecutado += $datos['ejecutado'] ?? 0;
+                    }
+                }
+            }
+            
+            // Para conceptos que no están en las secciones, buscar directamente en la base de datos
+            if ($totalPresupuesto == 0 && $totalEjecutado == 0) {
+                // Buscar por el concepto exacto en toda la base de datos
+                $items = PresupuestoItem::where('rubro', $conceptoResumen)->get();
+                if ($items->count() > 0) {
+                    $totalPresupuesto = $items->sum('presupuesto') ?? 0;
+                    $totalEjecutado = $items->sum('valor') ?? 0;
+                }
+                
+                // También buscar por variaciones del nombre
+                if ($totalPresupuesto == 0 && $totalEjecutado == 0) {
+                    $variaciones = [];
+                    switch ($conceptoResumen) {
+                        case 'Biblioteca':
+                            $variaciones = ['Biblioteca institucional', 'Biblioteca Institucional'];
+                            break;
+                        case 'Gastos Importación/Material Importado':
+                            $variaciones = ['Material Importado', 'Gastos Importación/Material Importado'];
+                            break;
+                        case 'Materiales':
+                            $variaciones = ['Material Deportivo', 'Materiales'];
+                            break;
+                        case 'Deportes-Dotación':
+                            $variaciones = ['Dotación - Deportes', 'Deportes-Dotación'];
+                            break;
+                        case 'Part time teacher- reemplazos':
+                            $variaciones = ['Part time teacher - reemplazos', 'Part time teacher- reemplazos'];
+                            break;
+                        case 'Monografia':
+                            $variaciones = ['Monografía', 'Monografia'];
+                            break;
+                        case 'Personal Project PAI':
+                            $variaciones = ['Proyecto Personal', 'Personal Project PAI'];
+                            break;
+                        case 'MUN TVS-Otros Colegios- GLY':
+                            $variaciones = ['MUN TVS - Otros Colegios - GLY', 'MUN TVS-Otros Colegios- GLY'];
+                            break;
+                        case 'Preparación Pruebas saber':
+                            $variaciones = ['Preparación Pruebas Saber', 'Preparación Pruebas saber'];
+                            break;
+                    }
+                    
+                    foreach ($variaciones as $variacion) {
+                        $itemsVariacion = PresupuestoItem::where('rubro', $variacion)->get();
+                        if ($itemsVariacion->count() > 0) {
+                            $totalPresupuesto += $itemsVariacion->sum('presupuesto') ?? 0;
+                            $totalEjecutado += $itemsVariacion->sum('valor') ?? 0;
+                        }
+                    }
+                }
+            }
+            
+            $totalPorEjecutar = $totalPresupuesto - $totalEjecutado;
+            
+            $resumen[$conceptoResumen] = [
+                'presupuesto' => $totalPresupuesto,
+                'ejecutado' => $totalEjecutado,
+                'por_ejecutar' => $totalPorEjecutar
+            ];
+        }
+        
+        return $resumen;
     }
 
     /**
