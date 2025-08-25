@@ -33,7 +33,7 @@ class QuotationItemSelectionController extends Controller
         }
         
         // Bloquear si está en un estado no válido para selección
-        if (!in_array($purchaseRequest->status, ['pending_selection', 'approved', 'En Cotización'])) {
+        if (!in_array($purchaseRequest->status, ['pending_selection', 'approved', 'En Cotización', 'En pre-aprobación', 'Pre-aprobada'])) {
             return redirect()->route('purchase-requests.show', $purchaseRequest)
                 ->with('error', 'No se puede realizar la selección mixta en el estado actual de la solicitud.');
         }

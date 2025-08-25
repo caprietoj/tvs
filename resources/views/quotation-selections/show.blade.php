@@ -176,77 +176,107 @@
                                     @if(isset($existingSelections[$index]))
                                         @php $selection = $existingSelections[$index]; @endphp
                                         <div class="provider-selection">
-                                            <!-- Input oculto para almacenar la selección -->
-                                            <input type="hidden" class="selected-provider-input" 
-                                                   data-item-index="{{ $index }}" 
-                                                   value="{{ $selection->quotation_id }}">
-                                            
-                                            <!-- Contenedor de proveedores -->
-                                            <div class="provider-options" data-item-index="{{ $index }}">
+                                            <!-- Select para seleccionar proveedor con precio -->
+                                            <select class="form-control provider-select" 
+                                                    data-item-index="{{ $index }}" 
+                                                    onchange="handleProviderSelectChange(this)">
+                                                <option value="">Seleccione un proveedor...</option>
                                                 @foreach($quotations as $quotation)
                                                     @php
                                                         $unitPrice = 0;
-                                                        if (isset($quotation->quotation_items[$index]['unit_price'])) {
-                                                            $unitPrice = $quotation->quotation_items[$index]['unit_price'];
+                                                        $priceSource = 'fallback'; // Para indicar de dónde viene el precio
+                                                        
+                                                        // Debug: mostrar estructura de datos
+                                                        // dd($quotation->original_item_prices); // Descomentar para debug
+                                                        
+                                                        // Buscar el precio unitario en original_item_prices
+                                                        if (isset($quotation->original_item_prices[$index])) {
+                                                            $unitPrice = $quotation->original_item_prices[$index];
+                                                            $priceSource = 'specific';
+                                                        } elseif (isset($quotation->original_item_prices) && is_array($quotation->original_item_prices) && count($quotation->original_item_prices) > 0) {
+                                                            // Si no encuentra el índice específico, buscar alternativas
+                                                            $prices = array_values($quotation->original_item_prices);
+                                                            if (isset($prices[$index])) {
+                                                                $unitPrice = $prices[$index];
+                                                                $priceSource = 'indexed';
+                                                            } else {
+                                                                // Fallback: dividir total entre número de items
+                                                                $totalItems = count($purchaseItems);
+                                                                $unitPrice = $totalItems > 0 ? ($quotation->total_amount / $totalItems) : 0;
+                                                                $priceSource = 'fallback';
+                                                            }
                                                         } else {
+                                                            // Fallback: dividir total entre número de items
                                                             $totalItems = count($purchaseItems);
                                                             $unitPrice = $totalItems > 0 ? ($quotation->total_amount / $totalItems) : 0;
+                                                            $priceSource = 'fallback';
                                                         }
                                                         $totalPrice = $unitPrice * ($item['quantity'] ?? 1);
                                                         $isSelected = $selection->quotation_id == $quotation->id;
                                                     @endphp
-                                                    <div class="provider-card {{ $isSelected ? 'selected' : '' }}" 
-                                                         data-quotation-id="{{ $quotation->id }}"
-                                                         data-provider-name="{{ $quotation->provider_name }}"
-                                                         data-unit-price="{{ $unitPrice }}"
-                                                         data-total-price="{{ $totalPrice }}"
-                                                         data-item-index="{{ $index }}"
-                                                         onclick="selectProvider(this)">
-                                                        <div class="provider-name">{{ $quotation->provider_name }}</div>
-                                                        <div class="provider-check">
-                                                            <span class="checkmark">✓</span>
-                                                        </div>
-                                                    </div>
+                                                    <option value="{{ $quotation->id }}" 
+                                                            data-provider-name="{{ $quotation->provider_name }}"
+                                                            data-unit-price="{{ $unitPrice }}"
+                                                            data-total-price="{{ $totalPrice }}"
+                                                            {{ $isSelected ? 'selected' : '' }}>
+                                                        {{ $quotation->provider_name }} - ${{ number_format($unitPrice, 2, ',', '.') }}
+                                                        @if($priceSource === 'fallback')
+                                                            <small>(est.)</small>
+                                                        @endif
+                                                    </option>
                                                 @endforeach
-                                            </div>
+                                            </select>
                                             <small class="text-success mt-2 d-block" style="font-weight: 500;">
                                                 <i class="fas fa-check-circle"></i> Seleccionado por {{ $selection->selectedBy->name }} el {{ $selection->selected_at->format('d/m/Y H:i') }}
                                             </small>
                                         </div>
                                     @else
                                         <div class="provider-selection">
-                                            <!-- Input oculto para almacenar la selección -->
-                                            <input type="hidden" class="selected-provider-input" 
-                                                   data-item-index="{{ $index }}" 
-                                                   value="">
-                                            
-                                            <!-- Contenedor de proveedores -->
-                                            <div class="provider-options" data-item-index="{{ $index }}">
+                                            <!-- Select para seleccionar proveedor con precio -->
+                                            <select class="form-control provider-select" 
+                                                    data-item-index="{{ $index }}" 
+                                                    onchange="handleProviderSelectChange(this)">
+                                                <option value="">Seleccione un proveedor...</option>
                                                 @foreach($quotations as $quotation)
                                                     @php
                                                         $unitPrice = 0;
-                                                        if (isset($quotation->quotation_items[$index]['unit_price'])) {
-                                                            $unitPrice = $quotation->quotation_items[$index]['unit_price'];
+                                                        $priceSource = 'fallback'; // Para indicar de dónde viene el precio
+                                                        
+                                                        // Buscar el precio unitario en original_item_prices
+                                                        if (isset($quotation->original_item_prices[$index])) {
+                                                            $unitPrice = $quotation->original_item_prices[$index];
+                                                            $priceSource = 'specific';
+                                                        } elseif (isset($quotation->original_item_prices) && is_array($quotation->original_item_prices) && count($quotation->original_item_prices) > 0) {
+                                                            // Si no encuentra el índice específico, buscar alternativas
+                                                            $prices = array_values($quotation->original_item_prices);
+                                                            if (isset($prices[$index])) {
+                                                                $unitPrice = $prices[$index];
+                                                                $priceSource = 'indexed';
+                                                            } else {
+                                                                // Fallback: dividir total entre número de items
+                                                                $totalItems = count($purchaseItems);
+                                                                $unitPrice = $totalItems > 0 ? ($quotation->total_amount / $totalItems) : 0;
+                                                                $priceSource = 'fallback';
+                                                            }
                                                         } else {
+                                                            // Fallback: dividir total entre número de items
                                                             $totalItems = count($purchaseItems);
                                                             $unitPrice = $totalItems > 0 ? ($quotation->total_amount / $totalItems) : 0;
+                                                            $priceSource = 'fallback';
                                                         }
                                                         $totalPrice = $unitPrice * ($item['quantity'] ?? 1);
                                                     @endphp
-                                                    <div class="provider-card" 
-                                                         data-quotation-id="{{ $quotation->id }}"
-                                                         data-provider-name="{{ $quotation->provider_name }}"
-                                                         data-unit-price="{{ $unitPrice }}"
-                                                         data-total-price="{{ $totalPrice }}"
-                                                         data-item-index="{{ $index }}"
-                                                         onclick="selectProvider(this)">
-                                                        <div class="provider-name">{{ $quotation->provider_name }}</div>
-                                                        <div class="provider-check">
-                                                            <span class="checkmark">✓</span>
-                                                        </div>
-                                                    </div>
+                                                    <option value="{{ $quotation->id }}" 
+                                                            data-provider-name="{{ $quotation->provider_name }}"
+                                                            data-unit-price="{{ $unitPrice }}"
+                                                            data-total-price="{{ $totalPrice }}">
+                                                        {{ $quotation->provider_name }} - ${{ number_format($unitPrice, 2, ',', '.') }}
+                                                        @if($priceSource === 'fallback')
+                                                            <small>(est.)</small>
+                                                        @endif
+                                                    </option>
                                                 @endforeach
-                                            </div>
+                                            </select>
                                         </div>
                                     @endif
                                 </td>
@@ -376,6 +406,39 @@
         gap: 8px;
     }
     
+    /* Estilos para los selects de proveedores */
+    .provider-select {
+        border: 2px solid #e3e6f0;
+        border-radius: 6px;
+        font-size: 0.95em;
+        font-weight: 500;
+        padding: 8px 12px;
+        transition: all 0.3s ease;
+        background-color: white;
+        color: #495057;
+    }
+    
+    .provider-select:focus {
+        border-color: #364E76;
+        box-shadow: 0 0 0 0.2rem rgba(54, 78, 118, 0.25);
+        outline: none;
+    }
+    
+    .provider-select:hover {
+        border-color: #364E76;
+    }
+    
+    .provider-select option {
+        padding: 8px;
+        font-weight: 500;
+    }
+    
+    .provider-select option:checked {
+        background-color: #364E76;
+        color: white;
+    }
+    
+    /* Estilos para las tarjetas de proveedores (mantenidos para compatibilidad) */
     .provider-card {
         display: flex;
         align-items: center;
@@ -562,52 +625,50 @@
 <script>
 console.log('Inicializando selección directa de proveedores...');
 
-// Función principal para seleccionar proveedor desde las cards
+// Función principal para seleccionar proveedor desde las cards (LEGACY - mantenida para compatibilidad)
 function selectProvider(cardElement) {
-    const itemIndex = cardElement.dataset.itemIndex;
-    const quotationId = cardElement.dataset.quotationId;
-    const providerName = cardElement.dataset.providerName;
-    const unitPrice = cardElement.dataset.unitPrice;
-    
-    console.log('Proveedor seleccionado:', {
-        itemIndex: itemIndex,
-        quotationId: quotationId,
-        providerName: providerName,
-        unitPrice: unitPrice
-    });
-    
-    // Agregar animación de selección
-    cardElement.classList.add('selecting');
-    setTimeout(() => {
-        cardElement.classList.remove('selecting');
-    }, 300);
-    
-    // Actualizar el estado visual inmediatamente
-    const providerOptions = cardElement.parentElement;
-    const allCards = providerOptions.querySelectorAll('.provider-card');
-    
-    // Remover selección anterior
-    allCards.forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    // Agregar selección actual
-    cardElement.classList.add('selected');
-    
-    // Actualizar input oculto
-    const hiddenInput = providerOptions.parentElement.querySelector('.selected-provider-input');
-    if (hiddenInput) {
-        hiddenInput.value = quotationId;
-    }
+    console.log('selectProvider (legacy) - Esta función ya no se usa con los selects');
+    // Esta función se mantiene por compatibilidad pero ya no se usa
+    // El nuevo sistema usa handleProviderSelectChange() para los selects
+}
     
     // Guardar la selección automáticamente
     saveProviderSelection(itemIndex, quotationId, unitPrice, providerName);
 }
 
-// Función para manejar el cambio de proveedor en los selects (compatibilidad)
+// Función para manejar el cambio de proveedor en los selects
+function handleProviderSelectChange(selectElement) {
+    console.log('handleProviderSelectChange llamado');
+    
+    const selectedOption = selectElement.selectedOptions[0];
+    const itemIndex = selectElement.getAttribute('data-item-index');
+    
+    if (!selectedOption || !selectedOption.value) {
+        console.log('No hay opción seleccionada o valor vacío');
+        return;
+    }
+    
+    const quotationId = selectedOption.value;
+    const providerName = selectedOption.getAttribute('data-provider-name');
+    const unitPrice = selectedOption.getAttribute('data-unit-price');
+    const totalPrice = selectedOption.getAttribute('data-total-price');
+    
+    console.log('Datos extraídos del select:', {
+        itemIndex: itemIndex,
+        quotationId: quotationId,
+        providerName: providerName,
+        unitPrice: unitPrice,
+        totalPrice: totalPrice
+    });
+    
+    // Guardar la selección automáticamente
+    saveProviderSelection(itemIndex, quotationId, unitPrice, providerName);
+}
+
+// Función para manejar el cambio de proveedor en los selects (función legacy mantenida para compatibilidad)
 function handleProviderChange(selectElement) {
-    console.log('handleProviderChange llamado para compatibilidad - ya no se usa');
-    // Esta función se mantiene para compatibilidad pero ya no se usa
+    console.log('handleProviderChange (legacy) redirigiendo a nueva función');
+    handleProviderSelectChange(selectElement);
 }
 
 // Función para guardar la selección del proveedor
@@ -725,13 +786,19 @@ function saveProviderSelection(itemIndex, quotationId, price, providerName) {
     });
 }
 
-// Función para actualizar contadores usando las cards
+// Función para actualizar contadores usando los selects
 function updateSelectionCounts() {
     const totalItems = {{ count($purchaseItems) }};
     
-    // Contar cards seleccionadas
-    const selectedCards = document.querySelectorAll('.provider-card.selected');
-    const selectedCount = selectedCards.length;
+    // Contar selects con valores seleccionados
+    const selectedSelects = document.querySelectorAll('.provider-select');
+    let selectedCount = 0;
+    
+    selectedSelects.forEach(select => {
+        if (select.value && select.value !== '') {
+            selectedCount++;
+        }
+    });
     
     console.log(`Selecciones actuales: ${selectedCount}/${totalItems}`);
     
@@ -789,30 +856,30 @@ window.confirmSaveAndSend = function() {
 
 // Inicialización cuando el DOM esté listo
 $(document).ready(function() {
-    console.log('DOM listo, configurando eventos para provider cards...');
+    console.log('DOM listo, configurando eventos para selects de proveedores...');
     
-    // Agregar eventos click a todas las provider cards
-    document.querySelectorAll('.provider-card').forEach(card => {
-        card.addEventListener('click', function() {
-            selectProvider(this);
+    // Agregar eventos change a todos los selects de proveedores
+    document.querySelectorAll('.provider-select').forEach(select => {
+        select.addEventListener('change', function() {
+            handleProviderSelectChange(this);
         });
     });
     
-    // Marcar cards preseleccionadas basándose en selecciones existentes
-    @if(isset($existingSelections) && is_array($existingSelections))
-        @foreach($existingSelections as $itemIndex => $quotationId)
-            const existingCard = document.querySelector('.provider-card[data-item-index="{{ $itemIndex }}"][data-quotation-id="{{ $quotationId }}"]');
-            if (existingCard) {
-                existingCard.classList.add('selected');
-                console.log('Card preseleccionada encontrada para item {{ $itemIndex }}');
-            }
-        @endforeach
-    @endif
+    // Contar selecciones existentes basándose en los selects con valores
+    let existingSelectionsCount = 0;
+    document.querySelectorAll('.provider-select').forEach(select => {
+        if (select.value && select.value !== '') {
+            existingSelectionsCount++;
+            console.log('Select preseleccionado encontrado:', select.value);
+        }
+    });
+    
+    console.log('Total de selecciones preexistentes:', existingSelectionsCount);
     
     // Actualizar contadores iniciales
     updateSelectionCounts();
     
-    console.log('Sistema de provider cards configurado correctamente');
+    console.log('Sistema de selects de proveedores configurado correctamente');
 });
 </script>
 

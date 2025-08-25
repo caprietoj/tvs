@@ -595,10 +595,11 @@
                                                 <small class="d-block">{{ $purchaseRequest->quotations->count() }} proveedores disponibles</small>
                                             </a>
                                         @elseif(!is_null($purchaseRequest->preapproval_sent_at))
-                                            <button type="button" class="btn btn-secondary btn-sm" disabled>
+                                            <a href="{{ route('quotation-selections.show', $purchaseRequest->id) }}" 
+                                               class="btn btn-info btn-sm">
                                                 <i class="fas fa-balance-scale mr-2"></i>Selección Mixta de Proveedores
-                                                <small class="d-block">(Enviado para pre-aprobación)</small>
-                                            </button>
+                                                <small class="d-block">(Puede seguir seleccionando)</small>
+                                            </a>
                                         @else
                                             <a href="{{ route('quotation-selections.show', $purchaseRequest->id) }}" 
                                                class="btn btn-info btn-sm">

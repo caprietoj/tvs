@@ -65,6 +65,43 @@
         [title] {
             cursor: help;
         }
+        
+        /* Estilos para los filtros */
+        .form-label-sm {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: #495057;
+        }
+        
+        .card-header.bg-light {
+            background-color: #f8f9fa !important;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .filter-section {
+            transition: all 0.3s ease;
+        }
+        
+        .filter-section.collapsed {
+            display: none;
+        }
+        
+        /* Mejorar el diseño responsive de filtros */
+        @media (max-width: 768px) {
+            .form-group {
+                margin-bottom: 0.75rem;
+            }
+            
+            .d-flex {
+                flex-direction: column;
+            }
+            
+            .d-flex .btn {
+                margin-bottom: 0.25rem;
+                margin-right: 0 !important;
+            }
+        }
     </style>
 @stop
 
@@ -73,6 +110,109 @@
         <div class="card-header">
             <h3 class="card-title">Solicitudes de Compra Pendientes de Cotización</h3>
         </div>
+        
+        <!-- Filtros -->
+        <div class="card-header bg-light filter-section" id="filtersSection">
+            <h5 class="mb-3"><i class="fas fa-filter mr-2"></i>Filtros de Búsqueda</h5>
+            <form method="GET" action="{{ route('quotations.index') }}" id="filtersForm">
+                <div class="row">
+                    <div class="col-md-2 col-sm-6">
+                        <div class="form-group">
+                            <label for="status" class="form-label-sm">Estado</label>
+                            <select class="form-control form-control-sm" name="status" id="status">
+                                <option value="all" {{ $statusFilter === 'all' || !$statusFilter ? 'selected' : '' }}>Todos</option>
+                                <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="En Cotización" {{ $statusFilter === 'En Cotización' ? 'selected' : '' }}>En Cotización</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <div class="form-group">
+                            <label for="type" class="form-label-sm">Tipo</label>
+                            <select class="form-control form-control-sm" name="type" id="type">
+                                <option value="all" {{ $typeFilter === 'all' || !$typeFilter ? 'selected' : '' }}>Todos</option>
+                                <option value="purchase" {{ $typeFilter === 'purchase' ? 'selected' : '' }}>Compras</option>
+                                <option value="services" {{ $typeFilter === 'services' ? 'selected' : '' }}>Servicios</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="form-group">
+                            <label for="section" class="form-label-sm">Sección</label>
+                            <select class="form-control form-control-sm" name="section" id="section">
+                                <option value="all">Todas las secciones</option>
+                                @foreach($allSections as $section)
+                                    <option value="{{ $section }}" {{ $sectionFilter === $section ? 'selected' : '' }}>
+                                        {{ $section }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="form-group">
+                            <label for="requester" class="form-label-sm">Solicitante</label>
+                            <input type="text" 
+                                   class="form-control form-control-sm" 
+                                   name="requester" 
+                                   id="requester" 
+                                   placeholder="Buscar por solicitante..."
+                                   value="{{ $requesterFilter }}">
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <div class="form-group">
+                            <label for="date_from" class="form-label-sm">Desde</label>
+                            <input type="date" 
+                                   class="form-control form-control-sm" 
+                                   name="date_from" 
+                                   id="date_from"
+                                   value="{{ $dateFromFilter }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2 col-sm-6">
+                        <div class="form-group">
+                            <label for="date_to" class="form-label-sm">Hasta</label>
+                            <input type="date" 
+                                   class="form-control form-control-sm" 
+                                   name="date_to" 
+                                   id="date_to"
+                                   value="{{ $dateToFilter }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-12">
+                        <div class="form-group">
+                            <label class="form-label-sm">&nbsp;</label>
+                            <div class="d-flex">
+                                <button type="submit" class="btn btn-primary btn-sm mr-2">
+                                    <i class="fas fa-search mr-1"></i>Buscar
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-sm mr-2" id="clearFilters">
+                                    <i class="fas fa-times mr-1"></i>Limpiar
+                                </button>
+                                <button type="button" class="btn btn-info btn-sm" id="toggleFilters">
+                                    <i class="fas fa-eye mr-1"></i>Ocultar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-12">
+                        <div class="form-group">
+                            <label class="form-label-sm">&nbsp;</label>
+                            <div class="text-right">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Mostrando {{ $purchaseRequests->count() }} de {{ $purchaseRequests->total() }} resultados
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
         <div class="card-body">
             @if (session('success'))
                 <div class="alert alert-success alert-dismissible">
@@ -360,6 +500,86 @@
                 $('#confirmCancelBtn').prop('disabled', true).html('<i class="fas fa-ban"></i> Anular solicitud');
                 $('#cancel_reason').removeClass('is-invalid');
             });
+
+            // === FUNCIONALIDAD DE FILTROS ===
+            
+            // Auto-submit del formulario cuando cambian los filtros principales
+            $('#status, #section, #type').on('change', function() {
+                $('#filterForm').submit();
+            });
+            
+            // Función para limpiar todos los filtros
+            $('#clearFilters').on('click', function() {
+                $('#status, #section, #type').val('all');
+                $('#requester').val('');
+                $('#date_from, #date_to').val('');
+                updateFilterCount();
+                $('#filterForm').submit();
+            });
+            
+            // Alternar visibilidad de filtros
+            $('#toggleFilters').on('click', function() {
+                $('#filtersSection').toggleClass('collapsed');
+                const icon = $(this).find('i');
+                const text = $(this).contents().filter(function() {
+                    return this.nodeType === 3; // Text node
+                }).first();
+                
+                if (icon.hasClass('fa-eye')) {
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                    text[0].textContent = 'Mostrar';
+                } else {
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                    text[0].textContent = 'Ocultar';
+                }
+            });
+            
+            // Validación de fechas
+            $('#date_from, #date_to').on('change', function() {
+                const dateFrom = $('#date_from').val();
+                const dateTo = $('#date_to').val();
+                
+                if (dateFrom && dateTo && dateFrom > dateTo) {
+                    alert('La fecha de inicio no puede ser mayor que la fecha de fin');
+                    $(this).val('');
+                }
+            });
+            
+            // Aplicar filtros con Enter en campos de texto
+            $('#requester').on('keypress', function(e) {
+                if (e.which === 13) {
+                    $('#filterForm').submit();
+                }
+            });
+            
+            // Mostrar contador de filtros activos
+            function updateFilterCount() {
+                let activeFilters = 0;
+                const inputs = ['#status', '#section', '#type', '#requester', '#date_from', '#date_to'];
+                
+                inputs.forEach(selector => {
+                    const val = $(selector).val();
+                    if (val && val !== 'all' && val !== '') {
+                        activeFilters++;
+                    }
+                });
+                
+                const filterTitle = $('h5:contains("Filtros de Búsqueda")');
+                if (activeFilters > 0) {
+                    const countText = filterTitle.find('.filter-count');
+                    if (countText.length > 0) {
+                        countText.text(`(${activeFilters} activos)`);
+                    } else {
+                        filterTitle.append(`<span class="filter-count text-primary ml-2">(${activeFilters} activos)</span>`);
+                    }
+                } else {
+                    filterTitle.find('.filter-count').remove();
+                }
+            }
+            
+            // Actualizar contador al cargar la página y cuando cambien los filtros
+            updateFilterCount();
+            $('#status, #section, #type, #requester, #date_from, #date_to').on('change keyup', updateFilterCount);
         });
     </script>
 @stop

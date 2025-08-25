@@ -19,7 +19,7 @@
                     <a href="{{ route('quotation-approvals.compare', $request->id) }}" class="btn btn-sm btn-info">
                         <i class="fas fa-balance-scale"></i> Comparar Cotizaciones
                     </a>
-                    @if($request->quotations->count() >= 2 && $request->status !== 'Pre-aprobada' && $request->status !== 'approved')
+                    @if($request->quotations->count() >= 2 && $request->status !== 'approved')
                         <a href="{{ route('quotation-selections.show', $request->id) }}" class="btn btn-sm btn-warning">
                             <i class="fas fa-tasks"></i> Selección Mixta
                         </a>

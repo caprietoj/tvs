@@ -460,24 +460,104 @@ class QuotationController extends Controller
     /**
      * Mostrar el índice de cotizaciones para gestión general
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Obtener solicitudes que requieren cotizaciones (compras y servicios regulares)
-        $purchaseRequests = PurchaseRequest::where(function($query) {
-                                // Solicitudes de compra
-                                $query->where('type', 'purchase')
-                                      // O servicios regulares (que requieren cotización)
-                                      ->orWhere(function($q) {
-                                          $q->where('type', 'services')
-                                            ->where('service_type', 'regular');
-                                      });
-                            })
-                            ->whereIn('status', ['pending', 'En Cotización'])
-                            ->with('quotations', 'user')
-                            ->latest()
-                            ->paginate(10);
+        // Obtener parámetros de filtro
+        $statusFilter = $request->get('status');
+        $sectionFilter = $request->get('section');
+        $typeFilter = $request->get('type');
+        $requesterFilter = $request->get('requester');
+        $dateFromFilter = $request->get('date_from');
+        $dateToFilter = $request->get('date_to');
         
-        return view('quotations.index', compact('purchaseRequests'));
+        // Query base para solicitudes que requieren cotizaciones
+        $query = PurchaseRequest::where(function($q) {
+                    // Solicitudes de compra
+                    $q->where('type', 'purchase')
+                      // O servicios regulares (que requieren cotización)
+                      ->orWhere(function($subQ) {
+                          $subQ->where('type', 'services')
+                               ->where('service_type', 'regular');
+                      });
+                })
+                ->whereIn('status', ['pending', 'En Cotización']);
+        
+        // Aplicar filtros
+        if ($statusFilter && $statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
+        }
+        
+        if ($sectionFilter && $sectionFilter !== 'all') {
+            $query->where('section_area', 'LIKE', '%' . $sectionFilter . '%');
+        }
+        
+        if ($typeFilter && $typeFilter !== 'all') {
+            if ($typeFilter === 'purchase') {
+                $query->where('type', 'purchase');
+            } elseif ($typeFilter === 'services') {
+                $query->where('type', 'services');
+            }
+        }
+        
+        if ($requesterFilter) {
+            $query->where('requester', 'LIKE', '%' . $requesterFilter . '%');
+        }
+        
+        if ($dateFromFilter) {
+            $query->where('request_date', '>=', $dateFromFilter);
+        }
+        
+        if ($dateToFilter) {
+            $query->where('request_date', '<=', $dateToFilter);
+        }
+        
+        $purchaseRequests = $query->with('quotations', 'user')
+                                  ->latest()
+                                  ->paginate(10);
+        
+        // Mantener parámetros de filtro en la paginación
+        $purchaseRequests->appends($request->query());
+        
+        // Obtener datos para los filtros
+        $allSections = PurchaseRequest::where(function($q) {
+                           $q->where('type', 'purchase')
+                             ->orWhere(function($subQ) {
+                                 $subQ->where('type', 'services')
+                                      ->where('service_type', 'regular');
+                             });
+                       })
+                       ->whereIn('status', ['pending', 'En Cotización'])
+                       ->distinct()
+                       ->whereNotNull('section_area')
+                       ->pluck('section_area')
+                       ->sort()
+                       ->values();
+        
+        $allRequesters = PurchaseRequest::where(function($q) {
+                             $q->where('type', 'purchase')
+                               ->orWhere(function($subQ) {
+                                   $subQ->where('type', 'services')
+                                        ->where('service_type', 'regular');
+                               });
+                         })
+                         ->whereIn('status', ['pending', 'En Cotización'])
+                         ->distinct()
+                         ->whereNotNull('requester')
+                         ->pluck('requester')
+                         ->sort()
+                         ->values();
+        
+        return view('quotations.index', compact(
+            'purchaseRequests', 
+            'allSections', 
+            'allRequesters',
+            'statusFilter',
+            'sectionFilter',
+            'typeFilter',
+            'requesterFilter',
+            'dateFromFilter',
+            'dateToFilter'
+        ));
     }
 
     /**
