@@ -369,6 +369,78 @@
     </div>
 </div>
 
+<!-- Modal de confirmación para pre-aprobación -->
+<div class="modal fade" id="preapprovalConfirmModal" tabindex="-1" role="dialog" aria-labelledby="preapprovalConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #364E76; color: white;">
+                <h5 class="modal-title" id="preapprovalConfirmModalLabel">
+                    <i class="fas fa-paper-plane mr-2"></i>Confirmar Envío a Pre-aprobación
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>¿Está seguro de que desea enviar esta selección a pre-aprobación?</strong>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Solicitud</h6>
+                                <p class="mb-0"><strong>#{{ $purchaseRequest->request_number }}</strong></p>
+                                <small class="text-muted">{{ $purchaseRequest->requester }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Items Seleccionados</h6>
+                                <p class="mb-0"><span id="modal-selected-count">0</span>/<span id="modal-total-count">{{ count($purchaseItems) }}</span></p>
+                                <small class="text-muted">proveedores asignados</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="preapproval-comments">
+                        <i class="fas fa-comment mr-2"></i>Comentarios adicionales (opcional):
+                    </label>
+                    <textarea class="form-control" 
+                              id="preapproval-comments" 
+                              name="comments" 
+                              rows="3" 
+                              placeholder="Agregue cualquier comentario o justificación para las selecciones realizadas..."></textarea>
+                    <small class="form-text text-muted">
+                        Estos comentarios serán visibles para el aprobador.
+                    </small>
+                </div>
+                
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="confirm-send-checkbox">
+                    <label class="custom-control-label" for="confirm-send-checkbox">
+                        Confirmo que he revisado todas las selecciones y deseo enviar a pre-aprobación
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmSendBtn" disabled>
+                    <i class="fas fa-paper-plane mr-2"></i>Enviar a Pre-aprobación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 
 @stop
@@ -631,10 +703,6 @@ function selectProvider(cardElement) {
     // Esta función se mantiene por compatibilidad pero ya no se usa
     // El nuevo sistema usa handleProviderSelectChange() para los selects
 }
-    
-    // Guardar la selección automáticamente
-    saveProviderSelection(itemIndex, quotationId, unitPrice, providerName);
-}
 
 // Función para manejar el cambio de proveedor en los selects
 function handleProviderSelectChange(selectElement) {
@@ -854,6 +922,67 @@ window.confirmSaveAndSend = function() {
     }
 };
 
+// Función para mostrar el modal de confirmación de pre-aprobación
+function showPreapprovalConfirmModal() {
+    console.log('Mostrando modal de confirmación de pre-aprobación');
+    
+    // Actualizar contadores en el modal
+    const totalItems = {{ count($purchaseItems) }};
+    let selectedCount = 0;
+    
+    document.querySelectorAll('.provider-select').forEach(select => {
+        if (select.value && select.value !== '') {
+            selectedCount++;
+        }
+    });
+    
+    // Actualizar contadores en el modal
+    const modalSelectedCount = document.getElementById('modal-selected-count');
+    const modalTotalCount = document.getElementById('modal-total-count');
+    if (modalSelectedCount) modalSelectedCount.textContent = selectedCount;
+    if (modalTotalCount) modalTotalCount.textContent = totalItems;
+    
+    // Mostrar el modal
+    $('#preapprovalConfirmModal').modal('show');
+}
+
+// Función para confirmar y enviar
+function confirmPreapprovalSend() {
+    const comments = document.getElementById('preapproval-comments').value;
+    
+    // Buscar el formulario activo
+    const activeForm = document.querySelector('#save-and-send-form') ||
+                       document.querySelector('#partial-save-and-send-form') ||
+                       document.querySelector('#dynamic-save-and-send-form') ||
+                       document.querySelector('#dynamic-partial-save-and-send-form');
+    
+    if (activeForm) {
+        // Agregar comentarios al formulario si hay
+        if (comments.trim()) {
+            const commentsInput = document.createElement('input');
+            commentsInput.type = 'hidden';
+            commentsInput.name = 'comments';
+            commentsInput.value = comments.trim();
+            activeForm.appendChild(commentsInput);
+        }
+        
+        console.log('Enviando formulario con comentarios:', comments);
+        
+        // Deshabilitar el botón y mostrar loading
+        const confirmBtn = document.getElementById('confirmSendBtn');
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enviando...';
+        }
+        
+        // Enviar el formulario
+        activeForm.submit();
+    } else {
+        console.error('No se encontró formulario activo para enviar');
+        alert('Error: No se pudo encontrar el formulario. Por favor, recargue la página e intente nuevamente.');
+    }
+}
+
 // Inicialización cuando el DOM esté listo
 $(document).ready(function() {
     console.log('DOM listo, configurando eventos para selects de proveedores...');
@@ -880,6 +1009,34 @@ $(document).ready(function() {
     updateSelectionCounts();
     
     console.log('Sistema de selects de proveedores configurado correctamente');
+    
+    // === MANEJO DEL MODAL DE CONFIRMACIÓN ===
+    
+    // Habilitar/deshabilitar botón de confirmar según checkbox
+    $('#confirm-send-checkbox').on('change', function() {
+        const confirmBtn = document.getElementById('confirmSendBtn');
+        if (confirmBtn) {
+            confirmBtn.disabled = !this.checked;
+        }
+    });
+    
+    // Manejar clic en el botón de confirmar envío
+    $('#confirmSendBtn').on('click', function() {
+        if ($('#confirm-send-checkbox').is(':checked')) {
+            confirmPreapprovalSend();
+        }
+    });
+    
+    // Limpiar modal al cerrarlo
+    $('#preapprovalConfirmModal').on('hidden.bs.modal', function() {
+        $('#preapproval-comments').val('');
+        $('#confirm-send-checkbox').prop('checked', false);
+        const confirmBtn = document.getElementById('confirmSendBtn');
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Enviar a Pre-aprobación';
+        }
+    });
 });
 </script>
 
@@ -893,5 +1050,4 @@ $(document).ready(function() {
 </script>
 <!-- JavaScript externo -->
 <script src="{{ asset('js/quotation-chart.js') }}"></script>
-</script>
 @stop

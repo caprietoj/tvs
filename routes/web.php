@@ -201,6 +201,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/presupuesto/old', [PresupuestoController::class, 'index'])->name('presupuesto.old');
         Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.update');
         Route::post('/presupuesto/guardar-ejecucion', [PresupuestoController::class, 'guardarEjecucion'])->name('presupuesto.guardar-ejecucion');
+        Route::post('/presupuesto/guardar-celda-masivo', [PresupuestoController::class, 'guardarCeldaMasivo'])->name('presupuesto.guardar-celda-masivo');
         Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.export');
         Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.procesar-extracto-contable');
         

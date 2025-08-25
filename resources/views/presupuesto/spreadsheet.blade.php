@@ -5025,18 +5025,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const table = cell.closest('table');
         const budgetSection = cell.closest('.budget-section');
         
-        if (!row || !table || !budgetSection) {
-            console.error('No se pudo extraer información de contexto de la celda');
+        if (!row || !table) {
+            console.error('❌ No se pudo encontrar fila o tabla para la celda');
             return null;
         }
         
         // Obtener nombre de la tabla desde el título de la sección
-        const titleElement = budgetSection.querySelector('h5');
-        const tablaNombre = titleElement ? titleElement.textContent.trim() : 'Unknown';
+        let tablaNombre = 'Presupuesto';
+        if (budgetSection) {
+            const titleElement = budgetSection.querySelector('h5');
+            tablaNombre = titleElement ? titleElement.textContent.trim() : 'Presupuesto';
+        }
         
         // Obtener concepto desde la primera celda de la fila
         const firstCell = row.querySelector('td');
-        const concepto = firstCell ? firstCell.textContent.trim().replace(/\*\*/g, '') : 'Unknown';
+        const concepto = firstCell ? firstCell.textContent.trim().replace(/\*\*/g, '') : 'Sin concepto';
         
         // Obtener nombre de la columna desde el header
         const cellIndex = getColumnIndex(cell);
@@ -5060,7 +5063,7 @@ document.addEventListener('DOMContentLoaded', function() {
             es_total: esTotal
         };
         
-        console.log('Datos extraídos de la celda:', cellData);
+        console.log('📊 Celda extraída - Concepto:', concepto, 'Columna:', columna, 'Valor:', valor);
         return cellData;
     }
     
@@ -5110,7 +5113,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Enviar datos al servidor
-        fetch('/contabilidad/presupuesto/guardar-celda-masivo', {
+        fetch('{{ route("presupuesto.guardar-celda-masivo") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -5185,18 +5188,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const table = cell.closest('table');
         const budgetSection = cell.closest('.budget-section');
         
-        if (!row || !table || !budgetSection) {
-            console.error('No se pudo extraer información de contexto de la celda');
+        if (!row || !table) {
+            console.error('❌ No se pudo encontrar fila o tabla para la celda (función duplicada)');
             return null;
         }
         
         // Obtener nombre de la tabla desde el título de la sección
-        const titleElement = budgetSection.querySelector('h5');
-        const tablaNombre = titleElement ? titleElement.textContent.trim() : 'Unknown';
+        let tablaNombre = 'Presupuesto';
+        if (budgetSection) {
+            const titleElement = budgetSection.querySelector('h5');
+            tablaNombre = titleElement ? titleElement.textContent.trim() : 'Presupuesto';
+        }
         
         // Obtener concepto desde la primera celda de la fila
         const firstCell = row.querySelector('td');
-        const concepto = firstCell ? firstCell.textContent.trim().replace(/\*\*/g, '') : 'Unknown';
+        const concepto = firstCell ? firstCell.textContent.trim().replace(/\*\*/g, '') : 'Sin concepto';
         
         // Obtener nombre de la columna desde el header
         const cellIndex = getColumnIndex(cell);
@@ -5220,7 +5226,7 @@ document.addEventListener('DOMContentLoaded', function() {
             es_total: esTotal
         };
         
-        console.log('Datos extraídos de la celda:', cellData);
+        console.log('📊 Celda individual - Concepto:', concepto, 'Columna:', columna, 'Valor:', valor);
         return cellData;
     }
     
