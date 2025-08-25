@@ -29,5 +29,6 @@ class DatabaseSeeder extends Seeder
         $this->call(SkillCategorySeeder::class);
         $this->call(EmcRoleSeeder::class);
         $this->call(SpaceReservationPermissionSeeder::class);
+        $this->call(ComprasUserSeeder::class);
     }
 }

@@ -204,6 +204,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/presupuesto/guardar-celda-masivo', [PresupuestoController::class, 'guardarCeldaMasivo'])->name('presupuesto.guardar-celda-masivo');
         Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.export');
         Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.procesar-extracto-contable');
+        Route::post('/presupuesto/filter-sections-by-month', [PresupuestoController::class, 'filterSectionsByMonth'])->name('presupuesto.filter-sections-by-month');
         
         // Nuevas rutas para funcionalidad Excel
         Route::post('/presupuesto/upload-excel', [PresupuestoController::class, 'uploadExcel'])->name('presupuesto.upload-excel');
@@ -666,8 +667,8 @@ Route::middleware(['auth'])->group(function () {
     Route::put('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'update'])
         ->name('purchase-orders.update');
     
-    // Rutas específicas para administradores - Edición de PDF
-    Route::middleware(['auth', 'admin'])->group(function () {
+    // Rutas específicas para administradores y personal de compras - Edición de PDF
+    Route::middleware(['auth', 'admin_or_compras'])->group(function () {
         Route::get('purchase-orders/{purchaseOrder}/edit-pdf', [PurchaseOrdersController::class, 'editPdf'])
             ->name('purchase-orders.edit-pdf');
         Route::get('purchase-orders/{purchaseOrder}/edit-pdf-new', [PurchaseOrdersController::class, 'editPdfNew'])

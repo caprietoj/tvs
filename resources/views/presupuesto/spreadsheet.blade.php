@@ -3,6 +3,7 @@
 @section('title', 'The Victoria School - Presupuesto 2025 - 2026')
 
 @section('content_header')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <div class="page-header">
         <h1>The Victoria School</h1>
         <p>Presupuesto 2025 - 2026</p>
@@ -207,8 +208,26 @@
                 @elseif($sheetKey == 'Secciones')
                     <!-- Hoja de Secciones con múltiples tablas -->
                     <div class="sections-container">
+                        <!-- Filtro por mes -->
+                        <div class="filters-container mb-4">
+                            <div class="filter-group-compact">
+                                <i class="fas fa-calendar filter-icon"></i>
+                                <select id="monthFilter" class="filter-select-compact">
+                                    <option value="">📅 Todos los meses</option>
+                                    @if(isset($availableMonths))
+                                        @foreach($availableMonths as $month)
+                                            <option value="{{ $month['value'] }}">{{ $month['label'] }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                            </div>
+                            <div class="filter-status">
+                                <span id="monthFilterStatus" class="filter-status-text">Mostrando todos los meses</span>
+                            </div>
+                        </div>
+                        
                         <!-- Tabla 1: Preescolar y Primaria -->
-                        <div class="section-table">
+                        <div class="section-table" id="preescolar-table">
                             <h3 class="section-title">Preescolar y Primaria</h3>
                             <div class="table-wrapper">
                                 <table class="data-table section-budget-table">
@@ -220,7 +239,7 @@
                                             <th>Saldo por ejecutar</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="preescolar-tbody">
                                         @php
                                             $seccion = 'PREESCOLAR Y PRIMARIA';
                                             $preescolarConceptos = $seccionesData[$seccion] ?? [];
@@ -256,7 +275,7 @@
                         </div>
 
                         <!-- Tabla 2: Escuela Media -->
-                        <div class="section-table">
+                        <div class="section-table" id="escuela-media-table">
                             <h3 class="section-title">Escuela Media</h3>
                             <div class="table-wrapper">
                                 <table class="data-table section-budget-table">
@@ -268,7 +287,7 @@
                                             <th>Saldo por ejecutar</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="escuela-media-tbody">
                                         @php
                                             $seccion = 'ESCUELA MEDIA';
                                             $escuelaMediaConceptos = $seccionesData[$seccion] ?? [];
@@ -304,7 +323,7 @@
                         </div>
 
                         <!-- Tabla 3: Escuela Alta -->
-                        <div class="section-table">
+                        <div class="section-table" id="escuela-alta-table">
                             <h3 class="section-title">Escuela Alta</h3>
                             <div class="table-wrapper">
                                 <table class="data-table section-budget-table">
@@ -316,7 +335,7 @@
                                             <th>Saldo por ejecutar</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="escuela-alta-tbody">
                                         @php
                                             $seccion = 'ALTA';
                                             $escuelaAltaConceptos = $seccionesData[$seccion] ?? [];
@@ -786,7 +805,7 @@
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>Total Ingresos - Gastos</strong></td>
-                                            <td class="number-cell"><strong>$12.856.980.087</strong></td>
+                                            <td class="number-cell"><strong>$-2.817.710.490</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -823,7 +842,7 @@
                                     <tbody>
                                         <tr>
                                             <td><strong>Ingresos Escolares</strong></td>
-                                            <td class="number-cell">$10.487.847.718</td>
+                                            <td class="number-cell">$10.457.915.716</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell">0</td>
@@ -835,7 +854,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Ingresos otros escolares</strong></td>
-                                            <td class="number-cell">$2.369.132.369</td>
+                                            <td class="number-cell">$868.862.765</td>
                                             <td class="number-cell"></td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell">0</td>
@@ -847,7 +866,7 @@
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>TOTAL INGRESOS</strong></td>
-                                            <td class="number-cell"><strong>$12.856.980.087</strong></td>
+                                            <td class="number-cell"><strong>$11.326.778.481</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -883,7 +902,7 @@
                                     <tbody>
                                         <tr>
                                             <td><strong>Total Salarios, Prestaciones Academia</strong></td>
-                                            <td class="number-cell">$6.600.731.523</td>
+                                            <td class="number-cell">$6.600.750.523</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
@@ -894,7 +913,7 @@
                                             <td class="number-cell editable">$-</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Total Salarios, Prestaciones Administrativos y Sena</strong></td>
+                                            <td><strong>Total Salarios, Prestaciones Administrativos y Servicios</strong></td>
                                             <td class="number-cell">$1.453.226.337</td>
                                             <td class="number-cell"></td>
                                             <td class="number-cell editable">$-</td>
@@ -906,8 +925,8 @@
                                             <td class="number-cell editable">$-</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Total Rubros Institucionales</strong></td>
-                                            <td class="number-cell">0</td>
+                                            <td><strong>Capacitación e Indemnizaciones</strong></td>
+                                            <td class="number-cell">$11.276.365</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
@@ -918,8 +937,8 @@
                                             <td class="number-cell editable">$-</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Total Seccion Academia</strong></td>
-                                            <td class="number-cell">0</td>
+                                            <td><strong>Institucional e Institucional academia</strong></td>
+                                            <td class="number-cell">$1.172.440.107</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
@@ -930,8 +949,8 @@
                                             <td class="number-cell editable">$-</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Total Servicios Públicos y Otros Egresos</strong></td>
-                                            <td class="number-cell">0</td>
+                                            <td><strong>Sección Academia</strong></td>
+                                            <td class="number-cell">$481.271.150</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
@@ -942,8 +961,20 @@
                                             <td class="number-cell editable">$-</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Total Costos Contratos Externos</strong></td>
-                                            <td class="number-cell">0</td>
+                                            <td><strong>Servicios Públicos y Otros Egresos</strong></td>
+                                            <td class="number-cell">$2.594.069.715</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Proyectado Costos Contratos Externos</strong></td>
+                                            <td class="number-cell">$1.831.454.774</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
@@ -955,7 +986,7 @@
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>TOTAL GASTOS</strong></td>
-                                            <td class="number-cell"><strong>$8.053.957.860</strong></td>
+                                            <td class="number-cell"><strong>$14.144.488.971</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -991,7 +1022,7 @@
                                     <tbody>
                                         <tr>
                                             <td><strong>Matriculas</strong></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">$979.804.763</td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1003,7 +1034,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Pensiones</strong></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">$8.816.286.570</td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1015,7 +1046,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Seguros Estudiantiles</strong></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">$3.922.844</td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1027,7 +1058,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Desarrollo curricular bilingüe / Bibliobanco</strong></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">$443.751.216</td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1039,7 +1070,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Sistematización de Notas</strong></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">$98.984.742</td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1051,7 +1082,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Materiales generales</strong></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">$115.165.581</td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1063,7 +1094,7 @@
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>TOTAL INGRESOS ESCOLARES</strong></td>
-                                            <td class="number-cell calculated">0</td>
+                                            <td class="number-cell calculated"><strong>$10.457.915.716</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -1112,7 +1143,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Agenda escolar</strong></td>
-                                            <td class="number-cell">$0</td>
+                                            <td class="number-cell">$114.682.596</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1124,7 +1155,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Anuario</strong></td>
-                                            <td class="number-cell">$0</td>
+                                            <td class="number-cell">$9.257.396</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1136,7 +1167,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Examenes de Admisión</strong></td>
-                                            <td class="number-cell">$0</td>
+                                            <td class="number-cell">$38.371.950</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1148,7 +1179,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Ingresos Por Servicio Cafeteria</strong></td>
-                                            <td class="number-cell">$0</td>
+                                            <td class="number-cell">$6.424.511</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1160,7 +1191,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Ingresos Por Servicio Transporte</strong></td>
-                                            <td class="number-cell">$0</td>
+                                            <td class="number-cell">$700.126.312</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1172,7 +1203,7 @@
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>TOTAL OTROS ESCOLARES</strong></td>
-                                            <td class="number-cell calculated"><strong>$0</strong></td>
+                                            <td class="number-cell calculated"><strong>$868.862.765</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -1208,8 +1239,272 @@
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td><strong>Salarios y Prestaciones Sociales Academia</strong></td>
-                                            <td class="number-cell editable">0</td>
+                                            <td><strong>Salarios</strong></td>
+                                            <td class="number-cell">$4.216.589.763</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono Dirección Sección</strong></td>
+                                            <td class="number-cell">$134.432.647</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono Sábados</strong></td>
+                                            <td class="number-cell">$52.026.480</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Pago de Agosto</strong></td>
+                                            <td class="number-cell">$4.568.188</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Medicina Prepagada</strong></td>
+                                            <td class="number-cell">$57.058.480</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Costo Vivienda-instalación profesores</strong></td>
+                                            <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono Extralectiva</strong></td>
+                                            <td class="number-cell">$63.258.765</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono de Rendimiento</strong></td>
+                                            <td class="number-cell">$30.000.000</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono Director de Grupo</strong></td>
+                                            <td class="number-cell">$45.551.527</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono Lider Académico (EFES OPTO)</strong></td>
+                                            <td class="number-cell">$26.019.336</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono Proyecto Personal</strong></td>
+                                            <td class="number-cell">$7.434.096</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono Monografía</strong></td>
+                                            <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono MUN</strong></td>
+                                            <td class="number-cell">$3.717.048</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono CAS</strong></td>
+                                            <td class="number-cell">$3.717.048</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono Anuario /Vídeos TVS/ ANUARIO</strong></td>
+                                            <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bono Consejo Estudiantil</strong></td>
+                                            <td class="number-cell">$7.434.096</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Prima</strong></td>
+                                            <td class="number-cell">$358.257.482</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Vacaciones</strong></td>
+                                            <td class="number-cell">$383.326.342</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Cesantías</strong></td>
+                                            <td class="number-cell">$358.257.482</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Intereses Cesantías</strong></td>
+                                            <td class="number-cell">$42.990.898</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Seguridad Social</strong></td>
+                                            <td class="number-cell">$612.204.790</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Aportes Parafiscales</strong></td>
+                                            <td class="number-cell">$191.786.134</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Viáticos</strong></td>
+                                            <td class="number-cell">$2.120.000</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
@@ -1221,7 +1516,7 @@
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>TOTAL SALARIOS ACADEMIA</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>$6.600.750.523</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -3641,6 +3936,37 @@ tr.editing {
     font-weight: bold;
     color: #495057;
 }
+
+/* Estilos para filtro por mes */
+.filters-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 20px;
+}
+
+.filter-status {
+    flex: 1;
+    text-align: right;
+}
+
+.filter-status-text {
+    color: #6c757d;
+    font-size: 14px;
+    font-style: italic;
+}
+
+/* Efectos de carga para las tablas */
+.section-table {
+    transition: opacity 0.3s ease;
+}
+
+.section-table.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
 </style>
 @stop
 
@@ -4259,7 +4585,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     console.log('JavaScript cargado correctamente');
+    
+    // Cargar datos iniciales para las secciones si estamos en la pestaña Secciones
+    loadInitialSectionData();
 });
+
+// Función para cargar datos iniciales de las secciones
+function loadInitialSectionData() {
+    const sectionsData = @json($seccionesData ?? []);
+    
+    if (sectionsData && Object.keys(sectionsData).length > 0) {
+        // Cargar datos iniciales sin filtro
+        updateSectionTables({
+            'PREESCOLAR Y PRIMARIA': sectionsData['PREESCOLAR Y PRIMARIA'] || {},
+            'ESCUELA MEDIA': sectionsData['ESCUELA MEDIA'] || {},
+            'ALTA': sectionsData['ALTA'] || {}
+        });
+    }
+}
 
 // Función global MUY SIMPLE para filtrar por sección
 function filtrarPorSeccion() {
@@ -4398,17 +4741,17 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initSectionTables() {
-    // Hacer editables las celdas de presupuesto y ejecución
-    const editableCells = document.querySelectorAll('.section-budget-table .editable');
+    // Hacer editables solo las celdas de ejecución (no presupuesto)
+    const editableCells = document.querySelectorAll('.section-budget-table .editable[data-type="ejecucion"]');
     
     editableCells.forEach(cell => {
         cell.addEventListener('click', function() {
             if (this.querySelector('input')) return; // Ya está siendo editada
             
-            const currentValue = this.textContent.trim();
+            const currentValue = this.textContent.trim().replace(/\./g, '').replace(/,/g, ''); // Remover formato
             const input = document.createElement('input');
             input.type = 'number';
-            input.value = currentValue;
+            input.value = currentValue || 0;
             input.style.width = '100%';
             input.style.border = 'none';
             input.style.background = 'transparent';
@@ -5438,6 +5781,141 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🎯 Funciones de test disponibles:');
     console.log('- testSaveFunction() - Prueba función de guardado');
     console.log('- testDirectEdit() - Prueba edición directa');
+
+    // Filtro por mes para secciones
+    const monthFilter = document.getElementById('monthFilter');
+    const monthFilterStatus = document.getElementById('monthFilterStatus');
+    
+    if (monthFilter) {
+        monthFilter.addEventListener('change', function() {
+            const selectedMonth = this.value;
+            const selectedText = this.options[this.selectedIndex].text;
+            
+            if (selectedMonth) {
+                // Mostrar loading
+                showLoadingForSections();
+                
+                // Actualizar estado del filtro
+                monthFilterStatus.textContent = `Filtrando por: ${selectedText}`;
+                
+                // Realizar petición AJAX
+                fetch('{{ route("presupuesto.filter-sections-by-month") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        month: selectedMonth
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateSectionTables(data.data);
+                        hideLoadingForSections();
+                    } else {
+                        console.error('Error al filtrar por mes:', data);
+                        hideLoadingForSections();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error en la petición:', error);
+                    hideLoadingForSections();
+                });
+            } else {
+                // Reset - mostrar todos los meses
+                monthFilterStatus.textContent = 'Mostrando todos los meses';
+                location.reload(); // Recargar para mostrar todos los datos
+            }
+        });
+    }
+
+    function showLoadingForSections() {
+        const tables = ['preescolar-table', 'escuela-media-table', 'escuela-alta-table'];
+        tables.forEach(tableId => {
+            const table = document.getElementById(tableId);
+            if (table) {
+                table.style.opacity = '0.5';
+                table.style.pointerEvents = 'none';
+            }
+        });
+    }
+
+    function hideLoadingForSections() {
+        const tables = ['preescolar-table', 'escuela-media-table', 'escuela-alta-table'];
+        tables.forEach(tableId => {
+            const table = document.getElementById(tableId);
+            if (table) {
+                table.style.opacity = '1';
+                table.style.pointerEvents = 'auto';
+            }
+        });
+    }
+
+    function updateSectionTables(data) {
+        // Actualizar tabla Preescolar y Primaria
+        updateSectionTable('preescolar-tbody', data['PREESCOLAR Y PRIMARIA'] || {}, 'preescolar');
+        
+        // Actualizar tabla Escuela Media
+        updateSectionTable('escuela-media-tbody', data['ESCUELA MEDIA'] || {}, 'escuela-media');
+        
+        // Actualizar tabla Escuela Alta
+        updateSectionTable('escuela-alta-tbody', data['ALTA'] || {}, 'escuela-alta');
+    }
+
+    function updateSectionTable(tbodyId, sectionData, sectionKey) {
+        const tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
+
+        // Limpiar tabla
+        tbody.innerHTML = '';
+
+        let totalPresupuesto = 0;
+        let totalEjecucion = 0;
+        let totalSaldo = 0;
+
+        // Agregar filas de datos
+        Object.keys(sectionData).forEach(concepto => {
+            const datos = sectionData[concepto];
+            const presupuesto = datos.presupuesto || 0;
+            const ejecutado = datos.ejecutado || 0;
+            const saldo = datos.saldo || 0;
+
+            totalPresupuesto += presupuesto;
+            totalEjecucion += ejecutado;
+            totalSaldo += saldo;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${concepto}</td>
+                <td class="number-cell" data-section="${sectionKey}" data-concept="${concepto}" data-type="presupuesto">${formatNumber(presupuesto)}</td>
+                <td class="number-cell editable" data-section="${sectionKey}" data-concept="${concepto}" data-type="ejecucion">${formatNumber(ejecutado)}</td>
+                <td class="number-cell calculated ${saldo < 0 ? 'negative' : ''}">${formatNumber(saldo)}</td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        // Agregar fila total
+        const totalRow = document.createElement('tr');
+        totalRow.className = 'total-row';
+        totalRow.innerHTML = `
+            <td><strong>TOTAL</strong></td>
+            <td class="number-cell total-presupuesto"><strong>${formatNumber(totalPresupuesto)}</strong></td>
+            <td class="number-cell total-ejecucion"><strong>${formatNumber(totalEjecucion)}</strong></td>
+            <td class="number-cell total-saldo ${totalSaldo < 0 ? 'negative' : ''}"><strong>${formatNumber(totalSaldo)}</strong></td>
+        `;
+        tbody.appendChild(totalRow);
+    }
+
+    function formatNumber(number) {
+        return new Intl.NumberFormat('es-CO').format(number);
+    }
+
+    // Hacer funciones globales
+    window.updateSectionTables = updateSectionTables;
+    window.updateSectionTable = updateSectionTable;
+    window.formatNumber = formatNumber;
 });
 </script>
 @stop

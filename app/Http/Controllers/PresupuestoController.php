@@ -716,10 +716,13 @@ class PresupuestoController extends Controller
         // Obtener datos del budget principal
         $budgetData = $this->getBudgetData();
         
+        // Obtener meses disponibles para filtros
+        $availableMonths = $this->getAvailableMonths();
+        
         // Cargar datos guardados del spreadsheet
         $spreadsheetData = $this->loadSpreadsheetData();
         
-        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData', 'spreadsheetData'));
+        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData', 'spreadsheetData', 'availableMonths'));
     }
 
     /**
@@ -944,9 +947,65 @@ class PresupuestoController extends Controller
     }
 
     /**
+     * Get budget data for specific concepts by section
+     */
+    private function getBudgetDataByConcept()
+    {
+        return [
+            'PREESCOLAR Y PRIMARIA' => [
+                'Capacitación' => 500000,
+                'Material Importado' => 800000,
+                'Material Deportivo' => 300000,
+                'Musicales' => 400000,
+                'Part time teacher - reemplazos' => 1200000,
+                'Apoyo Institucional' => 600000,
+                'Eventos Académicos y Sociales' => 700000,
+                'Insumos Tecnológicos' => 450000,
+                'Salidas Académicas Sección' => 350000,
+                'Alimentación' => 250000,
+                'Transporte' => 200000,
+                'Insumos de la Sección / Material para Clase' => 750000
+            ],
+            'ESCUELA MEDIA' => [
+                'Capacitación' => 600000,
+                'Material Importado' => 900000,
+                'Material Deportivo' => 350000,
+                'Musicales' => 450000,
+                'Part time teacher - reemplazos' => 1300000,
+                'Proyecto Comunitario' => 400000,
+                'MUN TVS - Otros Colegios - GLY' => 500000,
+                'Apoyo Institucional' => 650000,
+                'Eventos Académicos y Sociales' => 750000,
+                'Insumos Tecnológicos' => 500000,
+                'Salidas Académicas Sección' => 400000,
+                'Alimentación' => 300000,
+                'Transporte' => 250000,
+                'Insumos de la Sección / Material para Clase' => 800000
+            ],
+            'ALTA' => [
+                'Capacitación' => 700000,
+                'Material Importado' => 1000000,
+                'Material Deportivo' => 400000,
+                'Musicales' => 500000,
+                'Part time teacher - reemplazos' => 1400000,
+                'Monografía' => 350000,
+                'MUN TVS - Otros Colegios - GLY' => 550000,
+                'Preparación Pruebas Saber' => 600000,
+                'Apoyo Institucional' => 700000,
+                'Eventos Académicos y Sociales' => 800000,
+                'Insumos Tecnológicos' => 550000,
+                'Salidas Académicas Sección' => 450000,
+                'Alimentación' => 350000,
+                'Transporte' => 300000,
+                'Insumos de la Sección / Material para Clase' => 850000
+            ]
+        ];
+    }
+
+    /**
      * Get dynamic section data with concept mapping
      */
-    private function getSectionData()
+    private function getSectionData($mesFilter = null)
     {
         // Mapeo de conceptos antiguos a nuevos
         $conceptMapping = [
@@ -1062,6 +1121,9 @@ class PresupuestoController extends Controller
         // Obtener datos de presupuesto y ejecución para cada sección
         $sectionData = [];
         
+        // Obtener datos de presupuesto aprobado por concepto específico
+        $budgetDataByConcept = $this->getBudgetDataByConcept();
+        
         foreach ($sectionConcepts as $seccion => $conceptos) {
             $sectionData[$seccion] = [];
             
@@ -1070,24 +1132,39 @@ class PresupuestoController extends Controller
                 $presupuesto = 0;
                 $ejecutado = 0;
                 
-                // Buscar por concepto exacto
-                $items = PresupuestoItem::where('seccion', $seccion)
-                    ->where('rubro', $concepto)
-                    ->get();
+                // Obtener presupuesto específico para este concepto desde getBudgetDataByConcept
+                if (isset($budgetDataByConcept[$seccion]) && isset($budgetDataByConcept[$seccion][$concepto])) {
+                    $presupuesto = $budgetDataByConcept[$seccion][$concepto];
+                }
+                
+                // Buscar datos de ejecución por concepto exacto
+                $query = PresupuestoItem::where('seccion', $seccion)
+                    ->where('rubro', $concepto);
+                
+                // Aplicar filtro de mes si se proporciona
+                if ($mesFilter) {
+                    $query->whereRaw('DATE_FORMAT(fecha, "%Y-%m") = ?', [$mesFilter]);
+                }
+                
+                $items = $query->get();
                 
                 if ($items->count() > 0) {
-                    $presupuesto = $items->sum('presupuesto') ?? 0;
                     $ejecutado = $items->sum('valor') ?? 0;
                 } else {
                     // Buscar conceptos mapeados
                     foreach ($conceptMapping as $conceptoAntiguo => $conceptoNuevo) {
                         if ($conceptoNuevo === $concepto) {
-                            $itemsMapeados = PresupuestoItem::where('seccion', $seccion)
-                                ->where('rubro', $conceptoAntiguo)
-                                ->get();
+                            $queryMapeado = PresupuestoItem::where('seccion', $seccion)
+                                ->where('rubro', $conceptoAntiguo);
+                                
+                            // Aplicar filtro de mes si se proporciona
+                            if ($mesFilter) {
+                                $queryMapeado->whereRaw('DATE_FORMAT(fecha, "%Y-%m") = ?', [$mesFilter]);
+                            }
+                            
+                            $itemsMapeados = $queryMapeado->get();
                             
                             if ($itemsMapeados->count() > 0) {
-                                $presupuesto = $itemsMapeados->sum('presupuesto') ?? 0;
                                 $ejecutado = $itemsMapeados->sum('valor') ?? 0;
                                 break;
                             }
@@ -1740,5 +1817,57 @@ class PresupuestoController extends Controller
         }
 
         return $organizedData;
+    }
+
+    /**
+     * Get available months from PresupuestoItem dates
+     */
+    private function getAvailableMonths()
+    {
+        $months = PresupuestoItem::whereNotNull('fecha')
+            ->selectRaw('DISTINCT DATE_FORMAT(fecha, "%Y-%m") as mes_anio')
+            ->selectRaw('DATE_FORMAT(fecha, "%M") as mes_nombre_en')
+            ->selectRaw('MONTH(fecha) as mes_numero')
+            ->orderBy('mes_anio')
+            ->get();
+
+        // Mapear nombres de meses al español
+        $mesesEspanol = [
+            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+            5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+        ];
+
+        return $months->map(function ($month) use ($mesesEspanol) {
+            return [
+                'value' => $month->mes_anio,
+                'label' => $mesesEspanol[$month->mes_numero] . ' ' . substr($month->mes_anio, 0, 4),
+                'numero' => $month->mes_numero
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Filter section data by month via AJAX
+     */
+    public function filterSectionsByMonth(Request $request)
+    {
+        $month = $request->input('month');
+        
+        // Obtener datos filtrados por mes
+        $seccionesData = $this->getSectionData($month);
+        
+        // Devolver solo las secciones principales que se muestran en la vista
+        $sectionsToReturn = [
+            'PREESCOLAR Y PRIMARIA' => $seccionesData['PREESCOLAR Y PRIMARIA'] ?? [],
+            'ESCUELA MEDIA' => $seccionesData['ESCUELA MEDIA'] ?? [],
+            'ALTA' => $seccionesData['ALTA'] ?? []
+        ];
+        
+        return response()->json([
+            'success' => true,
+            'data' => $sectionsToReturn,
+            'month' => $month
+        ]);
     }
 }
