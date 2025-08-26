@@ -17,11 +17,7 @@
             </div>
             <div class="stat-content">
                 <div class="stat-number" id="presupuestoTotal">
-                    @if(isset($presupuestoItems))
-                        {{ number_format($presupuestoItems->sum('valor'), 0, ',', '.') }}
-                    @else
-                        0
-                    @endif
+                    {{ number_format($budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'], 0, ',', '.') }}
                 </div>
                 <div class="stat-label">Presupuesto Total</div>
             </div>
@@ -32,8 +28,9 @@
                 <i class="fas fa-users"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-number" id="totalAlumnos">1,248</div>
+                <div class="stat-number" id="totalAlumnos" data-section="config" data-concept="total_alumnos" data-type="valor">260</div>
                 <div class="stat-label">Total de Alumnos</div>
+                <div class="stat-sublabel">Alumnos becados 14</div>
             </div>
         </div>
         
@@ -745,7 +742,7 @@
                                     <tbody>
                                         <tr>
                                             <td><strong>Total Ingresos</strong></td>
-                                            <td class="number-cell">$12.856.980.087</td>
+                                            <td class="number-cell">${{ number_format($budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'], 0, ',', '.') }}</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
@@ -2265,6 +2262,14 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-weight: 500;
+}
+
+.stat-sublabel {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+    font-style: italic;
+    font-weight: 400;
 }
 
 /* Responsive para cajas de estadísticas */
@@ -4538,10 +4543,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeAutoCalculation() {
         console.log('Inicializando cálculo automático...');
         
-        // Buscar todas las celdas que pueden ser editables
-        const allNumberCells = document.querySelectorAll('.number-cell');
+        // Buscar todas las celdas que pueden ser editables (solo dentro de tablas)
+        const allNumberCells = document.querySelectorAll('table .number-cell');
         
-        console.log('Celdas numéricas encontradas:', allNumberCells.length);
+        console.log('Celdas numéricas encontradas en tablas:', allNumberCells.length);
         
         // Agregar event listeners a todas las celdas numéricas (no solo las que ya son editables)
         allNumberCells.forEach((cell, index) => {
@@ -4562,14 +4567,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 cell.addEventListener('blur', function() {
                     console.log('🔄 Evento blur disparado en celda:', this.textContent);
                     console.log('✅ Celda editada finalizada:', this.textContent);
-                    const cellData = extractCellData(this);
-                    if (cellData) {
-                        console.log('🔢 Datos extraídos:', cellData);
-                        saveCellToDatabase(cellData, this);
+                    
+                    // Verificar que la celda esté dentro de una tabla válida
+                    const isInTable = this.closest('table') !== null;
+                    const isInRow = this.closest('tr') !== null;
+                    
+                    if (isInTable && isInRow) {
+                        const cellData = extractCellData(this);
+                        if (cellData) {
+                            console.log('🔢 Datos extraídos:', cellData);
+                            saveCellToDatabase(cellData, this);
+                        } else {
+                            console.log('❌ No se pudieron extraer datos de la celda');
+                        }
+                        calculateTableTotals(this);
                     } else {
-                        console.log('❌ No se pudieron extraer datos de la celda');
+                        console.log('⚠️ Celda no está en una tabla válida, saltando guardado automático');
                     }
-                    calculateTableTotals(this);
+                    
                     formatCurrency(this);
                 });
                 
@@ -4584,6 +4599,53 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Calcular totales iniciales
         calculateAllTotals();
+    }
+    
+    // Función para manejar elementos de estadísticas (fuera de tablas)
+    function initializeStatElements() {
+        console.log('Inicializando elementos de estadísticas...');
+        
+        // Buscar elementos de estadísticas que tienen number-cell pero no están en tablas
+        const statElements = document.querySelectorAll('.stat-number.number-cell');
+        
+        console.log('Elementos de estadísticas encontrados:', statElements.length);
+        
+        statElements.forEach((element, index) => {
+            console.log(`Configurando listeners para elemento estadístico ${index}:`, element.id);
+            
+            // Event listener para cambios inmediatos
+            element.addEventListener('input', function() {
+                console.log('🔄 Elemento estadístico modificado:', this.textContent);
+                // Formatear pero no intentar extraer datos de tabla
+                formatCurrency(this);
+            });
+            
+            // Event listener para cuando se termina de editar
+            element.addEventListener('blur', function() {
+                console.log('🔄 Evento blur en elemento estadístico:', this.textContent);
+                
+                // Crear datos específicos para elementos estadísticos
+                const statData = {
+                    section: this.dataset.section,
+                    concept: this.dataset.concept,
+                    type: this.dataset.type,
+                    value: extractNumericValue(this.textContent),
+                    element_id: this.id
+                };
+                
+                console.log('📊 Datos de elemento estadístico:', statData);
+                // Aquí puedes agregar lógica para guardar datos de estadísticas si es necesario
+                
+                formatCurrency(this);
+            });
+            
+            // Event listener para Enter
+            element.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    this.blur();
+                }
+            });
+        });
     }
     
     // Función auxiliar para obtener el índice real de la columna
@@ -4756,6 +4818,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Reinicializar auto-cálculo cuando se activa el modo editable
             setTimeout(() => {
                 initializeAutoCalculation();
+                initializeStatElements();
                 // Agregar debugging de estructura de tablas
                 debugTableStructure();
             }, 100);
@@ -4807,6 +4870,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!row || !table) {
             console.error('❌ No se pudo encontrar fila o tabla para la celda');
+            console.error('❌ Elemento:', cell.tagName, cell.className);
             return null;
         }
         
@@ -4924,7 +4988,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         saveButton.innerHTML = '💾 Guardar Datos';
                         saveButton.style.backgroundColor = '#007bff';
                         saveButton.disabled = false;
-                    }, 3000);
+                    }, 1000); // Reducido de 3000 a 1000ms (1 segundo)
                 }
                 
                 // Agregar indicador visual a todas las celdas guardadas
@@ -4932,7 +4996,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cell.style.borderLeft = '3px solid #28a745';
                     setTimeout(() => {
                         cell.style.borderLeft = '';
-                    }, 5000);
+                    }, 2000); // Reducido de 5000 a 2000ms (2 segundos)
                 });
                 
             } else {
@@ -4945,7 +5009,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         saveButton.innerHTML = '💾 Guardar Datos';
                         saveButton.style.backgroundColor = '#007bff';
                         saveButton.disabled = false;
-                    }, 3000);
+                    }, 1500); // Reducido de 3000 a 1500ms (1.5 segundos)
                 }
             }
         })
@@ -4959,119 +5023,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     saveButton.innerHTML = '💾 Guardar Datos';
                     saveButton.style.backgroundColor = '#007bff';
                     saveButton.disabled = false;
-                }, 3000);
+                }, 1500); // Reducido de 3000 a 1500ms (1.5 segundos)
             }
-        });
-    }
-    function extractCellData(cell) {
-        const row = cell.closest('tr');
-        const table = cell.closest('table');
-        const budgetSection = cell.closest('.budget-section');
-        
-        if (!row || !table) {
-            console.error('❌ No se pudo encontrar fila o tabla para la celda (función duplicada)');
-            return null;
-        }
-        
-        // Obtener nombre de la tabla desde el título de la sección
-        let tablaNombre = 'Presupuesto';
-        if (budgetSection) {
-            const titleElement = budgetSection.querySelector('h5');
-            tablaNombre = titleElement ? titleElement.textContent.trim() : 'Presupuesto';
-        }
-        
-        // Obtener concepto desde la primera celda de la fila
-        const firstCell = row.querySelector('td');
-        const concepto = firstCell ? firstCell.textContent.trim().replace(/\*\*/g, '') : 'Sin concepto';
-        
-        // Obtener nombre de la columna desde el header
-        const cellIndex = getColumnIndex(cell);
-        const headerRow = table.querySelector('thead tr');
-        const headerCells = headerRow ? headerRow.querySelectorAll('th') : [];
-        const columna = headerCells[cellIndex] ? headerCells[cellIndex].textContent.trim() : `Columna_${cellIndex}`;
-        
-        // Extraer valor numérico
-        const valor = extractNumericValue(cell.textContent);
-        
-        // Determinar si es una fila de total
-        const esTotal = row.classList.contains('total-row');
-        
-        const cellData = {
-            tabla_nombre: tablaNombre,
-            concepto: concepto,
-            columna: columna,
-            valor: valor,
-            fila_orden: Array.from(row.parentNode.children).indexOf(row),
-            columna_orden: cellIndex,
-            es_total: esTotal
-        };
-        
-        console.log('📊 Celda individual - Concepto:', concepto, 'Columna:', columna, 'Valor:', valor);
-        return cellData;
-    }
-    
-    function saveCellToDatabase(cellData, cellElement) {
-        // No guardar celdas de totales (se calculan automáticamente)
-        if (cellData.es_total) {
-            console.log('Saltando guardado de celda de total');
-            return;
-        }
-        
-        console.log('🔄 Iniciando guardado de celda:', cellData);
-        
-        // Verificar CSRF token
-        const csrfToken = document.querySelector('meta[name="csrf-token"]');
-        if (!csrfToken) {
-            console.error('❌ Token CSRF no encontrado');
-            return;
-        }
-        
-        console.log('🔑 Token CSRF encontrado:', csrfToken.getAttribute('content').substring(0, 10) + '...');
-        
-        // Añadir indicador visual de guardado
-        cellElement.style.borderLeft = '3px solid #007bff';
-        
-        // Enviar datos al servidor
-        fetch('/contabilidad/presupuesto/guardar-celda', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken.getAttribute('content')
-            },
-            body: JSON.stringify(cellData)
-        })
-        .then(response => {
-            console.log('📨 Respuesta del servidor:', response.status, response.statusText);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('📦 Datos recibidos:', data);
-            if (data.success) {
-                console.log('✅ Celda guardada exitosamente:', data.message);
-                // Indicador visual de éxito
-                cellElement.style.borderLeft = '3px solid #28a745';
-                setTimeout(() => {
-                    cellElement.style.borderLeft = '';
-                }, 2000);
-            } else {
-                console.error('❌ Error al guardar celda:', data.message);
-                // Indicador visual de error
-                cellElement.style.borderLeft = '3px solid #dc3545';
-                setTimeout(() => {
-                    cellElement.style.borderLeft = '';
-                }, 3000);
-            }
-        })
-        .catch(error => {
-            console.error('❌ Error de conexión al guardar celda:', error);
-            // Indicador visual de error
-            cellElement.style.borderLeft = '3px solid #dc3545';
-            setTimeout(() => {
-                cellElement.style.borderLeft = '';
-            }, 3000);
         });
     }
     
@@ -5159,6 +5112,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (editButton && editButton.textContent.includes('Solo Lectura')) {
             console.log('📝 Modo editable detectado, inicializando auto-cálculo...');
             initializeAutoCalculation();
+            initializeStatElements();
         } else {
             console.log('📖 Modo solo lectura, esperando activación manual');
         }
