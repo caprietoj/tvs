@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('purchase_request_id')->constrained('purchase_requests')->onDelete('cascade');
             $table->string('provider_name');
-            $table->string('file_path');
+            $table->string('file_path')->nullable();
             $table->decimal('total_amount', 15, 2);
             $table->boolean('is_selected')->default(false);
             $table->timestamps();

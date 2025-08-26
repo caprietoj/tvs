@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('purchase_requests', function (Blueprint $table) {
-            $table->text('rejection_reason')->nullable()->after('status');
+            $table->text('rejection_reason')->nullable();
         });
     }
 
