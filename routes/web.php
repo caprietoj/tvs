@@ -658,6 +658,15 @@ Route::middleware(['auth'])->group(function () {
         ->name('purchase-orders.create');
     Route::post('purchase-requests/{purchaseRequest}/orders', [PurchaseOrdersController::class, 'store'])
         ->name('purchase-orders.store');
+    
+    // Rutas para creación manual de órdenes
+    Route::post('purchase-requests/{purchaseRequest}/orders/create-for-provider', [PurchaseOrdersController::class, 'createForProvider'])
+        ->name('purchase-orders.create-for-provider');
+    Route::post('purchase-requests/{purchaseRequest}/orders/create-from-quotation', [PurchaseOrdersController::class, 'createFromQuotation'])
+        ->name('purchase-orders.create-from-quotation');
+    Route::post('purchase-requests/{purchaseRequest}/orders/create-no-quotation', [PurchaseOrdersController::class, 'createNoQuotation'])
+        ->name('purchase-orders.create-no-quotation');
+    
     Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'show'])
         ->name('purchase-orders.show');
     Route::get('purchase-orders/{purchaseOrder}/pdf', [PurchaseOrdersController::class, 'generatePdf'])

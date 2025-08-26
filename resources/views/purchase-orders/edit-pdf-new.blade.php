@@ -34,9 +34,21 @@
         // Detectar si es una orden de selección mixta
         $isMixedSelection = false;
         $mixedSelections = collect();
+        
         if ($order->purchaseRequest) {
-            $mixedSelections = $order->purchaseRequest->quotationItemSelections()->with('quotation')->get();
-            $isMixedSelection = $mixedSelections->count() > 0;
+            // Usar las selecciones ya filtradas enviadas desde el controlador
+            if (isset($providerSpecificSelections) && $providerSpecificSelections->count() > 0) {
+                $mixedSelections = $providerSpecificSelections;
+                $isMixedSelection = true;
+                
+                // DEBUG: Registrar lo que está recibiendo la vista
+                \Log::info('🎯 VISTA BLADE - Datos recibidos', [
+                    'order' => $order->order_number,
+                    'provider_selections_count' => $providerSpecificSelections->count(),
+                    'is_mixed_selection' => $isMixedSelection,
+                    'provider_selections_items' => $providerSpecificSelections->pluck('item_description')->toArray()
+                ]);
+            }
         }
 
         // Si es selección mixta, agrupar por proveedor para facilitar la separación
@@ -50,6 +62,14 @@
                     'total' => $items->sum('total_price')
                 ];
             });
+            
+            // DEBUG: Ver qué contiene providerGroups
+            \Log::info('🟠 PROVIDER GROUPS calculado', [
+                'order' => $order->order_number,
+                'groups_count' => $providerGroups->count(),
+                'groups_providers' => $providerGroups->keys()->toArray(),
+                'total_items_in_groups' => $providerGroups->sum(function($group) { return $group['items']->count(); })
+            ]);
         }
 
         // Detectar órdenes con múltiples cotizaciones (potencial para separación alternativa)
@@ -198,10 +218,26 @@
 
         // Obtener purchase_items como fallback si no hay quotationItemSelections
         $purchaseItems = [];
-        if ($order->purchaseRequest && $order->purchaseRequest->purchase_items) {
+        
+        // 🚨 CORRECCIÓN CRÍTICA: Si hay selecciones específicas del proveedor (selección mixta), usar esos precios reales
+        if (isset($providerSpecificSelections) && $providerSpecificSelections->count() > 0) {
+            // Para selecciones mixtas, usar precios reales de las cotizaciones
+            echo "<!-- DEBUG: Usando precios reales de selecciones. Count: " . $providerSpecificSelections->count() . " -->";
+            foreach ($providerSpecificSelections as $selection) {
+                $purchaseItems[] = [
+                    'description' => $selection->item_description,
+                    'quantity' => $selection->quantity,
+                    'unit_price' => $selection->unit_price, // Usar precio real de la cotización
+                    'total' => $selection->total_price // Usar total real de la cotización
+                ];
+            }
+        } elseif ($order->purchaseRequest && $order->purchaseRequest->purchase_items) {
+            echo "<!-- DEBUG: Usando purchase_items del request -->";
             $purchaseItems = is_array($order->purchaseRequest->purchase_items) 
                 ? $order->purchaseRequest->purchase_items 
                 : json_decode($order->purchaseRequest->purchase_items, true);
+        } else {
+            echo "<!-- DEBUG: No hay datos disponibles -->";
         }
 
         // Si no hay purchase_items, intentar con service_items
@@ -412,9 +448,67 @@
                         
                         @php $itemNumber = 1; @endphp
                         
-                        {{-- Mostrar items de quotationItemSelections si existen --}}
-                        @if($selectedQuotation && $selectedQuotation->quotationItemSelections && $selectedQuotation->quotationItemSelections->count() > 0)
-                            @foreach($selectedQuotation->quotationItemSelections as $item)
+                        {{-- FORZAR: Para selecciones mixtas, SIEMPRE usar solo las del proveedor --}}
+                        @if(isset($providerSpecificSelections) && $providerSpecificSelections->count() > 0)
+                            @php
+                                \Log::info('🔥 USANDO PRIMERA CONDICIÓN - providerSpecificSelections', [
+                                    'order' => $order->order_number,
+                                    'items_count' => $providerSpecificSelections->count(),
+                                    'items' => $providerSpecificSelections->pluck('item_description')->toArray()
+                                ]);
+                            @endphp
+                            {{-- IGNORAR customData completamente para órdenes mixtas --}}
+                            @foreach($providerSpecificSelections as $item)
+                                <tr>
+                                    <td style="text-align: center; border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
+                                    <td style="border: 1px solid #000; padding: 4px;">
+                                        <textarea name="items[{{ $loop->index }}][description]" 
+                                                class="form-control form-control-sm border-0" 
+                                                style="width: 100%; border: none; background: transparent; resize: vertical; min-height: 20px;"
+                                                rows="2">{{ $item->item_description ?? '' }}</textarea>
+                                    </td>
+                                    <td style="text-align: center; border: 1px solid #000; padding: 4px;">
+                                        <input type="number" name="items[{{ $loop->index }}][quantity]" 
+                                               class="form-control form-control-sm border-0 item-quantity" 
+                                               value="{{ $item->quantity ?? 0 }}" 
+                                               style="width: 100%; border: none; background: transparent; text-align: center;"
+                                               data-index="{{ $loop->index }}">
+                                    </td>
+                                    <td style="text-align: right; border: 1px solid #000; padding: 4px;">
+                                        <input type="text" name="items[{{ $loop->index }}][unit_price]" 
+                                               class="form-control form-control-sm border-0 item-price" 
+                                               value="{{ $item->unit_price ?? 0 }}" 
+                                               style="width: 100%; border: none; background: transparent; text-align: right;"
+                                               data-index="{{ $loop->index }}">
+                                    </td>
+                                    <td style="text-align: right; border: 1px solid #000; padding: 4px;">
+                                        <span class="item-total" data-index="{{ $loop->index }}">
+                                            ${{ number_format(($item->total_price ?? 0), 0, ',', '.') }}
+                                        </span>
+                                        <input type="hidden" name="items[{{ $loop->index }}][total]" 
+                                               class="item-total-input" 
+                                               value="{{ $item->total_price ?? 0 }}"
+                                               data-index="{{ $loop->index }}">
+                                    </td>
+                                    <td style="text-align: center; border: 1px solid #000; padding: 4px;">
+                                        <button type="button" 
+                                                class="btn btn-danger btn-sm remove-item"
+                                                data-index="{{ $loop->index }}"
+                                                style="padding: 1px 5px; font-size: 10px;">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @elseif(!isset($providerSpecificSelections) && $selectedQuotation && $selectedQuotation->items && count($selectedQuotation->items) > 0)
+                            @php
+                                \Log::info('🟡 USANDO SEGUNDA CONDICIÓN - selectedQuotation items', [
+                                    'order' => $order->order_number,
+                                    'items_count' => count($selectedQuotation->items)
+                                ]);
+                            @endphp
+                            {{-- Para cotizaciones tradicionales, usar items de la cotización --}}
+                            @foreach($selectedQuotation->items as $item)
                                 <tr>
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
                                     <td style="border: 1px solid #000; padding: 4px;">
@@ -431,9 +525,20 @@
                                                data-index="{{ $loop->index }}">
                                     </td>
                                     <td style="text-align: right; border: 1px solid #000; padding: 4px;">
+                                        @php
+                                            // Intentar obtener precio unitario de la cotización seleccionada como en pdf-template-new
+                                            $precioUnitario = 0;
+                                            if ($selectedQuotation && isset($selectedQuotation->original_item_prices) && isset($selectedQuotation->original_item_prices[$loop->index])) {
+                                                $precioUnitario = $selectedQuotation->original_item_prices[$loop->index];
+                                            } elseif ($customData['items'][$loop->index]['unit_price'] ?? null) {
+                                                $precioUnitario = $customData['items'][$loop->index]['unit_price'];
+                                            } elseif ($item->unit_price ?? null) {
+                                                $precioUnitario = $item->unit_price;
+                                            }
+                                        @endphp
                                         <input type="text" name="items[{{ $loop->index }}][unit_price]" 
                                                class="form-control form-control-sm border-0 item-price" 
-                                               value="{{ $customData['items'][$loop->index]['unit_price'] ?? $item->unit_price ?? 0 }}" 
+                                               value="{{ $precioUnitario }}" 
                                                style="width: 100%; border: none; background: transparent; text-align: right;"
                                                data-index="{{ $loop->index }}">
                                     </td>
@@ -456,8 +561,14 @@
                                     </td>
                                 </tr>
                             @endforeach
-                        {{-- Si no hay quotationItemSelections, mostrar items de customData --}}
-                        @elseif(!empty($customData['items']) && is_array($customData['items']))
+                        {{-- Si no hay quotationItemSelections Y no es selección mixta, mostrar items de customData --}}
+                        @elseif(!isset($providerSpecificSelections) && !$isMixedSelection && !empty($customData['items']) && is_array($customData['items']))
+                            @php
+                                \Log::info('🔵 USANDO TERCERA CONDICIÓN - customData items', [
+                                    'order' => $order->order_number,
+                                    'items_count' => count($customData['items'])
+                                ]);
+                            @endphp
                             @foreach($customData['items'] as $index => $item)
                                 @if(!empty($item['description']) || !empty($item['quantity']) || !empty($item['unit_price']))
                                     <tr>
@@ -502,8 +613,51 @@
                                     </tr>
                                 @endif
                             @endforeach
-                        {{-- Si no hay customData, usar purchase_items originales --}}
-                        @elseif(!empty($purchaseItems) && is_array($purchaseItems))
+                        {{-- Si hay selecciones específicas del proveedor, usar los purchaseItems corregidos con precios reales --}}
+                        @elseif(isset($providerSpecificSelections) && $providerSpecificSelections->count() > 0 && !empty($purchaseItems) && is_array($purchaseItems))
+                            @foreach($purchaseItems as $index => $item)
+                                <tr>
+                                    <td style="text-align: center; border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
+                                    <td style="border: 1px solid #000; padding: 4px;">
+                                        <textarea name="items[{{ $index }}][description]" 
+                                                class="form-control form-control-sm border-0" 
+                                                style="width: 100%; border: none; background: transparent; resize: vertical; min-height: 20px;"
+                                                rows="2">{{ $item['description'] ?? '' }}</textarea>
+                                    </td>
+                                    <td style="text-align: center; border: 1px solid #000; padding: 4px;">
+                                        <input type="number" name="items[{{ $index }}][quantity]" 
+                                               class="form-control form-control-sm border-0 item-quantity" 
+                                               value="{{ $item['quantity'] ?? 0 }}" 
+                                               style="width: 100%; border: none; background: transparent; text-align: center;"
+                                               data-index="{{ $index }}">
+                                    </td>
+                                    <td style="text-align: right; border: 1px solid #000; padding: 4px;">
+                                        <input type="text" name="items[{{ $index }}][unit_price]" 
+                                               class="form-control form-control-sm border-0 item-price" 
+                                               value="{{ $item['unit_price'] ?? 0 }}" 
+                                               style="width: 100%; border: none; background: transparent; text-align: right;"
+                                               data-index="{{ $index }}">
+                                    </td>
+                                    <td style="text-align: right; border: 1px solid #000; padding: 4px;">
+                                        <span class="item-total" data-index="{{ $index }}">
+                                            ${{ number_format(($item['total'] ?? 0), 0, ',', '.') }}
+                                        </span>
+                                        <input type="hidden" name="items[{{ $index }}][total]" 
+                                               class="item-total-input" 
+                                               value="{{ $item['total'] ?? 0 }}" 
+                                               data-index="{{ $index }}">
+                                    </td>
+                                    <td style="text-align: center; border: 1px solid #000; padding: 4px;">
+                                        <button type="button" class="btn btn-danger btn-xs remove-item" 
+                                                data-index="{{ $index }}"
+                                                style="padding: 1px 5px; font-size: 10px;">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        {{-- Si no hay customData ni selecciones específicas, usar purchase_items originales --}}
+                        @elseif(!isset($providerSpecificSelections) && !empty($purchaseItems) && is_array($purchaseItems))
                             @foreach($purchaseItems as $index => $item)
                                 <tr>
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
@@ -594,7 +748,8 @@
                             </tr>
                         @endif
 
-                        <!-- Items adicionales editables (solo mostrar si tienen datos o para agregar nuevos) -->
+                        <!-- Items adicionales editables (ocultos en selección mixta por proveedor) -->
+                        @if(!$isMixedSelection)
                         @for($i = 0; $i < 3; $i++)
                             @php
                                 $hasData = isset($customData['additional_items'][$i]) && 
@@ -655,6 +810,7 @@
                                 </tr>
                             @endif
                         @endfor
+                        @endif
 
                         <!-- Observaciones -->
                         <tr>
@@ -857,6 +1013,8 @@
                     </table>
                 </div>
 
+                {{-- TEMPORALMENTE OCULTA PARA DEPURACIÓN --}}
+                @if(false)
                 <div class="mt-3">
                     <h6>Detalles de Items por Proveedor:</h6>
                     @foreach($providerGroups as $group)
@@ -891,6 +1049,7 @@
                         </div>
                     @endforeach
                 </div>
+                @endif
             </div>
         </div>
     @endif

@@ -144,12 +144,23 @@
                                             </div>
                                         </div>
                                     @elseif(isset($hasMixedSelection) && $hasMixedSelection)
-                                        <!-- Caso de selección mixta -->
+                                        <!-- Caso de selección mixta - Mostrar información y redirigir -->
+                                        <div class="alert alert-warning">
+                                            <h5><i class="fas fa-exclamation-triangle"></i> Selección Mixta Detectada</h5>
+                                            <p>Se detectaron artículos de <strong>{{ $mixedSelections->groupBy('quotation.provider_name')->count() }}</strong> proveedores diferentes.</p>
+                                            <p class="mb-3">Para crear las órdenes de compra correctamente, debe proceder con la interfaz de selección mixta.</p>
+                                            
+                                            <a href="javascript:void(0)" onclick="proceedToMixedSelection()" class="btn btn-warning">
+                                                <i class="fas fa-balance-scale"></i> Proceder con Selección Mixta
+                                            </a>
+                                        </div>
+                                        
+                                        <!-- Tabla informativa -->
                                         <div class="card">
                                             <div class="card-header bg-info">
                                                 <h6 class="m-0 text-white">
                                                     <i class="fas fa-balance-scale mr-2"></i>
-                                                    Selección Mixta de Proveedores
+                                                    Vista Previa de Selección Mixta
                                                 </h6>
                                             </div>
                                             <div class="card-body">
@@ -168,7 +179,11 @@
                                                             @foreach($mixedSelections as $selection)
                                                                 <tr>
                                                                     <td>{{ $selection->item_description }}</td>
-                                                                    <td>{{ $selection->quotation->provider_name }}</td>
+                                                                    <td>
+                                                                        <span class="badge badge-secondary">
+                                                                            {{ $selection->quotation->provider_name }}
+                                                                        </span>
+                                                                    </td>
                                                                     <td>{{ $selection->quantity }}</td>
                                                                     <td>${{ number_format($selection->unit_price, 2) }}</td>
                                                                     <td>${{ number_format($selection->total_price, 2) }}</td>
@@ -185,13 +200,9 @@
                                                 </div>
                                                 <div class="alert alert-info mt-3">
                                                     <i class="fas fa-info-circle mr-2"></i>
-                                                    <strong>Información importante:</strong><br>
-                                                    Se generará una orden de compra separada para cada proveedor seleccionado en la tabla anterior. 
-                                                    Total de órdenes a crear: <strong>{{ $mixedSelections->groupBy('quotation.provider_name')->count() }}</strong>
+                                                    <strong>Se crearán {{ $mixedSelections->groupBy('quotation.provider_name')->count() }} órdenes separadas</strong><br>
+                                                    Una orden de compra para cada proveedor seleccionado.
                                                 </div>
-                                                <small class="text-muted">
-                                                    Esta selección mixta incluye productos de múltiples proveedores. Cada proveedor recibirá su propia orden de compra.
-                                                </small>
                                             </div>
                                         </div>
                                     @elseif($purchaseRequest->selectedQuotation && isset($purchaseRequest->selectedQuotation->provider_id))
@@ -402,20 +413,29 @@
                             </div>
                         </div>
                         
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            <strong>Nota:</strong> La orden de compra utilizará todos los datos (precios, IVA, items adicionales) 
-                            de la cotización seleccionada. Solo debe completar los campos de términos de pago, fecha de entrega y observaciones.
-                        </div>
-                        
-                        <div class="form-group mt-4">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-file-pdf"></i> Generar Orden de Compra
-                            </button>
-                            <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancelar
-                            </a>
-                        </div>
+                        @if(!isset($hasMixedSelection) || !$hasMixedSelection)
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Nota:</strong> La orden de compra utilizará todos los datos (precios, IVA, items adicionales) 
+                                de la cotización seleccionada. Solo debe completar los campos de términos de pago, fecha de entrega y observaciones.
+                            </div>
+                            
+                            <div class="form-group mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-file-pdf"></i> Generar Orden de Compra
+                                </button>
+                                <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                            </div>
+                        @else
+                            <div class="text-center mt-4">
+                                <p class="text-muted">Para casos de selección mixta, debe usar la interfaz especializada.</p>
+                                <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Volver
+                                </a>
+                            </div>
+                        @endif
                     </form>
                 </div>
             </div>
@@ -485,5 +505,30 @@
         
         console.log('=== JAVASCRIPT SETUP COMPLETE ===');
     });
+
+    // Función para proceder con selección mixta
+    function proceedToMixedSelection() {
+        if (confirm('¿Desea proceder con la interfaz de selección mixta? Esto le permitirá crear órdenes separadas para cada proveedor.')) {
+            // Hacer una petición POST para mostrar la interfaz de selección mixta
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route("purchase-orders.store", $purchaseRequest) }}';
+            
+            var csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+            
+            var mixedInput = document.createElement('input');
+            mixedInput.type = 'hidden';
+            mixedInput.name = 'handle_mixed_selection';
+            mixedInput.value = '1';
+            form.appendChild(mixedInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
 </script>
 @stop

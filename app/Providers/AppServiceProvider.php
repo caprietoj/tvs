@@ -13,7 +13,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Registrar comandos personalizados
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \App\Console\Commands\RegeneratePurchaseOrderPdfs::class,
+                \App\Console\Commands\VerifyTaxConsistency::class,
+            ]);
+        }
     }
 
     /**

@@ -47,123 +47,6 @@ class PurchaseOrderPdfService
     }
 
     /**
-     * Prepara los valores fiscales consistentes para el PDF
-     * 
-     * @param PurchaseOrder $order Orden de compra
-     * @param array $customData Datos personalizados del PDF (opcional)
-     * @return array Arreglo con valores fiscales normalizados
-     */
-    private function prepareTaxValues(PurchaseOrder $order, $customData = null)
-    {
-        // Si hay datos personalizados, usarlos como fuente principal
-        if (!empty($customData)) {
-            $subtotal = isset($customData['subtotal']) ? floatval($customData['subtotal']) : floatval($order->subtotal);
-            $ivaAmount = isset($customData['iva_amount']) ? floatval($customData['iva_amount']) : floatval($order->iva_amount);
-            $totalAmount = isset($customData['total']) ? floatval($customData['total']) : floatval($order->total_amount);
-            
-            // Verificación de consistencia
-            $calculatedTotal = $subtotal + $ivaAmount;
-            
-            // Si el total no coincide con subtotal + IVA, ajustar para mantener consistencia
-            if (abs($calculatedTotal - $totalAmount) > 0.01) {
-                Log::warning('Inconsistencia detectada en valores fiscales personalizados', [
-                    'order_id' => $order->id,
-                    'subtotal' => $subtotal,
-                    'iva_amount' => $ivaAmount,
-                    'provided_total' => $totalAmount,
-                    'calculated_total' => $calculatedTotal,
-                    'difference' => $calculatedTotal - $totalAmount
-                ]);
-                
-                // Usar el cálculo correcto
-                $totalAmount = $calculatedTotal;
-            }
-            
-            $includesIva = $ivaAmount > 0;
-        } else {
-            // Usar valores originales de la orden
-            $subtotal = floatval($order->subtotal);
-            $ivaAmount = floatval($order->iva_amount);
-            $totalAmount = floatval($order->total_amount);
-            
-            // Verificación de consistencia
-            $calculatedTotal = $subtotal + $ivaAmount;
-            
-            // Si el total no coincide con subtotal + IVA, ajustar para mantener consistencia
-            if (abs($calculatedTotal - $totalAmount) > 0.01) {
-                Log::warning('Inconsistencia detectada en valores fiscales de la orden', [
-                    'order_id' => $order->id,
-                    'subtotal' => $subtotal,
-                    'iva_amount' => $ivaAmount,
-                    'db_total' => $totalAmount,
-                    'calculated_total' => $calculatedTotal,
-                    'difference' => $calculatedTotal - $totalAmount
-                ]);
-                
-                // Usar el cálculo correcto
-                $totalAmount = $calculatedTotal;
-            }
-            
-            $includesIva = $order->includes_iva;
-        }
-        
-        // Procesar impuestos aplicados desde additional_items si existen
-        $appliedTaxes = isset($order->additional_items['applied_taxes_detail']) 
-            ? $order->additional_items['applied_taxes_detail'] 
-            : [];
-        
-        $iva19Amount = 0;
-        $iva5Amount = 0;
-        $ipoconsumo8Amount = 0;
-        $ipoconsumo4Amount = 0;
-        $hasDetailedTaxes = false;
-        
-        // Si hay impuestos detallados, usarlos
-        if (!empty($appliedTaxes)) {
-            foreach ($appliedTaxes as $tax) {
-                $hasDetailedTaxes = true;
-                $taxType = $tax['type'] ?? $tax['name'] ?? 'IVA';
-                switch ($taxType) {
-                    case 'IVA':
-                        if ($tax['rate'] == 19) {
-                            $iva19Amount = $tax['amount'];
-                        } elseif ($tax['rate'] == 5) {
-                            $iva5Amount = $tax['amount'];
-                        }
-                        break;
-                    case 'IMPUESTO_CONSUMO':
-                    case 'Impuesto al Consumo':
-                        if ($tax['rate'] == 8) {
-                            $ipoconsumo8Amount = $tax['amount'];
-                        } elseif ($tax['rate'] == 4) {
-                            $ipoconsumo4Amount = $tax['amount'];
-                        }
-                        break;
-                }
-            }
-        }
-        
-        // Si no hay impuestos detallados pero hay IVA, asignarlo como IVA 19%
-        if (!$hasDetailedTaxes && $includesIva && $ivaAmount > 0) {
-            $iva19Amount = $ivaAmount;
-        }
-        
-        return [
-            'subtotal' => $subtotal,
-            'ivaAmount' => $ivaAmount,
-            'iva_amount' => $ivaAmount, // Duplicado para compatibilidad con plantillas
-            'totalAmount' => $totalAmount,
-            'total_amount' => $totalAmount, // Duplicado para compatibilidad con plantillas
-            'includesIva' => $includesIva,
-            'iva19Amount' => $iva19Amount,
-            'iva5Amount' => $iva5Amount,
-            'ipoconsumo8Amount' => $ipoconsumo8Amount,
-            'ipoconsumo4Amount' => $ipoconsumo4Amount,
-            'hasDetailedTaxes' => $hasDetailedTaxes,
-        ];
-    }
-
-    /**
      * Genera el PDF de una orden de compra
      */
     public function generatePdf(PurchaseOrder $order, $providerSelections = null)
@@ -180,25 +63,78 @@ class PurchaseOrderPdfService
                 return $this->generateCustomPdf($order, $providerSelections);
             }
             
-            // Preparar valores fiscales consistentes
-            $taxValues = $this->prepareTaxValues($order);
-            
             // Verificar si es un servicio sin cotización
             if ($order->purchaseRequest->isNoQuotationService()) {
+                // Calcular variables necesarias para el template
+                $subtotalCalculado = $order->subtotal;
+                $totalFinal = $order->total_amount;
+                
+                // Procesar impuestos aplicados desde additional_items
+                $appliedTaxes = isset($order->additional_items['applied_taxes_detail']) 
+                    ? $order->additional_items['applied_taxes_detail'] 
+                    : [];
+                
+                $iva19Amount = 0;
+                $iva5Amount = 0;
+                $ipoconsumo8Amount = 0;
+                $ipoconsumo4Amount = 0;
+                $hasDetailedTaxes = false;
+                
+                // Si hay impuestos detallados, usarlos
+                if (!empty($appliedTaxes)) {
+                    foreach ($appliedTaxes as $tax) {
+                        $hasDetailedTaxes = true;
+                        switch ($tax['type']) {
+                            case 'IVA':
+                                if ($tax['rate'] == 19) {
+                                    $iva19Amount = $tax['amount'];
+                                } elseif ($tax['rate'] == 5) {
+                                    $iva5Amount = $tax['amount'];
+                                }
+                                break;
+                            case 'IMPUESTO_CONSUMO':
+                                if ($tax['rate'] == 8) {
+                                    $ipoconsumo8Amount = $tax['amount'];
+                                } elseif ($tax['rate'] == 4) {
+                                    $ipoconsumo4Amount = $tax['amount'];
+                                }
+                                break;
+                        }
+                    }
+                }
+                
+                // RESPALDO: Si no hay impuestos detallados, usar el IVA tradicional de la BD
+                if (!$hasDetailedTaxes && $order->includes_iva && $order->iva_amount > 0) {
+                    $iva19Amount = $order->iva_amount;
+                }
+                
                 // Usar plantilla para servicios sin cotización
-                $view = view('purchase-orders.pdf-template-service', array_merge([
+                $view = view('purchase-orders.pdf-template-service', [
                     'order' => $order,
                     'purchaseRequest' => $order->purchaseRequest,
-                ], $taxValues));
+                    'includesIva' => $order->includes_iva,
+                    'subtotal' => $order->subtotal,
+                    'ivaAmount' => $order->iva_amount,
+                    'totalFinal' => $totalFinal,
+                    'subtotalCalculado' => $subtotalCalculado,
+                    'iva19Amount' => $iva19Amount,
+                    'iva5Amount' => $iva5Amount,
+                    'ipoconsumo8Amount' => $ipoconsumo8Amount,
+                    'ipoconsumo4Amount' => $ipoconsumo4Amount,
+                    'hasDetailedTaxes' => $hasDetailedTaxes,
+                ]);
             } else {
                 // Verificar si tenemos selecciones específicas del proveedor (selección mixta)
                 if ($providerSelections !== null) {
                     // Usar selecciones específicas del proveedor para selección mixta
-                    $view = view('purchase-orders.pdf-template-mixed', array_merge([
+                    $view = view('purchase-orders.pdf-template-mixed', [
                         'order' => $order,
                         'purchaseRequest' => $order->purchaseRequest,
                         'mixedSelections' => $providerSelections,
-                    ], $taxValues));
+                        'includesIva' => $order->includes_iva,
+                        'subtotal' => $order->subtotal,
+                        'ivaAmount' => $order->iva_amount,
+                    ]);
                 } else {
                     // Verificar si es una orden con selección mixta (caso legacy)
                     $hasMixedSelection = $order->purchaseRequest->quotationItemSelections()->exists();
@@ -208,31 +144,31 @@ class PurchaseOrderPdfService
                         $mixedSelections = $this->getProviderSpecificSelections($order);
                         
                         // Usar plantilla para selección mixta
-                        $view = view('purchase-orders.pdf-template-mixed', array_merge([
+                        $view = view('purchase-orders.pdf-template-mixed', [
                             'order' => $order,
                             'purchaseRequest' => $order->purchaseRequest,
                             'mixedSelections' => $mixedSelections,
-                        ], $taxValues));
+                            'includesIva' => $order->includes_iva,
+                            'subtotal' => $order->subtotal,
+                            'ivaAmount' => $order->iva_amount,
+                        ]);
                     } else {
                         // Obtener datos de la cotización seleccionada para orden tradicional
                         $quotation = $order->purchaseRequest->selectedQuotation;
                         
-                        // Restaurar la plantilla original para generación de PDF
-                        $view = view('purchase-orders.pdf-template-new', array_merge([
+                        // Usar plantilla tradicional
+                        $view = view('purchase-orders.pdf-template-new', [
                             'order' => $order,
                             'purchaseRequest' => $order->purchaseRequest,
                             'quotation' => $quotation,
                             'items' => $order->purchaseRequest->purchase_items ?? [],
                             'additionalItems' => $order->additional_items ?? [],
+                            'includesIva' => $order->includes_iva,
+                            'subtotal' => $order->subtotal,
+                            'ivaAmount' => $order->iva_amount,
+                            'iva_amount' => $order->iva_amount,
                             'tax_consumption' => 0, // Si no se usa impuesto al consumo
                             'discount' => 0, // Si no se manejan descuentos
-                            'forceUseOriginalPrices' => true // Forzar uso de precios originales
-                        ], $taxValues));
-                        
-                        // Registrar el uso de la plantilla original para diagnóstico
-                        Log::critical('🔄 RESTAURANDO PLANTILLA ORIGINAL PDF', [
-                            'order_number' => $order->order_number,
-                            'provider' => $order->provider->nombre
                         ]);
                     }
                 }
@@ -273,25 +209,78 @@ class PurchaseOrderPdfService
             // Cargar la solicitud y sus relaciones
             $order->load(['purchaseRequest.user', 'purchaseRequest.selectedQuotation', 'purchaseRequest.approver', 'provider']);
             
-            // Preparar valores fiscales consistentes
-            $taxValues = $this->prepareTaxValues($order);
-            
             // Verificar si es un servicio sin cotización
             if ($order->purchaseRequest->isNoQuotationService()) {
+                // Calcular variables necesarias para el template
+                $subtotalCalculado = $order->subtotal;
+                $totalFinal = $order->total_amount;
+                
+                // Procesar impuestos aplicados desde additional_items
+                $appliedTaxes = isset($order->additional_items['applied_taxes_detail']) 
+                    ? $order->additional_items['applied_taxes_detail'] 
+                    : [];
+                
+                $iva19Amount = 0;
+                $iva5Amount = 0;
+                $ipoconsumo8Amount = 0;
+                $ipoconsumo4Amount = 0;
+                $hasDetailedTaxes = false;
+                
+                // Si hay impuestos detallados, usarlos
+                if (!empty($appliedTaxes)) {
+                    foreach ($appliedTaxes as $tax) {
+                        $hasDetailedTaxes = true;
+                        switch ($tax['type']) {
+                            case 'IVA':
+                                if ($tax['rate'] == 19) {
+                                    $iva19Amount = $tax['amount'];
+                                } elseif ($tax['rate'] == 5) {
+                                    $iva5Amount = $tax['amount'];
+                                }
+                                break;
+                            case 'IMPUESTO_CONSUMO':
+                                if ($tax['rate'] == 8) {
+                                    $ipoconsumo8Amount = $tax['amount'];
+                                } elseif ($tax['rate'] == 4) {
+                                    $ipoconsumo4Amount = $tax['amount'];
+                                }
+                                break;
+                        }
+                    }
+                }
+                
+                // RESPALDO: Si no hay impuestos detallados, usar el IVA tradicional de la BD
+                if (!$hasDetailedTaxes && $order->includes_iva && $order->iva_amount > 0) {
+                    $iva19Amount = $order->iva_amount;
+                }
+                
                 // Usar plantilla para servicios sin cotización
-                $view = view('purchase-orders.pdf-template-service', array_merge([
+                $view = view('purchase-orders.pdf-template-service', [
                     'order' => $order,
                     'purchaseRequest' => $order->purchaseRequest,
-                ], $taxValues));
+                    'includesIva' => $order->includes_iva,
+                    'subtotal' => $order->subtotal,
+                    'ivaAmount' => $order->iva_amount,
+                    'totalFinal' => $totalFinal,
+                    'subtotalCalculado' => $subtotalCalculado,
+                    'iva19Amount' => $iva19Amount,
+                    'iva5Amount' => $iva5Amount,
+                    'ipoconsumo8Amount' => $ipoconsumo8Amount,
+                    'ipoconsumo4Amount' => $ipoconsumo4Amount,
+                    'hasDetailedTaxes' => $hasDetailedTaxes,
+                ]);
             } else {
                 // Verificar si tenemos selecciones específicas del proveedor (selección mixta)
                 if ($providerSelections !== null) {
                     // Usar selecciones específicas del proveedor para selección mixta
-                    $view = view('purchase-orders.pdf-template-mixed', array_merge([
+                    $view = view('purchase-orders.pdf-template-mixed', [
                         'order' => $order,
                         'purchaseRequest' => $order->purchaseRequest,
                         'mixedSelections' => $providerSelections,
-                    ], $taxValues));
+                        'includesIva' => $order->includes_iva,
+                        'subtotal' => $order->subtotal,
+                        'ivaAmount' => $order->iva_amount,
+                    ]);
                 } else {
                     // Verificar si es una orden con selección mixta (caso legacy)
                     $hasMixedSelection = $order->purchaseRequest->quotationItemSelections()->exists();
@@ -301,25 +290,32 @@ class PurchaseOrderPdfService
                         $mixedSelections = $this->getProviderSpecificSelections($order);
                         
                         // Usar plantilla para selección mixta
-                        $view = view('purchase-orders.pdf-template-mixed', array_merge([
+                        $view = view('purchase-orders.pdf-template-mixed', [
                             'order' => $order,
                             'purchaseRequest' => $order->purchaseRequest,
                             'mixedSelections' => $mixedSelections,
-                        ], $taxValues));
+                            'includesIva' => $order->includes_iva,
+                            'subtotal' => $order->subtotal,
+                            'ivaAmount' => $order->iva_amount,
+                        ]);
                     } else {
                         // Obtener datos de la cotización seleccionada para orden tradicional
                         $quotation = $order->purchaseRequest->selectedQuotation;
                         
                         // Usar plantilla tradicional
-                        $view = view('purchase-orders.pdf-template-new', array_merge([
+                        $view = view('purchase-orders.pdf-template-new', [
                             'order' => $order,
                             'purchaseRequest' => $order->purchaseRequest,
                             'quotation' => $quotation,
                             'items' => $order->purchaseRequest->purchase_items ?? [],
                             'additionalItems' => $order->additional_items ?? [],
+                            'includesIva' => $order->includes_iva,
+                            'subtotal' => $order->subtotal,
+                            'ivaAmount' => $order->iva_amount,
+                            'iva_amount' => $order->iva_amount,
                             'tax_consumption' => 0,
                             'discount' => 0,
-                        ], $taxValues));
+                        ]);
                     }
                 }
             }
@@ -361,15 +357,18 @@ class PurchaseOrderPdfService
             $originalProvider = $order->provider;
             $order->setRelation('provider', $customProvider);
             
-            // Preparar valores fiscales consistentes usando datos personalizados
-            $taxValues = $this->prepareTaxValues($order, $customData);
-            
-            // Actualizar la orden con los valores fiscales preparados
-            $order->subtotal = $taxValues['subtotal'];
-            $order->iva_amount = $taxValues['ivaAmount'];
-            $order->tax_amount = $taxValues['ivaAmount'];
-            $order->total_amount = $taxValues['totalAmount'];
-            $order->includes_iva = $taxValues['includesIva'];
+            // Actualizar totales si están en los datos personalizados
+            if (isset($customData['subtotal'])) {
+                $order->subtotal = $customData['subtotal'];
+            }
+            if (isset($customData['iva_amount'])) {
+                $order->iva_amount = $customData['iva_amount'];
+                $order->tax_amount = $customData['iva_amount'];
+                $order->includes_iva = $customData['iva_amount'] > 0;
+            }
+            if (isset($customData['total'])) {
+                $order->total_amount = $customData['total'];
+            }
             
             // Usar la lógica original para determinar el template correcto
             $view = null;
@@ -380,18 +379,21 @@ class PurchaseOrderPdfService
                 $itemsToUse = $customData['items'] ?? [];
                 
                 // Usar template de servicio con datos personalizados
-                $view = view('purchase-orders.pdf-template-service', array_merge([
+                $view = view('purchase-orders.pdf-template-service', [
                     'order' => $order,
                     'purchaseRequest' => $order->purchaseRequest,
                     'customItems' => $itemsToUse,
-                ], $taxValues));
+                    'includesIva' => $order->includes_iva,
+                    'subtotal' => $order->subtotal,
+                    'ivaAmount' => $order->iva_amount,
+                ]);
             } else {
                 // Verificar si es selección mixta para filtrar items
                 $hasMixedSelection = $order->purchaseRequest->quotationItemSelections()->exists();
                 $itemsToUse = $customData['items'] ?? [];
                 
                 if ($hasMixedSelection) {
-                    // 🔥 Para selecciones mixtas, usar solo items del proveedor
+                    // 🔥 CORRECCIÓN CRÍTICA: Para selecciones mixtas, usar solo items del proveedor
                     // Si ya tenemos selecciones filtradas del controlador, usarlas; sino, obtenerlas
                     if ($providerSelections === null) {
                         $providerSelections = $this->getProviderSpecificSelections($order);
@@ -436,23 +438,18 @@ class PurchaseOrderPdfService
                     }, $itemsToUse)
                 ]);
                 
-                // Restaurar la plantilla original para generación de PDF personalizado
-                $view = view('purchase-orders.pdf-template-new', array_merge([
+                $view = view('purchase-orders.pdf-template-new', [
                     'order' => $order,
                     'purchaseRequest' => $order->purchaseRequest,
                     'quotation' => $quotation,
                     'items' => $itemsToUse, // Usar items filtrados en lugar de todos los items
                     'additionalItems' => $order->additional_items ?? [],
+                    'includesIva' => $order->includes_iva,
+                    'subtotal' => $order->subtotal,
+                    'ivaAmount' => $order->iva_amount,
+                    'iva_amount' => $order->iva_amount,
                     'tax_consumption' => 0,
                     'discount' => 0,
-                    'forceUseOriginalPrices' => true // Forzar uso de precios originales
-                ], $taxValues));
-                
-                // Registrar el uso de la plantilla original para diagnóstico
-                Log::critical('🔄 RESTAURANDO PLANTILLA ORIGINAL PARA PDF CUSTOM', [
-                    'order_number' => $order->order_number,
-                    'provider' => $order->provider->nombre,
-                    'items_count' => count($itemsToUse)
                 ]);
             }
             

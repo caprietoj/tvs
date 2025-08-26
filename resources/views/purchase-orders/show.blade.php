@@ -92,17 +92,62 @@
                                     @endif
                                 </dd>
                                 
+                                @php
+                                    // Priorizar datos personalizados del PDF si existen
+                                    $customData = null;
+                                    if (!empty($purchaseOrder->pdf_custom_data)) {
+                                        $customData = json_decode($purchaseOrder->pdf_custom_data, true);
+                                    }
+                                    
+                                    // Determinar qué datos mostrar
+                                    $displayProviderName = ($customData && isset($customData['provider_name'])) 
+                                        ? $customData['provider_name'] 
+                                        : ($purchaseOrder->provider->nombre ?? 'N/A');
+                                    
+                                    $displayTotal = ($customData && isset($customData['total'])) 
+                                        ? $customData['total'] 
+                                        : $purchaseOrder->total_amount;
+                                    
+                                    $displayPaymentTerms = ($customData && isset($customData['payment_terms'])) 
+                                        ? $customData['payment_terms'] 
+                                        : $purchaseOrder->payment_terms;
+                                    
+                                    $displayDeliveryDate = ($customData && isset($customData['delivery_date'])) 
+                                        ? $customData['delivery_date'] 
+                                        : $purchaseOrder->delivery_date->format('d/m/Y');
+                                @endphp
+                                
                                 <dt class="col-sm-5">Proveedor:</dt>
-                                <dd class="col-sm-7">{{ $purchaseOrder->provider->nombre ?? 'N/A' }}</dd>
+                                <dd class="col-sm-7">
+                                    {{ $displayProviderName }}
+                                    @if($customData && isset($customData['provider_name']))
+                                        <small class="text-muted">(Editado en PDF)</small>
+                                    @endif
+                                </dd>
                                 
                                 <dt class="col-sm-5">Monto Total:</dt>
-                                <dd class="col-sm-7">${{ number_format($purchaseOrder->total_amount, 2, ',', '.') }}</dd>
+                                <dd class="col-sm-7">
+                                    ${{ number_format($displayTotal, 2, ',', '.') }}
+                                    @if($customData && isset($customData['total']))
+                                        <small class="text-muted">(Editado en PDF)</small>
+                                    @endif
+                                </dd>
                                 
                                 <dt class="col-sm-5">Términos de Pago:</dt>
-                                <dd class="col-sm-7">{{ $purchaseOrder->payment_terms }}</dd>
+                                <dd class="col-sm-7">
+                                    {{ $displayPaymentTerms }}
+                                    @if($customData && isset($customData['payment_terms']))
+                                        <small class="text-muted">(Editado en PDF)</small>
+                                    @endif
+                                </dd>
                                 
                                 <dt class="col-sm-5">Fecha de Entrega:</dt>
-                                <dd class="col-sm-7">{{ $purchaseOrder->delivery_date->format('d/m/Y') }}</dd>
+                                <dd class="col-sm-7">
+                                    {{ $displayDeliveryDate }}
+                                    @if($customData && isset($customData['delivery_date']))
+                                        <small class="text-muted">(Editado en PDF)</small>
+                                    @endif
+                                </dd>
                             </dl>
                         </div>
                         <div class="col-md-6">
@@ -412,8 +457,20 @@
                     </div>
                     <p>¿Está seguro de que desea eliminar la orden de compra <strong>{{ $purchaseOrder->order_number }}</strong>?</p>
                     <p><strong>Solicitud asociada:</strong> {{ $purchaseOrder->purchaseRequest->request_number ?? 'N/A' }}</p>
-                    <p><strong>Proveedor:</strong> {{ $purchaseOrder->provider->nombre ?? 'N/A' }}</p>
-                    <p><strong>Monto:</strong> ${{ number_format($purchaseOrder->total_amount, 2, ',', '.') }}</p>
+                    <p><strong>Proveedor:</strong> 
+                        @if($customData && isset($customData['provider_name']))
+                            {{ $customData['provider_name'] }}
+                        @else
+                            {{ $purchaseOrder->provider->nombre ?? 'N/A' }}
+                        @endif
+                    </p>
+                    <p><strong>Monto:</strong> 
+                        @if($customData && isset($customData['total']))
+                            ${{ number_format($customData['total'], 2, ',', '.') }}
+                        @else
+                            ${{ number_format($purchaseOrder->total_amount, 2, ',', '.') }}
+                        @endif
+                    </p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>

@@ -16,13 +16,59 @@ class PrevisitaConsolidadoController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:previsitas.view')->only(['index', 'show']);
-        $this->middleware('permission:previsitas.create')->only(['create', 'store']);
-        $this->middleware('permission:previsitas.edit')->only(['edit', 'update']);
-        $this->middleware('permission:previsitas.delete')->only(['destroy']);
-        $this->middleware('permission:previsitas.download')->only(['downloadFile']);
-        $this->middleware('permission:previsitas.dashboard')->only(['dashboard']);
+        $this->middleware(function ($request, $next) {
+            return $this->checkPrevisitasAccess($request, $next, 'view');
+        })->only(['index', 'show', 'dashboard', 'downloadFile']);
+        
+        $this->middleware(function ($request, $next) {
+            return $this->checkPrevisitasAccess($request, $next, 'edit');
+        })->only(['create', 'store', 'edit', 'update', 'destroy']);
+        
         // Las sugerencias solo requieren autenticación básica, no permisos específicos
+    }
+    
+    /**
+     * Verificar acceso específico a previsitas por usuario
+     */
+    private function checkPrevisitasAccess($request, $next, $type = 'view')
+    {
+        $userEmail = auth()->user()->email;
+        
+        // Usuarios con permisos de solo lectura
+        $readOnlyUsers = [
+            'preschool@tvs.edu.co',
+            'coordpai@tvs.edu.co', 
+            'asistentegeneral@tvs.edu.co',
+            'escuelamedia@tvs.edu.co',
+            'dp@tvs.edu.co',
+            'generaldirector@tvs.edu.co'
+        ];
+
+        // Usuarios con permisos completos
+        $editorUsers = [
+            'asistenteadministrativa@tvs.edu.co',
+            'asistentebachillerato@tvs.edu.co',
+            'asistentepyp@tvs.edu.co',
+            'wrueda@tvs.edu.co'
+        ];
+        
+        // Verificar si el usuario tiene acceso
+        if (in_array($userEmail, $readOnlyUsers)) {
+            // Solo permitir acciones de lectura
+            if ($type === 'view') {
+                return $next($request);
+            } else {
+                abort(403, 'No tienes permisos para realizar esta acción.');
+            }
+        } elseif (in_array($userEmail, $editorUsers)) {
+            // Permitir todas las acciones
+            return $next($request);
+        } elseif (auth()->user()->can('admin')) {
+            // Los administradores tienen acceso completo
+            return $next($request);
+        } else {
+            abort(403, 'No tienes acceso al módulo de previsitas.');
+        }
     }
 
     /**

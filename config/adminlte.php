@@ -853,13 +853,13 @@ return [
             ],
            
         ],
-         [
-             'text' => 'Presupuesto',
-             'url'  => 'presupuesto',
-             'icon' => 'fas fa-calculator',
-             'can'  => 'admin',
-             'active' => ['presupuesto'],
-         ],
+        //  [
+        //      'text' => 'Presupuesto',
+        //      'url'  => 'presupuesto',
+        //      'icon' => 'fas fa-calculator',
+        //      'can'  => 'admin',
+        //      'active' => ['presupuesto'],
+        //  ],
         [
             'text' => 'Perfil',
             'url' => 'admin/settings',

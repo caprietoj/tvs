@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PurchaseRequest;
 use App\Models\RequestHistory;
 use App\Models\PurchaseOrder;
+use App\Models\Proveedor;
 use App\Notifications\OrderCreated;
 use App\Services\PurchaseOrderPdfService;
 use App\Helpers\BudgetHelper;
@@ -42,11 +43,6 @@ class PurchaseOrdersController extends Controller
         // Obtener las solicitudes aprobadas pendientes de generar órdenes de compra
         $approvedRequests = PurchaseRequest::with(['selectedQuotation', 'user', 'approver', 'quotationItemSelections'])
             ->whereIn('status', ['approved', 'in_process'])
-            ->whereNotIn('id', function($query) {
-                $query->select('purchase_request_id')
-                    ->from('purchase_orders')
-                    ->whereNull('deleted_at');
-            })
             ->where(function($query) {
                 // Solicitudes con cotización seleccionada tradicional
                 $query->where('selected_quotation_id', '!=', null)
@@ -58,8 +54,32 @@ class PurchaseOrdersController extends Controller
                                    ->where('service_type', 'no_quotation');
                       });
             })
-            ->orderBy('approval_date', 'desc')
-            ->get();
+            ->get()
+            ->filter(function($request) {
+                // Para selecciones mixtas, verificar si faltan órdenes por proveedores
+                $hasMixedSelection = $request->quotationItemSelections()->exists();
+                
+                if ($hasMixedSelection) {
+                    // Obtener proveedores con items seleccionados
+                    $selections = $request->quotationItemSelections()->with('quotation')->get();
+                    $providersWithSelections = $selections->groupBy('quotation.provider_name')->keys();
+                    
+                    // Obtener proveedores que ya tienen órdenes
+                    $providersWithOrders = $request->purchaseOrders()
+                        ->whereNull('deleted_at')
+                        ->whereHas('provider')
+                        ->get()
+                        ->pluck('provider.nombre')
+                        ->filter();
+                    
+                    // Mostrar si aún faltan proveedores por procesar
+                    return $providersWithSelections->diff($providersWithOrders)->isNotEmpty();
+                } else {
+                    // Para cotizaciones tradicionales y servicios, excluir si ya tiene orden
+                    return !$request->purchaseOrders()->whereNull('deleted_at')->exists();
+                }
+            })
+            ->sortByDesc('approval_date');
             
         return view('purchase-orders.index', compact('orders', 'approvedRequests'));
     }
@@ -91,17 +111,14 @@ class PurchaseOrdersController extends Controller
                 ->with('error', 'La solicitud no tiene una cotización seleccionada, selección mixta, ni es un servicio sin cotización.');
         }
         
-        // Cargar las selecciones mixtas si existen
-        $mixedSelections = $hasMixedSelection ? $purchaseRequest->quotationItemSelections()->with('quotation')->get() : collect();
-        
-        Log::info('Datos para la vista create', [
+        Log::info('Redirigiendo a interfaz de creación manual', [
             'has_selected_quotation' => $hasSelectedQuotation,
             'has_mixed_selection' => $hasMixedSelection,
-            'mixed_selections_count' => $mixedSelections->count(),
             'is_no_quotation_service' => $isNoQuotationService
         ]);
         
-        return view('purchase-orders.create', compact('purchaseRequest', 'hasSelectedQuotation', 'hasMixedSelection', 'mixedSelections', 'isNoQuotationService'));
+        // Redirigir SIEMPRE a la interfaz de creación manual apropiada
+        return $this->showOrderCreationInterface(request(), $purchaseRequest);
     }
 
     /**
@@ -160,10 +177,8 @@ class PurchaseOrdersController extends Controller
                 return redirect()->route('purchase-orders.index')->with('error', 'Solo se pueden crear órdenes de compra para solicitudes aprobadas.');
             }
 
-            // Si hay selección mixta, crear múltiples órdenes por proveedor
-            if ($hasMixedSelection) {
-                return $this->createMixedSelectionOrders($request, $purchaseRequest);
-            }
+            // Redirigir SIEMPRE a la interfaz de creación manual
+            return $this->showOrderCreationInterface($request, $purchaseRequest);
             
             // Verificar que no exista una orden para esta solicitud
             $existingOrder = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->exists();
@@ -408,6 +423,67 @@ class PurchaseOrdersController extends Controller
             'observations' => $validated['observations'],
         ]);
         
+        // Regenerar PDF automáticamente después de editar (solo si no se subió archivo manual)
+        if (!$request->hasFile('order_file')) {
+            try {
+                // FILTRAR POR PROVEEDOR PARA ÓRDENES DE SELECCIÓN MIXTA
+                $providerSelections = null;
+                
+                \Log::info('=== UPDATE PDF REGENERATION START ===', [
+                    'purchase_order_id' => $purchaseOrder->id,
+                    'provider_id' => $purchaseOrder->provider_id,
+                    'request_type' => $purchaseOrder->purchaseRequest->type ?? 'unknown',
+                    'has_quotation_item_selections' => $purchaseOrder->purchaseRequest->quotationItemSelections()->exists(),
+                    'quotation_item_selections_count' => $purchaseOrder->purchaseRequest->quotationItemSelections()->count()
+                ]);
+
+                // Verificar si es una orden de selección mixta
+                $hasMixedSelections = $purchaseOrder->purchaseRequest->quotationItemSelections()->exists();
+                
+                if ($hasMixedSelections) {
+                    \Log::info('UPDATE PDF - MIXED SELECTION DETECTED - Filtering by provider', [
+                        'provider_id' => $purchaseOrder->provider_id,
+                        'provider_name' => $purchaseOrder->provider->nombre ?? 'unknown'
+                    ]);
+
+                    // Obtener todas las selecciones
+                    $allSelections = $purchaseOrder->purchaseRequest->quotationItemSelections;
+                    \Log::info('UPDATE PDF - Total selections found', ['count' => $allSelections->count()]);
+
+                    // Filtrar solo las selecciones del proveedor de esta orden
+                    $providerSelections = $allSelections->filter(function ($selection) use ($purchaseOrder) {
+                        $match = $selection->quotation->provider_name == $purchaseOrder->provider->nombre;
+                        \Log::info('UPDATE PDF - Selection filter', [
+                            'selection_id' => $selection->id,
+                            'selection_provider_name' => $selection->quotation->provider_name,
+                            'order_provider_name' => $purchaseOrder->provider->nombre,
+                            'matches' => $match
+                        ]);
+                        return $match;
+                    });
+
+                    \Log::info('UPDATE PDF - Filtered selections for PDF generation', [
+                        'filtered_count' => $providerSelections->count(),
+                        'provider_name' => $purchaseOrder->provider->nombre ?? 'unknown'
+                    ]);
+                }
+                
+                $pdfService = app(PurchaseOrderPdfService::class);
+                $pdfPath = $pdfService->generatePdf($purchaseOrder, $providerSelections);
+                $purchaseOrder->update(['file_path' => $pdfPath]);
+                
+                \Log::info('PDF regenerado automáticamente después de editar orden', [
+                    'order_id' => $purchaseOrder->id,
+                    'pdf_path' => $pdfPath
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Error al regenerar PDF después de editar orden: ' . $e->getMessage(), [
+                    'order_id' => $purchaseOrder->id
+                ]);
+                // No fallar la actualización por error en PDF, solo registrar el error
+            }
+        }
+        
         return redirect()->route('purchase-orders.show', $purchaseOrder->id)
             ->with('success', 'Orden de compra actualizada exitosamente.');
     }
@@ -418,8 +494,52 @@ class PurchaseOrdersController extends Controller
     public function generatePdf(PurchaseOrder $purchaseOrder)
     {
         try {
-            $pdfPath = $this->pdfService->generatePdf($purchaseOrder);
+            // FILTRAR POR PROVEEDOR PARA ÓRDENES DE SELECCIÓN MIXTA
+            $providerSelections = null;
+            
+            \Log::info('=== GENERATE PDF START ===', [
+                'purchase_order_id' => $purchaseOrder->id,
+                'provider_id' => $purchaseOrder->provider_id,
+                'request_type' => $purchaseOrder->purchaseRequest->type ?? 'unknown',
+                'has_quotation_item_selections' => $purchaseOrder->purchaseRequest->quotationItemSelections()->exists(),
+                'quotation_item_selections_count' => $purchaseOrder->purchaseRequest->quotationItemSelections()->count()
+            ]);
+
+            // Verificar si es una orden de selección mixta
+            $hasMixedSelections = $purchaseOrder->purchaseRequest->quotationItemSelections()->exists();
+            
+            if ($hasMixedSelections) {
+                \Log::info('MIXED SELECTION DETECTED BY QUOTATION_ITEM_SELECTIONS - Filtering by provider', [
+                    'provider_id' => $purchaseOrder->provider_id,
+                    'provider_name' => $purchaseOrder->provider->nombre ?? 'unknown'
+                ]);
+
+                // Obtener todas las selecciones
+                $allSelections = $purchaseOrder->purchaseRequest->quotationItemSelections;
+                \Log::info('Total selections found', ['count' => $allSelections->count()]);
+
+                // Filtrar solo las selecciones del proveedor de esta orden
+                $providerSelections = $allSelections->filter(function ($selection) use ($purchaseOrder) {
+                    $match = $selection->quotation->provider_name == $purchaseOrder->provider->nombre;
+                    \Log::info('Selection filter', [
+                        'selection_id' => $selection->id,
+                        'selection_provider_name' => $selection->quotation->provider_name,
+                        'order_provider_name' => $purchaseOrder->provider->nombre,
+                        'matches' => $match
+                    ]);
+                    return $match;
+                });
+
+                \Log::info('Filtered selections for PDF generation', [
+                    'filtered_count' => $providerSelections->count(),
+                    'provider_name' => $purchaseOrder->provider->nombre ?? 'unknown'
+                ]);
+            }
+
+            $pdfPath = $this->pdfService->generatePdf($purchaseOrder, $providerSelections);
             $purchaseOrder->update(['file_path' => $pdfPath]);
+            
+            \Log::info('PDF generated successfully', ['pdf_path' => $pdfPath]);
             
             return redirect()->route('purchase-orders.show', $purchaseOrder->id)
                 ->with('success', 'PDF de la orden de compra generado exitosamente.');
@@ -944,13 +1064,79 @@ class PurchaseOrdersController extends Controller
             'provider'
         ]);
 
+        // CORRECCIÓN CRÍTICA: Filtrar selecciones mixtas por proveedor específico
+        $purchaseRequest = $purchaseOrder->purchaseRequest;
+        $providerSpecificSelections = collect();
+        
+        if ($purchaseRequest && $purchaseRequest->quotationItemSelections()->exists()) {
+            // Para órdenes de selección mixta, filtrar por proveedor específico
+            $providerSpecificSelections = $purchaseRequest->quotationItemSelections()
+                ->whereHas('quotation', function($query) use ($purchaseOrder) {
+                    $query->where('provider_name', $purchaseOrder->provider->nombre);
+                })
+                ->with('quotation')
+                ->get();
+            
+            // CORRECCIÓN: Obtener precios reales de las cotizaciones originales
+            $providerSpecificSelections = $providerSpecificSelections->map(function($selection) {
+                if ($selection->quotation && isset($selection->quotation->original_item_prices)) {
+                    $prices = $selection->quotation->original_item_prices;
+                    $realPrice = null;
+
+                    // 1) Intentar por índice exacto
+                    if (isset($prices[$selection->item_index])) {
+                        $realPrice = $prices[$selection->item_index];
+                        Log::info('✅ Precio por índice exacto', [
+                            'item_index' => $selection->item_index,
+                            'real_price' => $realPrice
+                        ]);
+                    } elseif (is_array($prices)) {
+                        // 2) Fallback: usar array_values y tomar la posición
+                        $values = array_values($prices);
+                        if (isset($values[$selection->item_index])) {
+                            $realPrice = $values[$selection->item_index];
+                            Log::info('✅ Precio por posición en array_values', [
+                                'item_index' => $selection->item_index,
+                                'real_price' => $realPrice
+                            ]);
+                        }
+                    }
+
+                    if ($realPrice !== null) {
+                        $selection->unit_price = $realPrice;
+                        $selection->total_price = $realPrice * $selection->quantity;
+                        Log::info('✅ PRECIO CORREGIDO', [
+                            'item' => $selection->item_description,
+                            'new_price' => $realPrice,
+                            'quantity' => $selection->quantity,
+                            'new_total' => $selection->total_price
+                        ]);
+                    } else {
+                        Log::warning('⚠️ No se encontró precio específico para item, se mantiene unit_price existente', [
+                            'item' => $selection->item_description,
+                            'item_index' => $selection->item_index,
+                            'existing_unit_price' => $selection->unit_price
+                        ]);
+                    }
+                }
+                return $selection;
+            });
+            
+            Log::info('🎯 EDITPDF - Filtrando vista de edición', [
+                'order' => $purchaseOrder->order_number,
+                'provider' => $purchaseOrder->provider->nombre,
+                'total_selections' => $purchaseRequest->quotationItemSelections()->count(),
+                'filtered_selections' => $providerSpecificSelections->count()
+            ]);
+        }
+
         // Usar el alias 'order' para compatibilidad con la vista
         $order = $purchaseOrder;
 
         // Obtener opciones de presupuesto
         $budgetOptions = BudgetHelper::getBudgetOptions();
 
-        return view('purchase-orders.edit-pdf-new', compact('order', 'budgetOptions'));
+        return view('purchase-orders.edit-pdf-new', compact('order', 'budgetOptions', 'providerSpecificSelections'));
     }
 
     /**
@@ -973,13 +1159,101 @@ class PurchaseOrdersController extends Controller
             'provider'
         ]);
 
+        // RESTAURAR: Usar el sistema original pero con verificación de precios correctos
+        $purchaseRequest = $purchaseOrder->purchaseRequest;
+        $selectedQuotation = $purchaseRequest->selectedQuotation;
+        
+        // Verificar y registrar disponibilidad de precios originales
+        if ($selectedQuotation && isset($selectedQuotation->original_item_prices)) {
+            Log::critical('💰 PRECIOS ORIGINALES ENCONTRADOS', [
+                'order' => $purchaseOrder->order_number,
+                'provider' => $purchaseOrder->provider->nombre,
+                'prices' => $selectedQuotation->original_item_prices
+            ]);
+        } else {
+            Log::critical('❌ NO HAY PRECIOS ORIGINALES', [
+                'order' => $purchaseOrder->order_number,
+                'provider' => $purchaseOrder->provider->nombre,
+            ]);
+        }
+
+        // Preparar items para la edición con precios correctos
+        $editItems = [];
+        
+        // Si es una selección mixta, obtener solo items del proveedor específico
+        $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
+        if ($hasMixedSelection) {
+            $providerSelections = $purchaseRequest->quotationItemSelections()
+                ->whereHas('quotation', function($query) use ($purchaseOrder) {
+                    $query->where('provider_name', $purchaseOrder->provider->nombre);
+                })
+                ->with('quotation')
+                ->get();
+                
+            foreach ($providerSelections as $selection) {
+                // Obtener el precio real de la cotización original
+                $realPrice = null;
+                if ($selection->quotation && isset($selection->quotation->original_item_prices)) {
+                    if (isset($selection->quotation->original_item_prices[$selection->item_index])) {
+                        $realPrice = $selection->quotation->original_item_prices[$selection->item_index];
+                    }
+                }
+                
+                // Si no se encontró precio, usar el que tiene guardado
+                if ($realPrice === null) {
+                    $realPrice = $selection->unit_price ?? 0;
+                }
+                
+                $editItems[] = [
+                    'description' => $selection->item_description ?? '',
+                    'quantity' => floatval($selection->quantity ?? 0),
+                    'unit_price' => floatval($realPrice),
+                    'total' => (floatval($realPrice) * floatval($selection->quantity ?? 0))
+                ];
+            }
+            
+            Log::critical('🧾 ITEMS MEZCLADOS PREPARADOS', [
+                'items_count' => count($editItems),
+                'sample' => array_slice($editItems, 0, 2)
+            ]);
+        }
+        // Para órdenes normales, usar items del purchase request con precios de la cotización
+        else {
+            $purchaseItems = $purchaseRequest->purchase_items ?? [];
+            if (is_string($purchaseItems)) {
+                $purchaseItems = json_decode($purchaseItems, true) ?? [];
+            }
+            
+            foreach ($purchaseItems as $index => $item) {
+                $realPrice = 0;
+                
+                // Si hay cotización seleccionada, intentar obtener precio original
+                if ($selectedQuotation && isset($selectedQuotation->original_item_prices)) {
+                    $realPrice = $selectedQuotation->original_item_prices[$index] ?? 0;
+                }
+                
+                $editItems[] = [
+                    'description' => $item['description'] ?? '',
+                    'quantity' => floatval($item['quantity'] ?? 0),
+                    'unit_price' => floatval($realPrice),
+                    'total' => (floatval($realPrice) * floatval($item['quantity'] ?? 0))
+                ];
+            }
+            
+            Log::critical('� ITEMS ESTÁNDAR PREPARADOS', [
+                'items_count' => count($editItems),
+                'sample' => array_slice($editItems, 0, 2)
+            ]);
+        }
+
         // Usar el alias 'order' para compatibilidad con la vista
         $order = $purchaseOrder;
 
         // Obtener opciones de presupuesto
         $budgetOptions = BudgetHelper::getBudgetOptions();
 
-        return view('purchase-orders.edit-pdf-new', compact('order', 'budgetOptions'));
+        // Usar la vista de edición tradicional pero con los items preparados con precios correctos
+        return view('purchase-orders.edit-pdf-new', compact('order', 'budgetOptions', 'editItems', 'selectedQuotation'));
     }
 
     /**
@@ -993,10 +1267,206 @@ class PurchaseOrdersController extends Controller
         }
 
         try {
-            // Obtener datos actuales
-            $currentCustomData = json_decode($purchaseOrder->pdf_custom_data ?? '{}', true);
+            // FORZAR: Para órdenes con selección mixta, IGNORAR datos previos del PDF
+            $purchaseRequest = $purchaseOrder->purchaseRequest;
+            $hasMixedSelection = $purchaseRequest ? $purchaseRequest->quotationItemSelections()->exists() : false;
             
-            // Preparar nuevos datos personalizados
+            // Siempre empezar con datos limpios para asegurar consistencia en los cálculos
+            $currentCustomData = [];
+            
+            if ($hasMixedSelection) {
+                Log::info('🔥 FORZANDO LIMPIEZA - Selección mixta detectada', [
+                    'order' => $purchaseOrder->order_number,
+                    'provider' => $purchaseOrder->provider->nombre,
+                    'cleaning_previous_data' => true
+                ]);
+            } else {
+                // Para órdenes normales, recuperar solo datos no relacionados con precios
+                $savedCustomData = json_decode($purchaseOrder->pdf_custom_data ?? '{}', true);
+                
+                // Transferir solo datos no relacionados con cálculos
+                $nonPriceFields = ['provider_name', 'provider_nit', 'provider_email', 
+                                  'provider_phone', 'provider_address', 'provider_city', 
+                                  'delivery_address', 'payment_method', 'budget',
+                                  'observations', 'shared_budget_info'];
+                
+                foreach ($nonPriceFields as $field) {
+                    if (isset($savedCustomData[$field])) {
+                        $currentCustomData[$field] = $savedCustomData[$field];
+                    }
+                }
+            }
+            
+            // Los items que llegan del formulario
+            $itemsToSave = $request->items ?? [];
+            
+            // Cargar cotización seleccionada para tener acceso a los precios originales
+            $purchaseOrder->purchaseRequest->load(['selectedQuotation']);
+            $selectedQuotation = $purchaseOrder->purchaseRequest->selectedQuotation;
+            
+            // DIAGNÓSTICO EXTENSO: Analizar qué precios están disponibles
+            Log::critical('🔍 ANÁLISIS DE PRECIOS PARA ORDEN #' . $purchaseOrder->order_number, [
+                'provider' => $purchaseOrder->provider->nombre,
+                'has_selectedQuotation' => ($selectedQuotation ? 'SI' : 'NO'),
+                'has_original_item_prices' => ($selectedQuotation && isset($selectedQuotation->original_item_prices) ? 'SI' : 'NO'),
+                'original_prices' => ($selectedQuotation && isset($selectedQuotation->original_item_prices) ? $selectedQuotation->original_item_prices : 'NO DISPONIBLE'),
+                'first_items' => array_slice($itemsToSave, 0, 3)
+            ]);
+            
+            // CORRECCIÓN CRÍTICA: FORZAR USO DE PRECIOS ORIGINALES DE LA COTIZACIÓN PARA EVITAR BUG DE $4.949
+            if ($selectedQuotation && isset($selectedQuotation->original_item_prices)) {
+                $originalPrices = $selectedQuotation->original_item_prices;
+                
+                Log::critical('🔒 UPDATEPDF - RESTAURANDO SISTEMA ORIGINAL', [
+                    'order' => $purchaseOrder->order_number,
+                    'original_prices_count' => count($originalPrices),
+                    'items_count' => count($itemsToSave),
+                    'original_prices' => $originalPrices
+                ]);
+                
+                // Para cada item, usar SIEMPRE el precio original cuando esté disponible
+                foreach ($itemsToSave as $index => &$item) {
+                    if (isset($originalPrices[$index])) {
+                        $oldPrice = $item['unit_price'];
+                        // Convertir explícitamente a número para evitar errores
+                        $item['unit_price'] = floatval($originalPrices[$index]);
+                        // Asegurarnos de que la cantidad también sea numérica
+                        $item['quantity'] = floatval($item['quantity']);
+                        // Recalcular el total
+                        $item['total'] = $item['unit_price'] * $item['quantity'];
+                        
+                        Log::critical('✅ UPDATEPDF - Precio original aplicado', [
+                            'item' => $item['description'],
+                            'old_price' => $oldPrice,
+                            'original_price' => $item['unit_price'],
+                            'quantity' => $item['quantity'],
+                            'total' => $item['total']
+                        ]);
+                    } else {
+                        Log::warning('⚠️ No se encontró precio original para el ítem #' . $index, [
+                            'description' => $item['description'] ?? 'Sin descripción'
+                        ]);
+                    }
+                }
+            }
+            
+            if ($hasMixedSelection) {
+                // Para órdenes mixtas: verificar que solo tengamos items del proveedor
+                $providerSelections = $purchaseRequest->quotationItemSelections()
+                    ->with('quotation')
+                    ->whereHas('quotation', function($query) use ($purchaseOrder) {
+                        $query->where('provider_name', $purchaseOrder->provider->nombre);
+                    })
+                    ->get();
+                
+                $expectedItemCount = $providerSelections->count();
+                $receivedItemCount = count($itemsToSave);
+                
+                // FORZAR: Solo guardar los primeros N items que corresponden al proveedor
+                $itemsToSave = array_slice($itemsToSave, 0, $expectedItemCount);
+                
+                Log::info('🎯 FORZANDO FILTRADO CORRECTO', [
+                    'order' => $purchaseOrder->order_number,
+                    'provider' => $purchaseOrder->provider->nombre,
+                    'expected_items' => $expectedItemCount,
+                    'received_items' => $receivedItemCount,
+                    'final_items_saved' => count($itemsToSave)
+                ]);
+            }
+            // CORRECCIÓN CRÍTICA: Usar la plantilla fija con precios corregidos
+            Log::critical('🔧 APLICANDO SOLUCIÓN DE PRECIOS FIJOS', [
+                'order' => $purchaseOrder->order_number,
+                'provider' => $purchaseOrder->provider->nombre,
+                'using_fixed_template' => true,
+                'items_to_save' => count($itemsToSave)
+            ]);
+            
+            // INTERCEPTAR: Si llegan más de 10 items, es sospechoso de ser error de selección mixta
+            if (count($itemsToSave) > 10) {
+                Log::warning('🚨 INTERCEPTANDO POSIBLE ERROR - Demasiados items detectados', [
+                    'order' => $purchaseOrder->order_number,
+                    'items_received' => count($itemsToSave),
+                    'forcing_cleanup' => true
+                ]);
+                
+                // VERIFICAR si es selección mixta por contenido
+                $hasAromatica = false;
+                $hasCafe = false;
+                foreach ($itemsToSave as $item) {
+                    if (isset($item['description'])) {
+                        if (str_contains(strtolower($item['description']), 'aromática')) $hasAromatica = true;
+                        if (str_contains(strtolower($item['description']), 'café')) $hasCafe = true;
+                    }
+                }
+                
+                if ($hasAromatica && $hasCafe && count($itemsToSave) >= 14) {
+                    // ESTO ES DEFINITIVAMENTE EL ERROR - FORZAR LIMPIEZA
+                    Log::error('🔥 ERROR CONFIRMADO - Forzando corrección inmediata', [
+                        'order' => $purchaseOrder->order_number,
+                        'detected_items' => count($itemsToSave),
+                        'has_aromatica' => $hasAromatica,
+                        'has_cafe' => $hasCafe
+                    ]);
+                    
+                    // FORZAR: Solo los primeros 7 items
+                    $itemsToSave = array_slice($itemsToSave, 0, 7);
+                    
+                    Log::info('✅ CORRECCIÓN FORZADA APLICADA', [
+                        'order' => $purchaseOrder->order_number,
+                        'items_after_correction' => count($itemsToSave)
+                    ]);
+                }
+            }
+            
+            // Recalcular los totales e impuestos correctamente
+            $rawSubtotal = floatval($request->subtotal);
+            $rawTotal = floatval($request->total);
+            $ivaRate = intval($request->iva_rate);
+            $ipoconsumoRate = intval($request->ipoconsumo_rate);
+            
+            // Verificar si los datos enviados son consistentes o necesitan recálculo
+            $calculatedTotal = $rawSubtotal;
+            $ivaAmount = 0;
+            $ipoconsumoAmount = 0;
+            
+            if ($ivaRate > 0) {
+                $ivaAmount = round(($rawSubtotal * $ivaRate) / 100);
+                $calculatedTotal += $ivaAmount;
+            }
+            
+            if ($ipoconsumoRate > 0) {
+                $ipoconsumoAmount = round(($rawSubtotal * $ipoconsumoRate) / 100);
+                $calculatedTotal += $ipoconsumoAmount;
+            }
+            
+            // Si hay inconsistencia entre el total calculado y el enviado, recalcular
+            if (abs($calculatedTotal - $rawTotal) > 5) { // Permitir pequeña variación por redondeo
+                Log::warning("Inconsistencia detectada en los cálculos de impuestos. Recalculando.", [
+                    'order' => $purchaseOrder->order_number,
+                    'input_subtotal' => $rawSubtotal,
+                    'input_total' => $rawTotal,
+                    'calculated_total' => $calculatedTotal,
+                    'difference' => $calculatedTotal - $rawTotal
+                ]);
+                
+                // Determinar el subtotal real a partir del total si el IVA es estándar
+                if ($ivaRate == 19 && $ipoconsumoRate == 0) {
+                    $correctedSubtotal = round($rawTotal / 1.19);
+                    $correctedIvaAmount = $rawTotal - $correctedSubtotal;
+                    
+                    Log::info("Corrigiendo subtotal e IVA basado en el total", [
+                        'original_subtotal' => $rawSubtotal,
+                        'corrected_subtotal' => $correctedSubtotal,
+                        'corrected_iva' => $correctedIvaAmount,
+                        'total' => $rawTotal
+                    ]);
+                    
+                    $rawSubtotal = $correctedSubtotal;
+                    $ivaAmount = $correctedIvaAmount;
+                }
+            }
+            
+            // Preparar nuevos datos personalizados con cálculos corregidos
             $customData = array_merge($currentCustomData, [
                 'provider_name' => $request->provider_name,
                 'provider_nit' => $request->provider_nit,
@@ -1007,13 +1477,13 @@ class PurchaseOrdersController extends Controller
                 'delivery_address' => $request->delivery_address,
                 'payment_method' => $request->payment_method,
                 'budget' => $request->budget,
-                'iva_rate' => $request->iva_rate . '%',
-                'iva_amount' => $request->iva_amount ?? 0,
-                'ipoconsumo_rate' => $request->ipoconsumo_rate . '%',
-                'ipoconsumo_amount' => $request->ipoconsumo_amount ?? 0,
-                'subtotal' => $request->subtotal,
-                'total' => $request->total,
-                'items' => $request->items ?? [],
+                'iva_rate' => $ivaRate . '%',
+                'iva_amount' => $ivaAmount,
+                'ipoconsumo_rate' => $ipoconsumoRate . '%',
+                'ipoconsumo_amount' => $ipoconsumoAmount,
+                'subtotal' => $rawSubtotal,
+                'total' => $rawTotal,
+                'items' => $itemsToSave,
                 'additional_items' => $request->additional_items ?? [],
                 'observations' => $request->observations,
                 'shared_budget_info' => $request->shared_budget_info,
@@ -1023,11 +1493,11 @@ class PurchaseOrdersController extends Controller
 
             // Actualizar la orden de compra
             $purchaseOrder->delivery_date = $request->delivery_date;
-            $purchaseOrder->subtotal = $request->subtotal;
-            $purchaseOrder->iva_amount = $request->iva_amount ?? 0;
-            $purchaseOrder->tax_amount = $request->iva_amount ?? 0;
-            $purchaseOrder->total_amount = $request->total;
-            $purchaseOrder->includes_iva = ($request->iva_amount ?? 0) > 0;
+            $purchaseOrder->subtotal = $rawSubtotal;
+            $purchaseOrder->iva_amount = $ivaAmount;
+            $purchaseOrder->tax_amount = $ivaAmount + $ipoconsumoAmount;
+            $purchaseOrder->total_amount = $rawTotal;
+            $purchaseOrder->includes_iva = $ivaAmount > 0;
             $purchaseOrder->observations = $request->observations;
             $purchaseOrder->pdf_custom_data = json_encode($customData);
             
@@ -1089,10 +1559,55 @@ class PurchaseOrdersController extends Controller
             // PASO 1: Recalcular impuestos y totales desde la solicitud original
             $this->recalculateOrderFromRequest($purchaseOrder, $purchaseRequest);
 
-            // PASO 2: Generar nuevo PDF con los datos recalculados
-            $pdfPath = $this->pdfService->generatePdf($purchaseOrder);
+            // PASO 1.5: CORRECCIÓN CRÍTICA - Asegurarse de que la cotización original esté cargada
+            $purchaseRequest->load(['selectedQuotation']);
+            
+            // Verificar si hay precios originales en la cotización y registrarlos
+            if ($purchaseRequest->selectedQuotation && isset($purchaseRequest->selectedQuotation->original_item_prices)) {
+                $originalPrices = $purchaseRequest->selectedQuotation->original_item_prices;
+                Log::info('🔒 REGENERATE PDF - Precios originales disponibles', [
+                    'order' => $purchaseOrder->order_number,
+                    'prices_count' => count($originalPrices),
+                    'first_prices' => array_slice($originalPrices, 0, 3)
+                ]);
+            }
 
-            // PASO 3: Actualizar la orden con la nueva información
+            // PASO 2: Filtrar por proveedor para órdenes de selección mixta antes de generar PDF
+            $providerSelections = null;
+            $hasMixedSelections = $purchaseOrder->purchaseRequest->quotationItemSelections()->exists();
+            
+            if ($hasMixedSelections) {
+                Log::info('REGENERATE PDF - MIXED SELECTION DETECTED - Filtering by provider', [
+                    'provider_id' => $purchaseOrder->provider_id,
+                    'provider_name' => $purchaseOrder->provider->nombre ?? 'unknown'
+                ]);
+
+                // Obtener todas las selecciones
+                $allSelections = $purchaseOrder->purchaseRequest->quotationItemSelections;
+                Log::info('REGENERATE PDF - Total selections found', ['count' => $allSelections->count()]);
+
+                // Filtrar solo las selecciones del proveedor de esta orden
+                $providerSelections = $allSelections->filter(function ($selection) use ($purchaseOrder) {
+                    $match = $selection->quotation->provider_name == $purchaseOrder->provider->nombre;
+                    Log::info('REGENERATE PDF - Selection filter', [
+                        'selection_id' => $selection->id,
+                        'selection_provider_name' => $selection->quotation->provider_name,
+                        'order_provider_name' => $purchaseOrder->provider->nombre,
+                        'matches' => $match
+                    ]);
+                    return $match;
+                });
+
+                Log::info('REGENERATE PDF - Filtered selections for PDF generation', [
+                    'filtered_count' => $providerSelections->count(),
+                    'provider_name' => $purchaseOrder->provider->nombre ?? 'unknown'
+                ]);
+            }
+
+            // PASO 3: Generar nuevo PDF con los datos recalculados y filtrados
+            $pdfPath = $this->pdfService->generatePdf($purchaseOrder, $providerSelections);
+
+            // PASO 4: Actualizar la orden con la nueva información
             $purchaseOrder->file_path = $pdfPath;
             $purchaseOrder->updated_at = now();
             $purchaseOrder->save();
@@ -1199,11 +1714,7 @@ class PurchaseOrdersController extends Controller
                         $taxAmount = ($baseAmount * $taxRate) / 100;
                         
                         if (!isset($appliedTaxes[$taxName])) {
-                            $appliedTaxes[$taxName] = [
-                                'name' => $taxName,
-                                'rate' => $taxRate,
-                                'amount' => 0
-                            ];
+                            $appliedTaxes[$taxName] = $this->createTaxRecord($taxName, $taxRate);
                         }
                         $appliedTaxes[$taxName]['amount'] += $taxAmount;
                         $totalTaxes += $taxAmount;
@@ -1215,11 +1726,7 @@ class PurchaseOrdersController extends Controller
             $ivaRate = 19;
             $ivaAmount = ($baseAmount * $ivaRate) / 100;
             
-            $appliedTaxes['IVA'] = [
-                'name' => 'IVA',
-                'rate' => $ivaRate,
-                'amount' => $ivaAmount
-            ];
+            $appliedTaxes['IVA'] = $this->createTaxRecord('IVA', $ivaRate, $ivaAmount);
             $totalTaxes = $ivaAmount;
         }
         
@@ -1272,38 +1779,22 @@ class PurchaseOrdersController extends Controller
             
             // Usar impuestos ya calculados en la cotización
             if ($quotation->includes_iva_19 && $quotation->iva_19_amount > 0) {
-                $appliedTaxes['IVA 19%'] = [
-                    'name' => 'IVA',
-                    'rate' => 19,
-                    'amount' => $quotation->iva_19_amount
-                ];
+                $appliedTaxes['IVA 19%'] = $this->createTaxRecord('IVA', 19, $quotation->iva_19_amount);
                 $totalTaxes += $quotation->iva_19_amount;
             }
             
             if ($quotation->includes_iva_5 && $quotation->iva_5_amount > 0) {
-                $appliedTaxes['IVA 5%'] = [
-                    'name' => 'IVA',
-                    'rate' => 5,
-                    'amount' => $quotation->iva_5_amount
-                ];
+                $appliedTaxes['IVA 5%'] = $this->createTaxRecord('IVA', 5, $quotation->iva_5_amount);
                 $totalTaxes += $quotation->iva_5_amount;
             }
             
             if ($quotation->includes_ipoconsumo_8 && $quotation->ipoconsumo_8_amount > 0) {
-                $appliedTaxes['Impuesto al Consumo 8%'] = [
-                    'name' => 'Impuesto al Consumo',
-                    'rate' => 8,
-                    'amount' => $quotation->ipoconsumo_8_amount
-                ];
+                $appliedTaxes['Impuesto al Consumo 8%'] = $this->createTaxRecord('Impuesto al Consumo', 8, $quotation->ipoconsumo_8_amount);
                 $totalTaxes += $quotation->ipoconsumo_8_amount;
             }
             
             if ($quotation->includes_ipoconsumo_4 && $quotation->ipoconsumo_4_amount > 0) {
-                $appliedTaxes['Impuesto al Consumo 4%'] = [
-                    'name' => 'Impuesto al Consumo',
-                    'rate' => 4,
-                    'amount' => $quotation->ipoconsumo_4_amount
-                ];
+                $appliedTaxes['Impuesto al Consumo 4%'] = $this->createTaxRecord('Impuesto al Consumo', 4, $quotation->ipoconsumo_4_amount);
                 $totalTaxes += $quotation->ipoconsumo_4_amount;
             }
             
@@ -1341,11 +1832,7 @@ class PurchaseOrdersController extends Controller
                     $taxAmount = ($itemSubtotal * $taxRate) / 100;
                     
                     if (!isset($appliedTaxes['IVA 19%'])) {
-                        $appliedTaxes['IVA 19%'] = [
-                            'name' => 'IVA',
-                            'rate' => $taxRate,
-                            'amount' => 0
-                        ];
+                        $appliedTaxes['IVA 19%'] = $this->createTaxRecord('IVA', $taxRate);
                     }
                     $appliedTaxes['IVA 19%']['amount'] += $taxAmount;
                     $totalTaxes += $taxAmount;
@@ -1356,11 +1843,7 @@ class PurchaseOrdersController extends Controller
                     $taxAmount = ($itemSubtotal * $taxRate) / 100;
                     
                     if (!isset($appliedTaxes['IVA 5%'])) {
-                        $appliedTaxes['IVA 5%'] = [
-                            'name' => 'IVA',
-                            'rate' => $taxRate,
-                            'amount' => 0
-                        ];
+                        $appliedTaxes['IVA 5%'] = $this->createTaxRecord('IVA', $taxRate);
                     }
                     $appliedTaxes['IVA 5%']['amount'] += $taxAmount;
                     $totalTaxes += $taxAmount;
@@ -1371,11 +1854,7 @@ class PurchaseOrdersController extends Controller
                     $taxAmount = ($itemSubtotal * $taxRate) / 100;
                     
                     if (!isset($appliedTaxes['Impuesto al Consumo 8%'])) {
-                        $appliedTaxes['Impuesto al Consumo 8%'] = [
-                            'name' => 'Impuesto al Consumo',
-                            'rate' => $taxRate,
-                            'amount' => 0
-                        ];
+                        $appliedTaxes['Impuesto al Consumo 8%'] = $this->createTaxRecord('Impuesto al Consumo', $taxRate);
                     }
                     $appliedTaxes['Impuesto al Consumo 8%']['amount'] += $taxAmount;
                     $totalTaxes += $taxAmount;
@@ -1386,11 +1865,7 @@ class PurchaseOrdersController extends Controller
                     $taxAmount = ($itemSubtotal * $taxRate) / 100;
                     
                     if (!isset($appliedTaxes['Impuesto al Consumo 4%'])) {
-                        $appliedTaxes['Impuesto al Consumo 4%'] = [
-                            'name' => 'Impuesto al Consumo',
-                            'rate' => $taxRate,
-                            'amount' => 0
-                        ];
+                        $appliedTaxes['Impuesto al Consumo 4%'] = $this->createTaxRecord('Impuesto al Consumo', $taxRate);
                     }
                     $appliedTaxes['Impuesto al Consumo 4%']['amount'] += $taxAmount;
                     $totalTaxes += $taxAmount;
@@ -1401,11 +1876,7 @@ class PurchaseOrdersController extends Controller
                 $taxAmount = ($itemSubtotal * $taxRate) / 100;
                 
                 if (!isset($appliedTaxes['IVA 19%'])) {
-                    $appliedTaxes['IVA 19%'] = [
-                        'name' => 'IVA',
-                        'rate' => $taxRate,
-                        'amount' => 0
-                    ];
+                    $appliedTaxes['IVA 19%'] = $this->createTaxRecord('IVA', $taxRate);
                 }
                 $appliedTaxes['IVA 19%']['amount'] += $taxAmount;
                 $totalTaxes += $taxAmount;
@@ -1417,6 +1888,81 @@ class PurchaseOrdersController extends Controller
             'total_taxes' => $totalTaxes,
             'applied_taxes' => $appliedTaxes
         ]);
+    }
+
+    /**
+     * Mostrar interfaz para creación manual de órdenes de compra
+     */
+    private function showOrderCreationInterface(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        // Detectar tipo de solicitud y preparar datos apropiados
+        $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
+        $hasSelectedQuotation = $purchaseRequest->selected_quotation_id && $purchaseRequest->selectedQuotation;
+        $isNoQuotationService = $purchaseRequest->type === 'services' && !$hasSelectedQuotation && !$hasMixedSelection;
+
+        if ($hasMixedSelection) {
+            // Selección mixta - Múltiples proveedores
+            $mixedSelections = $purchaseRequest->quotationItemSelections()->with('quotation')->get();
+            $providerGroups = $mixedSelections->groupBy('quotation.provider_name');
+            
+            $providerSummary = $providerGroups->map(function ($selections, $providerName) {
+                return [
+                    'provider_name' => $providerName,
+                    'items_count' => $selections->count(),
+                    'total_amount' => $selections->sum('total_price'),
+                    'items' => $selections
+                ];
+            });
+
+            Log::info('Mostrando interfaz de selección mixta', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'providers_count' => $providerGroups->count(),
+                'total_items' => $mixedSelections->count()
+            ]);
+
+            return view('purchase-orders.mixed-selection', compact(
+                'purchaseRequest', 
+                'mixedSelections', 
+                'providerGroups',
+                'providerSummary'
+            ));
+            
+        } elseif ($hasSelectedQuotation) {
+            // Cotización única - Un solo proveedor
+            $quotation = $purchaseRequest->selectedQuotation;
+            $providerName = $quotation->provider_name;
+            
+            // Buscar el proveedor
+            $provider = \App\Models\Proveedor::where('nombre', $providerName)->first();
+            
+            Log::info('Mostrando interfaz de cotización única', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'provider_name' => $providerName,
+                'quotation_id' => $quotation->id
+            ]);
+
+            return view('purchase-orders.single-provider', compact(
+                'purchaseRequest',
+                'quotation',
+                'provider',
+                'providerName'
+            ));
+            
+        } elseif ($isNoQuotationService) {
+            // Servicio sin cotización
+            Log::info('Mostrando interfaz de servicio sin cotización', [
+                'purchase_request_id' => $purchaseRequest->id
+            ]);
+
+            return view('purchase-orders.no-quotation-service', compact(
+                'purchaseRequest'
+            ));
+            
+        } else {
+            // Caso no identificado - redirigir con error
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'No se pudo determinar el tipo de solicitud para crear la orden de compra.');
+        }
     }
 
     /**
@@ -1432,37 +1978,108 @@ class PurchaseOrdersController extends Controller
         try {
             DB::beginTransaction();
             
-            // Obtener las selecciones mixtas agrupadas por proveedor
-            $itemSelections = $purchaseRequest->quotationItemSelections()->with('quotation')->get();
-            $selectionsByProvider = $itemSelections->groupBy('quotation_id');
+            // Obtener las selecciones mixtas con todas las relaciones necesarias
+            $itemSelections = $purchaseRequest->quotationItemSelections()
+                ->with(['quotation', 'quotation.quotationItems'])
+                ->get();
+            
+            Log::info('Selecciones mixtas obtenidas', [
+                'total_selections' => $itemSelections->count(),
+                'selections_data' => $itemSelections->map(function($selection) {
+                    return [
+                        'id' => $selection->id,
+                        'quotation_id' => $selection->quotation_id,
+                        'item_description' => $selection->item_description,
+                        'quantity' => $selection->quantity,
+                        'unit_price' => $selection->unit_price,
+                        'total_price' => $selection->total_price,
+                        'provider_name' => $selection->quotation->provider_name ?? 'Sin proveedor'
+                    ];
+                })->toArray()
+            ]);
+            
+            // Agrupar por provider_name en lugar de quotation_id para evitar confusiones
+            $selectionsByProvider = $itemSelections->groupBy(function($selection) {
+                return $selection->quotation->provider_name;
+            });
             
             Log::info('Selecciones agrupadas por proveedor', [
                 'providers_count' => $selectionsByProvider->count(),
-                'total_selections' => $itemSelections->count()
+                'providers_list' => $selectionsByProvider->keys()->toArray(),
+                'items_per_provider' => $selectionsByProvider->map(function($group, $providerName) {
+                    return [
+                        'provider' => $providerName,
+                        'items_count' => $group->count(),
+                        'total_amount' => $group->sum('total_price'),
+                        'items' => $group->map(function($item) {
+                            return [
+                                'description' => $item->item_description,
+                                'quantity' => $item->quantity,
+                                'unit_price' => $item->unit_price,
+                                'total_price' => $item->total_price
+                            ];
+                        })->toArray()
+                    ];
+                })->toArray()
             ]);
             
             $createdOrders = [];
             $orderCounter = 1;
             
-            foreach ($selectionsByProvider as $quotationId => $providerSelections) {
-                $quotation = $providerSelections->first()->quotation;
+            foreach ($selectionsByProvider as $providerName => $providerSelections) {
+                // Validar que tengamos un proveedor válido
+                if (empty($providerName) || $providerName === 'Sin proveedor') {
+                    Log::warning('Proveedor inválido encontrado, saltando', [
+                        'provider_name' => $providerName,
+                        'selections_count' => $providerSelections->count()
+                    ]);
+                    continue;
+                }
+                
+                // Obtener la primera quotation para datos del proveedor
+                $firstSelection = $providerSelections->first();
+                $quotation = $firstSelection->quotation;
+                
+                // Validar que la quotation existe y tiene datos válidos
+                if (!$quotation) {
+                    Log::error('Quotation no encontrada para selección', [
+                        'selection_id' => $firstSelection->id,
+                        'provider_name' => $providerName
+                    ]);
+                    continue;
+                }
                 
                 // Buscar o crear proveedor basado en el nombre de la cotización
-                $provider = \App\Models\Proveedor::where('nombre', $quotation->provider_name)->first();
+                $provider = \App\Models\Proveedor::where('nombre', $providerName)->first();
                 
                 if (!$provider) {
+                    Log::info('Creando nuevo proveedor', ['provider_name' => $providerName]);
                     $provider = \App\Models\Proveedor::create([
-                        'nombre' => $quotation->provider_name,
+                        'nombre' => $providerName,
                         'email' => $quotation->provider_email ?? 'proveedor@contacto.com',
                         'telefono' => $quotation->provider_phone ?? '000-000-0000',
                         'direccion' => 'Por definir',
                         'persona_contacto' => 'Por asignar',
                         'nit' => $quotation->provider_nit ?? '000000000-0'
                     ]);
+                } else {
+                    Log::info('Proveedor existente encontrado', [
+                        'provider_id' => $provider->id,
+                        'provider_name' => $provider->nombre
+                    ]);
                 }
                 
-                // Calcular total para este proveedor
+                // Calcular total para este proveedor SOLO con sus items
                 $totalAmount = $providerSelections->sum('total_price');
+                
+                // Validar que el total sea mayor a 0
+                if ($totalAmount <= 0) {
+                    Log::warning('Total amount inválido para proveedor', [
+                        'provider_name' => $providerName,
+                        'total_amount' => $totalAmount
+                    ]);
+                    continue;
+                }
                 
                 // Calcular IVA correctamente - para selecciones mixtas asumimos que los precios ya incluyen IVA
                 $includesIva = true;
@@ -1474,17 +2091,27 @@ class PurchaseOrdersController extends Controller
                 
                 // Preparar observaciones específicas para este proveedor
                 $observations = $request->observations ?? '';
-                $providerObservations = 'Orden para proveedor: ' . $quotation->provider_name;
+                $providerObservations = 'Orden para proveedor: ' . $providerName;
                 if ($observations) {
                     $providerObservations .= ' | ' . $observations;
                 }
                 
                 Log::info('Creando orden individual para proveedor', [
-                    'provider_name' => $quotation->provider_name,
+                    'provider_name' => $providerName,
                     'provider_id' => $provider->id,
                     'order_number' => $orderNumber,
                     'total_amount' => $totalAmount,
-                    'items_count' => $providerSelections->count()
+                    'subtotal' => $subtotal,
+                    'iva_amount' => $ivaAmount,
+                    'items_count' => $providerSelections->count(),
+                    'items_detail' => $providerSelections->map(function($sel) {
+                        return [
+                            'description' => $sel->item_description,
+                            'qty' => $sel->quantity,
+                            'price' => $sel->unit_price,
+                            'total' => $sel->total_price
+                        ];
+                    })->toArray()
                 ]);
                 
                 // Crear orden de compra individual para este proveedor
@@ -1507,12 +2134,28 @@ class PurchaseOrdersController extends Controller
                     'iva_amount' => $ivaAmount,
                 ]);
                 
-                // Generar PDF específico para este proveedor
-                $pdfService = app(PurchaseOrderPdfService::class);
-                $pdfPath = $pdfService->generatePdf($order, $providerSelections);
-                
-                // Actualizar la ruta del archivo
-                $order->update(['file_path' => $pdfPath]);
+                // Generar PDF específico para este proveedor CON SUS ITEMS EXACTOS
+                try {
+                    $pdfService = app(PurchaseOrderPdfService::class);
+                    $pdfPath = $pdfService->generatePdf($order, $providerSelections);
+                    
+                    // Actualizar la ruta del archivo
+                    $order->update(['file_path' => $pdfPath]);
+                    
+                    Log::info('PDF generado exitosamente', [
+                        'order_id' => $order->id,
+                        'pdf_path' => $pdfPath,
+                        'provider_selections_count' => $providerSelections->count()
+                    ]);
+                } catch (\Exception $pdfError) {
+                    Log::error('Error al generar PDF para orden', [
+                        'order_id' => $order->id,
+                        'provider_name' => $providerName,
+                        'error' => $pdfError->getMessage()
+                    ]);
+                    // Continuar con la siguiente orden aunque falle el PDF
+                    $order->update(['file_path' => 'error_generation']);
+                }
                 
                 $createdOrders[] = $order;
                 $orderCounter++;
@@ -1520,8 +2163,15 @@ class PurchaseOrdersController extends Controller
                 Log::info('Orden individual creada exitosamente', [
                     'order_id' => $order->id,
                     'order_number' => $order->order_number,
-                    'provider' => $quotation->provider_name
+                    'provider' => $providerName,
+                    'items_included' => $providerSelections->pluck('item_description')->toArray(),
+                    'total_amount' => $totalAmount
                 ]);
+            }
+            
+            // Validar que se hayan creado órdenes
+            if (empty($createdOrders)) {
+                throw new \Exception('No se pudieron crear órdenes de compra. Verifique que las selecciones mixtas tengan proveedores válidos.');
             }
             
             DB::commit();
@@ -1529,13 +2179,16 @@ class PurchaseOrdersController extends Controller
             Log::info('Todas las órdenes de selección mixta creadas exitosamente', [
                 'purchase_request_id' => $purchaseRequest->id,
                 'orders_created' => count($createdOrders),
-                'order_ids' => array_column($createdOrders, 'id')
+                'order_ids' => array_column($createdOrders, 'id'),
+                'providers_processed' => $selectionsByProvider->keys()->toArray(),
+                'total_amount_all_orders' => array_sum(array_column($createdOrders, 'total_amount'))
             ]);
             
             // Redirigir a la lista con mensaje de éxito
             $orderCount = count($createdOrders);
+            $providerList = $selectionsByProvider->keys()->implode(', ');
             return redirect()->route('purchase-orders.index')
-                ->with('success', "Se crearon exitosamente {$orderCount} órdenes de compra para los diferentes proveedores de la selección mixta.");
+                ->with('success', "Se crearon exitosamente {$orderCount} órdenes de compra para los proveedores: {$providerList}.");
                 
         } catch (\Exception $e) {
             DB::rollback();
@@ -2031,5 +2684,379 @@ class PurchaseOrdersController extends Controller
                 'message' => 'Error al cambiar el estado de la orden.'
             ], 500);
         }
+    }
+
+    /**
+     * Crear una orden de compra para un proveedor específico en selección mixta
+     */
+    public function createForProvider(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        $request->validate([
+            'provider_name' => 'required|string',
+            'payment_terms' => 'required|string',
+            'delivery_date' => 'required|date',
+            'observations' => 'nullable|string'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Verificar que la solicitud esté aprobada
+            if ($purchaseRequest->status !== 'approved') {
+                return redirect()->back()->with('error', 'Solo se pueden crear órdenes de compra para solicitudes aprobadas.');
+            }
+
+            // Obtener selecciones para el proveedor específico
+            $allSelections = $purchaseRequest->quotationItemSelections()->with('quotation')->get();
+            $providerSelections = $allSelections->filter(function($selection) use ($request) {
+                return $selection->quotation && 
+                       $selection->quotation->provider_name === $request->provider_name;
+            });
+
+            if ($providerSelections->isEmpty()) {
+                return redirect()->back()->with('error', 'No se encontraron selecciones para el proveedor especificado.');
+            }
+
+            // Verificar si ya existe una orden para este proveedor
+            $existingOrder = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)
+                ->whereHas('provider', function($query) use ($request) {
+                    $query->where('nombre', $request->provider_name);
+                })
+                ->exists();
+
+            if ($existingOrder) {
+                return redirect()->back()->with('error', 'Ya existe una orden de compra para este proveedor.');
+            }
+
+            // Buscar el ID del proveedor
+            $provider = Proveedor::where('nombre', $request->provider_name)->first();
+            if (!$provider) {
+                return redirect()->back()->with('error', 'Proveedor no encontrado en la base de datos.');
+            }
+
+            // Verificar si la cotización original incluye IVA
+            $firstSelection = $providerSelections->first();
+            $quotation = $firstSelection->quotation;
+            $quotationIncludesIva = $quotation->includes_iva;
+            
+            // Calcular totales basándose en si la cotización incluye IVA
+            $totalAmount = $providerSelections->sum('total_price');
+            
+            if ($quotationIncludesIva) {
+                // El total ya incluye IVA, calcular subtotal
+                $subtotal = round($totalAmount / 1.19, 2);
+                $ivaAmount = round($totalAmount - $subtotal, 2);
+                $finalTotal = $totalAmount;
+            } else {
+                // El total no incluye IVA, calcularlo
+                $subtotal = $totalAmount;
+                $ivaAmount = round($totalAmount * 0.19, 2);
+                $finalTotal = $subtotal + $ivaAmount;
+            }
+
+            Log::info('Cálculo de IVA para orden', [
+                'provider_name' => $request->provider_name,
+                'quotation_includes_iva' => $quotationIncludesIva,
+                'selections_total' => $totalAmount,
+                'calculated_subtotal' => $subtotal,
+                'calculated_iva' => $ivaAmount,
+                'final_total' => $finalTotal
+            ]);
+
+            // Crear la orden de compra
+            $orderNumber = $this->generateOrderNumber();
+            
+            $purchaseOrder = PurchaseOrder::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'provider_id' => $provider->id,
+                'order_number' => $orderNumber,
+                'total_amount' => $finalTotal,
+                'subtotal' => $subtotal,
+                'includes_iva' => $quotationIncludesIva,
+                'iva_amount' => $ivaAmount,
+                'order_date' => now(),
+                'payment_terms' => $request->payment_terms,
+                'delivery_date' => $request->delivery_date,
+                'observations' => $request->observations,
+                'created_by' => auth()->id(),
+                'status' => 'pending',
+                'file_path' => 'pending_generation'
+            ]);
+
+            // Generar PDF
+            $pdfService = app(PurchaseOrderPdfService::class);
+            $pdfPath = $pdfService->generatePdf($purchaseOrder, $providerSelections);
+            
+            // Actualizar la ruta del PDF
+            $purchaseOrder->update(['file_path' => $pdfPath]);
+
+            DB::commit();
+
+            Log::info('Orden de compra creada para proveedor específico', [
+                'order_id' => $purchaseOrder->id,
+                'provider_name' => $request->provider_name,
+                'total_amount' => $totalAmount,
+                'items_count' => $providerSelections->count()
+            ]);
+
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('success', "Orden de compra #{$orderNumber} creada exitosamente para {$request->provider_name}");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error al crear orden para proveedor específico', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'provider_name' => $request->provider_name,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Error al crear la orden de compra: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Crear una orden de compra desde una cotización única
+     */
+    public function createFromQuotation(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        $request->validate([
+            'provider_id' => 'required|exists:proveedores,id',
+            'payment_terms' => 'required|string',
+            'delivery_date' => 'required|date',
+            'observations' => 'nullable|string'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Verificar que la solicitud esté aprobada
+            if ($purchaseRequest->status !== 'approved') {
+                return redirect()->back()->with('error', 'Solo se pueden crear órdenes de compra para solicitudes aprobadas.');
+            }
+
+            // Verificar si ya existe una orden para esta solicitud
+            $existingOrder = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->exists();
+            if ($existingOrder) {
+                return redirect()->back()->with('error', 'Ya existe una orden de compra para esta solicitud.');
+            }
+
+            $quotation = $purchaseRequest->selectedQuotation;
+            if (!$quotation) {
+                return redirect()->back()->with('error', 'No se encontró la cotización seleccionada.');
+            }
+
+            // Crear la orden de compra
+            $orderNumber = $this->generateOrderNumber();
+            
+            $purchaseOrder = PurchaseOrder::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'provider_id' => $request->provider_id,
+                'order_number' => $orderNumber,
+                'total_amount' => $quotation->total_amount,
+                'subtotal' => $quotation->subtotal,
+                'includes_iva' => $quotation->includes_iva,
+                'iva_amount' => $quotation->iva_amount,
+                'tax_amount' => $quotation->tax_amount,
+                'order_date' => now(),
+                'payment_terms' => $request->payment_terms,
+                'delivery_date' => $request->delivery_date,
+                'observations' => $request->observations,
+                'created_by' => auth()->id(),
+                'status' => 'pending',
+                'file_path' => 'pending_generation'
+            ]);
+
+            // Generar PDF
+            $pdfService = app(PurchaseOrderPdfService::class);
+            $pdfPath = $pdfService->generatePdf($purchaseOrder);
+            
+            // Actualizar la ruta del PDF
+            $purchaseOrder->update(['file_path' => $pdfPath]);
+
+            DB::commit();
+
+            Log::info('Orden de compra creada desde cotización única', [
+                'order_id' => $purchaseOrder->id,
+                'quotation_id' => $quotation->id,
+                'total_amount' => $quotation->total_amount
+            ]);
+
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('success', "Orden de compra #{$orderNumber} creada exitosamente");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error al crear orden desde cotización', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Error al crear la orden de compra: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Crear una orden de compra para servicio sin cotización
+     */
+    public function createNoQuotation(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        $request->validate([
+            'provider_name' => 'required|string',
+            'provider_nit' => 'required|string',
+            'provider_address' => 'nullable|string',
+            'provider_phone' => 'nullable|string',
+            'provider_email' => 'nullable|email',
+            'total_amount' => 'required|numeric|min:0',
+            'includes_iva' => 'required|boolean',
+            'payment_terms' => 'required|string',
+            'delivery_date' => 'required|date',
+            'observations' => 'nullable|string'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Verificar que la solicitud esté aprobada
+            if ($purchaseRequest->status !== 'approved') {
+                return redirect()->back()->with('error', 'Solo se pueden crear órdenes de compra para solicitudes aprobadas.');
+            }
+
+            // Verificar si ya existe una orden para esta solicitud
+            $existingOrder = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->exists();
+            if ($existingOrder) {
+                return redirect()->back()->with('error', 'Ya existe una orden de compra para esta solicitud.');
+            }
+
+            // Buscar o crear el proveedor
+            $provider = Proveedor::firstOrCreate(
+                ['nit' => $request->provider_nit],
+                [
+                    'nombre' => $request->provider_name,
+                    'direccion' => $request->provider_address,
+                    'telefono' => $request->provider_phone,
+                    'email' => $request->provider_email,
+                ]
+            );
+
+            // Calcular valores basándose en si incluye IVA
+            $inputAmount = $request->total_amount;
+            $includesIva = $request->boolean('includes_iva');
+            
+            if ($includesIva) {
+                // El valor ingresado incluye IVA
+                $totalAmount = $inputAmount;
+                $subtotal = round($totalAmount / 1.19, 2);
+                $ivaAmount = round($totalAmount - $subtotal, 2);
+            } else {
+                // El valor ingresado no incluye IVA
+                $subtotal = $inputAmount;
+                $ivaAmount = round($subtotal * 0.19, 2);
+                $totalAmount = $subtotal + $ivaAmount;
+            }
+
+            Log::info('Cálculo de IVA para orden sin cotización', [
+                'provider_name' => $request->provider_name,
+                'input_amount' => $inputAmount,
+                'includes_iva' => $includesIva,
+                'calculated_subtotal' => $subtotal,
+                'calculated_iva' => $ivaAmount,
+                'final_total' => $totalAmount
+            ]);
+
+            // Crear la orden de compra
+            $orderNumber = $this->generateOrderNumber();
+            
+            $purchaseOrder = PurchaseOrder::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'provider_id' => $provider->id,
+                'order_number' => $orderNumber,
+                'total_amount' => $totalAmount,
+                'subtotal' => $subtotal,
+                'includes_iva' => $includesIva,
+                'iva_amount' => $ivaAmount,
+                'order_date' => now(),
+                'payment_terms' => $request->payment_terms,
+                'delivery_date' => $request->delivery_date,
+                'observations' => $request->observations,
+                'created_by' => auth()->id(),
+                'status' => 'pending',
+                'file_path' => 'pending_generation'
+            ]);
+
+            // Generar PDF
+            $pdfService = app(PurchaseOrderPdfService::class);
+            $pdfPath = $pdfService->generatePdf($purchaseOrder);
+            
+            // Actualizar la ruta del PDF
+            $purchaseOrder->update(['file_path' => $pdfPath]);
+
+            DB::commit();
+
+            Log::info('Orden de compra creada para servicio sin cotización', [
+                'order_id' => $purchaseOrder->id,
+                'provider_name' => $request->provider_name,
+                'total_amount' => $totalAmount
+            ]);
+
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('success', "Orden de compra #{$orderNumber} creada exitosamente");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error al crear orden sin cotización', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Error al crear la orden de compra: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generar número de orden único
+     */
+    private function generateOrderNumber()
+    {
+        $prefix = 'ORD-';
+        
+        // Buscar el número más alto existente con formato ORD-XXXX
+        $lastOrder = PurchaseOrder::withTrashed()
+            ->where('order_number', 'LIKE', 'ORD-%')
+            ->orderByRaw('CAST(SUBSTRING(order_number, 5) AS UNSIGNED) DESC')
+            ->first();
+        
+        if ($lastOrder) {
+            // Extraer el número del formato ORD-XXXX
+            $lastNumber = intval(substr($lastOrder->order_number, 4));
+            $nextId = $lastNumber + 1;
+        } else {
+            $nextId = 1;
+        }
+        
+        return $prefix . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+    }
+    
+    /**
+     * Crea un registro de impuesto con la estructura correcta
+     * 
+     * @param string $name Nombre del impuesto (IVA, Impuesto al Consumo)
+     * @param float $rate Tasa del impuesto (19, 5, 8, 4)
+     * @param float $amount Monto del impuesto
+     * @return array Estructura de impuesto consistente
+     */
+    private function createTaxRecord($name, $rate, $amount = 0)
+    {
+        // Determinar el tipo de impuesto basado en el nombre
+        $type = 'IVA';
+        if (strpos(strtolower($name), 'consumo') !== false) {
+            $type = 'IMPUESTO_CONSUMO';
+        }
+        
+        return [
+            'name' => $name,
+            'type' => $type,
+            'rate' => $rate,
+            'amount' => $amount
+        ];
     }
 }

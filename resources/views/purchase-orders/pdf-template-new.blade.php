@@ -147,19 +147,23 @@
                 
                 // Determinar si es servicio o compra y obtener items correspondientes
                 $isService = $order->purchaseRequest->type === 'services';
-                $items = [];
-                
-                if ($isService) {
-                    // Para servicios, usar service_items
-                    $items = $order->purchaseRequest->service_items ?? [];
-                    if (is_string($items)) {
-                        $items = json_decode($items, true) ?? [];
-                    }
-                } else {
-                    // Para compras, usar purchase_items
-                    $items = $order->purchaseRequest->purchase_items ?? [];
-                    if (is_string($items)) {
-                        $items = json_decode($items, true) ?? [];
+                // 🚨 CORRECCIÓN CRÍTICA: Usar items ya filtrados del servicio si están disponibles
+                // Solo obtener items de la request si no se han pasado items filtrados
+                if (!isset($items) || empty($items)) {
+                    $items = [];
+                    
+                    if ($isService) {
+                        // Para servicios, usar service_items
+                        $items = $order->purchaseRequest->service_items ?? [];
+                        if (is_string($items)) {
+                            $items = json_decode($items, true) ?? [];
+                        }
+                    } else {
+                        // Para compras, usar purchase_items
+                        $items = $order->purchaseRequest->purchase_items ?? [];
+                        if (is_string($items)) {
+                            $items = json_decode($items, true) ?? [];
+                        }
                     }
                 }
                 
@@ -184,8 +188,20 @@
                         $totalItems += $cantidad;
                         
                         // Para servicios, calcular precio unitario basado en el subtotal total
-                        $totalCantidadServicios = array_sum(array_filter(array_column($items, 'quantity'), function($q) { return $q > 0; }));
+                        $totalCantidadServicios = array_sum(array_filter(array_column($items, 'quantity'), function($q) { 
+                            return is_numeric($q) && floatval($q) > 0; 
+                        }));
+                        
+                        // Asegurar valores numéricos
+                        $subtotalBase = floatval($subtotalBase);
+                        $totalCantidadServicios = floatval($totalCantidadServicios);
+                        
+                        // Calcular precio unitario evitando división por cero
                         $precioUnitario = $totalCantidadServicios > 0 ? $subtotalBase / $totalCantidadServicios : $subtotalBase;
+                        
+                        // Asegurar valores numéricos para el cálculo final
+                        $cantidad = floatval($cantidad);
+                        $precioUnitario = floatval($precioUnitario);
                         
                         $total = $cantidad * $precioUnitario;
                         $subtotalCalculado += $total;
@@ -208,14 +224,44 @@
                         
                         // Intentar obtener precio unitario de la cotización seleccionada
                         $precioUnitario = 0;
+                        
+                        // SIEMPRE forzar uso de precios originales (evitar bug de $4.949)
+                        $forceOriginalPrices = true;
+                        
                         if ($selectedQuotation && 
                             isset($selectedQuotation->original_item_prices) && 
                             isset($selectedQuotation->original_item_prices[$index])) {
-                            $precioUnitario = $selectedQuotation->original_item_prices[$index];
+                            // Usar precio original de la cotización con conversión explícita a float
+                            $precioUnitario = floatval($selectedQuotation->original_item_prices[$index]);
+                            
+                            // Registro de seguridad para confirmar uso de precios originales
+                            \Log::critical("🔒 USANDO PRECIO ORIGINAL para " . $descripcion, [
+                                "precio" => $precioUnitario,
+                                "valor_original" => $selectedQuotation->original_item_prices[$index]
+                            ]);
                         } else {
-                            // Fallback: calcular precio promedio solo si no hay precios específicos
-                            $totalCantidad = array_sum(array_column($items, 'quantity'));
-                            $precioUnitario = $totalCantidad > 0 ? $subtotalBase / $totalCantidad : 0;
+                            // Si no hay precios originales, buscar en otras fuentes
+                            if (isset($item['unit_price']) && is_numeric($item['unit_price'])) {
+                                $precioUnitario = floatval($item['unit_price']);
+                                \Log::info("💲 Usando precio del ítem para " . $descripcion, ["precio" => $precioUnitario]);
+                            } else {
+                                // Último recurso: usar precio promedio
+                                $totalCantidad = array_sum(array_filter(array_column($items, 'quantity'), function($q) { return is_numeric($q) && $q > 0; }));
+                                $precioUnitario = $totalCantidad > 0 ? floatval($subtotalBase) / floatval($totalCantidad) : 0;
+                                
+                                \Log::warning("⚠️ FALLBACK en precio para " . $descripcion, [
+                                    "precio_fallback" => $precioUnitario,
+                                    "subtotal_base" => $subtotalBase,
+                                    "total_cantidad" => $totalCantidad
+                                ]);
+                            }
+                        }
+                        
+                        // Asegurar que los valores son numéricos
+                        $cantidad = floatval($cantidad);
+                        if (!is_numeric($precioUnitario)) {
+                            $precioUnitario = 0;
+                            \Log::error("❌ PRECIO NO NUMÉRICO CORREGIDO para " . $descripcion);
                         }
                         
                         $total = $cantidad * $precioUnitario;

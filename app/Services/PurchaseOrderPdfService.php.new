@@ -122,8 +122,7 @@ class PurchaseOrderPdfService
         if (!empty($appliedTaxes)) {
             foreach ($appliedTaxes as $tax) {
                 $hasDetailedTaxes = true;
-                $taxType = $tax['type'] ?? $tax['name'] ?? 'IVA';
-                switch ($taxType) {
+                switch ($tax['type']) {
                     case 'IVA':
                         if ($tax['rate'] == 19) {
                             $iva19Amount = $tax['amount'];
@@ -132,7 +131,6 @@ class PurchaseOrderPdfService
                         }
                         break;
                     case 'IMPUESTO_CONSUMO':
-                    case 'Impuesto al Consumo':
                         if ($tax['rate'] == 8) {
                             $ipoconsumo8Amount = $tax['amount'];
                         } elseif ($tax['rate'] == 4) {
@@ -217,7 +215,7 @@ class PurchaseOrderPdfService
                         // Obtener datos de la cotización seleccionada para orden tradicional
                         $quotation = $order->purchaseRequest->selectedQuotation;
                         
-                        // Restaurar la plantilla original para generación de PDF
+                        // Usar plantilla tradicional
                         $view = view('purchase-orders.pdf-template-new', array_merge([
                             'order' => $order,
                             'purchaseRequest' => $order->purchaseRequest,
@@ -226,14 +224,7 @@ class PurchaseOrderPdfService
                             'additionalItems' => $order->additional_items ?? [],
                             'tax_consumption' => 0, // Si no se usa impuesto al consumo
                             'discount' => 0, // Si no se manejan descuentos
-                            'forceUseOriginalPrices' => true // Forzar uso de precios originales
                         ], $taxValues));
-                        
-                        // Registrar el uso de la plantilla original para diagnóstico
-                        Log::critical('🔄 RESTAURANDO PLANTILLA ORIGINAL PDF', [
-                            'order_number' => $order->order_number,
-                            'provider' => $order->provider->nombre
-                        ]);
                     }
                 }
             }
@@ -436,7 +427,6 @@ class PurchaseOrderPdfService
                     }, $itemsToUse)
                 ]);
                 
-                // Restaurar la plantilla original para generación de PDF personalizado
                 $view = view('purchase-orders.pdf-template-new', array_merge([
                     'order' => $order,
                     'purchaseRequest' => $order->purchaseRequest,
@@ -445,15 +435,7 @@ class PurchaseOrderPdfService
                     'additionalItems' => $order->additional_items ?? [],
                     'tax_consumption' => 0,
                     'discount' => 0,
-                    'forceUseOriginalPrices' => true // Forzar uso de precios originales
                 ], $taxValues));
-                
-                // Registrar el uso de la plantilla original para diagnóstico
-                Log::critical('🔄 RESTAURANDO PLANTILLA ORIGINAL PARA PDF CUSTOM', [
-                    'order_number' => $order->order_number,
-                    'provider' => $order->provider->nombre,
-                    'items_count' => count($itemsToUse)
-                ]);
             }
             
             // Restaurar el proveedor original
