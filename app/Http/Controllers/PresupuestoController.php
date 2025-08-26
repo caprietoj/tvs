@@ -716,13 +716,16 @@ class PresupuestoController extends Controller
         // Obtener datos del budget principal
         $budgetData = $this->getBudgetData();
         
+        // Obtener datos específicos por concepto
+        $budgetDataByConcept = $this->getBudgetDataByConcept();
+        
         // Obtener meses disponibles para filtros
         $availableMonths = $this->getAvailableMonths();
         
         // Cargar datos guardados del spreadsheet
         $spreadsheetData = $this->loadSpreadsheetData();
         
-        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData', 'spreadsheetData', 'availableMonths'));
+        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData', 'budgetDataByConcept', 'spreadsheetData', 'availableMonths'));
     }
 
     /**
@@ -998,6 +1001,99 @@ class PresupuestoController extends Controller
                 'Alimentación' => 350000,
                 'Transporte' => 300000,
                 'Insumos de la Sección / Material para Clase' => 850000
+            ],
+            'salarios-administracion' => [
+                'salario-aux-transporte' => 1063770859,
+                'bonificacion' => 0,
+                'bono-salario' => 12720000,
+                'prima' => 81174199,
+                'vacaciones' => 40065644,
+                'cesantias' => 81174199,
+                'intereses-cesantias' => 9740904,
+                'seguridad-social' => 130789322,
+                'aportes-parafiscales' => 36623138,
+                'comision-pago' => 0,
+                'reuniones' => 7167840
+            ],
+            'capacitacion-indemnizaciones' => [
+                'capacitacion-admin' => 1276365,
+                'capacitacion-emc-docentes' => 0,
+                'capacitacion-copassi' => 0,
+                'indemnizaciones' => 10000000
+            ],
+            'rubros-institucionales' => [
+                'equipos-dotacion' => 0,
+                'examenes-medicos' => 18060210,
+                'tecnologia-institucional' => 10520000,
+                'insumos-enfermeria' => 5260000,
+                'mercadeo-admisiones' => 0,
+                'eventos-comunidad' => 5008698,
+                'mantenimiento-general' => 0,
+                'reparaciones-mayores' => 182322100,
+                'reparacion-muebles' => 17200200,
+                'utiles-oficina' => 34400400,
+                'elementos-aseo' => 60000000,
+                'gastos-agasajos' => 45867200,
+                'bienestar-institucional' => 22933400,
+                'eventos-internos' => 0,
+                'gastos-contratacion' => 0,
+                'afiliaciones-inscripciones' => 0
+            ],
+            'membresias-convenios' => [
+                'bachillerato-internacional' => 284954040,
+                'accbi' => 0,
+                'red-papaz' => 0
+            ],
+            'servicios-publicos' => [
+                'agua' => 10883921,
+                'energia' => 119406196,
+                'telefono' => 32518205,
+                'vigilancia' => 171134680,
+                'internet-arrendamientos' => 156666907
+            ],
+            'otros-egresos' => [
+                'honorarios' => 173824567,
+                'legales-financieras' => 6020070,
+                'agencia' => 6312000,
+                'seguros-generales' => 25930703,
+                'anuario' => 31560000,
+                'comisiones-bancarias' => 14812273,
+                'mensajeria-acarreos' => 1806021,
+                'miscelaneas' => 0,
+                'impuesto-industria-comercio' => 89998861,
+                'normas-internacionales-niif' => 0,
+                'plan-seguridad-salud-trabajo' => 28224382,
+                'otros-ingresos-retencion' => 0,
+                'impuesto-renta' => 204200774,
+                'arrendamientos' => 1386750135
+            ],
+            'secciones-academia-general' => [
+                'capacitacion' => 82399832,
+                'gastos-importacion-material' => 29656000,
+                'biblioteca-institucional' => 4523600,
+                'biblioteca' => 23661272,
+                'materiales' => 12613480,
+                'deportivos' => 8123857,
+                'municipios' => 4970700,
+                'part-time-teacher-reemplazos' => 0,
+                'dotacion' => 68800800,
+                'tecnologia' => 5271684,
+                'catalogo-pep' => 1052000,
+                'demografia' => 11300000,
+                'personal-project-pai-proyecto-comunitario' => 11046000,
+                'cas-intercambios' => 11046000,
+                'mun-tvs-otros-colegios-gly' => 12624000,
+                'preparacion-pruebas-saber' => 41028000,
+                'psicologia-institucional' => 18000000,
+                'consejeria-universidad' => 0,
+                'eventos-academicos' => 2000000,
+                'evento-ib-cano' => 26547713,
+                'eventos-sociales' => 27308870,
+                'direccion-general' => 441731150
+            ],
+            'contratos-externos' => [
+                'cafeteria' => 599725348,
+                'transporte' => 1231729426
             ]
         ];
     }

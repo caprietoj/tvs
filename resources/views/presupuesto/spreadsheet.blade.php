@@ -1563,44 +1563,42 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td><strong>Salarios y Aux de Transporte- administración y servicios generales</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Capacitacion administracion</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Aprendices Sena</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
+                                        @php
+                                            $salariosAdminData = $budgetDataByConcept['salarios-administracion'] ?? [];
+                                            $conceptLabels = [
+                                                'salario-aux-transporte' => 'Salario y Aux de Transporte-administración y servicios',
+                                                'bonificacion' => 'Bonificación',
+                                                'bono-salario' => 'Bono Salario',
+                                                'prima' => 'Prima',
+                                                'vacaciones' => 'Vacaciones',
+                                                'cesantias' => 'Cesantías',
+                                                'intereses-cesantias' => 'Intereses Cesantías',
+                                                'seguridad-social' => 'Seguridad Social',
+                                                'aportes-parafiscales' => 'Aportes Parafiscales',
+                                                'comision-pago' => 'Comisión Pago Personal Temporal',
+                                                'reuniones' => 'Reuniones'
+                                            ];
+                                        @endphp
+                                        @foreach($conceptLabels as $conceptKey => $concepto)
+                                            @php
+                                                $presupuesto = $salariosAdminData[$conceptKey] ?? 0;
+                                            @endphp
+                                            <tr>
+                                                <td><strong>{{ $concepto }}</strong></td>
+                                                <td class="number-cell editable" data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                            </tr>
+                                        @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL SALARIOS ADMINISTRATIVOS</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ number_format(array_sum($salariosAdminData), 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -1609,19 +1607,6 @@
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated">0,00%</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1648,56 +1633,35 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td><strong>Capacitación admin</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Capacitación EMC/Docentes</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Capacitacin COPASST (brigadas cruz roja, bomberos)</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Indemnizaciones</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
+                                        @php
+                                            $capacitacionData = $budgetDataByConcept['capacitacion-indemnizaciones'] ?? [];
+                                            $capacitacionLabels = [
+                                                'capacitacion-admin' => 'Capacitación admin',
+                                                'capacitacion-emc-docentes' => 'Capacitación EMC/Docentes',
+                                                'capacitacion-copassi' => 'Capacitación COPASSI (Inspectoras, bomberos)',
+                                                'indemnizaciones' => 'Indemnizaciones'
+                                            ];
+                                        @endphp
+                                        @foreach($capacitacionLabels as $conceptKey => $concepto)
+                                            @php
+                                                $presupuesto = $capacitacionData[$conceptKey] ?? 0;
+                                            @endphp
+                                            <tr>
+                                                <td><strong>{{ $concepto }}</strong></td>
+                                                <td class="number-cell editable" data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                            </tr>
+                                        @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL CAPACITACION E INDEMNIZACIONES</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ number_format(array_sum($capacitacionData), 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -1706,19 +1670,6 @@
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated">0,00%</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1745,200 +1696,47 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td><strong>Equipos y Dotacion Salones y/o oficinas</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Examenes Médicos (periodicos y de contratacion)</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Tecnologia institucional</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Insumos enfermeria escolar</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Mercadeo y admisiones</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Eventos Institucionales de Comunidad</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Mantenimiento general</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Reparaciones mayores (construcciones)</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Reparación de Muebles</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Utiles de Oficna y Papeleria (ABKA)</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Elementos de Aseo y Cafeteria</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Gastos de Agasajos</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Bienestar institucional</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Eventos institucionales internos</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Gastos de contratación (pruebas psicotecnicas, plataforma de computrabajo,visitas y poligrafos, anuncios empleo)</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Afiliaciones e Inscripciones</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
+                                        @php
+                                            $rubrosData = $budgetDataByConcept['rubros-institucionales'] ?? [];
+                                            $rubrosLabels = [
+                                                'equipos-dotacion' => 'Equipos y Dotacion Salones y/o oficinas',
+                                                'examenes-medicos' => 'Examenes Médicos (periodicos y de contratacion)',
+                                                'tecnologia-institucional' => 'Tecnologia institucional',
+                                                'insumos-enfermeria' => 'Insumos enfermeria escolar',
+                                                'mercadeo-admisiones' => 'Mercadeo y admisiones',
+                                                'eventos-comunidad' => 'Eventos Institucionales de Comunidad',
+                                                'mantenimiento-general' => 'Mantenimiento general',
+                                                'reparaciones-mayores' => 'Reparaciones mayores (construcciones)',
+                                                'reparacion-muebles' => 'Reparación de Muebles',
+                                                'utiles-oficina' => 'Utiles de Oficna y Papeleria (ABKA)',
+                                                'elementos-aseo' => 'Elementos de Aseo y Cafeteria',
+                                                'gastos-agasajos' => 'Gastos de Agasajos',
+                                                'bienestar-institucional' => 'Bienestar institucional',
+                                                'eventos-internos' => 'Eventos institucionales internos',
+                                                'gastos-contratacion' => 'Gastos de contratación (pruebas psicotecnicas, plataforma de computrabajo,visitas y poligrafos, anuncios empleo)',
+                                                'afiliaciones-inscripciones' => 'Afiliaciones e Inscripciones'
+                                            ];
+                                        @endphp
+                                        @foreach($rubrosLabels as $conceptKey => $concepto)
+                                            @php
+                                                $presupuesto = $rubrosData[$conceptKey] ?? 0;
+                                            @endphp
+                                            <tr>
+                                                <td><strong>{{ $concepto }}</strong></td>
+                                                <td class="number-cell editable" data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                            </tr>
+                                        @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL INSTITUCIONAL</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ number_format(array_sum($rubrosData), 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -1947,19 +1745,6 @@
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated">0,00%</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1986,45 +1771,34 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td><strong>Bachillerato Internacional</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>ACCBI</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>RED PAPAZ</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
+                                        @php
+                                            $membresiasData = $budgetDataByConcept['membresias-convenios'] ?? [];
+                                            $membresiasLabels = [
+                                                'bachillerato-internacional' => 'Bachillerato Internacional',
+                                                'accbi' => 'ACCBI',
+                                                'red-papaz' => 'RED PAPAZ'
+                                            ];
+                                        @endphp
+                                        @foreach($membresiasLabels as $conceptKey => $concepto)
+                                            @php
+                                                $presupuesto = $membresiasData[$conceptKey] ?? 0;
+                                            @endphp
+                                            <tr>
+                                                <td><strong>{{ $concepto }}</strong></td>
+                                                <td class="number-cell editable" data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                            </tr>
+                                        @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL INSTITUCIONAL ACADEMIA</strong></td>
-                                            <td class="number-cell calculated">0</td>
+                                            <td class="number-cell calculated"><strong>{{ number_format(array_sum($membresiasData), 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -2033,18 +1807,6 @@
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated">0,00%</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -2071,69 +1833,36 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td><strong>Agua</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Energia</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Teléfono</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Vigilancia (METROS CUADRADOS PORTERO)</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Internet/ Arrendamientos Tecnológicos</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
+                                        @php
+                                            $serviciosData = $budgetDataByConcept['servicios-publicos'] ?? [];
+                                            $serviciosLabels = [
+                                                'agua' => 'Agua',
+                                                'energia' => 'Energia',
+                                                'telefono' => 'Teléfono',
+                                                'vigilancia' => 'Vigilancia (METROS CUADRADOS PORTERO)',
+                                                'internet-arrendamientos' => 'Internet/ Arrendamientos Tecnológicos'
+                                            ];
+                                        @endphp
+                                        @foreach($serviciosLabels as $conceptKey => $concepto)
+                                            @php
+                                                $presupuesto = $serviciosData[$conceptKey] ?? 0;
+                                            @endphp
+                                            <tr>
+                                                <td><strong>{{ $concepto }}</strong></td>
+                                                <td class="number-cell editable" data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                            </tr>
+                                        @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL SERVICIOS PUBLICOS</strong></td>
-                                            <td class="number-cell calculated">0</td>
+                                            <td class="number-cell calculated"><strong>{{ number_format(array_sum($serviciosData), 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -2142,18 +1871,6 @@
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated">0,00%</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -2180,165 +1897,45 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td><strong>Honorarios</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Legales (sanciones UGPP) càmara de comercio</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Agenda</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Seguros Generales</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Anuario</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Comisiones Bancarias</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Mensajería y Acarreos</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Miscelaneos</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Impto de Industria y Comercio</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Plan de seguridad y Salud en el trabajo</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Otros Egresos Retención</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Impto de renta</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Arrendamientos</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
+                                        @php
+                                            $otrosEgresosData = $budgetDataByConcept['otros-egresos'] ?? [];
+                                            $otrosEgresosLabels = [
+                                                'honorarios' => 'Honorarios',
+                                                'legales-financieras' => 'Legales financieras LGFPP (cámara de comercio)',
+                                                'agencia' => 'Agencia',
+                                                'seguros-generales' => 'Seguros Generales',
+                                                'anuario' => 'Anuario',
+                                                'comisiones-bancarias' => 'Comisiones Bancarias',
+                                                'mensajeria-acarreos' => 'Mensajería y Acarreos',
+                                                'miscelaneas' => 'Misceláneas',
+                                                'impuesto-industria-comercio' => 'Impuesto de Industria y Comercio',
+                                                'normas-internacionales-niif' => 'Normas Internacionales Financiera NIIF',
+                                                'plan-seguridad-salud-trabajo' => 'Plan de seguridad y Salud en el trabajo',
+                                                'otros-ingresos-retencion' => 'Otros Ingresos Retención',
+                                                'impuesto-renta' => 'Impuesto de renta',
+                                                'arrendamientos' => 'Arrendamientos'
+                                            ];
+                                        @endphp
+                                        @foreach($otrosEgresosLabels as $conceptKey => $concepto)
+                                            @php
+                                                $presupuesto = $otrosEgresosData[$conceptKey] ?? 0;
+                                            @endphp
+                                            <tr>
+                                                <td><strong>{{ $concepto }}</strong></td>
+                                                <td class="number-cell editable" data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                            </tr>
+                                        @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL OTROS EGRESOS</strong></td>
-                                            <td class="number-cell calculated">0</td>
+                                            <td class="number-cell calculated"><strong>{{ number_format(array_sum($otrosEgresosData), 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -2347,18 +1944,6 @@
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated">0,00%</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -2385,189 +1970,53 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td><strong>Capacitación</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Gastos Importacion/Material Importado</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Textos y Utiles de Consumo</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Biblioteca institucional</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Materiales para clases</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Material Deportivo</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Musicales</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Part time teacher- reemplazos</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Insumos institucionales de Seccion (Tecnologia )</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>PEP</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>DP</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>PAI</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Departamento de Apoyo</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Consejeria Universitaria</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Direcciòn general</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
+                                        @php
+                                            $seccionesAcademiaData = $budgetDataByConcept['secciones-academia-general'] ?? [];
+                                            $seccionesLabels = [
+                                                'capacitacion' => 'Capacitación',
+                                                'gastos-importacion-material' => 'Gastos Importación/Material Importado',
+                                                'biblioteca-institucional' => 'Biblioteca Institucional',
+                                                'biblioteca' => 'Biblioteca',
+                                                'materiales' => 'Materiales',
+                                                'deportivos' => 'Deportivos',
+                                                'municipios' => 'Municipios',
+                                                'part-time-teacher-reemplazos' => 'Part time teacher - reemplazos',
+                                                'dotacion' => 'Dotación',
+                                                'tecnologia' => 'Tecnología',
+                                                'catalogo-pep' => 'Catálogo PEP',
+                                                'demografia' => 'Demografía',
+                                                'personal-project-pai-proyecto-comunitario' => 'Personal Project PAI/Proyecto comunitario',
+                                                'cas-intercambios' => 'CAS / Intercambios',
+                                                'mun-tvs-otros-colegios-gly' => 'MUN TVS-Otros Colegios - GLY',
+                                                'preparacion-pruebas-saber' => 'Preparación Pruebas saber',
+                                                'psicologia-institucional' => 'Psicología Institucional',
+                                                'consejeria-universidad' => 'Consejería Universidad',
+                                                'eventos-academicos' => 'Eventos Académicos',
+                                                'evento-ib-cano' => 'Evento IB-Cano',
+                                                'eventos-sociales' => 'Eventos Sociales',
+                                                'direccion-general' => 'Dirección general'
+                                            ];
+                                        @endphp
+                                        @foreach($seccionesLabels as $conceptKey => $concepto)
+                                            @php
+                                                $presupuesto = $seccionesAcademiaData[$conceptKey] ?? 0;
+                                            @endphp
+                                            <tr>
+                                                <td><strong>{{ $concepto }}</strong></td>
+                                                <td class="number-cell editable" data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                            </tr>
+                                        @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL SECCIONES ACADEMIA GENERAL</strong></td>
-                                            <td class="number-cell calculated">0</td>
+                                            <td class="number-cell calculated"><strong>{{ number_format(array_sum($seccionesAcademiaData), 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -2576,18 +2025,6 @@
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated">0,00%</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -2614,33 +2051,33 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td><strong>Cafeteria</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Transporte</strong></td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
+                                        @php
+                                            $contratosExternosData = $budgetDataByConcept['contratos-externos'] ?? [];
+                                            $contratosLabels = [
+                                                'cafeteria' => 'Cafetería',
+                                                'transporte' => 'Transporte'
+                                            ];
+                                        @endphp
+                                        @foreach($contratosLabels as $conceptKey => $concepto)
+                                            @php
+                                                $presupuesto = $contratosExternosData[$conceptKey] ?? 0;
+                                            @endphp
+                                            <tr>
+                                                <td><strong>{{ $concepto }}</strong></td>
+                                                <td class="number-cell editable" data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                            </tr>
+                                        @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL CONTRATOS EXTERNOS</strong></td>
-                                            <td class="number-cell calculated">0</td>
+                                            <td class="number-cell calculated"><strong>{{ number_format(array_sum($contratosExternosData), 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
