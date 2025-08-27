@@ -219,7 +219,8 @@
                                                 <h5>Arrastra archivos aquí o haz clic para seleccionar</h5>
                                                 <p class="text-muted">
                                                     Formatos permitidos: PDF, JPG, PNG, GIF, BMP, WEBP<br>
-                                                    Tamaño máximo: 10MB por archivo
+                                                    Tamaño máximo: 10MB por archivo<br>
+                                                    Máximo 100 archivos por previsita
                                                 </p>
                                                 <input type="file" 
                                                        class="file-input @error('archivos_novedades') is-invalid @enderror" 
@@ -737,6 +738,13 @@
                 return;
             }
             
+            // Validar límite de archivos
+            if (files.length > 100) {
+                showFileError('No se pueden seleccionar más de 100 archivos a la vez.', 'limit');
+                updateUploadAreaText();
+                return;
+            }
+            
             // Mostrar título de archivos seleccionados
             container.append(`
                 <div class="mb-3">
@@ -813,7 +821,8 @@
                 content.find('h5').text('Arrastra archivos aquí o haz clic para seleccionar');
                 content.find('p').html(`
                     Formatos permitidos: PDF, JPG, PNG, GIF, BMP, WEBP<br>
-                    Tamaño máximo: 10MB por archivo
+                    Tamaño máximo: 10MB por archivo<br>
+                    Máximo 100 archivos por previsita
                 `);
                 uploadArea.removeClass('has-files');
             }
