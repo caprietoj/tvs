@@ -562,7 +562,7 @@
                                 </tr>
                             @endforeach
                         {{-- Si no hay quotationItemSelections Y no es selección mixta, mostrar items de customData --}}
-                        @elseif(!isset($providerSpecificSelections) && !$isMixedSelection && !empty($customData['items']) && is_array($customData['items']))
+                        @elseif((!isset($providerSpecificSelections) || $providerSpecificSelections->count() == 0) && !$isMixedSelection && !empty($customData['items']) && is_array($customData['items']))
                             @php
                                 \Log::info('🔵 USANDO TERCERA CONDICIÓN - customData items', [
                                     'order' => $order->order_number,
@@ -1263,18 +1263,51 @@
 $(document).ready(function() {
     // Función para formatear números
     function formatNumber(num) {
-        if (!num || num === 0) return '';
+        if (!num && num !== 0) return '';
+        // Asegurar que num sea un número
+        num = parseFloat(num);
+        if (isNaN(num)) return '';
+        
+        // Redondear al entero más cercano antes de formatear
+        num = Math.round(num);
+        
         return new Intl.NumberFormat('es-CO', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
-        }).format(Math.round(num));
+        }).format(num);
     }
 
     // Función para limpiar formato de número (solo quitar puntos separadores de miles)
     function unformatNumber(str) {
-        if (!str) return '';
+        if (!str) return '0';
+        
+        // Convertir a string si no lo es
+        str = str.toString();
+        
+        // Si el número tiene formato colombiano (puntos como separadores de miles)
+        // PERO no tiene comas para decimales, entonces solo quitar puntos
+        if (str.includes('.') && !str.includes(',')) {
+            // Contar los puntos - si hay más de uno o el último punto no está en posición de decimal, son separadores de miles
+            const parts = str.split('.');
+            if (parts.length > 2 || (parts.length === 2 && parts[1].length !== 2)) {
+                // Son separadores de miles, quitar todos los puntos
+                return str.replace(/\./g, '');
+            } else if (parts.length === 2 && parts[1].length <= 2) {
+                // Podría ser decimal - verificar si tiene más de 2 dígitos después del punto
+                // Si tiene exactamente 1-2 dígitos después del punto, conservarlo como decimal
+                // Si tiene más, probablemente son separadores de miles
+                if (parts[1].length <= 2) {
+                    // Es un decimal válido, convertir punto a lo que JavaScript entiende
+                    return str; // JavaScript entiende punto como decimal
+                } else {
+                    // Son separadores de miles
+                    return str.replace(/\./g, '');
+                }
+            }
+        }
+        
         // Solo quitar puntos (separadores de miles en formato colombiano)
-        return str.toString().replace(/\./g, '');
+        return str.replace(/\./g, '');
     }
 
     // Función para formatear inputs de precio al cargar la página
@@ -1282,12 +1315,49 @@ $(document).ready(function() {
         $('.item-price, .additional-price').each(function() {
             const currentValue = $(this).val();
             if (currentValue && currentValue !== '0' && currentValue !== '') {
-                const numericValue = parseFloat(currentValue.replace(/\./g, ''));
-                if (numericValue > 0) {
-                    $(this).val(formatNumber(numericValue));
+                let numericValue = 0;
+                
+                // Si el valor ya es un número directo (sin formato), usarlo directamente
+                if (!isNaN(currentValue) && typeof currentValue === 'string' && 
+                    (!currentValue.includes('.') || currentValue.split('.')[1].length <= 2)) {
+                    numericValue = parseFloat(currentValue);
+                } else {
+                    // Limpiar el valor de cualquier formato existente
+                    const cleanValue = unformatNumber(currentValue);
+                    numericValue = parseFloat(cleanValue);
+                }
+                
+                if (!isNaN(numericValue) && numericValue > 0) {
+                    // Guardar el valor numérico para referencia futura
+                    $(this).data('previous-value', numericValue);
+                    $(this).data('original-value', numericValue);
+                    // NO formatear inmediatamente, mantener el valor numérico para edición
+                    $(this).val(numericValue);
                 }
             }
         });
+        
+        // Calcular todos los totales iniciales
+        recalculateAllTotals();
+    }
+    
+    // Función para recalcular todos los totales
+    function recalculateAllTotals() {
+        $('.item-price').each(function() {
+            const index = $(this).data('index');
+            if (index !== undefined) {
+                calculateItemTotal(index, false);
+            }
+        });
+        
+        $('.additional-price').each(function() {
+            const index = $(this).data('index');
+            if (index !== undefined) {
+                calculateItemTotal(index, true);
+            }
+        });
+        
+        calculateTotal();
     }
 
     // Formatear inputs al cargar la página
@@ -1296,10 +1366,40 @@ $(document).ready(function() {
     // Evento para formatear al perder el foco (blur)
     $(document).on('blur', '.item-price, .additional-price', function() {
         const inputValue = $(this).val();
+        
         if (inputValue && inputValue !== '') {
-            const numericValue = parseFloat(unformatNumber(inputValue));
-            if (!isNaN(numericValue) && numericValue > 0) {
-                $(this).val(formatNumber(numericValue));
+            let numericValue = 0;
+            
+            // Si el valor ya es un número directo, usarlo tal como está
+            if (!isNaN(inputValue) && (!inputValue.includes('.') || inputValue.split('.')[1].length <= 2)) {
+                numericValue = parseFloat(inputValue);
+            } else {
+                // Limpiar cualquier formato antes de procesar
+                const cleanValue = unformatNumber(inputValue);
+                numericValue = parseFloat(cleanValue);
+            }
+            
+            if (!isNaN(numericValue)) {
+                // Obtener el valor numérico anterior para comparación
+                const previousValue = $(this).data('previous-value') || 0;
+                
+                // Si el valor ha aumentado más de 100 veces y es mayor a 50,000, es posible que sea un error
+                if (previousValue > 0 && numericValue > previousValue * 100 && numericValue > 50000) {
+                    console.warn('Posible error detectado, valor aumentó demasiado:', previousValue, '->', numericValue);
+                    
+                    // Sugerir corrección automática dividiendo por 1000
+                    const correctedValue = numericValue / 1000;
+                    if (confirm(`El valor parece muy alto (${formatNumber(numericValue)}). ¿Desea corregirlo a ${formatNumber(correctedValue)}?`)) {
+                        numericValue = correctedValue;
+                    }
+                }
+                
+                // Guardar el valor para referencia futura
+                $(this).data('previous-value', numericValue);
+                
+                // NO formatear inmediatamente, dejar el valor numérico para facilitar edición
+                $(this).val(numericValue);
+                $(this).data('previous-value', numericValue);
                 
                 // Recalcular totales después del formateo
                 const index = $(this).data('index');
@@ -1313,7 +1413,14 @@ $(document).ready(function() {
     $(document).on('focus', '.item-price, .additional-price', function() {
         const currentValue = $(this).val();
         if (currentValue && currentValue !== '') {
+            // Guardar el valor actual como referencia para detectar cambios no deseados
+            $(this).data('original-value', currentValue);
+            
+            // Guardar el valor numérico actual (sin formato) para comparaciones
             const numericValue = unformatNumber(currentValue);
+            $(this).data('previous-value', parseFloat(numericValue));
+            
+            // Mostrar el valor sin formato para edición
             $(this).val(numericValue);
         }
     });
@@ -1329,12 +1436,36 @@ $(document).ready(function() {
         let price = 0;
         
         if (priceValue && priceValue !== '') {
-            // Si el campo está enfocado, el valor ya está sin formato
-            // Si no está enfocado, puede tener formato que necesitamos limpiar
-            price = parseFloat(unformatNumber(priceValue)) || 0;
+            // Si el valor ya es un número sin formato, usarlo directamente
+            if (!isNaN(priceValue) && !priceValue.toString().includes('.') || 
+                (priceValue.toString().includes('.') && priceValue.toString().split('.')[1].length <= 2)) {
+                // Es un número directo o decimal válido
+                price = parseFloat(priceValue) || 0;
+            } else {
+                // Eliminar cualquier formato de número (puntos) antes de convertir
+                const cleanValue = unformatNumber(priceValue);
+                // Convertir a número después de limpiar el formato
+                price = parseFloat(cleanValue) || 0;
+            }
+            
+            // Guardar el precio actual sin formato para referencia
+            priceInput.data('numeric-value', price);
+            
+            // Verificar si el precio es razonable (evitar multiplicación accidental)
+            if (price > 100000000) { // Reducido el límite para ser más estricto
+                console.warn('Precio sospechosamente alto detectado:', price);
+                
+                // Si el precio es demasiado alto, dividir por 1000 como corrección automática
+                if (price > 1000000) {
+                    price = price / 1000;
+                    priceInput.val(formatNumber(price));
+                    console.log('Precio corregido automáticamente:', price);
+                }
+            }
         }
         
-        const total = quantity * price;
+        // Usar Math.round para asegurar que el total sea un número entero sin decimales
+        const total = Math.round(quantity * price);
         
         $(`.${prefix}-total[data-index="${index}"]`).text('$' + formatNumber(total));
         $(`.${prefix}-total-input[data-index="${index}"]`).val(total);

@@ -7,317 +7,471 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            font-size: 12px;
-            margin: 0;
-            padding: 20px;
-            color: #333;
+            font-size: 13px;
+            margin: 15px;
+            background-color: white;
         }
         
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 15px;
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
         }
         
-        .header h1 {
-            color: #007bff;
-            margin: 0;
-            font-size: 24px;
-        }
-        
-        .header p {
-            margin: 5px 0;
-            color: #666;
-        }
-        
-        .info-section {
-            margin-bottom: 20px;
-        }
-        
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-        
-        .info-box {
-            width: 48%;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        
-        .info-box h3 {
-            margin: 0 0 10px 0;
-            color: #007bff;
-            font-size: 14px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
-        }
-        
-        .info-box p {
-            margin: 3px 0;
-            line-height: 1.4;
-        }
-        
-        .items-table {
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin-bottom: 4px;
         }
         
-        .items-table th,
-        .items-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
+        td {
+            border: 1px solid #000;
+            padding: 4px 6px;
+            vertical-align: top;
+            font-size: 12px;
         }
         
-        .items-table th {
-            background-color: #007bff;
-            color: white;
+        .header-title {
+            background-color: #cccccc;
             font-weight: bold;
+            text-align: center;
+            font-size: 14px;
+            padding: 6px;
         }
         
-        .items-table tr:nth-child(even) {
-            background-color: #f2f2f2;
+        .label {
+            background-color: #e6e6e6;
+            font-weight: bold;
+            width: 120px;
+            padding: 4px;
         }
         
-        .totals-section {
-            margin-top: 20px;
+        .value {
+            padding: 4px;
+        }
+        
+        .center {
+            text-align: center;
+        }
+        
+        .right {
             text-align: right;
         }
         
-        .totals-table {
-            width: 300px;
-            margin-left: auto;
-            border-collapse: collapse;
-        }
-        
-        .totals-table td {
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-        }
-        
-        .totals-table .total-row {
-            background-color: #007bff;
-            color: white;
+        .bold {
             font-weight: bold;
         }
         
-        .observations {
+        .items-header {
+            background-color: #cccccc;
+            font-weight: bold;
+            text-align: center;
+            font-size: 12px;
+            padding: 4px;
+        }
+        
+        .footer-box {
+            border: 2px solid #000;
+            padding: 12px;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .signature-section {
             margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
+            font-size: 12px;
         }
         
-        .signatures {
-            margin-top: 40px;
-        }
-        
-        .signature-box {
-            width: 45%;
-            display: inline-block;
-            text-align: center;
-            margin: 0 2.5%;
-        }
-        
-        .signature-line {
-            border-top: 1px solid #333;
-            margin-top: 50px;
-            padding-top: 5px;
-        }
-        
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 10px;
-            color: #666;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-        }
-        
-        .edited-notice {
+        .edit-notice {
             background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
+            border: 2px solid #ffc107;
             padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-align: center;
+            color: #856404;
         }
     </style>
 </head>
 <body>
-    <!-- Aviso de edición -->
-    @if($editedBy)
-    <div class="edited-notice">
-        <strong>⚠️ DOCUMENTO EDITADO</strong><br>
-        Este PDF ha sido personalizado por un administrador el {{ \Carbon\Carbon::parse($editedAt)->format('d/m/Y H:i') }}
-    </div>
-    @endif
-
-    <!-- Header -->
-    <div class="header">
-        <h1>ORDEN DE COMPRA</h1>
-        <p><strong>No. {{ $order->order_number }}</strong></p>
-        <p>Fecha: {{ \Carbon\Carbon::parse($orderDate)->format('d/m/Y') }}</p>
-    </div>
-
-    <!-- Información de la empresa y proveedor -->
-    <div class="info-section">
-        <div class="info-row">
-            <div class="info-box">
-                <h3>De: Nuestra Empresa</h3>
-                <p><strong>{{ config('app.name', 'TVS') }}</strong></p>
-                <p>NIT: 123456789-0</p>
-                <p>Dirección: Calle Principal #123</p>
-                <p>Teléfono: (123) 456-7890</p>
-                <p>Email: compras@empresa.com</p>
-            </div>
-            
-            <div class="info-box">
-                <h3>Para: Proveedor</h3>
-                <p><strong>{{ $customProvider->nombre }}</strong></p>
-                @if($customProvider->nit)
-                <p>NIT: {{ $customProvider->nit }}</p>
-                @endif
-                @if($customProvider->direccion)
-                <p>Dirección: {{ $customProvider->direccion }}</p>
-                @endif
-                @if($customProvider->telefono)
-                <p>Teléfono: {{ $customProvider->telefono }}</p>
-                @endif
-                @if($customProvider->email)
-                <p>Email: {{ $customProvider->email }}</p>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    <!-- Información de la orden -->
-    <div class="info-section">
-        <div class="info-row">
-            <div class="info-box">
-                <h3>Detalles de la Orden</h3>
-                <p><strong>Solicitud:</strong> {{ $purchaseRequest->request_number ?? 'N/A' }}</p>
-                <p><strong>Solicitante:</strong> {{ $purchaseRequest->user->name ?? 'N/A' }}</p>
-                @if($deliveryDate)
-                <p><strong>Fecha de Entrega:</strong> {{ \Carbon\Carbon::parse($deliveryDate)->format('d/m/Y') }}</p>
-                @endif
-                @if($paymentTerms)
-                <p><strong>Términos de Pago:</strong> {{ $paymentTerms }}</p>
-                @endif
-            </div>
-            
-            <div class="info-box">
-                <h3>Estado del Documento</h3>
-                <p><strong>Estado:</strong> 
-                    @switch($order->status)
-                        @case('pending')
-                            Pendiente
-                            @break
-                        @case('approved')
-                            Aprobado
-                            @break
-                        @case('sent_to_accounting')
-                            Enviado a Contabilidad
-                            @break
-                        @case('paid')
-                            Pagado
-                            @break
-                        @default
-                            {{ ucfirst($order->status) }}
-                    @endswitch
-                </p>
-                <p><strong>Creado:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</p>
-                @if($order->approved_at)
-                <p><strong>Aprobado:</strong> {{ $order->approved_at->format('d/m/Y H:i') }}</p>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    <!-- Tabla de items -->
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th style="width: 50%">Descripción</th>
-                <th style="width: 15%">Cantidad</th>
-                <th style="width: 17.5%">Precio Unitario</th>
-                <th style="width: 17.5%">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($customItems as $item)
-            <tr>
-                <td>{{ $item['description'] }}</td>
-                <td style="text-align: center">{{ number_format($item['quantity']) }}</td>
-                <td style="text-align: right">${{ number_format($item['unit_price'], 2, ',', '.') }}</td>
-                <td style="text-align: right">${{ number_format($item['total_price'], 2, ',', '.') }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    <!-- Totales -->
-    <div class="totals-section">
-        <table class="totals-table">
-            <tr>
-                <td><strong>Subtotal:</strong></td>
-                <td style="text-align: right">${{ number_format($subtotal, 2, ',', '.') }}</td>
-            </tr>
-            @if($taxAmount > 0)
-            <tr>
-                <td><strong>IVA (19%):</strong></td>
-                <td style="text-align: right">${{ number_format($taxAmount, 2, ',', '.') }}</td>
-            </tr>
+    <div class="container">
+        @if(isset($showEditedNotice) && $showEditedNotice)
+        <div class="edit-notice">
+            <strong>⚠️ DOCUMENTO EDITADO</strong><br>
+            Este PDF ha sido personalizado por un administrador el {{ isset($editedAt) ? $editedAt->format('d/m/Y H:i') : \Carbon\Carbon::now()->format('d/m/Y H:i') }}
+            @if(isset($editedBy))
+                por {{ $editedBy }}
             @endif
-            <tr class="total-row">
-                <td><strong>TOTAL:</strong></td>
-                <td style="text-align: right"><strong>${{ number_format($totalAmount, 2, ',', '.') }}</strong></td>
+        </div>
+        @endif
+
+        <!-- Nota sobre envío de facturas -->
+        <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 8px; margin-bottom: 10px; font-size: 11px; text-align: justify;">
+            <strong>IMPORTANTE:</strong> El envío de las facturas se debe realizar al correo <strong>830097105@recepciondefacturas.co</strong> para poder realizar las respectivas aceptaciones y acuse de facturas ante la DIAN
+        </div>
+
+        <!-- Título principal -->
+        <table>
+            <tr>
+                <td class="header-title">FORMATO DE ORDEN DE COMPRA Y/O SERVICIO COLEGIO VICTORIA S.A.S</td>
             </tr>
         </table>
-    </div>
 
-    <!-- Observaciones -->
-    @if($observations)
-    <div class="observations">
-        <h3>Observaciones:</h3>
-        <p>{{ $observations }}</p>
-    </div>
-    @endif
+        <!-- Información básica -->
+        <table>
+            <tr>
+                <td class="label">ORDEN DE COMPRA/SERVICIO</td>
+                <td class="value" style="width: 200px;">{{ $order->order_number }}</td>
+                <td class="label">FECHA</td>
+                <td class="value">{{ isset($orderDate) ? \Carbon\Carbon::parse($orderDate)->format('d/m/Y') : $order->created_at->format('d/m/Y') }}</td>
+            </tr>
+            <tr>
+                <td class="label">Consecutivo COM</td>
+                <td class="value">{{ $order->order_number }}</td>
+                <td class="label"></td>
+                <td class="value"></td>
+            </tr>
+        </table>
 
-    <!-- Firmas -->
-    <div class="signatures">
-        <div class="signature-box">
-            <div class="signature-line">
-                <strong>Elaborado por</strong><br>
-                {{ $purchaseRequest->user->name ?? 'N/A' }}<br>
-                Solicitante
-            </div>
-        </div>
-        
-        <div class="signature-box">
-            <div class="signature-line">
-                <strong>Aprobado por</strong><br>
-                {{ $purchaseRequest->approver->name ?? 'Pendiente' }}<br>
-                Aprobador
-            </div>
-        </div>
-    </div>
+        <!-- Información del proveedor -->
+        <table>
+            <tr>
+                <td class="label">PROVEEDOR:</td>
+                <td class="value" colspan="3">{{ isset($customProvider) ? $customProvider->nombre : ($order->provider->nombre ?? 'N/A') }}</td>
+            </tr>
+            <tr>
+                <td class="label">NIT/CC:</td>
+                <td class="value">
+                    @if(isset($customProvider) && $customProvider->nit)
+                        {{ $customProvider->nit }}
+                    @elseif($order->provider && $order->provider->nit)
+                        {{ $order->provider->nit }}
+                    @endif
+                </td>
+                <td class="label">DIRECCIÓN:</td>
+                <td class="value">
+                    @if(isset($customProvider) && $customProvider->direccion)
+                        {{ $customProvider->direccion }}
+                    @elseif($order->provider && $order->provider->direccion)
+                        {{ $order->provider->direccion }}
+                    @endif
+                </td>
+            </tr>
+            <tr>
+                <td class="label">TELÉFONO:</td>
+                <td class="value">
+                    @if(isset($customProvider) && $customProvider->telefono)
+                        {{ $customProvider->telefono }}
+                    @elseif($order->provider && $order->provider->telefono)
+                        {{ $order->provider->telefono }}
+                    @endif
+                </td>
+                <td class="label">CIUDAD:</td>
+                <td class="value">Bogotá, D.C.</td>
+            </tr>
+            <tr>
+                <td class="label">E-MAIL:</td>
+                <td class="value">
+                    @if(isset($customProvider) && $customProvider->email)
+                        {{ $customProvider->email }}
+                    @elseif($order->provider && $order->provider->email)
+                        {{ $order->provider->email }}
+                    @endif
+                </td>
+                <td class="label">ENTREGAR EN:</td>
+                <td class="value">COLEGIO VICTORIA CALLE 32 F SUR 17G 26</td>
+            </tr>
+        </table>
 
-    <!-- Footer -->
-    <div class="footer">
-        <p>Este documento ha sido generado electrónicamente</p>
-        @if($editedBy)
-        <p style="color: #856404;"><strong>Documento personalizado - Editado por administrador</strong></p>
+        <!-- Información de entrega y responsable -->
+        <table>
+            <tr>
+                <td class="label">FORMA DE PAGO:</td>
+                <td class="value">{{ $paymentTerms ?? $order->payment_terms ?? 'Contado' }}</td>
+                <td class="label">RESPONSABLE DE LA COMPRA:</td>
+                <td class="value">{{ $order->purchaseRequest->user->name ?? 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td class="label">FECHA ENTREGA:</td>
+                <td class="value">{{ isset($deliveryDate) ? \Carbon\Carbon::parse($deliveryDate)->format('d/m/Y') : ($order->delivery_date ? \Carbon\Carbon::parse($order->delivery_date)->format('d/m/Y') : \Carbon\Carbon::now()->format('d/m/Y')) }}</td>
+                <td class="label"></td>
+                <td class="value"></td>
+            </tr>
+        </table>
+
+        <!-- Información específica para órdenes mixtas -->
+        @if(isset($isMixedOrder) && $isMixedOrder && isset($providerSpecificInfo) && $providerSpecificInfo)
+        <table>
+            <tr>
+                <td class="label">TIPO DE ORDEN:</td>
+                <td class="value" colspan="3">
+                    <strong>ORDEN MIXTA</strong> - Selección de múltiples proveedores
+                </td>
+            </tr>
+            <tr>
+                <td class="label">DETALLE SELECCIÓN:</td>
+                <td class="value" colspan="3">
+                    {{ $providerSpecificInfo['this_provider_items'] }} de {{ $providerSpecificInfo['total_items'] }} items totales | 
+                    Proveedores involucrados: {{ $providerSpecificInfo['total_providers'] }}
+                </td>
+            </tr>
+        </table>
         @endif
-        <p>Orden de Compra #{{ $order->order_number }} - Generado el {{ now()->format('d/m/Y H:i') }}</p>
+
+        <!-- Información específica para órdenes compartidas -->
+        @if(isset($isSharedPurchase) && $isSharedPurchase)
+        <table>
+            <tr>
+                <td class="label">COMPRA COMPARTIDA:</td>
+                <td class="value" colspan="3">
+                    <strong>SÍ</strong> - Presupuesto distribuido entre secciones
+                </td>
+            </tr>
+            @if(isset($sharedSections) && !empty($sharedSections))
+            <tr>
+                <td class="label">SECCIONES:</td>
+                <td class="value" colspan="3">
+                    {{ is_array($sharedSections) ? implode(' • ', $sharedSections) : $sharedSections }}
+                </td>
+            </tr>
+            @endif
+        </table>
+        @endif
+
+        <!-- Items -->
+        <table>
+            <tr>
+                <td class="items-header" style="width: 60px;">ITEM</td>
+                <td class="items-header">DESCRIPCIÓN</td>
+                <td class="items-header" style="width: 60px;">CANT</td>
+                <td class="items-header" style="width: 100px;">VALOR UNIT</td>
+                <td class="items-header" style="width: 100px;">VALOR TOTAL</td>
+                <td class="items-header" style="width: 80px;">ACCIONES</td>
+            </tr>
+            
+            @php
+                $itemsToShow = [];
+                $useCustomData = isset($customItems) && !empty($customItems);
+                
+                // Detectar si es orden mixta
+                $isMixedOrder = false;
+                $isSharedPurchase = false;
+                $sharedSections = [];
+                $providerSpecificInfo = null;
+                
+                // Obtener el presupuesto correcto
+                $budget = null;
+                if (isset($customData) && is_array($customData) && isset($customData['budget'])) {
+                    $budget = $customData['budget'];
+                } elseif ($order->purchaseRequest && $order->purchaseRequest->budget) {
+                    $budget = $order->purchaseRequest->budget;
+                }
+                
+                // Verificar datos personalizados para información adicional
+                if (isset($customData) && is_array($customData)) {
+                    $isSharedPurchase = $customData['is_shared_purchase'] ?? false;
+                    $sharedSections = $customData['shared_sections'] ?? [];
+                    if (is_string($sharedSections)) {
+                        $sharedSections = explode(' • ', $sharedSections);
+                    }
+                }
+                
+                // Detectar orden mixta por selecciones de cotización
+                if ($order->purchaseRequest && $order->purchaseRequest->quotationItemSelections()->exists()) {
+                    $isMixedOrder = true;
+                    $allSelections = $order->purchaseRequest->quotationItemSelections;
+                    $providerSelections = $allSelections->filter(function($sel) use ($order) {
+                        return $sel->quotation && $sel->quotation->provider_name === $order->provider->nombre;
+                    });
+                    
+                    if ($providerSelections->count() > 0) {
+                        $providerSpecificInfo = [
+                            'total_providers' => $allSelections->pluck('quotation.provider_name')->unique()->count(),
+                            'this_provider_items' => $providerSelections->count(),
+                            'total_items' => $allSelections->count()
+                        ];
+                    }
+                }
+                
+                if ($useCustomData) {
+                    // Usar datos personalizados
+                    $itemsToShow = $customItems;
+                } elseif (isset($quotationItemSelections) && $quotationItemSelections->count() > 0) {
+                    // Para órdenes mixtas, usar solo las selecciones del proveedor específico
+                    $itemsToShow = [];
+                    foreach ($quotationItemSelections as $selection) {
+                        $unitPrice = 0;
+                        if ($selection->quotation && isset($selection->quotation->original_item_prices[$selection->item_index])) {
+                            $unitPrice = $selection->quotation->original_item_prices[$selection->item_index];
+                        } elseif ($selection->quotation && isset($selection->quotation->item_prices[$selection->item_index])) {
+                            $unitPrice = $selection->quotation->item_prices[$selection->item_index];
+                        }
+                        
+                        $itemsToShow[] = [
+                            'description' => $selection->item_description ?? 'N/A',
+                            'quantity' => $selection->quantity ?? 1,
+                            'unit_price' => $unitPrice,
+                            'total' => ($selection->quantity ?? 1) * $unitPrice,
+                            'unit' => $selection->unit ?? 'Unidad',
+                            'observations' => $selection->observations ?? ''
+                        ];
+                    }
+                } elseif (isset($items) && !empty($items)) {
+                    // Usar items regulares
+                    $itemsToShow = $items;
+                } elseif ($order->purchaseRequest && $order->purchaseRequest->purchase_items) {
+                    // Combinar items de la solicitud con precios de la cotización
+                    $purchaseItems = $order->purchaseRequest->purchase_items;
+                    $prices = [];
+                    
+                    if ($order->purchaseRequest->selectedQuotation) {
+                        $prices = $order->purchaseRequest->selectedQuotation->original_item_prices ?? 
+                                 $order->purchaseRequest->selectedQuotation->item_prices ?? [];
+                    }
+                    
+                    $itemsToShow = [];
+                    $totalItemCount = count($purchaseItems);
+                    $totalPriceCount = count($prices);
+                    
+                    foreach ($purchaseItems as $index => $item) {
+                        $unitPrice = 0;
+                        
+                        // Si hay exactamente la misma cantidad de precios que items
+                        if ($totalPriceCount == $totalItemCount && isset($prices[$index])) {
+                            $unitPrice = $prices[$index];
+                        }
+                        // Si hay menos precios que items, distribuir el precio total
+                        elseif ($totalPriceCount > 0) {
+                            if ($index == 0 && isset($prices[0])) {
+                                // Asignar todo el primer precio al primer item
+                                $unitPrice = $prices[0];
+                            } else {
+                                // Los demás items tienen precio 0
+                                $unitPrice = 0;
+                            }
+                        }
+                        
+                        $quantity = $item['quantity'] ?? 1;
+                        
+                        $itemsToShow[] = [
+                            'description' => $item['description'] ?? 'N/A',
+                            'quantity' => $quantity,
+                            'unit_price' => $unitPrice,
+                            'total' => $quantity * $unitPrice,
+                            'unit' => $item['unit'] ?? 'Unidad',
+                            'observations' => $item['observations'] ?? ''
+                        ];
+                    }
+                }
+            @endphp
+
+            @if(!empty($itemsToShow))
+                @foreach($itemsToShow as $index => $item)
+                <tr>
+                    <td class="center">{{ $index + 1 }}</td>
+                    <td>{{ $item['description'] ?? $item['item_description'] ?? 'N/A' }}</td>
+                    <td class="center">{{ $item['quantity'] ?? $item['cantidad'] ?? 1 }}</td>
+                    <td class="right">{{ number_format($item['unit_price'] ?? $item['precio_unitario'] ?? $item['unit_price_display'] ?? 0, 0, ',', '.') }}</td>
+                    <td class="right">${{ number_format($item['total'] ?? $item['total_price'] ?? (($item['quantity'] ?? 1) * ($item['unit_price'] ?? 0)), 0, ',', '.') }}</td>
+                    <td class="center">-</td>
+                </tr>
+                @endforeach
+            @else
+                <tr>
+                    <td class="center">1</td>
+                    <td>No hay items disponibles</td>
+                    <td class="center">0</td>
+                    <td class="right">0</td>
+                    <td class="right">$0</td>
+                    <td class="center">-</td>
+                </tr>
+            @endif
+        </table>
+
+        <!-- Observaciones y presupuesto -->
+        <table>
+            <tr>
+                <td class="label">Observaciones:</td>
+                <td class="value" colspan="3">
+                    @php
+                        $displayObservations = $observations ?? '-';
+                        
+                        // Agregar información adicional para órdenes mixtas
+                        if (isset($isMixedOrder) && $isMixedOrder) {
+                            $additionalInfo = "ORDEN MIXTA: Esta orden contiene items seleccionados de múltiples proveedores. ";
+                            if (isset($providerSpecificInfo) && $providerSpecificInfo) {
+                                $additionalInfo .= "Items de este proveedor: {$providerSpecificInfo['this_provider_items']}/{$providerSpecificInfo['total_items']}. ";
+                            }
+                            $displayObservations = ($displayObservations === '-' ? '' : $displayObservations . ' | ') . $additionalInfo;
+                        }
+                        
+                        // Agregar información adicional para órdenes compartidas
+                        if (isset($isSharedPurchase) && $isSharedPurchase) {
+                            $sharedInfo = "COMPRA COMPARTIDA: ";
+                            if (isset($sharedSections) && !empty($sharedSections)) {
+                                $sectionsText = is_array($sharedSections) ? implode(', ', $sharedSections) : $sharedSections;
+                                $sharedInfo .= "Secciones involucradas: {$sectionsText}. ";
+                            }
+                            $sharedInfo .= "Los costos serán distribuidos proporcionalmente.";
+                            $displayObservations = ($displayObservations === '-' ? '' : $displayObservations . ' | ') . $sharedInfo;
+                        }
+                        
+                        echo $displayObservations ?: '-';
+                    @endphp
+                </td>
+            </tr>
+            <tr>
+                <td class="label">PRESUPUESTO COMPARTIDO:</td>
+                <td class="value" colspan="3">
+                    @if(isset($isSharedPurchase) && $isSharedPurchase && isset($sharedSections) && !empty($sharedSections))
+                        @php
+                            $sectionCount = is_array($sharedSections) ? count($sharedSections) : 1;
+                            $percentage = $sectionCount > 0 ? round(100 / $sectionCount, 1) : 100;
+                        @endphp
+                        {{ is_array($sharedSections) ? implode(" ({$percentage}%) - ", $sharedSections) . " ({$percentage}%)" : $sharedSections }}
+                    @else
+                        {{ isset($sharedBudget) ? $sharedBudget : '' }}
+                    @endif
+                </td>
+            </tr>
+        </table>
+
+        <!-- Aprobación y totales -->
+        <table>
+            <tr>
+                <td class="label">APROBACIÓN</td>
+                <td class="value">{{ $order->purchaseRequest->approver->name ?? 'Juliana Pérez López' }}</td>
+                <td class="label bold">SUB TOTAL</td>
+                <td class="value bold right">${{ number_format($subtotal ?? $order->subtotal ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td class="label">FECHA:</td>
+                <td class="value">{{ isset($approvalDate) ? \Carbon\Carbon::parse($approvalDate)->format('d/m/Y') : $order->created_at->format('d/m/Y') }}</td>
+                <td class="label bold">IVA (19%)</td>
+                <td class="value bold right">${{ number_format($ivaAmount ?? $order->iva_amount ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td class="label">PRESUPUESTO:</td>
+                <td class="value">{{ $budget ?? 'N/A' }}</td>
+                <td class="label bold">Sin Imp. Consumo</td>
+                <td class="value bold right">$0</td>
+            </tr>
+            <tr>
+                <td class="label">SOLICITUD Nº:</td>
+                <td class="value">{{ $order->purchaseRequest->request_number ?? 'SC-0012' }}</td>
+                <td class="label bold">TOTAL A PAGAR</td>
+                <td class="value bold right">${{ number_format($totalAmount ?? $order->total_amount ?? 0, 0, ',', '.') }}</td>
+            </tr>
+        </table>
+
+        <!-- Información de facturación -->
+        <div style="text-align: center; margin-top: 20px; padding: 15px; border: 2px solid #000; font-weight: bold; font-size: 12px;">
+            FACTURA A FAVOR DE COLEGIO VICTORIA SAS NIT 830.097.105-2<br>
+            Calle 215 No. 50-60 Tel (571) 6761503/6763435<br>
+            Bogotá - Colombia<br>
+            Departamento de Compras email: compras@tvs.edu.co
+        </div>
     </div>
 </body>
 </html>

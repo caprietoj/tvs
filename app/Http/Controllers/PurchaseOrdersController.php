@@ -1130,6 +1130,19 @@ class PurchaseOrdersController extends Controller
             ]);
         }
 
+        // GENERAR DATOS PERSONALIZADOS AUTOMÁTICAMENTE SI NO EXISTEN
+        if (empty($purchaseOrder->pdf_custom_data) && !$purchaseRequest->quotationItemSelections()->exists()) {
+            Log::info('🔧 GENERANDO DATOS PERSONALIZADOS AUTOMÁTICOS', [
+                'order' => $purchaseOrder->order_number,
+                'reason' => 'pdf_custom_data vacío para orden regular'
+            ]);
+            
+            $this->generateInitialCustomData($purchaseOrder);
+            
+            // Recargar la orden con los nuevos datos
+            $purchaseOrder->refresh();
+        }
+
         // Usar el alias 'order' para compatibilidad con la vista
         $order = $purchaseOrder;
 
@@ -1332,8 +1345,16 @@ class PurchaseOrdersController extends Controller
                         $item['unit_price'] = floatval($originalPrices[$index]);
                         // Asegurarnos de que la cantidad también sea numérica
                         $item['quantity'] = floatval($item['quantity']);
-                        // Recalcular el total
-                        $item['total'] = $item['unit_price'] * $item['quantity'];
+                        // Asegurar que price y quantity sean números
+                        $unitPrice = floatval($item['unit_price']);
+                        $quantity = floatval($item['quantity']);
+                        
+                        // Recalcular el total con redondeo
+                        $item['total'] = round($unitPrice * $quantity);
+                        
+                        // Actualizar los valores para asegurar que son numéricos
+                        $item['unit_price'] = $unitPrice;
+                        $item['quantity'] = $quantity;
                         
                         Log::critical('✅ UPDATEPDF - Precio original aplicado', [
                             'item' => $item['description'],
@@ -1373,11 +1394,12 @@ class PurchaseOrdersController extends Controller
                     'final_items_saved' => count($itemsToSave)
                 ]);
             }
-            // CORRECCIÓN CRÍTICA: Usar la plantilla fija con precios corregidos
-            Log::critical('🔧 APLICANDO SOLUCIÓN DE PRECIOS FIJOS', [
+            // CORRECCIÓN CRÍTICA: Usar siempre la plantilla pdf-template-custom.blade.php
+            Log::critical('🔧 APLICANDO SOLUCIÓN DEFINITIVA PARA PDF', [
                 'order' => $purchaseOrder->order_number,
                 'provider' => $purchaseOrder->provider->nombre,
-                'using_fixed_template' => true,
+                'using_custom_template' => true,
+                'template' => 'pdf-template-custom.blade.php',
                 'items_to_save' => count($itemsToSave)
             ]);
             
@@ -1829,7 +1851,7 @@ class PurchaseOrdersController extends Controller
                 
                 if ($quotation->includes_iva_19 && $quotation->iva_19_amount > 0) {
                     $taxRate = 19;
-                    $taxAmount = ($itemSubtotal * $taxRate) / 100;
+                    $taxAmount = round(($itemSubtotal * $taxRate) / 100);
                     
                     if (!isset($appliedTaxes['IVA 19%'])) {
                         $appliedTaxes['IVA 19%'] = $this->createTaxRecord('IVA', $taxRate);
@@ -1840,7 +1862,7 @@ class PurchaseOrdersController extends Controller
                 
                 if ($quotation->includes_iva_5 && $quotation->iva_5_amount > 0) {
                     $taxRate = 5;
-                    $taxAmount = ($itemSubtotal * $taxRate) / 100;
+                    $taxAmount = round(($itemSubtotal * $taxRate) / 100);
                     
                     if (!isset($appliedTaxes['IVA 5%'])) {
                         $appliedTaxes['IVA 5%'] = $this->createTaxRecord('IVA', $taxRate);
@@ -2820,7 +2842,7 @@ class PurchaseOrdersController extends Controller
     public function createFromQuotation(Request $request, PurchaseRequest $purchaseRequest)
     {
         $request->validate([
-            'provider_id' => 'required|exists:proveedores,id',
+            'provider_id' => 'required|exists:proveedors,id',
             'payment_terms' => 'required|string',
             'delivery_date' => 'required|date',
             'observations' => 'nullable|string'
@@ -3058,5 +3080,93 @@ class PurchaseOrdersController extends Controller
             'rate' => $rate,
             'amount' => $amount
         ];
+    }
+    
+    /**
+     * Genera datos personalizados iniciales para órdenes que no los tienen
+     * Esto permite que las órdenes sean editables en la interfaz
+     */
+    private function generateInitialCustomData(PurchaseOrder $order)
+    {
+        Log::info('🔧 Generando datos personalizados para orden', [
+            'order' => $order->order_number,
+            'provider' => $order->provider->nombre ?? 'N/A'
+        ]);
+        
+        $order->load(['purchaseRequest.selectedQuotation', 'provider']);
+        $quotation = $order->purchaseRequest->selectedQuotation;
+        
+        $items = [];
+        
+        // Intentar usar precios originales de la cotización
+        if ($quotation && !empty($quotation->original_item_prices)) {
+            Log::info('🎯 Usando precios originales de cotización', [
+                'cotización_id' => $quotation->id,
+                'precios_count' => count($quotation->original_item_prices)
+            ]);
+            
+            foreach ($quotation->original_item_prices as $index => $price) {
+                $quantity = 1; // Cantidad por defecto
+                $items[] = [
+                    'description' => "Item " . ($index + 1) . " - Editable",
+                    'quantity' => $quantity,
+                    'unit_price' => floatval($price),
+                    'total' => floatval($price) * $quantity
+                ];
+            }
+        } 
+        // Fallback: crear un item básico basado en el total de la orden
+        else {
+            Log::info('🎯 Generando item básico desde total de orden', [
+                'total_amount' => $order->total_amount
+            ]);
+            
+            $totalAmount = $order->total_amount ?: 100000; // Fallback si no hay total
+            $items[] = [
+                'description' => 'Item por defecto - Editable en interfaz',
+                'quantity' => 1,
+                'unit_price' => $totalAmount,
+                'total' => $totalAmount
+            ];
+        }
+        
+        // Calcular totales
+        $subtotal = array_sum(array_column($items, 'total'));
+        $ivaRate = 19; // Tasa de IVA por defecto
+        $ivaAmount = round($subtotal * ($ivaRate / 100));
+        $total = $subtotal + $ivaAmount;
+        
+        // Crear estructura de datos personalizados
+        $customData = [
+            'items' => $items,
+            'subtotal' => $subtotal,
+            'iva_rate' => $ivaRate . '%',
+            'iva_amount' => $ivaAmount,
+            'ipoconsumo_rate' => '0%',
+            'ipoconsumo_amount' => 0,
+            'total' => $total,
+            'provider_info' => [
+                'name' => $order->provider->nombre ?? '',
+                'nit' => $order->provider->nit ?? '',
+                'address' => $order->provider->direccion ?? '',
+                'phone' => $order->provider->telefono ?? '',
+                'email' => $order->provider->correo ?? ''
+            ],
+            'generated_automatically' => true,
+            'generated_at' => now()->toDateTimeString()
+        ];
+        
+        // Guardar los datos personalizados
+        $order->pdf_custom_data = json_encode($customData);
+        $order->save();
+        
+        Log::info('✅ Datos personalizados generados exitosamente', [
+            'order' => $order->order_number,
+            'items_count' => count($items),
+            'subtotal' => number_format($subtotal, 0, ',', '.'),
+            'total' => number_format($total, 0, ',', '.')
+        ]);
+        
+        return $customData;
     }
 }
