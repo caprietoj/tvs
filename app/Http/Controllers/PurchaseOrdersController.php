@@ -1295,7 +1295,10 @@ class PurchaseOrdersController extends Controller
                 ]);
             } else {
                 // Para órdenes normales, recuperar solo datos no relacionados con precios
-                $savedCustomData = json_decode($purchaseOrder->pdf_custom_data ?? '{}', true);
+                $existingData = $purchaseOrder->pdf_custom_data ?? '{}';
+                $savedCustomData = is_array($existingData) 
+                    ? $existingData 
+                    : json_decode($existingData, true);
                 
                 // Transferir solo datos no relacionados con cálculos
                 $nonPriceFields = ['provider_name', 'provider_nit', 'provider_email', 
@@ -3098,8 +3101,32 @@ class PurchaseOrdersController extends Controller
         
         $items = [];
         
+        // Intentar usar datos reales de la solicitud de compra
+        $purchaseRequest = $order->purchaseRequest;
+        
+        // Primero intentar obtener items de la solicitud original
+        if ($purchaseRequest && !empty($purchaseRequest->purchase_items)) {
+            Log::info('🎯 Usando items de solicitud de compra original', [
+                'request_id' => $purchaseRequest->id,
+                'items_count' => count($purchaseRequest->purchase_items)
+            ]);
+            
+            foreach ($purchaseRequest->purchase_items as $index => $item) {
+                $quantity = $item['quantity'] ?? 1;
+                $unitPrice = $order->total_amount && count($purchaseRequest->purchase_items) > 0 
+                    ? round($order->total_amount / array_sum(array_column($purchaseRequest->purchase_items, 'quantity')))
+                    : 0;
+                    
+                $items[] = [
+                    'description' => $item['description'] ?? 'Descripción no disponible',
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'total' => $unitPrice * $quantity
+                ];
+            }
+        }
         // Intentar usar precios originales de la cotización
-        if ($quotation && !empty($quotation->original_item_prices)) {
+        elseif ($quotation && !empty($quotation->original_item_prices)) {
             Log::info('🎯 Usando precios originales de cotización', [
                 'cotización_id' => $quotation->id,
                 'precios_count' => count($quotation->original_item_prices)
@@ -3108,7 +3135,7 @@ class PurchaseOrdersController extends Controller
             foreach ($quotation->original_item_prices as $index => $price) {
                 $quantity = 1; // Cantidad por defecto
                 $items[] = [
-                    'description' => "Item " . ($index + 1) . " - Editable",
+                    'description' => "Producto " . ($index + 1),
                     'quantity' => $quantity,
                     'unit_price' => floatval($price),
                     'total' => floatval($price) * $quantity
@@ -3121,13 +3148,15 @@ class PurchaseOrdersController extends Controller
                 'total_amount' => $order->total_amount
             ]);
             
-            $totalAmount = $order->total_amount ?: 100000; // Fallback si no hay total
-            $items[] = [
-                'description' => 'Item por defecto - Editable en interfaz',
-                'quantity' => 1,
-                'unit_price' => $totalAmount,
-                'total' => $totalAmount
-            ];
+            $totalAmount = $order->total_amount ?: 0;
+            if ($totalAmount > 0) {
+                $items[] = [
+                    'description' => 'Producto/Servicio',
+                    'quantity' => 1,
+                    'unit_price' => $totalAmount,
+                    'total' => $totalAmount
+                ];
+            }
         }
         
         // Calcular totales

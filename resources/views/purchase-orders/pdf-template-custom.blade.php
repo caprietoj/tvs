@@ -341,15 +341,9 @@
                         if ($totalPriceCount == $totalItemCount && isset($prices[$index])) {
                             $unitPrice = $prices[$index];
                         }
-                        // Si hay menos precios que items, distribuir el precio total
-                        elseif ($totalPriceCount > 0) {
-                            if ($index == 0 && isset($prices[0])) {
-                                // Asignar todo el primer precio al primer item
-                                $unitPrice = $prices[0];
-                            } else {
-                                // Los demás items tienen precio 0
-                                $unitPrice = 0;
-                            }
+                        // Si hay precios disponibles, usarlos hasta que se agoten
+                        elseif ($totalPriceCount > 0 && isset($prices[$index])) {
+                            $unitPrice = $prices[$index];
                         }
                         
                         $quantity = $item['quantity'] ?? 1;
@@ -372,7 +366,7 @@
                     <td class="center">{{ $index + 1 }}</td>
                     <td>{{ $item['description'] ?? $item['item_description'] ?? 'N/A' }}</td>
                     <td class="center">{{ $item['quantity'] ?? $item['cantidad'] ?? 1 }}</td>
-                    <td class="right">{{ number_format($item['unit_price'] ?? $item['precio_unitario'] ?? $item['unit_price_display'] ?? 0, 0, ',', '.') }}</td>
+                    <td class="right">${{ number_format($item['unit_price'] ?? $item['precio_unitario'] ?? $item['unit_price_display'] ?? 0, 0, ',', '.') }}</td>
                     <td class="right">${{ number_format($item['total'] ?? $item['total_price'] ?? (($item['quantity'] ?? 1) * ($item['unit_price'] ?? 0)), 0, ',', '.') }}</td>
                     <td class="center">-</td>
                 </tr>
@@ -395,7 +389,26 @@
                 <td class="label">Observaciones:</td>
                 <td class="value" colspan="3">
                     @php
-                        $displayObservations = $observations ?? '-';
+                        // Combinar observaciones de diferentes fuentes
+                        $observationSources = [];
+                        
+                        // Observaciones del PurchaseOrder
+                        if (isset($observations) && $observations && $observations !== '-') {
+                            $observationSources[] = $observations;
+                        }
+                        
+                        // Observaciones del customData
+                        if (isset($customData['observations']) && $customData['observations']) {
+                            $observationSources[] = $customData['observations'];
+                        }
+                        
+                        // Observaciones del PurchaseRequest
+                        if (isset($purchaseRequestObservations) && $purchaseRequestObservations) {
+                            $observationSources[] = $purchaseRequestObservations;
+                        }
+                        
+                        // Combinar todas las observaciones
+                        $displayObservations = !empty($observationSources) ? implode(' | ', $observationSources) : '-';
                         
                         // Agregar información adicional para órdenes mixtas
                         if (isset($isMixedOrder) && $isMixedOrder) {
@@ -408,12 +421,7 @@
                         
                         // Agregar información adicional para órdenes compartidas
                         if (isset($isSharedPurchase) && $isSharedPurchase) {
-                            $sharedInfo = "COMPRA COMPARTIDA: ";
-                            if (isset($sharedSections) && !empty($sharedSections)) {
-                                $sectionsText = is_array($sharedSections) ? implode(', ', $sharedSections) : $sharedSections;
-                                $sharedInfo .= "Secciones involucradas: {$sectionsText}. ";
-                            }
-                            $sharedInfo .= "Los costos serán distribuidos proporcionalmente.";
+                            $sharedInfo = "Los costos serán distribuidos proporcionalmente entre las secciones involucradas.";
                             $displayObservations = ($displayObservations === '-' ? '' : $displayObservations . ' | ') . $sharedInfo;
                         }
                         

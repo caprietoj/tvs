@@ -96,7 +96,9 @@
                                     // Priorizar datos personalizados del PDF si existen
                                     $customData = null;
                                     if (!empty($purchaseOrder->pdf_custom_data)) {
-                                        $customData = json_decode($purchaseOrder->pdf_custom_data, true);
+                                        $customData = is_array($purchaseOrder->pdf_custom_data) 
+                                            ? $purchaseOrder->pdf_custom_data 
+                                            : json_decode($purchaseOrder->pdf_custom_data, true);
                                     }
                                     
                                     // Determinar qué datos mostrar
