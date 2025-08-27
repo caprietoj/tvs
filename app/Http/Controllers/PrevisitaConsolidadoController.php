@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PrevisitaConsolidado;
+use App\Models\PrevisitaArchivo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -36,20 +37,21 @@ class PrevisitaConsolidadoController extends Controller
         
         // Usuarios con permisos de solo lectura
         $readOnlyUsers = [
-            'preschool@tvs.edu.co',
-            'coordpai@tvs.edu.co', 
+            'coordpai@tvs.edu.co',
             'asistentegeneral@tvs.edu.co',
-            'escuelamedia@tvs.edu.co',
+            'coordpep@tvs.edu.co',
+            'preschool@tvs.edu.co',
             'dp@tvs.edu.co',
-            'generaldirector@tvs.edu.co'
+            'generaldirector@tvs.edu.co',
+            'escuelamedia@tvs.edu.co'
         ];
 
         // Usuarios con permisos completos
         $editorUsers = [
-            'asistenteadministrativa@tvs.edu.co',
             'asistentebachillerato@tvs.edu.co',
             'asistentepyp@tvs.edu.co',
-            'wrueda@tvs.edu.co'
+            'wrueda@tvs.edu.co',
+            'asistenteadministrativa@tvs.edu.co'
         ];
         
         // Verificar si el usuario tiene acceso
@@ -136,7 +138,8 @@ class PrevisitaConsolidadoController extends Controller
             'responsable' => 'required|string|max:255',
             'aprobacion_sitio' => 'required|boolean',
             'observaciones_recomendaciones' => 'nullable|string',
-            'novedades_visita_archivo' => 'nullable|file|mimes:pdf|max:10240' // 10MB máximo
+            'archivos_novedades' => 'nullable|array|max:10', // Máximo 10 archivos
+            'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp|max:10240' // 10MB máximo por archivo
         ], [
             'lugar.required' => 'El lugar es obligatorio.',
             'fecha_visita.required' => 'La fecha de visita es obligatoria.',
@@ -145,9 +148,10 @@ class PrevisitaConsolidadoController extends Controller
             'vencimiento.after_or_equal' => 'El vencimiento debe ser igual o posterior a la fecha de visita.',
             'responsable.required' => 'El responsable es obligatorio.',
             'aprobacion_sitio.required' => 'La aprobación del sitio es obligatoria.',
-            'novedades_visita_archivo.file' => 'El archivo debe ser un archivo válido.',
-            'novedades_visita_archivo.mimes' => 'El archivo debe ser un PDF.',
-            'novedades_visita_archivo.max' => 'El archivo no debe superar los 10MB.'
+            'archivos_novedades.max' => 'No se pueden subir más de 10 archivos.',
+            'archivos_novedades.*.file' => 'Cada archivo debe ser un archivo válido.',
+            'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP y WEBP.',
+            'archivos_novedades.*.max' => 'Cada archivo no debe superar los 10MB.'
         ]);
 
         if ($validator->fails()) {
@@ -167,15 +171,35 @@ class PrevisitaConsolidadoController extends Controller
 
         $data['user_id'] = Auth::id();
 
-        // Manejar subida de archivo PDF
-        if ($request->hasFile('novedades_visita_archivo')) {
-            $file = $request->file('novedades_visita_archivo');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('previsitas/novedades', $filename, 'public');
-            $data['novedades_visita_archivo'] = $path;
-        }
-
+        // Crear la previsita primero
         $previsita = PrevisitaConsolidado::create($data);
+
+        // Manejar subida de múltiples archivos
+        if ($request->hasFile('archivos_novedades')) {
+            foreach ($request->file('archivos_novedades') as $file) {
+                // Generar nombre único para el archivo
+                $timestamp = time();
+                $filename = $timestamp . '_' . uniqid() . '_' . $file->getClientOriginalName();
+                
+                // Almacenar archivo
+                $path = $file->storeAs('previsitas/archivos', $filename, 'public');
+                
+                // Determinar tipo de archivo
+                $mimeType = $file->getMimeType();
+                $tipoArchivo = str_starts_with($mimeType, 'image/') ? 'image' : 'pdf';
+                
+                // Crear registro en la base de datos
+                PrevisitaArchivo::create([
+                    'previsita_consolidado_id' => $previsita->id,
+                    'nombre_original' => $file->getClientOriginalName(),
+                    'nombre_archivo' => $filename,
+                    'ruta_archivo' => $path,
+                    'tipo_archivo' => $tipoArchivo,
+                    'mime_type' => $mimeType,
+                    'tamaño_archivo' => $file->getSize()
+                ]);
+            }
+        }
 
         return redirect()->route('previsitas.index')
             ->with('success', 'Consolidado previsita creado exitosamente.');
@@ -186,7 +210,7 @@ class PrevisitaConsolidadoController extends Controller
      */
     public function show(PrevisitaConsolidado $previsita)
     {
-        $previsita->load('user');
+        $previsita->load(['user', 'archivos']);
         return view('previsitas.show', compact('previsita'));
     }
 
@@ -195,6 +219,7 @@ class PrevisitaConsolidadoController extends Controller
      */
     public function edit(PrevisitaConsolidado $previsita)
     {
+        $previsita->load('archivos');
         return view('previsitas.edit', compact('previsita'));
     }
 
@@ -210,7 +235,8 @@ class PrevisitaConsolidadoController extends Controller
             'responsable' => 'required|string|max:255',
             'aprobacion_sitio' => 'required|boolean',
             'observaciones_recomendaciones' => 'nullable|string',
-            'novedades_visita_archivo' => 'nullable|file|mimes:pdf|max:10240'
+            'archivos_novedades' => 'nullable|array|max:10', // Máximo 10 archivos
+            'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp|max:10240' // 10MB máximo por archivo
         ], [
             'lugar.required' => 'El lugar es obligatorio.',
             'fecha_visita.required' => 'La fecha de visita es obligatoria.',
@@ -219,9 +245,10 @@ class PrevisitaConsolidadoController extends Controller
             'vencimiento.after_or_equal' => 'El vencimiento debe ser igual o posterior a la fecha de visita.',
             'responsable.required' => 'El responsable es obligatorio.',
             'aprobacion_sitio.required' => 'La aprobación del sitio es obligatoria.',
-            'novedades_visita_archivo.file' => 'El archivo debe ser un archivo válido.',
-            'novedades_visita_archivo.mimes' => 'El archivo debe ser un PDF.',
-            'novedades_visita_archivo.max' => 'El archivo no debe superar los 10MB.'
+            'archivos_novedades.max' => 'No se pueden subir más de 10 archivos.',
+            'archivos_novedades.*.file' => 'Cada archivo debe ser un archivo válido.',
+            'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP y WEBP.',
+            'archivos_novedades.*.max' => 'Cada archivo no debe superar los 10MB.'
         ]);
 
         if ($validator->fails()) {
@@ -239,20 +266,35 @@ class PrevisitaConsolidadoController extends Controller
             'observaciones_recomendaciones'
         ]);
 
-        // Manejar subida de nuevo archivo PDF
-        if ($request->hasFile('novedades_visita_archivo')) {
-            // Eliminar archivo anterior si existe
-            if ($previsita->novedades_visita_archivo) {
-                Storage::disk('public')->delete($previsita->novedades_visita_archivo);
-            }
-
-            $file = $request->file('novedades_visita_archivo');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('previsitas/novedades', $filename, 'public');
-            $data['novedades_visita_archivo'] = $path;
-        }
-
+        // Actualizar datos básicos de la previsita
         $previsita->update($data);
+
+        // Manejar subida de nuevos archivos
+        if ($request->hasFile('archivos_novedades')) {
+            foreach ($request->file('archivos_novedades') as $file) {
+                // Generar nombre único para el archivo
+                $timestamp = time();
+                $filename = $timestamp . '_' . uniqid() . '_' . $file->getClientOriginalName();
+                
+                // Almacenar archivo
+                $path = $file->storeAs('previsitas/archivos', $filename, 'public');
+                
+                // Determinar tipo de archivo
+                $mimeType = $file->getMimeType();
+                $tipoArchivo = str_starts_with($mimeType, 'image/') ? 'image' : 'pdf';
+                
+                // Crear registro en la base de datos
+                PrevisitaArchivo::create([
+                    'previsita_consolidado_id' => $previsita->id,
+                    'nombre_original' => $file->getClientOriginalName(),
+                    'nombre_archivo' => $filename,
+                    'ruta_archivo' => $path,
+                    'tipo_archivo' => $tipoArchivo,
+                    'mime_type' => $mimeType,
+                    'tamaño_archivo' => $file->getSize()
+                ]);
+            }
+        }
 
         return redirect()->route('previsitas.index')
             ->with('success', 'Consolidado previsita actualizado exitosamente.');
@@ -263,7 +305,13 @@ class PrevisitaConsolidadoController extends Controller
      */
     public function destroy(PrevisitaConsolidado $previsita)
     {
-        // Eliminar archivo asociado si existe
+        // Eliminar archivos asociados
+        foreach ($previsita->archivos as $archivo) {
+            Storage::disk('public')->delete($archivo->ruta_archivo);
+            $archivo->delete();
+        }
+
+        // Eliminar archivo legacy si existe
         if ($previsita->novedades_visita_archivo) {
             Storage::disk('public')->delete($previsita->novedades_visita_archivo);
         }
@@ -272,6 +320,40 @@ class PrevisitaConsolidadoController extends Controller
 
         return redirect()->route('previsitas.index')
             ->with('success', 'Consolidado previsita eliminado exitosamente.');
+    }
+
+    /**
+     * Descargar archivo específico
+     */
+    public function downloadArchivo(PrevisitaArchivo $archivo)
+    {
+        $pathToFile = storage_path('app/public/' . $archivo->ruta_archivo);
+        
+        if (!file_exists($pathToFile)) {
+            abort(404, 'Archivo no encontrado');
+        }
+
+        return response()->download($pathToFile, $archivo->nombre_original);
+    }
+
+    /**
+     * Eliminar archivo específico
+     */
+    public function destroyArchivo(PrevisitaArchivo $archivo)
+    {
+        // Verificar que el usuario tenga permisos
+        $request = request();
+        $this->checkPrevisitasAccess($request, function() {}, 'edit');
+
+        // Eliminar archivo físico
+        if (Storage::disk('public')->exists($archivo->ruta_archivo)) {
+            Storage::disk('public')->delete($archivo->ruta_archivo);
+        }
+
+        // Eliminar registro de la base de datos
+        $archivo->delete();
+
+        return response()->json(['success' => true, 'message' => 'Archivo eliminado exitosamente']);
     }
 
     /**

@@ -152,6 +152,12 @@ class PurchaseRequestPermissionService
             return true;
         }
         
+        // Usuarios específicos autorizados pueden editar solicitudes de materiales
+        $authorizedEmails = ['compras@tvs.edu.co', 'auxiliaralmacen@tvs.edu.co'];
+        if (in_array($user->email, $authorizedEmails)) {
+            return true;
+        }
+        
         // Restricción específica: rol profesor no puede editar solicitudes de fotocopias
         if ($user->hasRole('profesor') && $purchaseRequest->isCopiesRequest()) {
             return false;
@@ -206,6 +212,12 @@ class PurchaseRequestPermissionService
         
         // Admin siempre puede eliminar
         if ($user->hasRole('admin')) {
+            return true;
+        }
+        
+        // Usuarios específicos autorizados pueden eliminar solicitudes de materiales
+        $authorizedEmails = ['compras@tvs.edu.co', 'auxiliaralmacen@tvs.edu.co'];
+        if (in_array($user->email, $authorizedEmails)) {
             return true;
         }
         

@@ -15,6 +15,10 @@ class Event extends Model
     protected $dates = [
         'request_date',
         'service_date',
+        'event_time',
+        'end_time',
+        'departure_time',
+        'return_time',
         'maintenance_setup_date',
         'general_services_setup_date',
         'systems_setup_date',
@@ -25,6 +29,10 @@ class Event extends Model
     protected $casts = [
         'request_date' => 'datetime',
         'service_date' => 'datetime',
+        'event_time' => 'datetime',
+        'end_time' => 'datetime',
+        'departure_time' => 'datetime',
+        'return_time' => 'datetime',
         'service_dates' => 'array', // Para múltiples fechas
         'locations' => 'array',     // Para múltiples lugares
         'maintenance_setup_date' => 'datetime',

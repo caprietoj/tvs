@@ -626,15 +626,15 @@ return [
                         ],
                     ],
                 ],
-             
+                
                 [
-                'text' => 'Consolidado Previsitas',
-                'url'  => 'previsitas',
-                'icon' => 'fas fa-list',
-                'can'  => 'previsitas.view',
-                'active' => ['previsitas', 'previsitas/*'],
-                 ],
-
+                    'text' => 'Consolidado Previsitas',
+                    'url'  => 'previsitas',
+                    'icon' => 'fas fa-list',
+                    'can'  => 'previsitas.view',
+                    'active' => ['previsitas', 'previsitas/*'],
+                ],
+             
                 [
                     'text' => 'Gestión Documental',
                     'icon' => 'fas fa-file-pdf',

@@ -58,6 +58,16 @@ class PrevisitaConsolidado extends Model
     }
 
     /**
+     * Relación con los archivos adjuntos
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function archivos()
+    {
+        return $this->hasMany(PrevisitaArchivo::class);
+    }
+
+    /**
      * Scope para previsitas aprobadas
      *
      * @param \Illuminate\Database\Eloquent\Builder $query

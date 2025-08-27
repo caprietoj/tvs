@@ -160,7 +160,10 @@ class SectionClassifierService
         $excludedEmails = [
             'generaldirector@tvs.edu.co',
             'cafeteriaaldimark@tvs.edu.co',
-            'aprendizsistemas@tvs.edu.co'
+            'aprendizsistemas@tvs.edu.co',
+            'jefesistemas@tvs.edu.co',
+            'administrativedirector@tvs.edu.co',
+            'auxiliarsistemas@tvs.edu.co'
         ];
         
         $filteredEmails = array_diff($emails, $excludedEmails);

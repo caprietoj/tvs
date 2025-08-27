@@ -16,20 +16,21 @@ class PrevisitasUsersPermissionsSeeder extends Seeder
     {
         // Usuarios con permisos de lector (solo ver)
         $readOnlyUsers = [
-            'preschool@tvs.edu.co',
-            'coordpai@tvs.edu.co', 
+            'coordpai@tvs.edu.co',
             'asistentegeneral@tvs.edu.co',
-            'escuelamedia@tvs.edu.co',
+            'coordpep@tvs.edu.co',
+            'preschool@tvs.edu.co',
             'dp@tvs.edu.co',
-            'generaldirector@tvs.edu.co'
+            'generaldirector@tvs.edu.co',
+            'escuelamedia@tvs.edu.co'
         ];
 
         // Usuarios con permisos de editor (crear, editar, eliminar)
         $editorUsers = [
-            'asistenteadministrativa@tvs.edu.co',
             'asistentebachillerato@tvs.edu.co',
             'asistentepyp@tvs.edu.co',
-            'wrueda@tvs.edu.co'
+            'wrueda@tvs.edu.co',
+            'asistenteadministrativa@tvs.edu.co'
         ];
 
         // Permisos de solo lectura

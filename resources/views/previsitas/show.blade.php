@@ -166,34 +166,58 @@
             </div>
         </div>
 
-        @if($previsita->novedades_visita_archivo)
+        <!-- Sección de archivos -->
+        @if($previsita->archivos && $previsita->archivos->count() > 0)
         <div class="card custom-card">
             <div class="card-header">
-                <h3 class="card-title">Novedades de Visita</h3>
+                <h3 class="card-title">Archivos de Novedades ({{ $previsita->archivos->count() }})</h3>
             </div>
-            <div class="card-body text-center">
-                <div class="mb-3">
-                    <i class="fas fa-file-pdf fa-3x text-danger"></i>
+            <div class="card-body">
+                <div class="row">
+                    @foreach($previsita->archivos as $archivo)
+                    <div class="col-md-6 mb-3">
+                        <div class="card border">
+                            <div class="card-body text-center">
+                                <div class="mb-2">
+                                    @if($archivo->esImagen())
+                                        <i class="fas fa-image fa-2x text-success"></i>
+                                    @else
+                                        <i class="fas fa-file-pdf fa-2x text-danger"></i>
+                                    @endif
+                                </div>
+                                <h6 class="card-title">{{ $archivo->nombre_original }}</h6>
+                                <p class="card-text text-muted small">
+                                    {{ $archivo->tamaño_formateado }}
+                                </p>
+                                <a href="{{ route('previsitas.download-archivo', $archivo) }}" 
+                                   class="btn btn-primary btn-sm" 
+                                   target="_blank">
+                                    <i class="fas fa-download"></i> Descargar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
                 </div>
-                <p><strong>Archivo PDF disponible</strong></p>
-                <p class="text-muted">{{ basename($previsita->novedades_visita_archivo) }}</p>
-                <a href="{{ route('previsitas.download', $previsita) }}" class="btn btn-primary btn-block" target="_blank">
-                    <i class="fas fa-download"></i> Descargar PDF
-                </a>
+                <div class="text-center mt-3">
+                    <a href="{{ route('previsitas.edit', $previsita) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> Agregar más archivos
+                    </a>
+                </div>
             </div>
         </div>
         @else
         <div class="card custom-card">
             <div class="card-header">
-                <h3 class="card-title">Novedades de Visita</h3>
+                <h3 class="card-title">Archivos de Novedades</h3>
             </div>
             <div class="card-body text-center">
                 <div class="mb-3">
-                    <i class="fas fa-file-pdf fa-3x text-muted"></i>
+                    <i class="fas fa-folder-open fa-3x text-muted"></i>
                 </div>
-                <p class="text-muted">No hay archivo PDF adjunto</p>
-                <a href="{{ route('previsitas.edit', $previsita) }}" class="btn btn-outline-primary btn-block">
-                    <i class="fas fa-upload"></i> Agregar Archivo
+                <p class="text-muted">No hay archivos adjuntos</p>
+                <a href="{{ route('previsitas.edit', $previsita) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-upload"></i> Agregar archivos
                 </a>
             </div>
         </div>

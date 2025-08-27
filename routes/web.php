@@ -1109,6 +1109,10 @@ Route::middleware(['auth'])->prefix('previsitas')->name('previsitas.')->group(fu
     Route::put('/{previsita}', [PrevisitaConsolidadoController::class, 'update'])->name('update');
     Route::delete('/{previsita}', [PrevisitaConsolidadoController::class, 'destroy'])->name('destroy');
     Route::get('/{previsita}/download', [PrevisitaConsolidadoController::class, 'downloadFile'])->name('download');
+    
+    // Rutas para archivos múltiples
+    Route::get('/archivos/{archivo}/download', [PrevisitaConsolidadoController::class, 'downloadArchivo'])->name('download-archivo');
+    Route::delete('/archivos/{archivo}', [PrevisitaConsolidadoController::class, 'destroyArchivo'])->name('destroy-archivo');
 });
 
 // Ruta temporal para presupuesto sin autenticación
