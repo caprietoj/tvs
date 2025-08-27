@@ -1,3 +1,5 @@
+<?php
+
 /**
  * Comando para corregir los precios de órdenes de compra
  * 
