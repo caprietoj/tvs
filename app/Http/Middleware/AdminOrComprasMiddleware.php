@@ -19,8 +19,8 @@ class AdminOrComprasMiddleware
             return redirect('/login');
         }
 
-        if (!auth()->user()->hasAnyRole(['admin', 'compras'])) {
-            abort(403, 'Acceso denegado. Solo administradores y personal de compras pueden acceder a esta sección.');
+        if (!auth()->user()->hasAnyRole(['admin', 'compras', 'contabilidad'])) {
+            abort(403, 'Acceso denegado. Solo administradores, personal de compras y contabilidad pueden acceder a esta sección.');
         }
 
         return $next($request);

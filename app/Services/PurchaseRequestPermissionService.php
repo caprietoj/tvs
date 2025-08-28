@@ -22,7 +22,7 @@ class PurchaseRequestPermissionService
     {
         $user = $user ?: Auth::user();
         
-        return $user->hasAnyRole(['admin', 'compras', 'almacen']);
+        return $user->hasAnyRole(['admin', 'compras', 'almacen', 'contabilidad']);
     }
 
     /**
