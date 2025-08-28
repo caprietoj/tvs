@@ -739,6 +739,29 @@ class ApprovalController extends Controller
             $totalAmount = $subtotal + $ivaAmount;
         }
         
+        // Preparar items para la orden
+        $orderItems = [];
+        $purchaseItems = is_array($purchaseRequest->purchase_items) 
+            ? $purchaseRequest->purchase_items 
+            : json_decode($purchaseRequest->purchase_items, true);
+            
+        $itemPrices = $quotation->original_item_prices ?? $quotation->item_prices ?? [];
+        
+        if ($purchaseItems && $itemPrices) {
+            foreach ($purchaseItems as $index => $item) {
+                $unitPrice = isset($itemPrices[$index]) ? $itemPrices[$index] : 0;
+                $quantity = $item['quantity'] ?? 1;
+                
+                $orderItems[] = [
+                    'description' => $item['description'],
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'total' => $quantity * $unitPrice,
+                    'unit' => $item['unit'] ?? 'Unidad'
+                ];
+            }
+        }
+        
         // Crear la orden de compra
         $purchaseOrder = \App\Models\PurchaseOrder::create([
             'purchase_request_id' => $purchaseRequest->id,
@@ -752,6 +775,7 @@ class ApprovalController extends Controller
             'payment_terms' => $paymentTerms,
             'delivery_date' => now()->addDays(15),
             'file_path' => 'pending_generation',
+            'pdf_custom_data' => json_encode($orderItems), // ✅ Guardar items correctos
             'observations' => $this->generateObservationsForSharedPurchase($purchaseRequest),
             'created_by' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
             'status' => 'pending'

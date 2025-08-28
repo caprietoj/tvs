@@ -211,20 +211,25 @@ class PurchaseOrderPdfService
      */
     private function getQuotationItemSelections(PurchaseOrder $order)
     {
-        if (!$order->provider) {
-            Log::warning('Orden sin proveedor asignado', ['order_id' => $order->id]);
+        if (!$order->purchaseRequest) {
+            Log::warning('Orden sin solicitud de compra asignada', ['order_id' => $order->id]);
             return collect();
         }
 
+        // ✅ CORREGIDO: Buscar selecciones específicas de esta solicitud y proveedor
         $allSelections = QuotationItemSelection::with(['quotation'])
+            ->where('purchase_request_id', $order->purchaseRequest->id)
             ->whereHas('quotation', function($query) use ($order) {
-                $query->where('provider_name', $order->provider->nombre);
+                if ($order->provider) {
+                    $query->where('provider_name', $order->provider->nombre);
+                }
             })
             ->get();
 
         Log::info('Selecciones de cotización obtenidas', [
             'order_id' => $order->id,
-            'provider_name' => $order->provider->nombre,
+            'purchase_request_id' => $order->purchaseRequest->id,
+            'provider_name' => $order->provider ? $order->provider->nombre : 'N/A',
             'selections_count' => $allSelections->count()
         ]);
 

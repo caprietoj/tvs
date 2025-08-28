@@ -3158,12 +3158,26 @@ class PurchaseOrdersController extends Controller
                 'items_count' => count($purchaseRequest->purchase_items)
             ]);
             
+            // ✅ CORREGIDO: Usar precios específicos de la cotización seleccionada
+            $prices = [];
+            if ($quotation && $quotation->original_item_prices) {
+                $prices = $quotation->original_item_prices;
+            } elseif ($quotation && $quotation->item_prices) {
+                $prices = $quotation->item_prices;
+            }
+            
             foreach ($purchaseRequest->purchase_items as $index => $item) {
                 $quantity = $item['quantity'] ?? 1;
-                $unitPrice = $order->total_amount && count($purchaseRequest->purchase_items) > 0 
-                    ? round($order->total_amount / array_sum(array_column($purchaseRequest->purchase_items, 'quantity')))
-                    : 0;
-                    
+                
+                // ✅ Usar precio específico del item si está disponible
+                $unitPrice = 0;
+                if (isset($prices[$index])) {
+                    $unitPrice = $prices[$index];
+                } elseif (count($prices) > 0 && count($purchaseRequest->purchase_items) === 1) {
+                    // Si solo hay un item y un precio, usar ese precio
+                    $unitPrice = reset($prices);
+                }
+                
                 $items[] = [
                     'description' => $item['description'] ?? 'Descripción no disponible',
                     'quantity' => $quantity,

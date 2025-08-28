@@ -29,8 +29,6 @@ class SpaceReservation extends Model
 
     protected $casts = [
         'date' => 'date',
-        'start_time' => 'datetime:H:i',
-        'end_time' => 'datetime:H:i',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
     ];
