@@ -184,33 +184,21 @@
                                                 @foreach($quotations as $quotation)
                                                     @php
                                                         $unitPrice = 0;
-                                                        $priceSource = 'fallback'; // Para indicar de dónde viene el precio
+                                                        $priceSource = 'fallback';
+                                                        $hasItemPrice = false;
                                                         
-                                                        // Debug: mostrar estructura de datos
-                                                        // dd($quotation->original_item_prices); // Descomentar para debug
-                                                        
-                                                        // Buscar el precio unitario en original_item_prices
+                                                        // Verificar si este proveedor cotizó específicamente este item
                                                         if (isset($quotation->original_item_prices[$index])) {
                                                             $unitPrice = $quotation->original_item_prices[$index];
                                                             $priceSource = 'specific';
-                                                        } elseif (isset($quotation->original_item_prices) && is_array($quotation->original_item_prices) && count($quotation->original_item_prices) > 0) {
-                                                            // Si no encuentra el índice específico, buscar alternativas
-                                                            $prices = array_values($quotation->original_item_prices);
-                                                            if (isset($prices[$index])) {
-                                                                $unitPrice = $prices[$index];
-                                                                $priceSource = 'indexed';
-                                                            } else {
-                                                                // Fallback: dividir total entre número de items
-                                                                $totalItems = count($purchaseItems);
-                                                                $unitPrice = $totalItems > 0 ? ($quotation->total_amount / $totalItems) : 0;
-                                                                $priceSource = 'fallback';
-                                                            }
-                                                        } else {
-                                                            // Fallback: dividir total entre número de items
-                                                            $totalItems = count($purchaseItems);
-                                                            $unitPrice = $totalItems > 0 ? ($quotation->total_amount / $totalItems) : 0;
-                                                            $priceSource = 'fallback';
+                                                            $hasItemPrice = true;
                                                         }
+                                                        
+                                                        // Solo mostrar este proveedor si cotizó el item específico
+                                                        if (!$hasItemPrice) {
+                                                            continue; // Saltar este proveedor si no cotizó este item
+                                                        }
+                                                        
                                                         $totalPrice = $unitPrice * ($item['quantity'] ?? 1);
                                                         $isSelected = $selection->quotation_id == $quotation->id;
                                                     @endphp
@@ -240,30 +228,21 @@
                                                 @foreach($quotations as $quotation)
                                                     @php
                                                         $unitPrice = 0;
-                                                        $priceSource = 'fallback'; // Para indicar de dónde viene el precio
+                                                        $priceSource = 'fallback';
+                                                        $hasItemPrice = false;
                                                         
-                                                        // Buscar el precio unitario en original_item_prices
+                                                        // Verificar si este proveedor cotizó específicamente este item
                                                         if (isset($quotation->original_item_prices[$index])) {
                                                             $unitPrice = $quotation->original_item_prices[$index];
                                                             $priceSource = 'specific';
-                                                        } elseif (isset($quotation->original_item_prices) && is_array($quotation->original_item_prices) && count($quotation->original_item_prices) > 0) {
-                                                            // Si no encuentra el índice específico, buscar alternativas
-                                                            $prices = array_values($quotation->original_item_prices);
-                                                            if (isset($prices[$index])) {
-                                                                $unitPrice = $prices[$index];
-                                                                $priceSource = 'indexed';
-                                                            } else {
-                                                                // Fallback: dividir total entre número de items
-                                                                $totalItems = count($purchaseItems);
-                                                                $unitPrice = $totalItems > 0 ? ($quotation->total_amount / $totalItems) : 0;
-                                                                $priceSource = 'fallback';
-                                                            }
-                                                        } else {
-                                                            // Fallback: dividir total entre número de items
-                                                            $totalItems = count($purchaseItems);
-                                                            $unitPrice = $totalItems > 0 ? ($quotation->total_amount / $totalItems) : 0;
-                                                            $priceSource = 'fallback';
+                                                            $hasItemPrice = true;
                                                         }
+                                                        
+                                                        // Solo mostrar este proveedor si cotizó el item específico
+                                                        if (!$hasItemPrice) {
+                                                            continue; // Saltar este proveedor si no cotizó este item
+                                                        }
+                                                        
                                                         $totalPrice = $unitPrice * ($item['quantity'] ?? 1);
                                                     @endphp
                                                     <option value="{{ $quotation->id }}" 
@@ -271,9 +250,6 @@
                                                             data-unit-price="{{ $unitPrice }}"
                                                             data-total-price="{{ $totalPrice }}">
                                                         {{ $quotation->provider_name }} - ${{ number_format($unitPrice, 2, ',', '.') }}
-                                                        @if($priceSource === 'fallback')
-                                                            <small>(est.)</small>
-                                                        @endif
                                                     </option>
                                                 @endforeach
                                             </select>

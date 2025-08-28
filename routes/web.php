@@ -565,6 +565,10 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard del módulo
     // Route::get('purchases/dashboard', [PurchaseDashboardController::class, 'index'])->name('purchases.dashboard');
     
+    // Ruta para búsqueda AJAX en tiempo real (debe ir ANTES del resource)
+    Route::get('purchase-requests/search', [PurchaseRequestController::class, 'searchAjax'])
+        ->name('purchase-requests.search');
+    
     // Solicitudes de compra
     Route::resource('purchase-requests', PurchaseRequestController::class);
     
@@ -602,6 +606,11 @@ Route::middleware(['auth'])->group(function () {
         ->name('purchase-requests.pdf.download');
     Route::get('purchase-requests/{id}/pdf/view', [PurchaseRequestController::class, 'viewPdf'])
         ->name('purchase-requests.pdf.view');
+    
+    // Ruta temporal de prueba AJAX
+    Route::get('test-ajax', function() {
+        return view('test_ajax');
+    });
     
     // Ruta para descargar archivo original de fotocopias
     Route::get('purchase-requests/{purchaseRequest}/original/download', [PurchaseRequestController::class, 'downloadOriginal'])
@@ -731,6 +740,8 @@ Route::middleware(['auth'])->group(function () {
 
 // Rutas para las preaprobaciones de solicitudes de compra
 Route::middleware(['auth'])->group(function () {
+    Route::get('quotation-approvals/search', [QuotationApprovalController::class, 'searchAjax'])
+        ->name('quotation-approvals.search');
     Route::get('quotation-approvals', [QuotationApprovalController::class, 'index'])
         ->name('quotation-approvals.index');
     Route::get('quotation-approvals/{id}', [QuotationApprovalController::class, 'show'])

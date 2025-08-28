@@ -596,4 +596,52 @@ class PurchaseRequest extends Model
         // Para todos los demás casos, sí requiere cotizaciones
         return true;
     }
+
+    /**
+     * Verificar si tiene una selección mixta de proveedores
+     */
+    public function hasMixedSelection()
+    {
+        return $this->quotationItemSelections()->exists();
+    }
+
+    /**
+     * Obtener el monto total de la selección mixta
+     */
+    public function getMixedSelectionTotal()
+    {
+        return $this->quotationItemSelections()->sum('total_price');
+    }
+
+    /**
+     * Obtener la información de la cotización seleccionada (tradicional o mixta)
+     */
+    public function getSelectedQuotationInfo()
+    {
+        if ($this->hasMixedSelection()) {
+            return 'Mixta';
+        }
+        
+        if ($this->preApprovedQuotation) {
+            return $this->preApprovedQuotation->provider_name;
+        }
+        
+        return 'N/A';
+    }
+
+    /**
+     * Obtener el monto total (tradicional o mixta)
+     */
+    public function getTotalAmount()
+    {
+        if ($this->hasMixedSelection()) {
+            return $this->getMixedSelectionTotal();
+        }
+        
+        if ($this->preApprovedQuotation) {
+            return $this->preApprovedQuotation->total_amount;
+        }
+        
+        return 0;
+    }
 }

@@ -314,34 +314,60 @@
                 </tr>
             </thead>
             <tbody>
-                @php $itemNumber = 1; @endphp
+                @php 
+                    $itemNumber = 1;
+                    $customData = null;
+                    
+                    // Intentar obtener datos personalizados corregidos
+                    if ($order->pdf_custom_data) {
+                        try {
+                            $customData = json_decode($order->pdf_custom_data, true);
+                        } catch (Exception $e) {
+                            $customData = null;
+                        }
+                    }
+                @endphp
                 
-                <!-- Productos de la solicitud original -->
-                @if($order->purchaseRequest && $order->purchaseRequest->purchase_items)
-                    @foreach($order->purchaseRequest->purchase_items as $item)
+                <!-- Usar datos personalizados si están disponibles -->
+                @if($customData && isset($customData['items']) && is_array($customData['items']))
+                    @foreach($customData['items'] as $item)
                         <tr>
                             <td class="text-center">{{ $itemNumber++ }}</td>
                             <td>{{ $item['description'] ?? 'N/A' }}</td>
                             <td class="text-center">{{ $item['quantity'] ?? 0 }}</td>
-                            <td class="text-center">{{ $item['unit'] ?? 'N/A' }}</td>
-                            <td class="text-right">${{ number_format(($order->total_amount / array_sum(array_column($order->purchaseRequest->purchase_items, 'quantity'))) ?? 0, 2, ',', '.') }}</td>
-                            <td class="text-right">${{ number_format((($order->total_amount / array_sum(array_column($order->purchaseRequest->purchase_items, 'quantity'))) * ($item['quantity'] ?? 0)) ?? 0, 2, ',', '.') }}</td>
+                            <td class="text-center">{{ $item['unit'] ?? 'Unidad' }}</td>
+                            <td class="text-right">${{ number_format(floatval($item['unit_price'] ?? 0), 0, ',', '.') }}</td>
+                            <td class="text-right">${{ number_format(floatval($item['total'] ?? 0), 0, ',', '.') }}</td>
                         </tr>
                     @endforeach
-                @endif
-                
-                <!-- Productos adicionales -->
-                @if($order->additional_items && is_array($order->additional_items))
-                    @foreach($order->additional_items as $item)
-                        <tr>
-                            <td class="text-center">{{ $itemNumber++ }}</td>
-                            <td>{{ $item['description'] ?? 'N/A' }}</td>
-                            <td class="text-center">{{ $item['quantity'] ?? 0 }}</td>
-                            <td class="text-center">{{ $item['unit'] ?? 'N/A' }}</td>
-                            <td class="text-right">${{ number_format($item['price'] ?? 0, 2, ',', '.') }}</td>
-                            <td class="text-right">${{ number_format(($item['quantity'] * $item['price']) ?? 0, 2, ',', '.') }}</td>
-                        </tr>
-                    @endforeach
+                @else
+                    <!-- Fallback: Productos de la solicitud original -->
+                    @if($order->purchaseRequest && $order->purchaseRequest->purchase_items)
+                        @foreach($order->purchaseRequest->purchase_items as $item)
+                            <tr>
+                                <td class="text-center">{{ $itemNumber++ }}</td>
+                                <td>{{ $item['description'] ?? 'N/A' }}</td>
+                                <td class="text-center">{{ $item['quantity'] ?? 0 }}</td>
+                                <td class="text-center">{{ $item['unit'] ?? 'N/A' }}</td>
+                                <td class="text-right">${{ number_format(($order->total_amount / array_sum(array_column($order->purchaseRequest->purchase_items, 'quantity'))) ?? 0, 0, ',', '.') }}</td>
+                                <td class="text-right">${{ number_format((($order->total_amount / array_sum(array_column($order->purchaseRequest->purchase_items, 'quantity'))) * ($item['quantity'] ?? 0)) ?? 0, 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    @endif
+                    
+                    <!-- Productos adicionales -->
+                    @if($order->additional_items && is_array($order->additional_items))
+                        @foreach($order->additional_items as $item)
+                            <tr>
+                                <td class="text-center">{{ $itemNumber++ }}</td>
+                                <td>{{ $item['description'] ?? 'N/A' }}</td>
+                                <td class="text-center">{{ $item['quantity'] ?? 0 }}</td>
+                                <td class="text-center">{{ $item['unit'] ?? 'N/A' }}</td>
+                                <td class="text-right">${{ number_format($item['price'] ?? 0, 0, ',', '.') }}</td>
+                                <td class="text-right">${{ number_format(($item['quantity'] * $item['price']) ?? 0, 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    @endif
                 @endif
                 
                 @if($itemNumber == 1)
@@ -357,17 +383,38 @@
         <!-- Totales -->
         <div class="totals-container">
             <div class="totals-box">
+                @php
+                    // Usar datos personalizados si están disponibles, sino usar datos de la orden
+                    $displaySubtotal = $customData['subtotal'] ?? $order->subtotal ?? 0;
+                    $displayIvaAmount = $customData['iva_amount'] ?? $order->iva_amount ?? 0;
+                    $displayIvaRate = $customData['iva_rate'] ?? 19;
+                    $displayTotal = $customData['total'] ?? $order->total_amount ?? 0;
+                    $displayIpoconsumoAmount = $customData['ipoconsumo_amount'] ?? 0;
+                    $displayIpoconsumoRate = $customData['ipoconsumo_rate'] ?? 0;
+                @endphp
+                
                 <div class="total-row">
                     <span class="total-label">Subtotal:</span>
-                    <span class="total-value">${{ number_format($order->subtotal ?? 0, 2, ',', '.') }}</span>
+                    <span class="total-value">${{ number_format(floatval($displaySubtotal), 0, ',', '.') }}</span>
                 </div>
+                
+                @if($displayIvaAmount > 0)
                 <div class="total-row">
-                    <span class="total-label">IVA (19%):</span>
-                    <span class="total-value">${{ number_format($order->iva_amount ?? 0, 2, ',', '.') }}</span>
+                    <span class="total-label">IVA ({{ $displayIvaRate }}%):</span>
+                    <span class="total-value">${{ number_format(floatval($displayIvaAmount), 0, ',', '.') }}</span>
                 </div>
+                @endif
+                
+                @if($displayIpoconsumoAmount > 0)
+                <div class="total-row">
+                    <span class="total-label">Imp. Consumo ({{ $displayIpoconsumoRate }}%):</span>
+                    <span class="total-value">${{ number_format(floatval($displayIpoconsumoAmount), 0, ',', '.') }}</span>
+                </div>
+                @endif
+                
                 <div class="total-row">
                     <span class="total-label font-bold">TOTAL:</span>
-                    <span class="total-value font-bold">${{ number_format($order->total_amount, 2, ',', '.') }}</span>
+                    <span class="total-value font-bold">${{ number_format(floatval($displayTotal), 0, ',', '.') }}</span>
                 </div>
             </div>
         </div>

@@ -626,7 +626,7 @@ return [
                         ],
                     ],
                 ],
-                
+
                 [
                     'text' => 'Consolidado Previsitas',
                     'url'  => 'previsitas',
@@ -634,7 +634,7 @@ return [
                     'can'  => 'previsitas.view',
                     'active' => ['previsitas', 'previsitas/*'],
                 ],
-             
+
                 [
                     'text' => 'Gestión Documental',
                     'icon' => 'fas fa-file-pdf',
@@ -790,7 +790,7 @@ return [
                 ],
             ],
         ],
-        
+
         [
             'text'    => 'Informes',
             'icon'    => 'fas fa-chart-bar',
@@ -851,7 +851,7 @@ return [
                     'icon' => 'fas fa-print',
                 ],
             ],
-           
+
         ],
         //  [
         //      'text' => 'Presupuesto',
@@ -1193,7 +1193,7 @@ return [
             border-left: 3px solid transparent;
             transition: all 0.3s ease;
         }
-        .menu-item:hover, 
+        .menu-item:hover,
         .menu-item.active {
             border-left-color: #3498db;
             background: rgba(52, 152, 219, 0.1);

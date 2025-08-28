@@ -98,12 +98,22 @@
                                 @endif
                             </td>
                             <td>{{ $request->preApprover ? $request->preApprover->name : 'N/A' }}</td>
-                            <td>{{ $request->preApprovedQuotation ? $request->preApprovedQuotation->provider_name : 'N/A' }}</td>
                             <td>
-                                @if($request->preApprovedQuotation)
+                                @if($request->hasMixedSelection())
+                                    <span class="badge badge-warning">Mixta</span>
+                                @elseif($request->preApprovedQuotation)
+                                    {{ $request->preApprovedQuotation->provider_name }}
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($request->hasMixedSelection())
+                                    ${{ number_format($request->getMixedSelectionTotal(), 2, ',', '.') }}
+                                @elseif($request->preApprovedQuotation)
                                     ${{ number_format($request->preApprovedQuotation->total_amount, 2, ',', '.') }}
                                 @else
-                                    N/A
+                                    <span class="text-muted">N/A</span>
                                 @endif
                             </td>
                             <td>

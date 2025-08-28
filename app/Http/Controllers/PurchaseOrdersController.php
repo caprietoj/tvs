@@ -1443,53 +1443,90 @@ class PurchaseOrdersController extends Controller
                 }
             }
             
-            // Recalcular los totales e impuestos correctamente
-            $rawSubtotal = floatval($request->subtotal);
-            $rawTotal = floatval($request->total);
-            $ivaRate = intval($request->iva_rate);
-            $ipoconsumoRate = intval($request->ipoconsumo_rate);
+            // CORRECCIÓN CRÍTICA: Recalcular totales desde los items corregidos
+            $calculatedSubtotal = 0;
             
-            // Verificar si los datos enviados son consistentes o necesitan recálculo
-            $calculatedTotal = $rawSubtotal;
+            // Validar y corregir precios unitarios en los items
+            foreach ($itemsToSave as $index => &$item) {
+                $unitPrice = floatval($item['unit_price'] ?? 0);
+                $quantity = floatval($item['quantity'] ?? 1);
+                
+                // Detectar precios unitarios anómalos (muy altos, probablemente erróneos)
+                if ($unitPrice > 10000000) { // Más de 10 millones es sospechoso
+                    Log::warning('Precio unitario anómalo detectado', [
+                        'order' => $purchaseOrder->order_number,
+                        'item_index' => $index,
+                        'description' => $item['description'] ?? 'N/A',
+                        'anomalous_price' => $unitPrice,
+                        'quantity' => $quantity
+                    ]);
+                    
+                    // Si hay un total válido, calcular el precio unitario correcto
+                    if (isset($item['total']) && floatval($item['total']) > 0 && $quantity > 0) {
+                        $correctedPrice = floatval($item['total']) / $quantity;
+                        Log::info('Corrigiendo precio unitario desde total', [
+                            'original_price' => $unitPrice,
+                            'corrected_price' => $correctedPrice,
+                            'total' => $item['total'],
+                            'quantity' => $quantity
+                        ]);
+                        $item['unit_price'] = $correctedPrice;
+                        $unitPrice = $correctedPrice;
+                    } else {
+                        // Establecer precio por defecto razonable
+                        $item['unit_price'] = 0;
+                        $unitPrice = 0;
+                        Log::warning('No se pudo corregir precio unitario, estableciendo en 0');
+                    }
+                }
+                
+                // Recalcular el total del item
+                $item['total'] = round($quantity * $unitPrice);
+                $calculatedSubtotal += $item['total'];
+                
+                Log::debug('Item procesado', [
+                    'index' => $index,
+                    'description' => $item['description'] ?? 'N/A',
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'total' => $item['total']
+                ]);
+            }
+            
+            Log::info('Subtotal recalculado desde items', [
+                'order' => $purchaseOrder->order_number,
+                'calculated_subtotal' => $calculatedSubtotal,
+                'request_subtotal' => $request->subtotal
+            ]);
+            
+            // Usar el subtotal calculado desde los items como fuente de verdad
+            $rawSubtotal = $calculatedSubtotal;
+            $ivaRate = intval($request->iva_rate ?? 19);
+            $ipoconsumoRate = intval($request->ipoconsumo_rate ?? 0);
+            
+            // Calcular impuestos basados en el subtotal real
             $ivaAmount = 0;
             $ipoconsumoAmount = 0;
             
             if ($ivaRate > 0) {
                 $ivaAmount = round(($rawSubtotal * $ivaRate) / 100);
-                $calculatedTotal += $ivaAmount;
             }
             
             if ($ipoconsumoRate > 0) {
                 $ipoconsumoAmount = round(($rawSubtotal * $ipoconsumoRate) / 100);
-                $calculatedTotal += $ipoconsumoAmount;
             }
             
-            // Si hay inconsistencia entre el total calculado y el enviado, recalcular
-            if (abs($calculatedTotal - $rawTotal) > 5) { // Permitir pequeña variación por redondeo
-                Log::warning("Inconsistencia detectada en los cálculos de impuestos. Recalculando.", [
-                    'order' => $purchaseOrder->order_number,
-                    'input_subtotal' => $rawSubtotal,
-                    'input_total' => $rawTotal,
-                    'calculated_total' => $calculatedTotal,
-                    'difference' => $calculatedTotal - $rawTotal
-                ]);
-                
-                // Determinar el subtotal real a partir del total si el IVA es estándar
-                if ($ivaRate == 19 && $ipoconsumoRate == 0) {
-                    $correctedSubtotal = round($rawTotal / 1.19);
-                    $correctedIvaAmount = $rawTotal - $correctedSubtotal;
-                    
-                    Log::info("Corrigiendo subtotal e IVA basado en el total", [
-                        'original_subtotal' => $rawSubtotal,
-                        'corrected_subtotal' => $correctedSubtotal,
-                        'corrected_iva' => $correctedIvaAmount,
-                        'total' => $rawTotal
-                    ]);
-                    
-                    $rawSubtotal = $correctedSubtotal;
-                    $ivaAmount = $correctedIvaAmount;
-                }
-            }
+            $rawTotal = $rawSubtotal + $ivaAmount + $ipoconsumoAmount;
+            
+            Log::info('Totales recalculados correctamente', [
+                'order' => $purchaseOrder->order_number,
+                'subtotal' => $rawSubtotal,
+                'iva_rate' => $ivaRate,
+                'iva_amount' => $ivaAmount,
+                'ipoconsumo_rate' => $ipoconsumoRate,
+                'ipoconsumo_amount' => $ipoconsumoAmount,
+                'total' => $rawTotal
+            ]);
             
             // Preparar nuevos datos personalizados con cálculos corregidos
             $customData = array_merge($currentCustomData, [
@@ -1502,9 +1539,9 @@ class PurchaseOrdersController extends Controller
                 'delivery_address' => $request->delivery_address,
                 'payment_method' => $request->payment_method,
                 'budget' => $request->budget,
-                'iva_rate' => $ivaRate . '%',
+                'iva_rate' => $ivaRate,
                 'iva_amount' => $ivaAmount,
-                'ipoconsumo_rate' => $ipoconsumoRate . '%',
+                'ipoconsumo_rate' => $ipoconsumoRate,
                 'ipoconsumo_amount' => $ipoconsumoAmount,
                 'subtotal' => $rawSubtotal,
                 'total' => $rawTotal,
@@ -1514,6 +1551,16 @@ class PurchaseOrdersController extends Controller
                 'shared_budget_info' => $request->shared_budget_info,
                 'edited_by' => auth()->user()->id,
                 'edited_at' => now()->toISOString(),
+                'calculation_source' => 'items_based', // Indicar que los cálculos se basan en items
+                'items_count' => count($itemsToSave)
+            ]);
+            
+            Log::info('Datos personalizados preparados con cálculos corregidos', [
+                'order' => $purchaseOrder->order_number,
+                'items_count' => count($itemsToSave),
+                'subtotal' => $rawSubtotal,
+                'total' => $rawTotal,
+                'calculation_source' => 'items_based'
             ]);
 
             // Actualizar la orden de compra

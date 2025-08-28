@@ -59,7 +59,7 @@ class ApprovalController extends Controller
             }
         }
         
-        $requests = $query->with(['quotations', 'user', 'preApprover', 'preApprovedQuotation'])
+        $requests = $query->with(['quotations', 'user', 'preApprover', 'preApprovedQuotation', 'quotationItemSelections'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 

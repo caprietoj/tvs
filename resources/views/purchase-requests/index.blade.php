@@ -2,6 +2,10 @@
 
 @section('title', 'Solicitudes de Compra y Materiales')
 
+@section('adminlte_css')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@stop
+
 @section('content_header')
     <div class="d-flex justify-content-between">
         <h1>Solicitudes de Compra y Materiales</h1>
@@ -90,7 +94,12 @@
             <!-- Filtros -->
             <div class="row mb-3">
                 <div class="col-md-12">
-                    <form method="GET" action="{{ route('purchase-requests.index') }}" class="form-inline">
+                    <form method="GET" action="{{ route('purchase-requests.index') }}" class="form-inline" id="filter-form">
+                        <div class="form-group mr-3">
+                            <label for="request_number" class="mr-2"><strong>No. Solicitud:</strong></label>
+                            <input type="text" name="request_number" id="request_number" class="form-control" 
+                                   value="{{ $requestNumberFilter ?? '' }}" placeholder="Buscar por número...">
+                        </div>
                         <div class="form-group mr-3">
                             <label for="type" class="mr-2"><strong>Tipo:</strong></label>
                             <select name="type" id="type" class="form-control">
@@ -135,9 +144,14 @@
             <!-- Indicadores de filtros activos -->
             <div class="row mb-2">
                 <div class="col-md-12">
-                    @if($typeFilter || $sectionFilter)
+                    @if($typeFilter || $sectionFilter || $requestNumberFilter)
                         <div class="mb-2">
                             <strong>Filtros activos:</strong>
+                            @if($requestNumberFilter)
+                                <span class="badge badge-primary mr-1">
+                                    No. Solicitud: {{ $requestNumberFilter }}
+                                </span>
+                            @endif
                             @if($typeFilter)
                                 <span class="badge badge-info mr-1">
                                     Tipo: 
@@ -177,122 +191,12 @@
                 </div>
             @endif
 
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped" id="requestsTable">
-                    <thead>
-                        <tr>
-                            <th>N° Solicitud</th>
-                            <th>Tipo</th>
-                            <th>Solicitante</th>
-                            <th>Área/Sección</th>
-                            <th>Fecha</th>
-                            @if(in_array($typeFilter, ['copies', 'materials']))
-                                <th>Observaciones</th>
-                            @endif
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($requests as $request)
-                            <tr>
-                                <td>{{ $request->request_number }}</td>
-                                <td>
-                                    @if($request->type == 'purchase')
-                                        <span class="badge badge-primary">Compra</span>
-                                    @elseif($request->type == 'services')
-                                        <span class="badge badge-warning">Servicios</span>
-                                        @if($request->service_type === 'no_quotation')
-                                            <br><small><span class="badge badge-secondary">Sin Cotización</span></small>
-                                        @endif
-                                    @elseif($request->isCopiesRequest())
-                                        <span class="badge badge-info">Fotocopias</span>
-                                    @else
-                                        <span class="badge badge-success">Materiales</span>
-                                    @endif
-                                </td>
-                                <td>{{ $request->requester }}</td>
-                                <td>{{ $request->section_area }}</td>
-                                <td>{{ $request->request_date->format('d/m/Y') }}</td>
-                                @if(in_array($typeFilter, ['copies', 'materials']))
-                                    <td class="text-center">
-                                        @if($typeFilter === 'copies' && $request->special_details)
-                                            <button type="button" class="btn btn-sm btn-outline-info" 
-                                                    data-toggle="popover" 
-                                                    data-trigger="hover" 
-                                                    data-placement="left"
-                                                    data-content="{{ $request->special_details }}" 
-                                                    title="Observaciones de Fotocopias">
-                                                <i class="fas fa-comment-alt"></i>
-                                            </button>
-                                        @elseif($typeFilter === 'materials' && $request->observations)
-                                            <button type="button" class="btn btn-sm btn-outline-success" 
-                                                    data-toggle="popover" 
-                                                    data-trigger="hover" 
-                                                    data-placement="left"
-                                                    data-content="{{ $request->observations }}" 
-                                                    title="Observaciones de Materiales">
-                                                <i class="fas fa-sticky-note"></i>
-                                            </button>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                @endif
-                                <td>
-                                    @if($request->status == 'pending')
-                                        <span class="badge badge-warning">Pendiente</span>
-                                    @elseif($request->status == 'approved')
-                                        <span class="badge badge-success">Aprobada</span>
-                                    @elseif($request->status == 'in_process')
-                                        <span class="badge badge-success">Aprobada</span>
-                                    @elseif($request->status == 'rejected')
-                                        <span class="badge badge-danger">Rechazada</span>
-                                    @elseif($request->status == 'En Cotización')
-                                        <span class="badge badge-info">En Cotización</span>
-                                    @elseif($request->status == 'En pre-aprobación')
-                                        <span class="badge badge-primary">En pre-aprobación</span>
-                                    @elseif($request->status == 'Pre-aprobada')
-                                        <span class="badge badge-primary">Pre-aprobada</span>
-                                    @else
-                                        <span class="badge badge-secondary">{{ $request->status }}</span>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    <div class="btn-group">
-                                        <a href="{{ route('purchase-requests.show', $request) }}" class="btn btn-sm btn-info" title="Ver detalle">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        @php
-                                            $permissionService = new \App\Services\PurchaseRequestPermissionService();
-                                        @endphp
-                                        @if($permissionService->canEditRequest($request))
-                                            <a href="{{ route('purchase-requests.edit', $request) }}" class="btn btn-sm btn-primary" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        @endif
-                                        @if($permissionService->canDeleteRequest($request))
-                                            <button type="button" class="btn btn-sm btn-danger" 
-                                                data-toggle="modal" 
-                                                data-target="#deleteModal" 
-                                                data-request-id="{{ $request->id }}"
-                                                title="Eliminar">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="{{ $typeFilter === 'copies' ? '8' : '7' }}" class="text-center">No hay solicitudes registradas</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <!-- Contenedor que se actualizará con AJAX -->
+            <div id="table-container">
+                @include('purchase-requests.partials.table')
             </div>
 
-            <div class="mt-3 d-flex justify-content-center">
+            <div class="mt-3 d-flex justify-content-center" id="pagination-container">
                 {{ $requests->links('pagination::bootstrap-4') }}
             </div>
         </div>
@@ -449,48 +353,84 @@
 @section('js')
 <script>
     $(function() {
-        // DataTables con configuración de idioma español directamente
-        // Desactivamos la paginación de DataTables ya que usamos la de Laravel
-        $('#requestsTable').DataTable({
-            "paging": false,
-            "lengthChange": false,
-            "searching": true,
-            "ordering": true,
-            "info": false,
-            "autoWidth": false,
-            "responsive": true,
-            "language": {
-                "sProcessing":     "Procesando...",
-                "sLengthMenu":     "Mostrar _MENU_ registros",
-                "sZeroRecords":    "No se encontraron resultados",
-                "sEmptyTable":     "Ningún dato disponible en esta tabla",
-                "sInfo":           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-                "sInfoEmpty":      "Mostrando registros del 0 al 0 de un total de 0 registros",
-                "sInfoFiltered":   "(filtrado de un total de _MAX_ registros)",
-                "sInfoPostFix":    "",
-                "sSearch":         "Buscar:",
-                "sUrl":            "",
-                "sInfoThousands":  ",",
-                "sLoadingRecords": "Cargando...",
-                "oPaginate": {
-                    "sFirst":    "Primero",
-                    "sLast":     "Último",
-                    "sNext":     "Siguiente",
-                    "sPrevious": "Anterior"
-                },
-                "oAria": {
-                    "sSortAscending":  ": Activar para ordenar la columna de manera ascendente",
-                    "sSortDescending": ": Activar para ordenar la columna de manera descendente"
-                },
-                "buttons": {
-                    "copy": "Copiar",
-                    "colvis": "Visibilidad"
-                }
+        // Configurar token CSRF para todas las peticiones AJAX
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
         
+        // Variables para debounce
+        let searchTimeout;
+        
+        // Función para realizar búsqueda AJAX
+        function performAjaxSearch() {
+            const formData = $('#filter-form').serialize();
+            
+            $.ajax({
+                url: '{{ route("purchase-requests.search") }}',
+                type: 'GET',
+                data: formData,
+                beforeSend: function() {
+                    $('#table-container').html('<div class="text-center p-4"><i class="fas fa-spinner fa-spin fa-2x"></i><br><small>Buscando...</small></div>');
+                },
+                success: function(response) {
+                    $('#table-container').html(response.html);
+                    $('#pagination-container').html(response.pagination);
+                    
+                    // Reinicializar popovers después de actualizar la tabla
+                    $('[data-toggle="popover"]').popover({
+                        html: true,
+                        container: 'body'
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error AJAX:', xhr.responseText);
+                    let errorMessage = 'Error al realizar la búsqueda. Por favor, intente nuevamente.';
+                    
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.message) {
+                            errorMessage = response.message;
+                        }
+                    } catch (e) {
+                        // Si no es JSON, usar el mensaje por defecto
+                    }
+                    
+                    if (xhr.status === 401) {
+                        errorMessage = 'Sesión expirada. Por favor, recargue la página e inicie sesión nuevamente.';
+                    } else if (xhr.status === 403) {
+                        errorMessage = 'No tiene permisos para realizar esta acción.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Error interno del servidor. Por favor, contacte al administrador.';
+                    }
+                    
+                    $('#table-container').html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle mr-2"></i>' + errorMessage + '</div>');
+                }
+            });
+        }
+        
+        // Búsqueda en tiempo real para el campo de número de solicitud
+        $('#request_number').on('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(function() {
+                performAjaxSearch();
+            }, 500); // Esperar 500ms después de que el usuario deje de escribir
+        });
+        
+        // Búsqueda inmediata para selects
+        $('#type, #section').on('change', function() {
+            performAjaxSearch();
+        });
+        
+        // Manejar envío del formulario para evitar recarga de página
+        $('#filter-form').on('submit', function(e) {
+            e.preventDefault();
+            performAjaxSearch();
+        });
+        
         // Modal de eliminación
-        $('#deleteModal').on('show.bs.modal', function (event) {
+        $(document).on('show.bs.modal', '#deleteModal', function (event) {
             const button = $(event.relatedTarget);
             const requestId = button.data('request-id');
             const form = document.getElementById('deleteForm');

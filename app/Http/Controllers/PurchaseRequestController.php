@@ -318,11 +318,15 @@ class PurchaseRequestController extends Controller
             $query->where('section_area', $sectionFilter);
         }
         
+        // Filtro por número de solicitud si se especifica
+        $requestNumberFilter = $request->get('request_number');
+        if ($requestNumberFilter) {
+            $query->where('request_number', 'like', '%' . $requestNumberFilter . '%');
+        }
+
         $requests = $query->with('user')
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
-        
-        // Mantener los parámetros de filtro en la paginación
+            ->paginate(10);        // Mantener los parámetros de filtro en la paginación
         $requests->appends($request->query());
         
         // Obtener todas las secciones para el filtro
@@ -360,6 +364,7 @@ class PurchaseRequestController extends Controller
             'typeFilter', 
             'sections', 
             'sectionFilter',
+            'requestNumberFilter',
             'canBulkApproveCopies',
             'copiesCount'
         ));
@@ -1660,5 +1665,102 @@ class PurchaseRequestController extends Controller
         return redirect()->back()
             ->with('success', 'Configuración de cotizaciones actualizada correctamente. Ahora se requieren ' . 
                     $request->required_quotations . ' cotizaciones.');
+    }
+
+    /**
+     * Búsqueda AJAX para filtrado en tiempo real
+     */
+    public function searchAjax(Request $request)
+    {
+        try {
+            $permissionService = new PurchaseRequestPermissionService();
+            
+            // Aplicar filtros basados en permisos del usuario
+            $query = PurchaseRequest::query();
+            $query = $permissionService->applyQueryFilters($query);
+            
+            // Filtro por tipo si se especifica
+            $typeFilter = $request->get('type');
+            if ($typeFilter && in_array($typeFilter, ['purchase', 'materials', 'copies', 'services'])) {
+                if ($typeFilter === 'purchase') {
+                    $query->where('type', 'purchase');
+                } elseif ($typeFilter === 'services') {
+                    $query->where('type', 'services');
+                } elseif ($typeFilter === 'materials') {
+                    $query->where('type', 'materials')
+                          ->where(function($q) {
+                              $q->whereNull('copy_items')
+                                ->orWhereRaw('JSON_LENGTH(copy_items) = 0');
+                          });
+                } elseif ($typeFilter === 'copies') {
+                    $query->where('type', 'materials')
+                          ->where(function($q) {
+                              $q->whereNotNull('copy_items')
+                                ->whereRaw('JSON_LENGTH(copy_items) > 0');
+                          });
+                }
+            }
+            
+            // Filtro por sección si se especifica
+            $sectionFilter = $request->get('section');
+            if ($sectionFilter && $sectionFilter !== 'all') {
+                $query->where('section_area', $sectionFilter);
+            }
+            
+            // Filtro por número de solicitud si se especifica
+            $requestNumberFilter = $request->get('request_number');
+            if ($requestNumberFilter) {
+                $query->where('request_number', 'like', '%' . $requestNumberFilter . '%');
+            }
+
+            $requests = $query->with('user')
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+
+            // Verificar si se puede mostrar aprobación masiva de fotocopias
+            $canBulkApproveCopies = false;
+            $copiesCount = 0;
+            
+            if ($typeFilter === 'copies' && $sectionFilter && $sectionFilter !== 'all') {
+                if (Auth::user()->can('approve-purchase-requests')) {
+                    $copiesCount = PurchaseRequest::where('type', 'materials')
+                        ->where('section_area', $sectionFilter)
+                        ->where(function($q) {
+                            $q->whereNotNull('copy_items')
+                              ->whereRaw('JSON_LENGTH(copy_items) > 0');
+                        })
+                        ->where('status', 'pending')
+                        ->count();
+                    
+                    if ($copiesCount > 0) {
+                        $canBulkApproveCopies = true;
+                    }
+                }
+            }
+
+            // Renderizar solo la tabla y paginación
+            $html = view('purchase-requests.partials.table', compact(
+                'requests', 
+                'typeFilter',
+                'canBulkApproveCopies',
+                'copiesCount'
+            ))->render();
+
+            return response()->json([
+                'html' => $html,
+                'pagination' => $requests->appends($request->query())->links()->render()
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en searchAjax: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            
+            return response()->json([
+                'error' => 'Error interno del servidor',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

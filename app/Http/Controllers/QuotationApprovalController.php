@@ -24,6 +24,7 @@ class QuotationApprovalController extends Controller
     {
         // Obtener filtros de la request
         $sectionFilter = $request->get('section');
+        $requestNumberFilter = $request->get('request_number');
         
         // Query base
         $query = PurchaseRequest::whereIn('status', ['En Cotización', 'En pre-aprobación', 'Pre-aprobada'])
@@ -43,6 +44,11 @@ class QuotationApprovalController extends Controller
             $query->where('section_area', $sectionFilter);
         }
         
+        // Aplicar filtro por número de solicitud si está presente
+        if ($requestNumberFilter) {
+            $query->where('request_number', 'like', '%' . $requestNumberFilter . '%');
+        }
+        
         $requests = $query->with(['quotations'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
@@ -57,7 +63,7 @@ class QuotationApprovalController extends Controller
             ->sort()
             ->values();
 
-        return view('quotation-approvals.index', compact('requests', 'sections', 'sectionFilter'));
+        return view('quotation-approvals.index', compact('requests', 'sections', 'sectionFilter', 'requestNumberFilter'));
     }
 
     /**
@@ -931,6 +937,64 @@ class QuotationApprovalController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Error al enviar el correo: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Búsqueda AJAX para filtrado en tiempo real
+     */
+    public function searchAjax(Request $request)
+    {
+        try {
+            // Obtener filtros de la request
+            $sectionFilter = $request->get('section');
+            $requestNumberFilter = $request->get('request_number');
+            
+            // Query base
+            $query = PurchaseRequest::whereIn('status', ['En Cotización', 'En pre-aprobación', 'Pre-aprobada'])
+                ->where(function($query) {
+                    $query->where('type', '!=', 'services')
+                          ->orWhere(function($subQuery) {
+                              $subQuery->where('type', 'services')
+                                       ->where(function($serviceQuery) {
+                                           $serviceQuery->whereNull('service_type')
+                                                       ->orWhere('service_type', 'regular');
+                                       });
+                          });
+                });
+            
+            // Aplicar filtro de sección si está presente
+            if ($sectionFilter && $sectionFilter !== 'all') {
+                $query->where('section_area', $sectionFilter);
+            }
+            
+            // Aplicar filtro por número de solicitud si está presente
+            if ($requestNumberFilter) {
+                $query->where('request_number', 'like', '%' . $requestNumberFilter . '%');
+            }
+            
+            $requests = $query->with(['quotations'])
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+
+            // Renderizar solo la tabla y paginación
+            $html = view('quotation-approvals.partials.table', compact('requests'))->render();
+
+            return response()->json([
+                'html' => $html,
+                'pagination' => $requests->appends($request->query())->links()->render()
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en searchAjax quotation-approvals: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            
+            return response()->json([
+                'error' => 'Error interno del servidor',
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 }
