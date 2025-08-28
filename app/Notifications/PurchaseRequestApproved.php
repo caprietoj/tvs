@@ -31,11 +31,11 @@ class PurchaseRequestApproved extends Notification
     {
         $message = $this->buildBaseMessage();
         
-        // Solo adjuntar PDF para órdenes de compra reales (no para fotocopias)
-        if (in_array($this->recipient, ['compras', 'contabilidad'])) {
+        // Solo adjuntar PDF para contabilidad (compras ya no recibe adjuntos)
+        if (in_array($this->recipient, ['contabilidad'])) {
             $this->attachPurchaseOrderPdf($message);
         }
-        // Note: 'compras_fotocopias' y 'auxiliaralmacen' NO reciben PDF adjunto
+        // Note: 'compras', 'compras_fotocopias' y 'auxiliaralmacen' NO reciben PDF adjunto
         
         return $message;
     }

@@ -67,7 +67,12 @@ class ServiceNoQuotationCreated extends Mailable
     {
         $attachments = [];
         
-        // Adjuntar archivo de cotización si existe
+        // No adjuntar archivos cuando se envía a compras
+        if ($this->emailType === 'compras') {
+            return $attachments;
+        }
+        
+        // Adjuntar archivo de cotización si existe (para otros destinatarios)
         if ($this->purchaseRequest->quotation_file_path) {
             $filePath = storage_path('app/public/' . $this->purchaseRequest->quotation_file_path);
             

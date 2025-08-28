@@ -247,7 +247,6 @@
                 <td class="items-header" style="width: 60px;">CANT</td>
                 <td class="items-header" style="width: 100px;">VALOR UNIT</td>
                 <td class="items-header" style="width: 100px;">VALOR TOTAL</td>
-                <td class="items-header" style="width: 80px;">ACCIONES</td>
             </tr>
             
             @php
@@ -368,7 +367,6 @@
                     <td class="center">{{ $item['quantity'] ?? $item['cantidad'] ?? 1 }}</td>
                     <td class="right">${{ number_format($item['unit_price'] ?? $item['precio_unitario'] ?? $item['unit_price_display'] ?? 0, 0, ',', '.') }}</td>
                     <td class="right">${{ number_format($item['total'] ?? $item['total_price'] ?? (($item['quantity'] ?? 1) * ($item['unit_price'] ?? 0)), 0, ',', '.') }}</td>
-                    <td class="center">-</td>
                 </tr>
                 @endforeach
             @else
@@ -378,7 +376,6 @@
                     <td class="center">0</td>
                     <td class="right">0</td>
                     <td class="right">$0</td>
-                    <td class="center">-</td>
                 </tr>
             @endif
         </table>
@@ -410,14 +407,7 @@
                         // Combinar todas las observaciones
                         $displayObservations = !empty($observationSources) ? implode(' | ', $observationSources) : '-';
                         
-                        // Agregar información adicional para órdenes mixtas
-                        if (isset($isMixedOrder) && $isMixedOrder) {
-                            $additionalInfo = "ORDEN MIXTA: Esta orden contiene items seleccionados de múltiples proveedores. ";
-                            if (isset($providerSpecificInfo) && $providerSpecificInfo) {
-                                $additionalInfo .= "Items de este proveedor: {$providerSpecificInfo['this_provider_items']}/{$providerSpecificInfo['total_items']}. ";
-                            }
-                            $displayObservations = ($displayObservations === '-' ? '' : $displayObservations . ' | ') . $additionalInfo;
-                        }
+
                         
                         // Agregar información adicional para órdenes compartidas
                         if (isset($isSharedPurchase) && $isSharedPurchase) {
