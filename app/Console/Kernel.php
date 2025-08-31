@@ -19,6 +19,10 @@ class Kernel extends ConsoleKernel
         
         // Limpiar archivos ICS temporales cada 6 horas
         $schedule->command('calendar:clean-temp-ics --older-than=6')->everySixHours();
+        
+        // Reparación automática de órdenes de compra (solo dry-run para logging)
+        $schedule->command('orders:repair --dry-run')->daily()
+            ->description('Validación diaria de integridad de órdenes de compra');
     }
 
     protected function commands()

@@ -177,3 +177,20 @@ a:hover {
 #accordionSkills .collapsed .btn-link {
     color: white !important;
 }
+
+/* Estilos para presupuesto aprobado */
+.presupuesto-aprobado-row {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    color: white !important;
+    font-weight: bold !important;
+}
+
+.presupuesto-aprobado-row td {
+    text-align: center !important;
+    padding: 12px !important;
+    border: none !important;
+}
+
+.presupuesto-aprobado-row i {
+    margin-right: 8px;
+}

@@ -33,6 +33,11 @@
             <div class="col-12">
                 <form method="GET" action="{{ route('approvals.index') }}" class="form-inline">
                     <div class="form-group mr-3">
+                        <label for="request_number" class="mr-2"><strong>No. Solicitud:</strong></label>
+                        <input type="text" name="request_number" id="request_number" class="form-control" 
+                               value="{{ $requestNumberFilter ?? '' }}" placeholder="Buscar por número...">
+                    </div>
+                    <div class="form-group mr-3">
                         <label for="section" class="mr-2"><strong>Área/Sección:</strong></label>
                         <select name="section" id="section" class="form-control">
                             <option value="all">Todas las secciones</option>
@@ -68,7 +73,7 @@
             <table class="table table-striped table-hover">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>No. Solicitud</th>
                         <th>Solicitante</th>
                         <th>Área/Sección</th>
                         <th>Fecha de solicitud</th>
@@ -82,7 +87,7 @@
                 <tbody>
                     @forelse($requests as $request)
                         <tr>
-                            <td>{{ $request->id }}</td>
+                            <td>{{ $request->request_number }}</td>
                             <td>{{ $request->requester }}</td>
                             <td>{{ $request->section_area }}</td>
                             <td>{{ $request->request_date->format('d/m/Y') }}</td>

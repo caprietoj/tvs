@@ -18,6 +18,7 @@ class AppServiceProvider extends ServiceProvider
             $this->commands([
                 \App\Console\Commands\RegeneratePurchaseOrderPdfs::class,
                 \App\Console\Commands\VerifyTaxConsistency::class,
+                \App\Console\Commands\RepairPurchaseOrdersData::class,
             ]);
         }
     }
@@ -32,6 +33,9 @@ class AppServiceProvider extends ServiceProvider
         // Configurar paginación para usar Bootstrap 4
         Paginator::defaultView('pagination::bootstrap-4');
         Paginator::defaultSimpleView('pagination::simple-bootstrap-4');
+        
+        // Registrar observers
+        \App\Models\PurchaseOrder::observe(\App\Observers\PurchaseOrderObserver::class);
         
         // Register mail classes
         $this->app->singleton(\App\Mail\LoanRequestCreated::class);

@@ -33,15 +33,40 @@ class PurchaseOrdersController extends Controller
     /**
      * Mostrar todas las órdenes de compra.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Obtener las órdenes de compra existentes
-        $orders = PurchaseOrder::with(['purchaseRequest', 'purchaseRequest.user', 'provider', 'viewer'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        // Obtener filtros de la request
+        $requestNumberFilter = $request->get('request_number');
+        $sectionFilter = $request->get('section');
+        $statusFilter = $request->get('status');
+        
+        // Query base para órdenes de compra existentes
+        $ordersQuery = PurchaseOrder::with(['purchaseRequest', 'purchaseRequest.user', 'provider', 'viewer']);
+        
+        // Aplicar filtros
+        if ($requestNumberFilter) {
+            $ordersQuery->whereHas('purchaseRequest', function($query) use ($requestNumberFilter) {
+                $query->where('request_number', 'like', '%' . $requestNumberFilter . '%');
+            });
+        }
+        
+        if ($sectionFilter && $sectionFilter !== 'all') {
+            $ordersQuery->whereHas('purchaseRequest', function($query) use ($sectionFilter) {
+                $query->where('section_area', $sectionFilter);
+            });
+        }
+        
+        if ($statusFilter && $statusFilter !== 'all') {
+            $ordersQuery->where('status', $statusFilter);
+        }
+        
+        $orders = $ordersQuery->orderBy('created_at', 'desc')->paginate(10);
+        
+        // Mantener parámetros de filtro en la paginación
+        $orders->appends($request->query());
             
         // Obtener las solicitudes aprobadas pendientes de generar órdenes de compra
-        $approvedRequests = PurchaseRequest::with(['selectedQuotation', 'user', 'approver', 'quotationItemSelections'])
+        $approvedRequests = PurchaseRequest::with(['selectedQuotation', 'user', 'approver', 'quotationItemSelections', 'purchaseOrders'])
             ->whereIn('status', ['approved', 'in_process'])
             ->where(function($query) {
                 // Solicitudes con cotización seleccionada tradicional
@@ -56,6 +81,12 @@ class PurchaseOrdersController extends Controller
             })
             ->get()
             ->filter(function($request) {
+                // Usar consultas directas para contar órdenes (las relaciones Eloquent tienen problemas con soft deletes)
+                $totalOrders = PurchaseOrder::where('purchase_request_id', $request->id)->withTrashed()->count();
+                $activeOrders = PurchaseOrder::where('purchase_request_id', $request->id)->count();
+                $deletedOrders = PurchaseOrder::where('purchase_request_id', $request->id)->onlyTrashed()->count();
+                $hasActiveOrders = $activeOrders > 0;
+                
                 // Para selecciones mixtas, verificar si faltan órdenes por proveedores
                 $hasMixedSelection = $request->quotationItemSelections()->exists();
                 
@@ -64,24 +95,38 @@ class PurchaseOrdersController extends Controller
                     $selections = $request->quotationItemSelections()->with('quotation')->get();
                     $providersWithSelections = $selections->groupBy('quotation.provider_name')->keys();
                     
-                    // Obtener proveedores que ya tienen órdenes
-                    $providersWithOrders = $request->purchaseOrders()
-                        ->whereNull('deleted_at')
-                        ->whereHas('provider')
-                        ->get()
+                    // Obtener proveedores que ya tienen órdenes ACTIVAS usando consulta directa
+                    $activeOrdersForRequest = PurchaseOrder::where('purchase_request_id', $request->id)
+                        ->with('provider')
+                        ->get();
+                    $providersWithOrders = $activeOrdersForRequest
                         ->pluck('provider.nombre')
                         ->filter();
                     
-                    // Mostrar si aún faltan proveedores por procesar
-                    return $providersWithSelections->diff($providersWithOrders)->isNotEmpty();
+                    // Para selecciones mixtas: mostrar solo si faltan órdenes por proveedores
+                    $shouldShow = $providersWithSelections->diff($providersWithOrders)->isNotEmpty();
+                    
+                    return $shouldShow;
                 } else {
-                    // Para cotizaciones tradicionales y servicios, excluir si ya tiene orden
-                    return !$request->purchaseOrders()->whereNull('deleted_at')->exists();
+                    // Para cotizaciones tradicionales y servicios:
+                    // Mostrar SOLO si NO tiene órdenes activas (lógica original)
+                    // Las órdenes eliminadas no deben hacer que aparezcan si ya tienen una orden activa
+                    $shouldShow = !$hasActiveOrders;
+                    
+                    return $shouldShow;
                 }
             })
             ->sortByDesc('approval_date');
+        
+        // Obtener todas las secciones para el filtro
+        $sections = PurchaseRequest::whereHas('purchaseOrders')
+            ->distinct()
+            ->pluck('section_area')
+            ->filter()
+            ->sort()
+            ->values();
             
-        return view('purchase-orders.index', compact('orders', 'approvedRequests'));
+        return view('purchase-orders.index', compact('orders', 'approvedRequests', 'sections', 'requestNumberFilter', 'sectionFilter', 'statusFilter'));
     }
 
     /**
@@ -1450,6 +1495,7 @@ class PurchaseOrdersController extends Controller
             foreach ($itemsToSave as $index => &$item) {
                 $unitPrice = floatval($item['unit_price'] ?? 0);
                 $quantity = floatval($item['quantity'] ?? 1);
+                $taxRate = floatval($item['tax_rate'] ?? 0); // Agregar tax_rate
                 
                 // Detectar precios unitarios anómalos (muy altos, probablemente erróneos)
                 if ($unitPrice > 10000000) { // Más de 10 millones es sospechoso
@@ -1482,6 +1528,7 @@ class PurchaseOrdersController extends Controller
                 
                 // Recalcular el total del item
                 $item['total'] = round($quantity * $unitPrice);
+                $item['tax_rate'] = $taxRate; // Asegurar que tax_rate se guarde
                 $calculatedSubtotal += $item['total'];
                 
                 Log::debug('Item procesado', [
@@ -1489,7 +1536,8 @@ class PurchaseOrdersController extends Controller
                     'description' => $item['description'] ?? 'N/A',
                     'quantity' => $quantity,
                     'unit_price' => $unitPrice,
-                    'total' => $item['total']
+                    'total' => $item['total'],
+                    'tax_rate' => $taxRate
                 ]);
             }
             
@@ -1518,6 +1566,35 @@ class PurchaseOrdersController extends Controller
             
             $rawTotal = $rawSubtotal + $ivaAmount + $ipoconsumoAmount;
             
+            // Calcular impuestos individuales si existen
+            $individualTaxesTotal = 0;
+            $individualTaxesBreakdown = [];
+            
+            \Log::info('Verificando campos de impuestos individuales en request:', [
+                'has_individual_taxes_total' => $request->has('individual_taxes_total'),
+                'individual_taxes_total_value' => $request->individual_taxes_total ?? 'NULL',
+                'has_individual_taxes_breakdown' => $request->has('individual_taxes_breakdown'),
+                'individual_taxes_breakdown_value' => $request->individual_taxes_breakdown ?? 'NULL'
+            ]);
+            
+            if ($request->has('individual_taxes_total')) {
+                $individualTaxesTotal = floatval($request->individual_taxes_total ?? 0);
+                \Log::info('Individual taxes total procesado:', ['value' => $individualTaxesTotal]);
+            }
+            
+            if ($request->has('individual_taxes_breakdown')) {
+                $breakdown = $request->individual_taxes_breakdown;
+                if (is_string($breakdown)) {
+                    $individualTaxesBreakdown = json_decode($breakdown, true) ?? [];
+                } else {
+                    $individualTaxesBreakdown = $breakdown ?? [];
+                }
+                \Log::info('Individual taxes breakdown procesado:', ['value' => $individualTaxesBreakdown]);
+            }
+            
+            // Agregar impuestos individuales al total final
+            $rawTotal += $individualTaxesTotal;
+            
             Log::info('Totales recalculados correctamente', [
                 'order' => $purchaseOrder->order_number,
                 'subtotal' => $rawSubtotal,
@@ -1525,8 +1602,18 @@ class PurchaseOrdersController extends Controller
                 'iva_amount' => $ivaAmount,
                 'ipoconsumo_rate' => $ipoconsumoRate,
                 'ipoconsumo_amount' => $ipoconsumoAmount,
+                'individual_taxes_total' => $individualTaxesTotal,
+                'individual_taxes_breakdown' => $individualTaxesBreakdown,
                 'total' => $rawTotal
             ]);
+            
+            // Procesar additional_items para incluir tax_rate
+            $additionalItemsToSave = $request->additional_items ?? [];
+            foreach ($additionalItemsToSave as $index => &$additionalItem) {
+                if (isset($additionalItem['tax_rate'])) {
+                    $additionalItem['tax_rate'] = floatval($additionalItem['tax_rate']);
+                }
+            }
             
             // Preparar nuevos datos personalizados con cálculos corregidos
             $customData = array_merge($currentCustomData, [
@@ -1546,9 +1633,11 @@ class PurchaseOrdersController extends Controller
                 'subtotal' => $rawSubtotal,
                 'total' => $rawTotal,
                 'items' => $itemsToSave,
-                'additional_items' => $request->additional_items ?? [],
+                'additional_items' => $additionalItemsToSave,
                 'observations' => $request->observations,
                 'shared_budget_info' => $request->shared_budget_info,
+                'individual_taxes_total' => $individualTaxesTotal,
+                'individual_taxes_breakdown' => $individualTaxesBreakdown,
                 'edited_by' => auth()->user()->id,
                 'edited_at' => now()->toISOString(),
                 'calculation_source' => 'items_based', // Indicar que los cálculos se basan en items
@@ -3258,5 +3347,88 @@ class PurchaseOrdersController extends Controller
         ]);
         
         return $customData;
+    }
+    
+    /**
+     * Reparar datos de una orden específica
+     */
+    public function repairOrderData(PurchaseOrder $purchaseOrder)
+    {
+        // Solo administradores pueden reparar órdenes
+        if (!auth()->user()->can('admin')) {
+            return redirect()->back()->with('error', 'No tienes permisos para reparar órdenes.');
+        }
+        
+        try {
+            $validationService = new \App\Services\PurchaseOrderValidationService();
+            $result = $validationService->validateAndRepair($purchaseOrder, false);
+            
+            if ($result['repaired']) {
+                return redirect()->back()->with('success', 
+                    'Orden reparada exitosamente: ' . implode(', ', $result['fixes'])
+                );
+            } else {
+                return redirect()->back()->with('info', 'La orden no necesitaba reparaciones.');
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error reparando orden desde interfaz', [
+                'order_number' => $purchaseOrder->order_number,
+                'error' => $e->getMessage()
+            ]);
+            
+            return redirect()->back()->with('error', 'Error al reparar la orden: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Reparar todas las órdenes con problemas
+     */
+    public function repairAllOrders()
+    {
+        // Solo administradores pueden reparar órdenes
+        if (!auth()->user()->can('admin')) {
+            return redirect()->back()->with('error', 'No tienes permisos para reparar órdenes.');
+        }
+        
+        try {
+            $validationService = new \App\Services\PurchaseOrderValidationService();
+            
+            // Obtener órdenes con custom data
+            $orders = PurchaseOrder::whereNotNull('pdf_custom_data')
+                ->where('pdf_custom_data', '!=', '')
+                ->get();
+            
+            $repaired = 0;
+            $fixes = [];
+            
+            foreach ($orders as $order) {
+                $result = $validationService->validateAndRepair($order, false);
+                if ($result['repaired']) {
+                    $repaired++;
+                    $fixes[] = $order->order_number . ': ' . implode(', ', $result['fixes']);
+                }
+            }
+            
+            if ($repaired > 0) {
+                Log::info('Reparación masiva completada', [
+                    'repaired_count' => $repaired,
+                    'fixes' => $fixes
+                ]);
+                
+                return redirect()->back()->with('success', 
+                    "Se repararon {$repaired} órdenes exitosamente."
+                );
+            } else {
+                return redirect()->back()->with('info', 'No se encontraron órdenes que necesiten reparación.');
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error en reparación masiva', [
+                'error' => $e->getMessage()
+            ]);
+            
+            return redirect()->back()->with('error', 'Error en la reparación masiva: ' . $e->getMessage());
+        }
     }
 }

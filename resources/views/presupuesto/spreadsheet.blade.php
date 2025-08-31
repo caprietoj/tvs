@@ -235,10 +235,20 @@
                                             <th>Ejecución</th>
                                             <th>Saldo por ejecutar</th>
                                         </tr>
+                                        @php
+                                            $seccion = 'PREESCOLAR Y PRIMARIA';
+                                            $presupuestoTotalSeccion = $presupuestosTotalesSecciones[$seccion] ?? 0;
+                                        @endphp
+                                        @if($presupuestoTotalSeccion > 0)
+                                        <tr class="presupuesto-aprobado-row">
+                                            <td colspan="4" style="text-align: center; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; font-weight: bold; padding: 12px;">
+                                                <i class="fas fa-check-circle"></i> PRESUPUESTO APROBADO: ${{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                        @endif
                                     </thead>
                                     <tbody id="preescolar-tbody">
                                         @php
-                                            $seccion = 'PREESCOLAR Y PRIMARIA';
                                             $preescolarConceptos = $seccionesData[$seccion] ?? [];
                                             $totalPresupuesto = 0;
                                             $totalEjecucion = 0;
@@ -262,9 +272,9 @@
                                         @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL</strong></td>
-                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($totalPresupuesto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell total-ejecucion"><strong>{{ number_format($totalEjecucion, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell total-saldo {{ $totalSaldo < 0 ? 'negative' : '' }}"><strong>{{ number_format($totalSaldo, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-saldo {{ ($presupuestoTotalSeccion - $totalEjecucion) < 0 ? 'negative' : '' }}"><strong>{{ number_format($presupuestoTotalSeccion - $totalEjecucion, 0, ',', '.') }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -283,10 +293,20 @@
                                             <th>Ejecución</th>
                                             <th>Saldo por ejecutar</th>
                                         </tr>
+                                        @php
+                                            $seccion = 'ESCUELA MEDIA';
+                                            $presupuestoTotalSeccion = $presupuestosTotalesSecciones[$seccion] ?? 0;
+                                        @endphp
+                                        @if($presupuestoTotalSeccion > 0)
+                                        <tr class="presupuesto-aprobado-row">
+                                            <td colspan="4" style="text-align: center; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; font-weight: bold; padding: 12px;">
+                                                <i class="fas fa-check-circle"></i> PRESUPUESTO APROBADO: ${{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                        @endif
                                     </thead>
                                     <tbody id="escuela-media-tbody">
                                         @php
-                                            $seccion = 'ESCUELA MEDIA';
                                             $escuelaMediaConceptos = $seccionesData[$seccion] ?? [];
                                             $totalPresupuesto = 0;
                                             $totalEjecucion = 0;
@@ -331,10 +351,20 @@
                                             <th>Ejecución</th>
                                             <th>Saldo por ejecutar</th>
                                         </tr>
+                                        @php
+                                            $seccion = 'ALTA';
+                                            $presupuestoTotalSeccion = $presupuestosTotalesSecciones[$seccion] ?? 0;
+                                        @endphp
+                                        @if($presupuestoTotalSeccion > 0)
+                                        <tr class="presupuesto-aprobado-row">
+                                            <td colspan="4" style="text-align: center; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; font-weight: bold; padding: 12px;">
+                                                <i class="fas fa-check-circle"></i> PRESUPUESTO APROBADO: ${{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                        @endif
                                     </thead>
                                     <tbody id="escuela-alta-tbody">
                                         @php
-                                            $seccion = 'ALTA';
                                             $escuelaAltaConceptos = $seccionesData[$seccion] ?? [];
                                             $totalPresupuesto = 0;
                                             $totalEjecucion = 0;
@@ -358,9 +388,9 @@
                                         @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL</strong></td>
-                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($totalPresupuesto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell total-ejecucion"><strong>{{ number_format($totalEjecucion, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell total-saldo {{ $totalSaldo < 0 ? 'negative' : '' }}"><strong>{{ number_format($totalSaldo, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-saldo {{ ($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion < 0 ? 'negative' : '' }}"><strong>{{ number_format(($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion, 0, ',', '.') }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -379,10 +409,20 @@
                                             <th>Ejecución</th>
                                             <th>Saldo por ejecutar</th>
                                         </tr>
+                                        @php
+                                            $seccion = 'PAI';
+                                            $presupuestoTotalSeccion = $presupuestosTotalesSecciones[$seccion] ?? 0;
+                                        @endphp
+                                        @if($presupuestoTotalSeccion > 0)
+                                        <tr class="presupuesto-aprobado-row">
+                                            <td colspan="4" style="text-align: center; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; font-weight: bold; padding: 12px;">
+                                                <i class="fas fa-check-circle"></i> PRESUPUESTO APROBADO: ${{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                        @endif
                                     </thead>
                                     <tbody>
                                         @php
-                                            $seccion = 'PAI';
                                             $paiConceptos = $seccionesData[$seccion] ?? [];
                                             $totalPresupuesto = 0;
                                             $totalEjecucion = 0;
@@ -406,9 +446,9 @@
                                         @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL</strong></td>
-                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($totalPresupuesto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell total-ejecucion"><strong>{{ number_format($totalEjecucion, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell total-saldo {{ $totalSaldo < 0 ? 'negative' : '' }}"><strong>{{ number_format($totalSaldo, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-saldo {{ ($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion < 0 ? 'negative' : '' }}"><strong>{{ number_format(($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion, 0, ',', '.') }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -427,10 +467,20 @@
                                             <th>Ejecución</th>
                                             <th>Saldo por ejecutar</th>
                                         </tr>
+                                        @php
+                                            $seccion = 'PEP';
+                                            $presupuestoTotalSeccion = $presupuestosTotalesSecciones[$seccion] ?? 0;
+                                        @endphp
+                                        @if($presupuestoTotalSeccion > 0)
+                                        <tr class="presupuesto-aprobado-row">
+                                            <td colspan="4" style="text-align: center; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; font-weight: bold; padding: 12px;">
+                                                <i class="fas fa-check-circle"></i> PRESUPUESTO APROBADO: ${{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                        @endif
                                     </thead>
                                     <tbody>
                                         @php
-                                            $seccion = 'PEP';
                                             $pepConceptos = $seccionesData[$seccion] ?? [];
                                             $totalPresupuesto = 0;
                                             $totalEjecucion = 0;
@@ -454,9 +504,9 @@
                                         @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL</strong></td>
-                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($totalPresupuesto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell total-ejecucion"><strong>{{ number_format($totalEjecucion, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell total-saldo {{ $totalSaldo < 0 ? 'negative' : '' }}"><strong>{{ number_format($totalSaldo, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-saldo {{ ($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion < 0 ? 'negative' : '' }}"><strong>{{ number_format(($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion, 0, ',', '.') }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -475,10 +525,20 @@
                                             <th>Ejecución</th>
                                             <th>Saldo por ejecutar</th>
                                         </tr>
+                                        @php
+                                            $seccion = 'DEPORTES';
+                                            $presupuestoTotalSeccion = $presupuestosTotalesSecciones[$seccion] ?? 0;
+                                        @endphp
+                                        @if($presupuestoTotalSeccion > 0)
+                                        <tr class="presupuesto-aprobado-row">
+                                            <td colspan="4" style="text-align: center; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; font-weight: bold; padding: 12px;">
+                                                <i class="fas fa-check-circle"></i> PRESUPUESTO APROBADO: ${{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                        @endif
                                     </thead>
                                     <tbody>
                                         @php
-                                            $seccion = 'DEPORTES';
                                             $deportesConceptos = $seccionesData[$seccion] ?? [];
                                             $totalPresupuesto = 0;
                                             $totalEjecucion = 0;
@@ -502,9 +562,9 @@
                                         @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL</strong></td>
-                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($totalPresupuesto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell total-ejecucion"><strong>{{ number_format($totalEjecucion, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell total-saldo {{ $totalSaldo < 0 ? 'negative' : '' }}"><strong>{{ number_format($totalSaldo, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-saldo {{ ($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion < 0 ? 'negative' : '' }}"><strong>{{ number_format(($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion, 0, ',', '.') }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -523,10 +583,20 @@
                                             <th>Ejecución</th>
                                             <th>Saldo por ejecutar</th>
                                         </tr>
+                                        @php
+                                            $seccion = 'BIBLIOTECA';
+                                            $presupuestoTotalSeccion = $presupuestosTotalesSecciones[$seccion] ?? 0;
+                                        @endphp
+                                        @if($presupuestoTotalSeccion > 0)
+                                        <tr class="presupuesto-aprobado-row">
+                                            <td colspan="4" style="text-align: center; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; font-weight: bold; padding: 12px;">
+                                                <i class="fas fa-check-circle"></i> PRESUPUESTO APROBADO: ${{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                        @endif
                                     </thead>
                                     <tbody>
                                         @php
-                                            $seccion = 'BIBLIOTECA';
                                             $bibliotecaConceptos = $seccionesData[$seccion] ?? [];
                                             $totalPresupuesto = 0;
                                             $totalEjecucion = 0;
@@ -550,9 +620,9 @@
                                         @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL</strong></td>
-                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($totalPresupuesto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell total-ejecucion"><strong>{{ number_format($totalEjecucion, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell total-saldo {{ $totalSaldo < 0 ? 'negative' : '' }}"><strong>{{ number_format($totalSaldo, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-saldo {{ ($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion < 0 ? 'negative' : '' }}"><strong>{{ number_format(($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion, 0, ',', '.') }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -571,10 +641,20 @@
                                             <th>Ejecución</th>
                                             <th>Saldo por ejecutar</th>
                                         </tr>
+                                        @php
+                                            $seccion = 'PSICOLOGÍA INSTITUCIONAL';
+                                            $presupuestoTotalSeccion = $presupuestosTotalesSecciones[$seccion] ?? 0;
+                                        @endphp
+                                        @if($presupuestoTotalSeccion > 0)
+                                        <tr class="presupuesto-aprobado-row">
+                                            <td colspan="4" style="text-align: center; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; font-weight: bold; padding: 12px;">
+                                                <i class="fas fa-check-circle"></i> PRESUPUESTO APROBADO: ${{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                        @endif
                                     </thead>
                                     <tbody>
                                         @php
-                                            $seccion = 'PSICOLOGÍA INSTITUCIONAL';
                                             $psicologiaConceptos = $seccionesData[$seccion] ?? [];
                                             $totalPresupuesto = 0;
                                             $totalEjecucion = 0;
@@ -598,9 +678,183 @@
                                         @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL</strong></td>
-                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($totalPresupuesto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell total-ejecucion"><strong>{{ number_format($totalEjecucion, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell total-saldo {{ $totalSaldo < 0 ? 'negative' : '' }}"><strong>{{ number_format($totalSaldo, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-saldo {{ ($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion < 0 ? 'negative' : '' }}"><strong>{{ number_format(($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion, 0, ',', '.') }}</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Tabla 9: CAS -->
+                        <div class="section-table">
+                            <h3 class="section-title">CAS</h3>
+                            <div class="table-wrapper">
+                                <table class="data-table section-budget-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Concepto</th>
+                                            <th>Presupuesto</th>
+                                            <th>Ejecución</th>
+                                            <th>Saldo por ejecutar</th>
+                                        </tr>
+                                        @php
+                                            $seccion = 'CAS';
+                                            $presupuestoTotalSeccion = $presupuestosTotalesSecciones[$seccion] ?? 0;
+                                        @endphp
+                                        @if($presupuestoTotalSeccion > 0)
+                                        <tr class="presupuesto-aprobado-row">
+                                            <td colspan="4" style="text-align: center; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; font-weight: bold; padding: 12px;">
+                                                <i class="fas fa-check-circle"></i> PRESUPUESTO APROBADO: ${{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                        @endif
+                                    </thead>
+                                    <tbody>
+                                        @php
+                                            $casConceptos = $seccionesData[$seccion] ?? [];
+                                            $totalPresupuesto = 0;
+                                            $totalEjecucion = 0;
+                                            $totalSaldo = 0;
+                                        @endphp
+                                        @foreach($casConceptos as $concepto => $datos)
+                                            @php
+                                                $presupuesto = $datos['presupuesto'] ?? 0;
+                                                $ejecucion = $datos['ejecutado'] ?? 0;
+                                                $saldo = $datos['saldo'] ?? 0;
+                                                $totalPresupuesto += $presupuesto;
+                                                $totalEjecucion += $ejecucion;
+                                                $totalSaldo += $saldo;
+                                            @endphp
+                                            <tr>
+                                                <td>{{ $concepto }}</td>
+                                                <td class="number-cell editable" data-section="cas" data-concept="{{ $concepto }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
+                                                <td class="number-cell editable" data-section="cas" data-concept="{{ $concepto }}" data-type="ejecucion">{{ number_format($ejecucion, 0, ',', '.') }}</td>
+                                                <td class="number-cell calculated {{ $saldo < 0 ? 'negative' : '' }}">{{ number_format($saldo, 0, ',', '.') }}</td>
+                                            </tr>
+                                        @endforeach
+                                        <tr class="total-row">
+                                            <td><strong>TOTAL</strong></td>
+                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-ejecucion"><strong>{{ number_format($totalEjecucion, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-saldo {{ ($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion < 0 ? 'negative' : '' }}"><strong>{{ number_format(($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion, 0, ',', '.') }}</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Tabla 10: Consejería Universitaria -->
+                        <div class="section-table">
+                            <h3 class="section-title">Consejería Universitaria</h3>
+                            <div class="table-wrapper">
+                                <table class="data-table section-budget-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Concepto</th>
+                                            <th>Presupuesto</th>
+                                            <th>Ejecución</th>
+                                            <th>Saldo por ejecutar</th>
+                                        </tr>
+                                        @php
+                                            $seccion = 'CONSEJERÍA UNIVERSITARIA';
+                                            $presupuestoTotalSeccion = $presupuestosTotalesSecciones[$seccion] ?? 0;
+                                        @endphp
+                                        @if($presupuestoTotalSeccion > 0)
+                                        <tr class="presupuesto-aprobado-row">
+                                            <td colspan="4" style="text-align: center; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; font-weight: bold; padding: 12px;">
+                                                <i class="fas fa-check-circle"></i> PRESUPUESTO APROBADO: ${{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                        @endif
+                                    </thead>
+                                    <tbody>
+                                        @php
+                                            $consejeriaConceptos = $seccionesData[$seccion] ?? [];
+                                            $totalPresupuesto = 0;
+                                            $totalEjecucion = 0;
+                                            $totalSaldo = 0;
+                                        @endphp
+                                        @foreach($consejeriaConceptos as $concepto => $datos)
+                                            @php
+                                                $presupuesto = $datos['presupuesto'] ?? 0;
+                                                $ejecucion = $datos['ejecutado'] ?? 0;
+                                                $saldo = $datos['saldo'] ?? 0;
+                                                $totalPresupuesto += $presupuesto;
+                                                $totalEjecucion += $ejecucion;
+                                                $totalSaldo += $saldo;
+                                            @endphp
+                                            <tr>
+                                                <td>{{ $concepto }}</td>
+                                                <td class="number-cell editable" data-section="consejeria" data-concept="{{ $concepto }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
+                                                <td class="number-cell editable" data-section="consejeria" data-concept="{{ $concepto }}" data-type="ejecucion">{{ number_format($ejecucion, 0, ',', '.') }}</td>
+                                                <td class="number-cell calculated {{ $saldo < 0 ? 'negative' : '' }}">{{ number_format($saldo, 0, ',', '.') }}</td>
+                                            </tr>
+                                        @endforeach
+                                        <tr class="total-row">
+                                            <td><strong>TOTAL</strong></td>
+                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-ejecucion"><strong>{{ number_format($totalEjecucion, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-saldo {{ ($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion < 0 ? 'negative' : '' }}"><strong>{{ number_format(($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion, 0, ',', '.') }}</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Tabla 11: Departamento de Apoyo -->
+                        <div class="section-table">
+                            <h3 class="section-title">Departamento de Apoyo</h3>
+                            <div class="table-wrapper">
+                                <table class="data-table section-budget-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Concepto</th>
+                                            <th>Presupuesto</th>
+                                            <th>Ejecución</th>
+                                            <th>Saldo por ejecutar</th>
+                                        </tr>
+                                        @php
+                                            $seccion = 'DEPARTAMENTO DE APOYO';
+                                            $presupuestoTotalSeccion = $presupuestosTotalesSecciones[$seccion] ?? 0;
+                                        @endphp
+                                        @if($presupuestoTotalSeccion > 0)
+                                        <tr class="presupuesto-aprobado-row">
+                                            <td colspan="4" style="text-align: center; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; font-weight: bold; padding: 12px;">
+                                                <i class="fas fa-check-circle"></i> PRESUPUESTO APROBADO: ${{ number_format($presupuestoTotalSeccion, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                        @endif
+                                    </thead>
+                                    <tbody>
+                                        @php
+                                            $departamentoConceptos = $seccionesData[$seccion] ?? [];
+                                            $totalPresupuesto = 0;
+                                            $totalEjecucion = 0;
+                                            $totalSaldo = 0;
+                                        @endphp
+                                        @foreach($departamentoConceptos as $concepto => $datos)
+                                            @php
+                                                $presupuesto = $datos['presupuesto'] ?? 0;
+                                                $ejecucion = $datos['ejecutado'] ?? 0;
+                                                $saldo = $datos['saldo'] ?? 0;
+                                                $totalPresupuesto += $presupuesto;
+                                                $totalEjecucion += $ejecucion;
+                                                $totalSaldo += $saldo;
+                                            @endphp
+                                            <tr>
+                                                <td>{{ $concepto }}</td>
+                                                <td class="number-cell editable" data-section="departamento" data-concept="{{ $concepto }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
+                                                <td class="number-cell editable" data-section="departamento" data-concept="{{ $concepto }}" data-type="ejecucion">{{ number_format($ejecucion, 0, ',', '.') }}</td>
+                                                <td class="number-cell calculated {{ $saldo < 0 ? 'negative' : '' }}">{{ number_format($saldo, 0, ',', '.') }}</td>
+                                            </tr>
+                                        @endforeach
+                                        <tr class="total-row">
+                                            <td><strong>TOTAL</strong></td>
+                                            <td class="number-cell total-presupuesto"><strong>{{ number_format($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-ejecucion"><strong>{{ number_format($totalEjecucion, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-saldo {{ ($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion < 0 ? 'negative' : '' }}"><strong>{{ number_format(($presupuestoTotalSeccion > 0 ? $presupuestoTotalSeccion : $totalPresupuesto) - $totalEjecucion, 0, ',', '.') }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -698,6 +952,12 @@
                                 <button id="reset-filter" style="padding: 8px 15px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-left: 10px;">
                                     🔄 Mostrar Todo
                                 </button>
+                                
+                                @can('admin')
+                                <a href="{{ route('presupuesto.configurar-secciones') }}" class="btn btn-warning btn-sm" style="margin-left: 15px; padding: 8px 15px; text-decoration: none;">
+                                    <i class="fas fa-cogs"></i> Configurar Presupuesto Secciones
+                                </a>
+                                @endcan
                                 
                                 <button id="toggle-editable" style="padding: 8px 15px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-left: 10px;">
                                     ✏️ Hacer Editables

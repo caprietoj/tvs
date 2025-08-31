@@ -436,13 +436,17 @@
                     </table>
 
                     <!-- Items de la orden -->
+                    <div class="alert alert-info mt-3 mb-2" style="font-size: 12px; padding: 8px;">
+                        <strong>Nota:</strong> La columna "Impuestos" es solo para referencia en edición y no aparecerá en la orden de compra final.
+                    </div>
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
                         <tr style="background-color: #f0f0f0;">
                             <td style="font-weight: bold; text-align: center; border: 1px solid #000; padding: 4px; width: 6%;">ITEM</td>
-                            <td style="font-weight: bold; text-align: center; border: 1px solid #000; padding: 4px; width: 42%;">DESCRIPCIÓN</td>
+                            <td style="font-weight: bold; text-align: center; border: 1px solid #000; padding: 4px; width: 35%;">DESCRIPCIÓN</td>
                             <td style="font-weight: bold; text-align: center; border: 1px solid #000; padding: 4px; width: 8%;">CANT</td>
-                            <td style="font-weight: bold; text-align: center; border: 1px solid #000; padding: 4px; width: 14%;">VALOR UNIT</td>
-                            <td style="font-weight: bold; text-align: center; border: 1px solid #000; padding: 4px; width: 18%;">VALOR TOTAL</td>
+                            <td style="font-weight: bold; text-align: center; border: 1px solid #000; padding: 4px; width: 12%;">VALOR UNIT</td>
+                            <td style="font-weight: bold; text-align: center; border: 1px solid #000; padding: 4px; width: 15%;">VALOR TOTAL</td>
+                            <td style="font-weight: bold; text-align: center; border: 1px solid #000; padding: 4px; width: 12%;">IMPUESTOS</td>
                             <td style="font-weight: bold; text-align: center; border: 1px solid #000; padding: 4px; width: 12%;">ACCIONES</td>
                         </tr>
                         
@@ -489,6 +493,20 @@
                                                class="item-total-input" 
                                                value="{{ $item->total_price ?? 0 }}"
                                                data-index="{{ $loop->index }}">
+                                    </td>
+                                    <td style="text-align: center; border: 1px solid #000; padding: 4px;">
+                                        <select name="items[{{ $loop->index }}][tax_rate]" 
+                                                class="form-control form-control-sm border-0 item-tax" 
+                                                style="width: 100%; border: none; background: transparent; font-size: 11px;"
+                                                data-index="{{ $loop->index }}">
+                                            @php $currentTaxRate = isset($item->tax_rate) ? $item->tax_rate : 0; @endphp
+                                            <option value="0" {{ $currentTaxRate == 0 ? 'selected' : '' }}>Sin Imp</option>
+                                            <option value="4" {{ $currentTaxRate == 4 ? 'selected' : '' }}>4%</option>
+                                            <option value="5" {{ $currentTaxRate == 5 ? 'selected' : '' }}>5%</option>
+                                            <option value="8" {{ $currentTaxRate == 8 ? 'selected' : '' }}>8%</option>
+                                            <option value="16" {{ $currentTaxRate == 16 ? 'selected' : '' }}>16%</option>
+                                            <option value="19" {{ $currentTaxRate == 19 || (!isset($item->tax_rate)) ? 'selected' : '' }}>19%</option>
+                                        </select>
                                     </td>
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">
                                         <button type="button" 
@@ -552,6 +570,20 @@
                                                data-index="{{ $loop->index }}">
                                     </td>
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">
+                                        <select name="items[{{ $loop->index }}][tax_rate]" 
+                                                class="form-control form-control-sm border-0 item-tax" 
+                                                style="width: 100%; border: none; background: transparent; font-size: 11px;"
+                                                data-index="{{ $loop->index }}">
+                                            @php $currentTaxRate = isset($item->tax_rate) ? $item->tax_rate : 0; @endphp
+                                            <option value="0" {{ $currentTaxRate == 0 ? 'selected' : '' }}>Sin Imp</option>
+                                            <option value="4" {{ $currentTaxRate == 4 ? 'selected' : '' }}>4%</option>
+                                            <option value="5" {{ $currentTaxRate == 5 ? 'selected' : '' }}>5%</option>
+                                            <option value="8" {{ $currentTaxRate == 8 ? 'selected' : '' }}>8%</option>
+                                            <option value="16" {{ $currentTaxRate == 16 ? 'selected' : '' }}>16%</option>
+                                            <option value="19" {{ $currentTaxRate == 19 || (!isset($item->tax_rate)) ? 'selected' : '' }}>19%</option>
+                                        </select>
+                                    </td>
+                                    <td style="text-align: center; border: 1px solid #000; padding: 4px;">
                                         <button type="button" 
                                                 class="btn btn-outline-dark btn-sm" 
                                                 onclick="removeItem({{ $loop->index }}, 'quotation')"
@@ -601,6 +633,20 @@
                                                    class="item-total-input" 
                                                    value="{{ floatval($item['total'] ?? (floatval($item['quantity'] ?? 0) * floatval($item['unit_price'] ?? 0))) }}"
                                                    data-index="{{ $index }}">
+                                        </td>
+                                        <td style="text-align: center; border: 1px solid #000; padding: 4px;">
+                                            <select name="items[{{ $index }}][tax_rate]" 
+                                                    class="form-control form-control-sm border-0 item-tax" 
+                                                    style="width: 100%; border: none; background: transparent; font-size: 11px;"
+                                                    data-index="{{ $index }}">
+                                                @php $currentTaxRate = isset($item['tax_rate']) ? $item['tax_rate'] : 0; @endphp
+                                                <option value="0" {{ $currentTaxRate == 0 ? 'selected' : '' }}>Sin Imp</option>
+                                                <option value="4" {{ $currentTaxRate == 4 ? 'selected' : '' }}>4%</option>
+                                                <option value="5" {{ $currentTaxRate == 5 ? 'selected' : '' }}>5%</option>
+                                                <option value="8" {{ $currentTaxRate == 8 ? 'selected' : '' }}>8%</option>
+                                                <option value="16" {{ $currentTaxRate == 16 ? 'selected' : '' }}>16%</option>
+                                                <option value="19" {{ $currentTaxRate == 19 || (!isset($item['tax_rate'])) ? 'selected' : '' }}>19%</option>
+                                            </select>
                                         </td>
                                         <td style="text-align: center; border: 1px solid #000; padding: 4px;">
                                             <button type="button" 
@@ -737,6 +783,19 @@
                                            data-index="0">
                                 </td>
                                 <td style="text-align: center; border: 1px solid #000; padding: 4px;">
+                                    <select name="items[0][tax_rate]" 
+                                            class="form-control form-control-sm border-0 item-tax" 
+                                            style="width: 100%; border: none; background: transparent; font-size: 11px;"
+                                            data-index="0">
+                                        <option value="0" selected>Sin Imp</option>
+                                        <option value="4">4%</option>
+                                        <option value="5">5%</option>
+                                        <option value="8">8%</option>
+                                        <option value="16">16%</option>
+                                        <option value="19">19%</option>
+                                    </select>
+                                </td>
+                                <td style="text-align: center; border: 1px solid #000; padding: 4px;">
                                     <button type="button" 
                                             class="btn btn-outline-dark btn-sm" 
                                             onclick="removeItem(0, 'empty')"
@@ -797,6 +856,20 @@
                                                class="additional-total-input" 
                                                value="{{ $additionalTotal }}"
                                                data-index="{{ $i }}">
+                                    </td>
+                                    <td style="text-align: center; border: 1px solid #000; padding: 4px;">
+                                        <select name="additional_items[{{ $i }}][tax_rate]" 
+                                                class="form-control form-control-sm border-0 additional-tax" 
+                                                style="width: 100%; border: none; background: transparent; font-size: 11px;"
+                                                data-index="{{ $i }}">
+                                            @php $currentAdditionalTaxRate = isset($customData['additional_items'][$i]['tax_rate']) ? $customData['additional_items'][$i]['tax_rate'] : 0; @endphp
+                                            <option value="0" {{ $currentAdditionalTaxRate == 0 ? 'selected' : '' }}>Sin Imp</option>
+                                            <option value="4" {{ $currentAdditionalTaxRate == 4 ? 'selected' : '' }}>4%</option>
+                                            <option value="5" {{ $currentAdditionalTaxRate == 5 ? 'selected' : '' }}>5%</option>
+                                            <option value="8" {{ $currentAdditionalTaxRate == 8 ? 'selected' : '' }}>8%</option>
+                                            <option value="16" {{ $currentAdditionalTaxRate == 16 ? 'selected' : '' }}>16%</option>
+                                            <option value="19" {{ $currentAdditionalTaxRate == 19 || (!isset($customData['additional_items'][$i]['tax_rate'])) ? 'selected' : '' }}>19%</option>
+                                        </select>
                                     </td>
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">
                                         <button type="button" 
@@ -896,6 +969,7 @@
                                 <select name="ipoconsumo_rate" id="ipoconsumo-rate" class="form-control form-control-sm border-0" style="border: none; background: transparent;">
                                     <option value="0" {{ ($customData['ipoconsumo_rate'] ?? '0%') == '0%' ? 'selected' : '' }}>Sin Imp. Consumo</option>
                                     <option value="4" {{ ($customData['ipoconsumo_rate'] ?? '') == '4%' ? 'selected' : '' }}>Imp. Consumo (4%)</option>
+                                    <option value="5" {{ ($customData['ipoconsumo_rate'] ?? '') == '5%' ? 'selected' : '' }}>Imp. Consumo (5%)</option>
                                     <option value="8" {{ ($customData['ipoconsumo_rate'] ?? '') == '8%' ? 'selected' : '' }}>Imp. Consumo (8%)</option>
                                     <option value="16" {{ ($customData['ipoconsumo_rate'] ?? '') == '16%' ? 'selected' : '' }}>Imp. Consumo (16%)</option>
                                 </select>
@@ -912,6 +986,9 @@
                             <td style="text-align: right; font-weight: bold; border: 1px solid #000; padding: 4px; background-color: #ffff99;">
                                 <span id="calculated-total">${{ number_format($customData['total'] ?? $order->total_amount ?? 0, 0, ',', '.') }}</span>
                                 <input type="hidden" name="total" id="total-input" value="{{ $customData['total'] ?? $order->total_amount ?? 0 }}">
+                                <!-- Campos ocultos para impuestos individuales -->
+                                <input type="hidden" name="individual_taxes_total" id="individual-taxes-total-input" value="0">
+                                <input type="hidden" name="individual_taxes_breakdown" id="individual-taxes-breakdown-input" value="">
                             </td>
                         </tr>
                     </table>
@@ -961,6 +1038,10 @@
                 </a>
             </div>
         </div>
+        
+        <!-- Campos ocultos para enviar los totales de impuestos individuales -->
+        <input type="hidden" name="individual_taxes_total" id="individual_taxes_total" value="0">
+        <input type="hidden" name="individual_taxes_breakdown" id="individual_taxes_breakdown" value="{}">
     </form>
 
     <!-- Herramientas para Selección Mixta -->
@@ -1498,6 +1579,79 @@ $(document).ready(function() {
         return subtotal;
     }
 
+    // Nueva función para calcular impuestos individuales por item
+    function calculateIndividualTaxes() {
+        let totalIndividualTaxes = 0;
+        let taxBreakdown = {
+            '4': 0,
+            '5': 0,
+            '8': 0,
+            '16': 0,
+            '19': 0
+        };
+        
+        console.log('Calculando impuestos individuales...');
+        
+        // Calcular impuestos de items regulares
+        $('.item-tax').each(function() {
+            const row = $(this).closest('tr');
+            if (!row.hasClass('deleted-item')) {
+                const taxRate = parseFloat($(this).val()) || 0;
+                const itemTotal = parseFloat(row.find('.item-total-input').val()) || 0;
+                
+                console.log('Item regular - Tax rate:', taxRate, 'Item total:', itemTotal);
+                
+                if (taxRate > 0) {
+                    // Los impuestos individuales se calculan sobre el precio base del item
+                    const taxAmount = itemTotal * (taxRate / 100);
+                    totalIndividualTaxes += taxAmount;
+                    if (taxBreakdown[taxRate.toString()] !== undefined) {
+                        taxBreakdown[taxRate.toString()] += taxAmount;
+                    }
+                    console.log('Impuesto calculado:', taxAmount);
+                }
+            }
+        });
+        
+        // Calcular impuestos de items adicionales
+        $('.additional-tax').each(function() {
+            const row = $(this).closest('tr');
+            if (!row.hasClass('deleted-additional-item')) {
+                const taxRate = parseFloat($(this).val()) || 0;
+                const itemTotal = parseFloat(row.find('.additional-total-input').val()) || 0;
+                
+                console.log('Item adicional - Tax rate:', taxRate, 'Item total:', itemTotal);
+                
+                if (taxRate > 0) {
+                    // Los impuestos individuales se calculan sobre el precio base del item
+                    const taxAmount = itemTotal * (taxRate / 100);
+                    totalIndividualTaxes += taxAmount;
+                    if (taxBreakdown[taxRate.toString()] !== undefined) {
+                        taxBreakdown[taxRate.toString()] += taxAmount;
+                    }
+                    console.log('Impuesto adicional calculado:', taxAmount);
+                }
+            }
+        });
+        
+        console.log('Total impuestos individuales:', totalIndividualTaxes, 'Desglose:', taxBreakdown);
+        
+        // IMPORTANTE: Actualizar campos ocultos del formulario
+        $('#individual_taxes_total').val(totalIndividualTaxes);
+        $('#individual_taxes_breakdown').val(JSON.stringify(taxBreakdown));
+        
+        console.log('🔥 VALORES ASIGNADOS A CAMPOS OCULTOS:');
+        console.log('- Campo individual_taxes_total existe?', $('#individual_taxes_total').length > 0);
+        console.log('- Campo individual_taxes_breakdown existe?', $('#individual_taxes_breakdown').length > 0);
+        console.log('- Valor individual_taxes_total:', $('#individual_taxes_total').val());
+        console.log('- Valor individual_taxes_breakdown:', $('#individual_taxes_breakdown').val());
+        
+        return {
+            total: totalIndividualTaxes,
+            breakdown: taxBreakdown
+        };
+    }
+
     // Función para calcular IVA
     function calculateIva(subtotal) {
         const ivaRate = parseFloat($('#iva-rate').val()) || 0;
@@ -1525,12 +1679,49 @@ $(document).ready(function() {
         const subtotal = calculateSubtotal();
         const ivaAmount = calculateIva(subtotal);
         const ipoconsumoAmount = calculateIpoconsumo(subtotal);
-        const total = subtotal + ivaAmount + ipoconsumoAmount;
+        const individualTaxes = calculateIndividualTaxes();
+        
+        // El total incluye subtotal + IVA general + impuesto al consumo + impuestos individuales
+        const total = subtotal + ivaAmount + ipoconsumoAmount + individualTaxes.total;
         
         $('#calculated-total').text('$' + formatNumber(total));
         $('#total-input').val(total);
         
+        // Almacenar información de impuestos individuales
+        $('#individual_taxes_total').val(individualTaxes.total);
+        $('#individual_taxes_breakdown').val(JSON.stringify(individualTaxes.breakdown));
+        
+        console.log('Campos ocultos actualizados:');
+        console.log('- individual_taxes_total value:', $('#individual_taxes_total').val());
+        console.log('- individual_taxes_breakdown value:', $('#individual_taxes_breakdown').val());
+        
+        // Mostrar desglose de impuestos individuales si hay alguno
+        displayIndividualTaxBreakdown(individualTaxes.breakdown);
+        
         return total;
+    }
+
+    // Función para mostrar el desglose de impuestos individuales
+    function displayIndividualTaxBreakdown(taxBreakdown) {
+        let breakdownHtml = '';
+        let hasIndividualTaxes = false;
+        
+        for (const [rate, amount] of Object.entries(taxBreakdown)) {
+            if (amount > 0) {
+                hasIndividualTaxes = true;
+                breakdownHtml += `<div><small>Imp. Individual ${rate}%: $${formatNumber(amount)}</small></div>`;
+            }
+        }
+        
+        // Mostrar u ocultar el desglose
+        if (hasIndividualTaxes) {
+            if ($('#individual-tax-breakdown').length === 0) {
+                $('#calculated-total').parent().append('<div id="individual-tax-breakdown" style="margin-top: 5px; font-size: 11px; color: #666;"></div>');
+            }
+            $('#individual-tax-breakdown').html(breakdownHtml);
+        } else {
+            $('#individual-tax-breakdown').remove();
+        }
     }
 
     // Event listeners para items regulares
@@ -1547,6 +1738,18 @@ $(document).ready(function() {
         calculateTotal();
     });
 
+    // Event listeners para cambios de impuestos individuales de items
+    $(document).on('change', '.item-tax', function() {
+        console.log('Impuesto individual cambiado para item:', $(this).data('index'), 'nuevo valor:', $(this).val());
+        calculateTotal();
+    });
+
+    // Event listeners para cambios de impuestos individuales de items adicionales
+    $(document).on('change', '.additional-tax', function() {
+        console.log('Impuesto individual cambiado para item adicional:', $(this).data('index'), 'nuevo valor:', $(this).val());
+        calculateTotal();
+    });
+
     // Event listeners para cambios de impuestos
     $('#iva-rate, #ipoconsumo-rate').on('change', function() {
         calculateTotal();
@@ -1554,6 +1757,12 @@ $(document).ready(function() {
 
     // Calcular totales iniciales
     calculateTotal();
+    
+    // Forzar recálculo de impuestos individuales después de cargar la página
+    setTimeout(function() {
+        console.log('Recalculando impuestos después de carga de página...');
+        calculateTotal();
+    }, 500);
 
     // Autocarga de datos del proveedor
     $('#provider-select').on('change', function() {
@@ -2023,6 +2232,28 @@ $(document).ready(function() {
             selectedOption.text(sectionName + ' - ' + initialBudget);
         }
     }
+    
+    // Event listener para el envío del formulario
+    $('#pdf-edit-form').on('submit', function(e) {
+        console.log('Formulario enviándose...');
+        
+        // Calcular y actualizar los impuestos individuales antes del envío
+        calculateTotal();
+        
+        // Verificar que los campos ocultos tienen valores
+        const individualTaxesTotal = $('#individual_taxes_total').val();
+        const individualTaxesBreakdown = $('#individual_taxes_breakdown').val();
+        
+        console.log('Individual taxes total a enviar:', individualTaxesTotal);
+        console.log('Individual taxes breakdown a enviar:', individualTaxesBreakdown);
+        
+        if (!individualTaxesTotal) {
+            console.warn('ADVERTENCIA: individual_taxes_total está vacío');
+        }
+        if (!individualTaxesBreakdown || individualTaxesBreakdown === '{}') {
+            console.warn('ADVERTENCIA: individual_taxes_breakdown está vacío o es objeto vacío');
+        }
+    });
 });
 
 

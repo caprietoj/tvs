@@ -50,7 +50,17 @@ class PresupuestoProcessorService
         
         $centroCosto = trim((string)$centroCosto);
         
-        // Si el centro de costo tiene menos de 2 caracteres, asignar a OTROS
+        // Intentar buscar en la base de datos primero
+        try {
+            $centroCostoModel = \App\Models\CentroCosto::where('codigo', $centroCosto)->first();
+            if ($centroCostoModel && $centroCostoModel->seccion) {
+                return $centroCostoModel->seccion->nombre;
+            }
+        } catch (\Exception $e) {
+            // Si hay error con la BD, usar mapeo estático
+        }
+        
+        // Fallback: usar mapeo estático
         if (strlen($centroCosto) < 2) return 'OTROS';
         
         $prefix = substr($centroCosto, 0, 2);
@@ -64,6 +74,17 @@ class PresupuestoProcessorService
         
         $cuenta = trim((string)$cuenta);
         
+        // Intentar buscar en la base de datos primero
+        try {
+            $cuentaModel = \App\Models\Cuenta::where('codigo', $cuenta)->first();
+            if ($cuentaModel && $cuentaModel->rubro) {
+                return $cuentaModel->rubro->nombre;
+            }
+        } catch (\Exception $e) {
+            // Si hay error con la BD, usar mapeo estático
+        }
+        
+        // Fallback: usar mapeo estático
         // Convertir de hexadecimal si es necesario
         if (preg_match('/[A-Fa-f]/', $cuenta)) {
             try {

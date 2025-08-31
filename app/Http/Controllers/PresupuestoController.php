@@ -7,6 +7,8 @@ use Illuminate\Http\Response;
 use App\Models\BudgetExecution;
 use App\Models\PresupuestoItem;
 use App\Models\PresupuestoSpreadsheet;
+use App\Models\PresupuestoAprobado;
+use App\Models\PresupuestoSeccion;
 use App\Services\PresupuestoProcessorService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -710,6 +712,10 @@ class PresupuestoController extends Controller
         // Obtener datos dinámicos para las secciones
         $seccionesData = $this->getSectionData();
         
+        // Obtener presupuestos totales de secciones
+        $year = date('Y');
+        $presupuestosTotalesSecciones = PresupuestoSeccion::obtenerTodosPresupuestos($year);
+        
         // Obtener resumen consolidado por concepto
         $resumenConceptos = $this->getConceptSummary();
         
@@ -725,7 +731,7 @@ class PresupuestoController extends Controller
         // Cargar datos guardados del spreadsheet
         $spreadsheetData = $this->loadSpreadsheetData();
         
-        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData', 'budgetDataByConcept', 'spreadsheetData', 'availableMonths'));
+        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData', 'budgetDataByConcept', 'spreadsheetData', 'availableMonths', 'presupuestosTotalesSecciones'));
     }
 
     /**
@@ -953,6 +959,33 @@ class PresupuestoController extends Controller
      * Get budget data for specific concepts by section
      */
     private function getBudgetDataByConcept()
+    {
+        // Intentar obtener datos de la base de datos primero
+        $year = date('Y');
+        $budgetData = [];
+        
+        $secciones = ['PREESCOLAR Y PRIMARIA', 'ESCUELA MEDIA', 'ALTA'];
+        
+        foreach ($secciones as $seccion) {
+            $presupuestos = PresupuestoAprobado::obtenerPresupuestosPorSeccion($seccion, $year);
+            
+            if (!empty($presupuestos)) {
+                $budgetData[$seccion] = $presupuestos;
+            }
+        }
+        
+        // Si no hay datos en BD, usar datos por defecto (hardcoded)
+        if (empty($budgetData)) {
+            return $this->getDefaultBudgetData();
+        }
+        
+        return $budgetData;
+    }
+    
+    /**
+     * Datos de presupuesto por defecto (fallback)
+     */
+    private function getDefaultBudgetData()
     {
         return [
             'PREESCOLAR Y PRIMARIA' => [
@@ -1216,22 +1249,25 @@ class PresupuestoController extends Controller
 
         // Obtener datos de presupuesto y ejecución para cada sección
         $sectionData = [];
+        $year = date('Y');
         
-        // Obtener datos de presupuesto aprobado por concepto específico
-        $budgetDataByConcept = $this->getBudgetDataByConcept();
+        // Obtener presupuestos totales de secciones
+        $presupuestosSecciones = PresupuestoSeccion::obtenerTodosPresupuestos($year);
         
         foreach ($sectionConcepts as $seccion => $conceptos) {
             $sectionData[$seccion] = [];
             
+            // Obtener presupuesto total de la sección
+            $presupuestoTotalSeccion = $presupuestosSecciones[$seccion] ?? 0;
+            
+            // Calcular presupuesto por concepto (distribuir equitativamente)
+            $numeroConceptos = count($conceptos);
+            $presupuestoPorConcepto = $numeroConceptos > 0 ? $presupuestoTotalSeccion / $numeroConceptos : 0;
+            
             foreach ($conceptos as $concepto) {
                 // Inicializar valores
-                $presupuesto = 0;
+                $presupuesto = $presupuestoPorConcepto;
                 $ejecutado = 0;
-                
-                // Obtener presupuesto específico para este concepto desde getBudgetDataByConcept
-                if (isset($budgetDataByConcept[$seccion]) && isset($budgetDataByConcept[$seccion][$concepto])) {
-                    $presupuesto = $budgetDataByConcept[$seccion][$concepto];
-                }
                 
                 // Buscar datos de ejecución por concepto exacto
                 $query = PresupuestoItem::where('seccion', $seccion)
@@ -1965,5 +2001,79 @@ class PresupuestoController extends Controller
             'data' => $sectionsToReturn,
             'month' => $month
         ]);
+    }
+
+    /**
+     * Mostrar formulario para configurar presupuesto de secciones
+     */
+    public function configurarSecciones()
+    {
+        // Verificación de autorización
+        if (!auth()->user()->can('admin')) {
+            abort(403, 'No tiene permisos para realizar esta acción.');
+        }
+
+        $year = date('Y');
+        $secciones = [
+            'PREESCOLAR Y PRIMARIA', 
+            'ESCUELA MEDIA', 
+            'ALTA',
+            'PAI',
+            'PEP',
+            'DEPORTES',
+            'BIBLIOTECA',
+            'PSICOLOGÍA INSTITUCIONAL',
+            'CAS',
+            'CONSEJERÍA UNIVERSITARIA',
+            'DEPARTAMENTO DE APOYO'
+        ];
+        
+        // Obtener presupuestos actuales
+        $presupuestosActuales = PresupuestoSeccion::obtenerTodosPresupuestos($year);
+        
+        return view('presupuesto.configurar-secciones', compact('secciones', 'presupuestosActuales', 'year'));
+    }
+
+    /**
+     * Guardar configuración de presupuesto de secciones
+     */
+    public function guardarPresupuestoSecciones(Request $request)
+    {
+        // Verificación de autorización
+        if (!auth()->user()->can('admin')) {
+            abort(403, 'No tiene permisos para realizar esta acción.');
+        }
+
+        $request->validate([
+            'presupuestos' => 'required|array',
+            'presupuestos.*' => 'required|numeric|min:0',
+            'year' => 'required|integer|min:2020|max:2030'
+        ]);
+
+        try {
+            $year = $request->input('year');
+            $presupuestos = $request->input('presupuestos');
+
+            foreach ($presupuestos as $seccion => $monto) {
+                PresupuestoSeccion::updateOrCreate(
+                    [
+                        'seccion' => $seccion,
+                        'year' => $year
+                    ],
+                    [
+                        'presupuesto_total' => $monto,
+                        'activo' => true
+                    ]
+                );
+            }
+
+            return redirect()->route('presupuesto.configurar-secciones')
+                           ->with('success', 'Presupuestos de secciones actualizados correctamente.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                           ->withInput()
+                           ->with('error', 'Error al guardar presupuestos: ' . $e->getMessage());
+        }
     }
 }

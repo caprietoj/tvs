@@ -423,6 +423,60 @@
             performAjaxSearch();
         });
         
+        // Manejar clics en los enlaces de paginación
+        $(document).on('click', '#pagination-container .page-link', function(e) {
+            e.preventDefault();
+            const url = $(this).attr('href');
+            
+            if (url) {
+                // Extraer los parámetros de la URL
+                const urlParams = new URLSearchParams(url.split('?')[1]);
+                const page = urlParams.get('page');
+                
+                // Agregar el número de página al formulario actual
+                const formData = $('#filter-form').serialize() + (page ? '&page=' + page : '');
+                
+                $.ajax({
+                    url: '{{ route("purchase-requests.search") }}',
+                    type: 'GET',
+                    data: formData,
+                    beforeSend: function() {
+                        $('#table-container').html('<div class="text-center p-4"><i class="fas fa-spinner fa-spin fa-2x"></i><br><small>Cargando...</small></div>');
+                    },
+                    success: function(response) {
+                        $('#table-container').html(response.html);
+                        $('#pagination-container').html(response.pagination);
+                        
+                        // Reinicializar popovers después de actualizar la tabla
+                        $('[data-toggle="popover"]').popover({
+                            html: true,
+                            container: 'body'
+                        });
+                        
+                        // Scroll hacia arriba para ver los resultados
+                        $('html, body').animate({
+                            scrollTop: $('#table-container').offset().top - 100
+                        }, 500);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error AJAX en paginación:', xhr.responseText);
+                        let errorMessage = 'Error al cargar la página. Por favor, intente nuevamente.';
+                        
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.message) {
+                                errorMessage = response.message;
+                            }
+                        } catch (e) {
+                            // Si no es JSON, usar el mensaje por defecto
+                        }
+                        
+                        $('#table-container').html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle mr-2"></i>' + errorMessage + '</div>');
+                    }
+                });
+            }
+        });
+        
         // Manejar envío del formulario para evitar recarga de página
         $('#filter-form').on('submit', function(e) {
             e.preventDefault();
@@ -454,6 +508,24 @@
                 $('#partialSuccessModal').modal('show');
             }, 2000);
         @endif
+        
+        // Verificar si hay parámetros de filtro en la URL al cargar la página
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('type') || urlParams.has('section') || urlParams.has('request_number')) {
+            // Sincronizar los filtros con la URL
+            if (urlParams.has('type')) {
+                $('#type').val(urlParams.get('type'));
+            }
+            if (urlParams.has('section')) {
+                $('#section').val(urlParams.get('section'));
+            }
+            if (urlParams.has('request_number')) {
+                $('#request_number').val(urlParams.get('request_number'));
+            }
+            
+            // Realizar búsqueda automática si hay filtros
+            performAjaxSearch();
+        }
     });
 </script>
 @stop

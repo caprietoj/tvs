@@ -30,6 +30,7 @@ class ApprovalController extends Controller
         // Obtener filtros de la request
         $sectionFilter = $request->get('section');
         $typeFilter = $request->get('type');
+        $requestNumberFilter = $request->get('request_number');
         
         // Query base
         $query = PurchaseRequest::where(function($query) {
@@ -59,6 +60,11 @@ class ApprovalController extends Controller
             }
         }
         
+        // Aplicar filtro por número de solicitud si está presente
+        if ($requestNumberFilter) {
+            $query->where('request_number', 'like', '%' . $requestNumberFilter . '%');
+        }
+        
         $requests = $query->with(['quotations', 'user', 'preApprover', 'preApprovedQuotation', 'quotationItemSelections'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
@@ -73,7 +79,7 @@ class ApprovalController extends Controller
             ->sort()
             ->values();
 
-        return view('approvals.index', compact('requests', 'sections', 'sectionFilter', 'typeFilter'));
+        return view('approvals.index', compact('requests', 'sections', 'sectionFilter', 'typeFilter', 'requestNumberFilter'));
     }
 
     /**

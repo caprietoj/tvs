@@ -49,6 +49,27 @@ class PresupuestoItem extends Model
         return $query->whereBetween('fecha', [$fechaInicio, $fechaFin]);
     }
 
+    // Relaciones con las tablas de referencia
+    public function centroCostoModel()
+    {
+        return $this->belongsTo(CentroCosto::class, 'centro_costo', 'codigo');
+    }
+
+    public function cuentaModel()
+    {
+        return $this->belongsTo(Cuenta::class, 'cuenta', 'codigo');
+    }
+
+    public function seccionModel()
+    {
+        return $this->belongsTo(Seccion::class, 'seccion', 'nombre');
+    }
+
+    public function rubroModel()
+    {
+        return $this->belongsTo(Rubro::class, 'rubro', 'nombre');
+    }
+
     // Accessor para formatear el valor
     public function getValorFormateadoAttribute()
     {

@@ -62,6 +62,14 @@
                                     <i class="fas fa-file-pdf"></i> Editar PDF
                                 </a>
                             @endif
+                            @if(auth()->user()->can('admin'))
+                                <form action="{{ route('purchases.orders.repair', $purchaseOrder->id) }}" method="POST" style="display: inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-success" title="Validar y reparar datos de la orden">
+                                        <i class="fas fa-tools"></i> Reparar Datos
+                                    </button>
+                                </form>
+                            @endif
                             @if(($purchaseOrder->isPending() || ($purchaseOrder->status == 'approved' && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))) && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))
                                 <a href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}" class="btn btn-sm btn-secondary">
                                     <i class="fas fa-edit"></i> Editar Orden

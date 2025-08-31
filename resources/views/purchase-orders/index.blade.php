@@ -106,9 +106,61 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Lista de Órdenes de Compra</h3>
+            @if(auth()->user()->can('admin'))
+                <div class="card-tools">
+                    <form action="{{ route('purchases.orders.repair-all') }}" method="POST" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-warning" title="Validar y reparar todas las órdenes con problemas" onclick="return confirm('¿Estás seguro de que deseas reparar todas las órdenes? Esto puede tomar algunos minutos.')">
+                            <i class="fas fa-tools"></i> Reparar Todas las Órdenes
+                        </button>
+                    </form>
+                </div>
+            @endif
         </div>
         <!-- /.card-header -->
         <div class="card-body">
+            <!-- Filtros -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <form method="GET" action="{{ route('purchase-orders.index') }}" class="form-inline">
+                        <div class="form-group mr-3">
+                            <label for="request_number" class="mr-2"><strong>No. Solicitud:</strong></label>
+                            <input type="text" name="request_number" id="request_number" class="form-control" 
+                                   value="{{ $requestNumberFilter ?? '' }}" placeholder="Buscar por número...">
+                        </div>
+                        <div class="form-group mr-3">
+                            <label for="section" class="mr-2"><strong>Área/Sección:</strong></label>
+                            <select name="section" id="section" class="form-control">
+                                <option value="all">Todas las secciones</option>
+                                @foreach($sections as $section)
+                                    <option value="{{ $section }}" {{ ($sectionFilter ?? '') === $section ? 'selected' : '' }}>
+                                        {{ $section }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group mr-3">
+                            <label for="status" class="mr-2"><strong>Estado:</strong></label>
+                            <select name="status" id="status" class="form-control">
+                                <option value="all">Todos los estados</option>
+                                <option value="pending" {{ ($statusFilter ?? '') === 'pending' ? 'selected' : '' }}>Pendiente</option>
+                                <option value="approved" {{ ($statusFilter ?? '') === 'approved' ? 'selected' : '' }}>Aprobada</option>
+                                <option value="delivered" {{ ($statusFilter ?? '') === 'delivered' ? 'selected' : '' }}>Entregada</option>
+                                <option value="cancelled" {{ ($statusFilter ?? '') === 'cancelled' ? 'selected' : '' }}>Cancelada</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                            <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
             <div class="table-responsive">
                 <table class="table table-bordered table-striped" id="ordersTable">
                     <thead>

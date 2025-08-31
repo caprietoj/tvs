@@ -239,6 +239,81 @@
         </table>
         @endif
 
+        @php
+            // Determinar si se debe mostrar la columna de impuestos
+            $showTaxColumn = false;
+            $hasIndividualTaxes = false;
+            
+            // Verificar si hay impuestos individuales en customData
+            if (isset($customData) && is_array($customData)) {
+                // Verificar items regulares
+                if (isset($customData['items']) && is_array($customData['items'])) {
+                    foreach ($customData['items'] as $item) {
+                        if (isset($item['tax_rate']) && is_numeric($item['tax_rate'])) {
+                            $taxRate = floatval($item['tax_rate']);
+                            // Mostrar columna si hay cualquier impuesto diferente de 19% (incluyendo 0%)
+                            if ($taxRate != 19) {
+                                $hasIndividualTaxes = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Verificar items adicionales si no se encontraron en regulares
+                if (!$hasIndividualTaxes && isset($customData['additional_items']) && is_array($customData['additional_items'])) {
+                    foreach ($customData['additional_items'] as $item) {
+                        if (isset($item['tax_rate']) && is_numeric($item['tax_rate'])) {
+                            $taxRate = floatval($item['tax_rate']);
+                            // Mostrar columna si hay cualquier impuesto diferente de 19% (incluyendo 0%)
+                            if ($taxRate != 19) {
+                                $hasIndividualTaxes = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // También verificar si hay total de impuestos individuales
+                if (!$hasIndividualTaxes && isset($customData['individual_taxes_total']) && floatval($customData['individual_taxes_total']) > 0) {
+                    $hasIndividualTaxes = true;
+                }
+                
+                // También mostrar si hay breakdown con valores
+                if (!$hasIndividualTaxes && isset($customData['individual_taxes_breakdown']) && is_array($customData['individual_taxes_breakdown'])) {
+                    foreach ($customData['individual_taxes_breakdown'] as $rate => $amount) {
+                        if (floatval($amount) > 0) {
+                            $hasIndividualTaxes = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            $showTaxColumn = $hasIndividualTaxes;
+            
+            // Calcular el total correcto incluyendo impuestos individuales
+            $calculatedSubtotal = $subtotal ?? $order->subtotal ?? 0;
+            $calculatedIva = $ivaAmount ?? $order->iva_amount ?? 0;
+            $calculatedIndividualTaxes = 0;
+            
+            if (isset($customData['individual_taxes_total'])) {
+                $calculatedIndividualTaxes = floatval($customData['individual_taxes_total']);
+            }
+            
+            $calculatedTotal = $calculatedSubtotal + $calculatedIva + $calculatedIndividualTaxes;
+            
+            // Debug: log de la decisión
+            \Log::info('Cálculo de totales en PDF:', [
+                'subtotal' => $calculatedSubtotal,
+                'iva' => $calculatedIva, 
+                'individual_taxes' => $calculatedIndividualTaxes,
+                'total_calculado' => $calculatedTotal,
+                'total_original' => $totalAmount ?? $order->total_amount ?? 0,
+                'showTaxColumn' => $showTaxColumn
+            ]);
+        @endphp
+
         <!-- Items -->
         <table>
             <tr>
@@ -246,11 +321,21 @@
                 <td class="items-header">DESCRIPCIÓN</td>
                 <td class="items-header" style="width: 60px;">CANT</td>
                 <td class="items-header" style="width: 100px;">VALOR UNIT</td>
+                @if($showTaxColumn)
+                <td class="items-header" style="width: 80px;">IMPUESTO</td>
+                @endif
                 <td class="items-header" style="width: 100px;">VALOR TOTAL</td>
             </tr>
             
             @php
                 $itemsToShow = [];
+                
+                // Extraer items de customData si están disponibles
+                $customItems = [];
+                if (isset($customData) && is_array($customData) && isset($customData['items'])) {
+                    $customItems = $customData['items'];
+                }
+                
                 $useCustomData = isset($customItems) && !empty($customItems);
                 
                 // Detectar si es orden mixta
@@ -365,8 +450,20 @@
                     <td class="center">{{ $index + 1 }}</td>
                     <td>{{ $item['description'] ?? $item['item_description'] ?? 'N/A' }}</td>
                     <td class="center">{{ $item['quantity'] ?? $item['cantidad'] ?? 1 }}</td>
-                    <td class="right">${{ number_format($item['unit_price'] ?? $item['precio_unitario'] ?? $item['unit_price_display'] ?? 0, 0, ',', '.') }}</td>
-                    <td class="right">${{ number_format($item['total'] ?? $item['total_price'] ?? (($item['quantity'] ?? 1) * ($item['unit_price'] ?? 0)), 0, ',', '.') }}</td>
+                    <td class="right">${{ number_format(intval($item['unit_price'] ?? $item['precio_unitario'] ?? $item['unit_price_display'] ?? 0), 0, ',', '.') }}</td>
+                    @if($showTaxColumn)
+                    <td class="center">
+                        @php
+                            $itemTaxRate = $item['tax_rate'] ?? 0;
+                        @endphp
+                        @if($itemTaxRate > 0)
+                            {{ $itemTaxRate }}%
+                        @else
+                            -
+                        @endif
+                    </td>
+                    @endif
+                    <td class="right">${{ number_format(intval($item['total'] ?? $item['total_price'] ?? (($item['quantity'] ?? 1) * intval($item['unit_price'] ?? 0))), 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
             @else
@@ -375,6 +472,9 @@
                     <td>No hay items disponibles</td>
                     <td class="center">0</td>
                     <td class="right">0</td>
+                    @if($showTaxColumn)
+                    <td class="center">-</td>
+                    @endif
                     <td class="right">$0</td>
                 </tr>
             @endif
@@ -447,8 +547,22 @@
                 <td class="label">FECHA:</td>
                 <td class="value">{{ isset($approvalDate) ? \Carbon\Carbon::parse($approvalDate)->format('d/m/Y') : $order->created_at->format('d/m/Y') }}</td>
                 <td class="label bold">IVA (19%)</td>
-                <td class="value bold right">${{ number_format($ivaAmount ?? $order->iva_amount ?? 0, 0, ',', '.') }}</td>
+                <td class="value bold right">${{ number_format($calculatedIva, 0, ',', '.') }}</td>
             </tr>
+            @if($showTaxColumn && $calculatedIndividualTaxes > 0)
+            <tr>
+                <td class="label">PRESUPUESTO:</td>
+                <td class="value">{{ $budget ?? 'N/A' }}</td>
+                <td class="label bold">Imp. Individuales</td>
+                <td class="value bold right">${{ number_format($calculatedIndividualTaxes, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td class="label">SOLICITUD Nº:</td>
+                <td class="value">{{ $order->purchaseRequest->request_number ?? 'SC-0012' }}</td>
+                <td class="label bold">Sin Imp. Consumo</td>
+                <td class="value bold right">$0</td>
+            </tr>
+            @else
             <tr>
                 <td class="label">PRESUPUESTO:</td>
                 <td class="value">{{ $budget ?? 'N/A' }}</td>
@@ -459,8 +573,17 @@
                 <td class="label">SOLICITUD Nº:</td>
                 <td class="value">{{ $order->purchaseRequest->request_number ?? 'SC-0012' }}</td>
                 <td class="label bold">TOTAL A PAGAR</td>
-                <td class="value bold right">${{ number_format($totalAmount ?? $order->total_amount ?? 0, 0, ',', '.') }}</td>
+                <td class="value bold right">${{ number_format($calculatedTotal, 0, ',', '.') }}</td>
             </tr>
+            @endif
+            @if($showTaxColumn && $calculatedIndividualTaxes > 0)
+            <tr>
+                <td class="label"></td>
+                <td class="value"></td>
+                <td class="label bold">TOTAL A PAGAR</td>
+                <td class="value bold right">${{ number_format($calculatedTotal, 0, ',', '.') }}</td>
+            </tr>
+            @endif
         </table>
 
         <!-- Información de facturación -->

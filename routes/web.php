@@ -218,6 +218,10 @@ Route::middleware('auth')->group(function () {
         Route::delete('/presupuesto/clear-data', [PresupuestoController::class, 'clearData'])->name('presupuesto.clearData');
         Route::post('/presupuesto/clear-excel', [PresupuestoController::class, 'clearExcel'])->name('presupuesto.clear-excel');
         Route::get('/presupuesto/load-more-data', [PresupuestoController::class, 'loadMoreData'])->name('presupuesto.load-more-data');
+
+        // Rutas para configuración de presupuesto de secciones
+        Route::get('/presupuesto/configurar-secciones', [PresupuestoController::class, 'configurarSecciones'])->name('presupuesto.configurar-secciones');
+        Route::post('/presupuesto/guardar-presupuesto-secciones', [PresupuestoController::class, 'guardarPresupuestoSecciones'])->name('presupuesto.guardar-presupuesto-secciones');
         Route::post('/presupuesto/update-total', [PresupuestoController::class, 'updateTotal'])->name('presupuesto.update-total');
         Route::post('/presupuesto/update-cell', [PresupuestoController::class, 'updateCell'])->name('presupuesto.update-cell');
         
@@ -524,6 +528,10 @@ Route::middleware('auth')->group(function () {
         Route::get('orders/{order}/pdf', [PurchaseOrdersController::class, 'generatePdf'])->name('orders.pdf');
         Route::post('orders/{order}/mark-as-paid', [PurchaseOrdersController::class, 'markAsPaid'])
             ->name('orders.mark-as-paid');
+        Route::post('orders/{order}/repair', [PurchaseOrdersController::class, 'repairOrderData'])
+            ->name('orders.repair');
+        Route::post('orders/repair-all', [PurchaseOrdersController::class, 'repairAllOrders'])
+            ->name('orders.repair-all');
     });
 
     // Add Loan Request routes
