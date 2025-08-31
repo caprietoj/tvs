@@ -23,6 +23,10 @@ class Kernel extends ConsoleKernel
         // Reparación automática de órdenes de compra (solo dry-run para logging)
         $schedule->command('orders:repair --dry-run')->daily()
             ->description('Validación diaria de integridad de órdenes de compra');
+            
+        // Actualizar estados de salidas pedagógicas de Programada a Realizada
+        $schedule->command('salidas:update-estado')->daily()
+            ->description('Actualizar automáticamente estados de salidas pedagógicas');
     }
 
     protected function commands()

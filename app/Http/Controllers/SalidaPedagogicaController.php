@@ -21,6 +21,9 @@ class SalidaPedagogicaController extends Controller
                 ->with('error', 'No tienes permisos para acceder a esta sección.');
         }
 
+        // Actualizar estados automáticamente antes de mostrar el listado
+        $this->updateEstadosAutomatico();
+
         $salidas = SalidaPedagogica::with('responsable')->orderBy('fecha_salida', 'desc')->get();
         return view('salidas.index', compact('salidas'));
     }
@@ -269,7 +272,19 @@ class SalidaPedagogicaController extends Controller
 
     public function show(SalidaPedagogica $salida)
     {
-        $salida->load('responsable');
+        // Actualizar estado automáticamente si es necesario
+        if ($salida->estado === 'Programada' && $salida->fecha_salida && $salida->fecha_salida->isPast()) {
+            $salida->update(['estado' => 'Realizada']);
+            $salida->refresh();
+        }
+
+        $salida->load([
+            'responsable',
+            'transporteConfirmadoPor',
+            'alimentacionConfirmadaPor',
+            'accesosConfirmadosPor',
+            'enfermeriaConfirmadaPor'
+        ]);
         return view('salidas.show', compact('salida'));
     }
 
@@ -294,29 +309,29 @@ class SalidaPedagogicaController extends Controller
         }
 
         $validated = $request->validate([
-            'grados' => 'required|string',
-            'lugar' => 'required|string',
-            'responsable_id' => 'required|exists:users,id',
-            'fecha_salida' => 'required|date',
-            'hora_salida' => 'required',
-            'fecha_regreso' => 'required|date|after_or_equal:fecha_salida',
-            'hora_regreso' => 'required',
-            'cantidad_pasajeros' => 'required|integer|min:1',
-            'calendario_general' => 'nullable|boolean',
-            'visita_inspeccion' => 'nullable|boolean',
-            'detalles_inspeccion' => 'nullable|string',
-            'contacto_lugar' => 'nullable|string',
-            'observaciones' => 'nullable|string',
-            'requiere_alimentacion' => 'nullable|boolean',
-            'cantidad_snacks' => 'nullable|integer|min:0',
-            'cantidad_almuerzos' => 'nullable|integer|min:0',
-            'menu_sugerido' => 'nullable|string',
-            'hora_apertura_puertas' => 'nullable',
-            'requiere_enfermeria' => 'nullable|boolean',
-            'requiere_comunicaciones' => 'nullable|boolean',
-            'requiere_arl' => 'nullable|boolean',
-            'observaciones_comunicaciones' => 'nullable|string'
-        ]);
+                'grados' => 'required|string',
+                'lugar' => 'required|string',
+                'responsable_id' => 'required|exists:users,id',
+                'fecha_salida' => 'required|date',
+                'hora_salida' => 'required',
+                'fecha_regreso' => 'required|date|after_or_equal:fecha_salida',
+                'hora_regreso' => 'required',
+                'cantidad_pasajeros' => 'required|integer|min:1',
+                'calendario_general' => 'nullable|in:on,1,true',
+                'visita_inspeccion' => 'nullable|in:on,1,true',
+                'detalles_inspeccion' => 'nullable|string',
+                'contacto_lugar' => 'nullable|string',
+                'observaciones' => 'nullable|string',
+                'requiere_alimentacion' => 'nullable|in:on,1,true',
+                'cantidad_snacks' => 'nullable|integer|min:0',
+                'cantidad_almuerzos' => 'nullable|integer|min:0',
+                'menu_sugerido' => 'nullable|string',
+                'hora_apertura_puertas' => 'nullable',
+                'requiere_enfermeria' => 'nullable|in:on,1,true',
+                'requiere_comunicaciones' => 'nullable|in:on,1,true',
+                'requiere_arl' => 'nullable|in:on,1,true',
+                'observaciones_comunicaciones' => 'nullable|string'
+            ]);
 
         try {
             $data = [
@@ -345,6 +360,8 @@ class SalidaPedagogicaController extends Controller
             $salida->update($data);
 
             // Update or create calendar event
+            // TODO: Configurar correctamente la relación con eventos de calendario
+            /*
             if ($request->has('calendario_general')) {
                 Event::updateOrCreate(
                     ['salida_pedagogica_id' => $salida->id],
@@ -362,6 +379,7 @@ class SalidaPedagogicaController extends Controller
                 // Remove calendar event if calendario_general is unchecked
                 Event::where('salida_pedagogica_id', $salida->id)->delete();
             }
+            */
 
             return redirect()
                 ->route('salidas.show', $salida)
@@ -398,5 +416,171 @@ class SalidaPedagogicaController extends Controller
     {
         $salidas = SalidaPedagogica::with('responsable')->get();
         return view('salidas.reports', compact('salidas'));
+    }
+
+    /**
+     * Confirmar transporte
+     */
+    public function confirmarTransporte(SalidaPedagogica $salida)
+    {
+        try {
+            $salida->update([
+                'transporte_confirmado' => true,
+                'transporte_confirmado_por' => auth()->id(),
+                'transporte_confirmado_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transporte confirmado exitosamente',
+                'confirmed_by' => auth()->user()->name,
+                'confirmed_at' => now()->format('d/m/Y H:i')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al confirmar transporte: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Confirmar alimentación
+     */
+    public function confirmarAlimentacion(SalidaPedagogica $salida)
+    {
+        try {
+            $salida->update([
+                'alimentacion_confirmada' => true,
+                'alimentacion_confirmada_por' => auth()->id(),
+                'alimentacion_confirmada_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Alimentación confirmada exitosamente',
+                'confirmed_by' => auth()->user()->name,
+                'confirmed_at' => now()->format('d/m/Y H:i')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al confirmar alimentación: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Confirmar enfermería
+     */
+    public function confirmarEnfermeria(SalidaPedagogica $salida)
+    {
+        try {
+            $salida->update([
+                'enfermeria_confirmada' => true,
+                'enfermeria_confirmada_por' => auth()->id(),
+                'enfermeria_confirmada_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Enfermería confirmada exitosamente',
+                'confirmed_by' => auth()->user()->name,
+                'confirmed_at' => now()->format('d/m/Y H:i')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al confirmar enfermería: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Confirmar accesos
+     */
+    public function confirmarAccesos(SalidaPedagogica $salida)
+    {
+        try {
+            $salida->update([
+                'accesos_confirmados' => true,
+                'accesos_confirmados_por' => auth()->id(),
+                'accesos_confirmados_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Accesos confirmados exitosamente',
+                'confirmed_by' => auth()->user()->name,
+                'confirmed_at' => now()->format('d/m/Y H:i')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al confirmar accesos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Confirmar comunicaciones
+     */
+    public function confirmarComunicaciones(SalidaPedagogica $salida)
+    {
+        try {
+            $salida->update([
+                'comunicaciones_confirmada' => true,
+                'comunicaciones_confirmado_por' => auth()->id(),
+                'comunicaciones_confirmado_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Comunicaciones confirmadas exitosamente',
+                'confirmed_by' => auth()->user()->name,
+                'confirmed_at' => now()->format('d/m/Y H:i')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al confirmar comunicaciones: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Confirmar ARL
+     */
+    public function confirmarArl(SalidaPedagogica $salida)
+    {
+        try {
+            $salida->update([
+                'arl_confirmado' => true,
+                'arl_confirmado_por' => auth()->id(),
+                'arl_confirmado_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'ARL confirmado exitosamente',
+                'confirmed_by' => auth()->user()->name,
+                'confirmed_at' => now()->format('d/m/Y H:i')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al confirmar ARL: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Actualizar automáticamente los estados de las salidas pedagógicas
+     */
+    private function updateEstadosAutomatico()
+    {
+        SalidaPedagogica::where('estado', 'Programada')
+            ->whereDate('fecha_salida', '<', now())
+            ->update(['estado' => 'Realizada']);
     }
 }

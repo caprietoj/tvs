@@ -1,25 +1,110 @@
 @extends('adminlte::page')
 
-@section('title', 'Detalles de Salida Pedagógica')
+@section('title', 'Detalle de Salida')
 
 @section('content_header')
-<div class="container-fluid">
-    <div class="row mb-2">
-        <div class="col-sm-6">
-            <h1 class="text-primary">
-                <i class="fas fa-bus mr-2"></i>Salida Pedagógica {{ $salida->consecutivo }}
-            </h1>
-        </div>
-        <div class="col-sm-6">
-            <div class="float-right">
-                @if(!auth()->user()->hasRole('profesor'))
-                <a href="{{ route('salidas.edit', $salida) }}" class="btn btn-warning">
-                    <i class="fas fa-edit"></i> Editar Salida
-                </a>
-                @endif
-                <a href="{{ route('salidas.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver
-                </a>
+<div class="content-header" style="background: linear-gradient(135deg, #233e6c 0%, #1a2d56 100%); color: white; padding: 2.5rem 0; margin-bottom: 2rem; position: relative; overflow: hidden;">
+    <!-- Decorative Elements -->
+    <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%; opacity: 0.3;"></div>
+    <div style="position: absolute; bottom: -30px; left: -30px; width: 100px; height: 100px; background: rgba(255,255,255,0.08); border-radius: 50%;"></div>
+    
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-lg-8 col-md-7">
+                <div class="header-content">
+                    <!-- Title Section -->
+                    <div class="title-section mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="icon-wrapper mr-3" style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 12px; backdrop-filter: blur(10px);">
+                                <i class="fas fa-route" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div>
+                                <h1 class="h2 font-weight-bold mb-1" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                                    {{ $salida->consecutivo }}
+                                </h1>
+                                <div class="subtitle-badge" style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; display: inline-block;">
+                                    <small class="font-weight-medium">
+                                        <i class="fas fa-calendar-alt mr-1"></i>
+                                        {{ \Carbon\Carbon::parse($salida->fecha_salida)->format('d/m/Y') }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Location -->
+                    <p class="lead mb-3" style="font-weight: 500; opacity: 0.95;">
+                        <i class="fas fa-map-marker-alt mr-2"></i>{{ $salida->lugar }}
+                    </p>
+                    
+                    <!-- Status and Progress -->
+                    <div class="d-flex align-items-center flex-wrap">
+                        @if($salida->estado === 'Programada')
+                            <span class="status-badge badge-programada mr-3 mb-2" style="background: rgba(52, 168, 83, 0.9); padding: 8px 16px; border-radius: 25px; font-size: 0.9rem;">
+                                <i class="fas fa-calendar-check mr-2"></i>{{ $salida->estado }}
+                            </span>
+                        @elseif($salida->estado === 'Realizada')
+                            <span class="status-badge badge-realizada mr-3 mb-2" style="background: rgba(52, 168, 83, 0.9); padding: 8px 16px; border-radius: 25px; font-size: 0.9rem;">
+                                <i class="fas fa-check-circle mr-2"></i>{{ $salida->estado }}
+                            </span>
+                        @else
+                            <span class="status-badge badge-cancelada mr-3 mb-2" style="background: rgba(234, 67, 53, 0.9); padding: 8px 16px; border-radius: 25px; font-size: 0.9rem;">
+                                <i class="fas fa-times-circle mr-2"></i>{{ $salida->estado }}
+                            </span>
+                        @endif
+                        
+                        @php
+                            $servicios = [
+                                'transporte' => $salida->transporte_confirmado,
+                                'alimentacion' => $salida->requiere_alimentacion ? $salida->alimentacion_confirmada : true,
+                                'enfermeria' => $salida->requiere_enfermeria ? $salida->enfermeria_confirmada : true,
+                                'accesos' => $salida->accesos_confirmados,
+                                'comunicaciones' => $salida->requiere_comunicaciones ? $salida->comunicaciones_confirmada : true,
+                                'arl' => $salida->requiere_arl ? $salida->arl_confirmado : true
+                            ];
+                            $confirmados = collect($servicios)->filter()->count();
+                            $total = count($servicios);
+                            $porcentaje = ($confirmados / $total) * 100;
+                        @endphp
+                        
+                        <div class="progress-section mb-2" style="min-width: 280px;">
+                            <div class="d-flex align-items-center mb-1">
+                                <small class="text-white-50 mr-2">Servicios Confirmados:</small>
+                                <strong>{{ $confirmados }}/{{ $total }}</strong>
+                            </div>
+                            <div class="progress-container" style="background: rgba(255,255,255,0.15); border-radius: 25px; padding: 3px; backdrop-filter: blur(10px);">
+                                <div class="progress" style="height: 24px; background: transparent; border-radius: 22px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ $porcentaje }}%; background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%); border-radius: 20px; transition: width 0.6s ease;" 
+                                         aria-valuenow="{{ $porcentaje }}" aria-valuemin="0" aria-valuemax="100">
+                                        <span class="font-weight-bold text-white" style="font-size: 0.85rem; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                                            {{ round($porcentaje) }}%
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-5 text-right">
+                <div class="action-buttons">
+                    @if(!auth()->user()->hasRole('profesor'))
+                    <a href="{{ route('salidas.edit', $salida) }}" class="btn btn-edit btn-lg mr-2 shadow-lg mb-2" 
+                       style="background: rgba(255,255,255,0.9); color: #233e6c; border: none; border-radius: 12px; padding: 12px 24px; font-weight: 600; transition: all 0.3s ease; backdrop-filter: blur(10px);"
+                       onmouseover="this.style.background='rgba(255,255,255,1)'; this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,0.9)'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-edit mr-2"></i>Editar Salida
+                    </a>
+                    @endif
+                    <a href="{{ route('salidas.index') }}" class="btn btn-back btn-lg shadow-lg mb-2" 
+                       style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); border-radius: 12px; padding: 12px 24px; font-weight: 600; transition: all 0.3s ease; backdrop-filter: blur(10px);"
+                       onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-arrow-left mr-2"></i>Volver al Listado
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -27,260 +112,807 @@
 @stop
 
 @section('content')
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmServiceModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-question-circle mr-2"></i>Confirmar Servicio
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5>¿Confirmar este servicio?</h5>
+                    <p class="text-muted">Esta acción marcará el servicio como confirmado.</p>
+                    <div class="mt-3">
+                        <strong>Servicio: </strong><span id="serviceTitle"></span><br>
+                        <strong>Usuario: </strong>{{ auth()->user()->name }}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success" id="confirmServiceBtn">
+                    <i class="fas fa-check mr-1"></i>Confirmar Servicio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Éxito -->
+<div class="modal fade" id="successModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle mr-2"></i>Confirmación Exitosa
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h4 class="text-success mb-3">¡Servicio Confirmado!</h4>
+                    <p id="successMessage" class="lead"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-dismiss="modal">
+                    <i class="fas fa-thumbs-up mr-1"></i>Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid">
-    <!-- Estado General -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="info-box">
-                <span class="info-box-icon bg-{{ $salida->estado === 'Programada' ? 'primary' : 
-                    ($salida->estado === 'Realizada' ? 'success' : 'danger') }}">
-                    <i class="fas fa-{{ $salida->estado === 'Programada' ? 'clock' : 
-                        ($salida->estado === 'Realizada' ? 'check' : 'times') }}"></i>
-                </span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Estado de la Salida</span>
-                    <span class="info-box-number">{{ $salida->estado }}</span>
-                    <div class="progress">
-                        <div class="progress-bar bg-{{ $salida->estado === 'Programada' ? 'primary' : 
-                            ($salida->estado === 'Realizada' ? 'success' : 'danger') }}" 
-                            style="width: 100%"></div>
+    <!-- Información General - Diseño Profesional -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+                <div class="card-header bg-primary text-white" style="background: #233e6c !important; padding: 1.5rem;">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-circle bg-white mr-3" style="width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #233e6c;">
+                            <i class="fas fa-info-circle fa-lg"></i>
+                        </div>
+                        <h3 class="card-title mb-0 font-weight-bold">Información General de la Salida Pedagógica</h3>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <!-- Detalles Principales -->
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Información General</h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
+                <div class="card-body" style="padding: 2rem;">
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="info-group mb-3">
-                                <label class="text-muted">Responsable</label>
-                                <p class="h5">{{ $salida->responsable->name }}</p>
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="info-card h-100 p-3" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; border-left: 4px solid #3b82f6;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-user-tie text-primary mr-2 fa-lg"></i>
+                                    <h6 class="text-muted font-weight-bold mb-0">RESPONSABLE</h6>
+                                </div>
+                                <p class="h5 text-dark font-weight-600 mb-0">{{ $salida->responsable->name }}</p>
                             </div>
-                            <div class="info-group mb-3">
-                                <label class="text-muted">Lugar</label>
-                                <p class="h5">{{ $salida->lugar }}</p>
-                            </div>
-                            <div class="info-group">
-                                <label class="text-muted">Grados</label>
-                                <p class="h5">{{ $salida->grados }}</p>
-                            </div>
-                            <div class="info-group mt-3">
-                                <label class="text-muted">Visita de Inspección</label>
-                                <p class="h5">
-                                    @if($salida->visita_inspeccion)
-                                        <span class="badge badge-success"><i class="fas fa-check-circle"></i> Requerida</span>
-                                    @else
-                                        <span class="badge badge-secondary"><i class="fas fa-times-circle"></i> No requerida</span>
-                                    @endif
-                                </p>
-                            </div>
-                            @if($salida->visita_inspeccion && $salida->detalles_inspeccion)
-                            <div class="info-group mt-2">
-                                <label class="text-muted">Detalles de la Inspección</label>
-                                <p>{{ $salida->detalles_inspeccion }}</p>
-                            </div>
-                            @endif
                         </div>
-                        <div class="col-md-6">
-                            <div class="info-group mb-3">
-                                <label class="text-muted">Fecha de Salida</label>
-                                <p class="h5">
-                                    <i class="far fa-calendar-alt mr-1"></i>
-                                    {{ $salida->fecha_salida->format('d/m/Y H:i') }}
+                        
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="info-card h-100 p-3" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; border-left: 4px solid #10b981;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-graduation-cap text-success mr-2 fa-lg"></i>
+                                    <h6 class="text-muted font-weight-bold mb-0">GRADOS</h6>
+                                </div>
+                                <span class="badge badge-success badge-lg px-3 py-2" style="font-size: 1rem;">{{ $salida->grados }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="info-card h-100 p-3" style="background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%); border-radius: 12px; border-left: 4px solid #f59e0b;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-calendar-alt text-warning mr-2 fa-lg"></i>
+                                    <h6 class="text-muted font-weight-bold mb-0">FECHA</h6>
+                                </div>
+                                <p class="h5 text-dark font-weight-600 mb-0">{{ \Carbon\Carbon::parse($salida->fecha_salida)->format('d/m/Y') }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="info-card h-100 p-3" style="background: linear-gradient(135deg, #fdf4ff 0%, #f3e8ff 100%); border-radius: 12px; border-left: 4px solid #8b5cf6;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-clock text-purple mr-2 fa-lg" style="color: #8b5cf6;"></i>
+                                    <h6 class="text-muted font-weight-bold mb-0">HORARIO</h6>
+                                </div>
+                                <p class="h5 text-dark font-weight-600 mb-0">
+                                    {{ \Carbon\Carbon::parse($salida->fecha_salida)->format('H:i') }} - 
+                                    {{ \Carbon\Carbon::parse($salida->fecha_regreso)->format('H:i') }}
                                 </p>
                             </div>
-                            <div class="info-group mb-3">
-                                <label class="text-muted">Fecha de Regreso</label>
-                                <p class="h5">
-                                    <i class="far fa-calendar-check mr-1"></i>
-                                    {{ $salida->fecha_regreso->format('d/m/Y H:i') }}
-                                </p>
+                        </div>
+                        
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="info-card h-100 p-3" style="background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%); border-radius: 12px; border-left: 4px solid #3b82f6;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-users text-info mr-2 fa-lg"></i>
+                                    <h6 class="text-muted font-weight-bold mb-0">PASAJEROS</h6>
+                                </div>
+                                <p class="h5 text-dark font-weight-600 mb-0">{{ $salida->cantidad_pasajeros }} personas</p>
                             </div>
-                            <div class="info-group">
-                                <label class="text-muted">Cantidad de Pasajeros</label>
-                                <p class="h5">
-                                    <i class="fas fa-users mr-1"></i>
-                                    {{ $salida->cantidad_pasajeros }}
-                                </p>
+                        </div>
+                        
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="info-card h-100 p-3" style="background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); border-radius: 12px; border-left: 4px solid #ef4444;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-map-marker-alt text-danger mr-2 fa-lg"></i>
+                                    <h6 class="text-muted font-weight-bold mb-0">DESTINO</h6>
+                                </div>
+                                <p class="h6 text-dark font-weight-500 mb-0 text-wrap">{{ $salida->lugar }}</p>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Timeline de Estados -->
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-history mr-2"></i>Línea de Tiempo</h3>
-                </div>
-                <div class="card-body p-0">
-                    <div class="timeline timeline-inverse p-3">
-                        <!-- Fecha de Solicitud -->
-                        <div class="time-label">
-                            <span class="bg-primary">{{ $salida->fecha_solicitud->format('d M Y') }}</span>
-                        </div>
-                        <div>
-                            <i class="fas fa-file bg-primary"></i>
-                            <div class="timeline-item">
-                                <span class="time"><i class="far fa-clock"></i> Creación</span>
-                                <h3 class="timeline-header">Solicitud Registrada</h3>
+                    
+                    @if($salida->observaciones)
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="alert alert-info border-0 shadow-sm" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 12px;">
+                                <div class="d-flex align-items-start">
+                                    <i class="fas fa-comment-alt text-info mr-3 mt-1 fa-lg"></i>
+                                    <div>
+                                        <h6 class="font-weight-bold text-info mb-2">Observaciones Especiales</h6>
+                                        <p class="mb-0 text-dark">{{ $salida->observaciones }}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        <!-- Estados de Confirmación -->
-                        @if($salida->transporte_confirmado)
-                        <div>
-                            <i class="fas fa-bus bg-success"></i>
-                            <div class="timeline-item">
-                                <h3 class="timeline-header">Transporte Confirmado</h3>
-                            </div>
-                        </div>
-                        @endif
-
-                        @if($salida->requiere_alimentacion)
-                        <div>
-                            <i class="fas fa-utensils bg-{{ $salida->alimentacion_confirmada ? 'success' : 'warning' }}"></i>
-                            <div class="timeline-item">
-                                <h3 class="timeline-header">Alimentación {{ $salida->alimentacion_confirmada ? 'Confirmada' : 'Pendiente' }}</h3>
-                            </div>
-                        </div>
-                        @endif
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Servicios Requeridos -->
+    <!-- Estado de Servicios - Diseño Profesional -->
     <div class="row">
-        @include('salidas.partials.service-card', [
-            'icon' => 'bus',
-            'title' => 'Transporte',
-            'status' => $salida->transporte_confirmado,
-            'details' => [
-                'Hora Salida' => $salida->hora_salida_bus,
-                'Hora Regreso' => $salida->hora_regreso_bus
-            ]
-        ])
-
-        @if($salida->requiere_alimentacion)
-            @include('salidas.partials.service-card', [
-                'icon' => 'utensils',
-                'title' => 'Alimentación',
-                'status' => $salida->alimentacion_confirmada,
-                'details' => [
-                    'Snacks' => $salida->cantidad_snacks,
-                    'Almuerzos' => $salida->cantidad_almuerzos,
-                    'Menú' => $salida->menu_sugerido
-                ]
-            ])
-        @endif
-
-        @if($salida->requiere_enfermeria)
-            @include('salidas.partials.service-card', [
-                'icon' => 'heartbeat',
-                'title' => 'Enfermería',
-                'status' => $salida->enfermeria_confirmada,
-                'details' => []
-            ])
-        @endif
-        
-        @if($salida->requiere_comunicaciones)
-            @include('salidas.partials.service-card', [
-                'icon' => 'bullhorn',
-                'title' => 'Comunicaciones',
-                'status' => false,
-                'details' => [
-                    'Observaciones' => $salida->observaciones_comunicaciones
-                ]
-            ])
-        @endif
-        
-        @if($salida->requiere_arl)
-            @include('salidas.partials.service-card', [
-                'icon' => 'medkit',
-                'title' => 'Reporte ARL',
-                'status' => false,
-                'details' => [
-                    'Estado' => 'Reportado a Gestión Humana'
-                ]
-            ])
-        @endif
-
-        @if($salida->visita_inspeccion)
-            @include('salidas.partials.service-card', [
-                'icon' => 'search',
-                'title' => 'Visita de Inspección',
-                'status' => true,
-                'details' => [
-                    'Detalles' => $salida->detalles_inspeccion
-                ]
-            ])
-        @endif
+        <div class="col-12">
+            <div class="card border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+                <div class="card-header text-white" style="background: #233e6c !important; padding: 1.5rem;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-white mr-3" style="width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #233e6c;">
+                                <i class="fas fa-clipboard-check fa-lg"></i>
+                            </div>
+                            <h3 class="card-title mb-0 font-weight-bold">Estado de Servicios Requeridos</h3>
+                        </div>
+                        <div class="progress-summary bg-white text-dark px-3 py-2 rounded-pill">
+                            <strong>{{ $confirmados }}/{{ $total }} Confirmados</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 2rem;">
+                    <div class="row">
+                        <!-- Transporte -->
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="service-card h-100 {{ $salida->transporte_confirmado ? 'confirmed' : 'pending' }}" 
+                                 style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+                                <div class="service-header p-3 text-white d-flex align-items-center justify-content-between" 
+                                     style="background: {{ $salida->transporte_confirmado ? '#233e6c' : '#6c757d' }};">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-bus fa-2x mr-3"></i>
+                                        <div>
+                                            <h5 class="mb-0 font-weight-bold">Transporte</h5>
+                                            <small>Servicio Obligatorio</small>
+                                        </div>
+                                    </div>
+                                    @if($salida->transporte_confirmado)
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    @else
+                                        <i class="fas fa-clock fa-2x"></i>
+                                    @endif
+                                </div>
+                                <div class="service-body p-3">
+                                    @if($salida->transporte_confirmado)
+                                        <div class="alert alert-success border-0 mb-3" style="background: #d4edda; color: #155724;">
+                                            <i class="fas fa-check mr-2"></i>
+                                            <strong>Confirmado</strong>
+                                        </div>
+                                        @if($salida->transporteConfirmadoPor)
+                                            <p class="text-muted mb-1"><strong>Confirmado por:</strong> {{ $salida->transporteConfirmadoPor->name }}</p>
+                                        @endif
+                                        @if($salida->transporte_confirmado_at)
+                                            <p class="text-muted mb-0"><strong>Fecha:</strong> {{ $salida->transporte_confirmado_at->format('d/m/Y H:i') }}</p>
+                                        @endif
+                                    @else
+                                        <button class="btn btn-sm confirm-service-btn shadow" 
+                                                data-service="transporte" 
+                                                data-title="Transporte"
+                                                style="background: #233e6c; color: white; border: none; border-radius: 6px; font-weight: 500; padding: 8px 16px; width: 100%;">
+                                            <i class="fas fa-check mr-2"></i>Confirmar Servicio
+                                        </button>
+                                        <p class="text-muted text-center mt-2 mb-0" style="font-size: 0.875rem;">
+                                            <i class="fas fa-info-circle mr-1"></i>Pendiente de confirmación
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Alimentación -->
+                        @if($salida->requiere_alimentacion)
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="service-card h-100 {{ $salida->alimentacion_confirmada ? 'confirmed' : 'pending' }}" 
+                                 style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+                                <div class="service-header p-3 text-white d-flex align-items-center justify-content-between" 
+                                     style="background: {{ $salida->alimentacion_confirmada ? '#233e6c' : '#6c757d' }};">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-utensils fa-2x mr-3"></i>
+                                        <div>
+                                            <h5 class="mb-0 font-weight-bold">Alimentación</h5>
+                                            <small>Servicio Requerido</small>
+                                        </div>
+                                    </div>
+                                    @if($salida->alimentacion_confirmada)
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    @else
+                                        <i class="fas fa-clock fa-2x"></i>
+                                    @endif
+                                </div>
+                                <div class="service-body p-3">
+                                    @if($salida->alimentacion_confirmada)
+                                        <div class="alert alert-success border-0 mb-3" style="background: #d4edda; color: #155724;">
+                                            <i class="fas fa-check mr-2"></i>
+                                            <strong>Confirmado</strong>
+                                        </div>
+                                        @if($salida->alimentacionConfirmadaPor)
+                                            <p class="text-muted mb-1"><strong>Confirmado por:</strong> {{ $salida->alimentacionConfirmadaPor->name }}</p>
+                                        @endif
+                                        @if($salida->alimentacion_confirmada_at)
+                                            <p class="text-muted mb-0"><strong>Fecha:</strong> {{ $salida->alimentacion_confirmada_at->format('d/m/Y H:i') }}</p>
+                                        @endif
+                                    @else
+                                        <button class="btn btn-sm confirm-service-btn shadow" 
+                                                data-service="alimentacion" 
+                                                data-title="Alimentación"
+                                                style="background: #233e6c; color: white; border: none; border-radius: 6px; font-weight: 500; padding: 8px 16px; width: 100%;">
+                                            <i class="fas fa-check mr-2"></i>Confirmar Servicio
+                                        </button>
+                                        <p class="text-muted text-center mt-2 mb-0" style="font-size: 0.875rem;">
+                                            <i class="fas fa-info-circle mr-1"></i>Pendiente de confirmación
+                                        </p> 
+                                                data-title="Alimentación"
+                                                style="border-radius: 8px; font-weight: bold;">
+                                            <i class="fas fa-check mr-2"></i>Confirmar Servicio
+                                        </button>
+                                        <p class="text-muted text-center mt-2 mb-0">
+                                            <i class="fas fa-info-circle mr-1"></i>Pendiente de confirmación
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                        
+                        <!-- Enfermería -->
+                        @if($salida->requiere_enfermeria)
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="service-card h-100 {{ $salida->enfermeria_confirmada ? 'confirmed' : 'pending' }}" 
+                                 style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+                                <div class="service-header p-3 text-white d-flex align-items-center justify-content-between" 
+                                     style="background: {{ $salida->enfermeria_confirmada ? '#233e6c' : '#6c757d' }};">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-plus-circle fa-2x mr-3"></i>
+                                        <div>
+                                            <h5 class="mb-0 font-weight-bold">Enfermería</h5>
+                                            <small>Servicio Requerido</small>
+                                        </div>
+                                    </div>
+                                    @if($salida->enfermeria_confirmada)
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    @else
+                                        <i class="fas fa-clock fa-2x"></i>
+                                    @endif
+                                </div>
+                                <div class="service-body p-3">
+                                    @if($salida->enfermeria_confirmada)
+                                        <div class="alert alert-success border-0 mb-3" style="background: #d4edda; color: #155724;">
+                                            <i class="fas fa-check mr-2"></i>
+                                            <strong>Confirmado</strong>
+                                        </div>
+                                        @if($salida->enfermeriaConfirmadaPor)
+                                            <p class="text-muted mb-1"><strong>Confirmado por:</strong> {{ $salida->enfermeriaConfirmadaPor->name }}</p>
+                                        @endif
+                                        @if($salida->enfermeria_confirmada_at)
+                                            <p class="text-muted mb-0"><strong>Fecha:</strong> {{ $salida->enfermeria_confirmada_at->format('d/m/Y H:i') }}</p>
+                                        @endif
+                                    @else
+                                        <button class="btn btn-sm confirm-service-btn shadow" 
+                                                data-service="enfermeria" 
+                                                data-title="Enfermería"
+                                                style="background: #233e6c; color: white; border: none; border-radius: 6px; font-weight: 500; padding: 8px 16px; width: 100%;">
+                                            <i class="fas fa-check mr-2"></i>Confirmar Servicio
+                                        </button>
+                                        <p class="text-muted text-center mt-2 mb-0" style="font-size: 0.875rem;">
+                                            <i class="fas fa-info-circle mr-1"></i>Pendiente de confirmación
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                        
+                        <!-- Accesos -->
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="service-card h-100 {{ $salida->accesos_confirmados ? 'confirmed' : 'pending' }}" 
+                                 style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+                                <div class="service-header p-3 text-white d-flex align-items-center justify-content-between" 
+                                     style="background: {{ $salida->accesos_confirmados ? '#233e6c' : '#6c757d' }};">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-key fa-2x mr-3"></i>
+                                        <div>
+                                            <h5 class="mb-0 font-weight-bold">Control de Accesos</h5>
+                                            <small>Servicio Obligatorio</small>
+                                        </div>
+                                    </div>
+                                    @if($salida->accesos_confirmados)
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    @else
+                                        <i class="fas fa-clock fa-2x"></i>
+                                    @endif
+                                </div>
+                                <div class="service-body p-3">
+                                    @if($salida->accesos_confirmados)
+                                        <div class="alert alert-success border-0 mb-3" style="background: #d4edda; color: #155724;">
+                                            <i class="fas fa-check mr-2"></i>
+                                            <strong>Confirmado</strong>
+                                        </div>
+                                        @if($salida->accesosConfirmadosPor)
+                                            <p class="text-muted mb-1"><strong>Confirmado por:</strong> {{ $salida->accesosConfirmadosPor->name }}</p>
+                                        @endif
+                                        @if($salida->accesos_confirmados_at)
+                                            <p class="text-muted mb-0"><strong>Fecha:</strong> {{ $salida->accesos_confirmados_at->format('d/m/Y H:i') }}</p>
+                                        @endif
+                                    @else
+                                        <button class="btn btn-sm confirm-service-btn shadow" 
+                                                data-service="accesos" 
+                                                data-title="Control de Accesos"
+                                                style="background: #233e6c; color: white; border: none; border-radius: 6px; font-weight: 500; padding: 8px 16px; width: 100%;">
+                                            <i class="fas fa-check mr-2"></i>Confirmar Servicio
+                                        </button>
+                                        <p class="text-muted text-center mt-2 mb-0" style="font-size: 0.875rem;">
+                                            <i class="fas fa-info-circle mr-1"></i>Pendiente de confirmación
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Comunicaciones -->
+                        @if($salida->requiere_comunicaciones)
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="service-card h-100 {{ $salida->comunicaciones_confirmada ? 'confirmed' : 'pending' }}" 
+                                 style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+                                <div class="service-header p-3 text-white d-flex align-items-center justify-content-between" 
+                                     style="background: {{ $salida->comunicaciones_confirmada ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }};">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-bullhorn fa-2x mr-3"></i>
+                                        <div>
+                                            <h5 class="mb-0 font-weight-bold">Comunicaciones</h5>
+                                            <small>Servicio Requerido</small>
+                                        </div>
+                                    </div>
+                                    @if($salida->comunicaciones_confirmada)
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    @else
+                                        <i class="fas fa-clock fa-2x"></i>
+                                    @endif
+                                </div>
+                                <div class="service-body p-3">
+                                    @if($salida->comunicaciones_confirmada)
+                                        <div class="alert alert-success border-0 mb-3" style="background: #f0fdf4;">
+                                            <i class="fas fa-check mr-2"></i>
+                                            <strong>Confirmado</strong>
+                                        </div>
+                                        @if($salida->comunicacionesConfirmadaPor)
+                                            <p class="text-muted mb-1"><strong>Confirmado por:</strong> {{ $salida->comunicacionesConfirmadaPor->name }}</p>
+                                        @endif
+                                        @if($salida->comunicaciones_confirmada_at)
+                                            <p class="text-muted mb-0"><strong>Fecha:</strong> {{ $salida->comunicaciones_confirmada_at->format('d/m/Y H:i') }}</p>
+                                        @endif
+                                    @else
+                                        <button class="btn btn-warning btn-block confirm-service-btn shadow" 
+                                                data-service="comunicaciones" 
+                                                data-title="Comunicaciones"
+                                                style="border-radius: 8px; font-weight: bold;">
+                                            <i class="fas fa-check mr-2"></i>Confirmar Servicio
+                                        </button>
+                                        <p class="text-muted text-center mt-2 mb-0">
+                                            <i class="fas fa-info-circle mr-1"></i>Pendiente de confirmación
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                        
+                        <!-- ARL -->
+                        @if($salida->requiere_arl)
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="service-card h-100 {{ $salida->arl_confirmado ? 'confirmed' : 'pending' }}" 
+                                 style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+                                <div class="service-header p-3 text-white d-flex align-items-center justify-content-between" 
+                                     style="background: {{ $salida->arl_confirmado ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }};">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-medkit fa-2x mr-3"></i>
+                                        <div>
+                                            <h5 class="mb-0 font-weight-bold">ARL</h5>
+                                            <small>Servicio Requerido</small>
+                                        </div>
+                                    </div>
+                                    @if($salida->arl_confirmado)
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    @else
+                                        <i class="fas fa-clock fa-2x"></i>
+                                    @endif
+                                </div>
+                                <div class="service-body p-3">
+                                    @if($salida->arl_confirmado)
+                                        <div class="alert alert-success border-0 mb-3" style="background: #f0fdf4;">
+                                            <i class="fas fa-check mr-2"></i>
+                                            <strong>Confirmado</strong>
+                                        </div>
+                                        @if($salida->arlConfirmadoPor)
+                                            <p class="text-muted mb-1"><strong>Confirmado por:</strong> {{ $salida->arlConfirmadoPor->name }}</p>
+                                        @endif
+                                        @if($salida->arl_confirmado_at)
+                                            <p class="text-muted mb-0"><strong>Fecha:</strong> {{ $salida->arl_confirmado_at->format('d/m/Y H:i') }}</p>
+                                        @endif
+                                    @else
+                                        <button class="btn btn-warning btn-block confirm-service-btn shadow" 
+                                                data-service="arl" 
+                                                data-title="ARL"
+                                                style="border-radius: 8px; font-weight: bold;">
+                                            <i class="fas fa-check mr-2"></i>Confirmar Servicio
+                                        </button>
+                                        <p class="text-muted text-center mt-2 mb-0">
+                                            <i class="fas fa-info-circle mr-1"></i>Pendiente de confirmación
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 @stop
 
 @section('css')
 <style>
-    .info-box-icon { font-size: 1.5rem; }
-    .info-group label { font-size: 0.9rem; margin-bottom: 0.2rem; }
-    .info-group p { margin-bottom: 0; }
-    .timeline { margin: 0; padding: 0; position: relative; }
-    .timeline::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 4px;
-        background: #ddd;
-        left: 31px;
-        margin: 0;
-        border-radius: 2px;
+/* Estilos profesionales para la vista de salidas */
+body {
+    background: #f8fafc;
+}
+
+.content-header {
+    border-radius: 0 0 25px 25px;
+    position: relative;
+    overflow: hidden;
+}
+
+.content-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.05)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.badge-lg {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+}
+
+.info-card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+}
+
+.service-card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.08);
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important;
+}
+
+.service-header {
+    position: relative;
+    overflow: hidden;
+}
+
+.service-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.service-card:hover .service-header::before {
+    left: 100%;
+}
+
+.icon-circle {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.progress {
+    border-radius: 50px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #10b981, #059669) !important;
+    position: relative;
+    transition: width 1s ease;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-image: linear-gradient(
+        -45deg,
+        rgba(255, 255, 255, .2) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, .2) 50%,
+        rgba(255, 255, 255, .2) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 30px 30px;
+    animation: move 2s linear infinite;
+}
+
+@keyframes move {
+    0% {
+        background-position: 0 0;
     }
-    .time-label { margin-bottom: 1rem; }
+    100% {
+        background-position: 30px 30px;
+    }
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    color: white;
+}
+
+.btn-lg {
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+}
+
+.card {
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+}
+
+.alert {
+    border: none;
+    border-radius: 10px;
+}
+
+.text-wrap {
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.font-weight-600 {
+    font-weight: 600;
+}
+
+.font-weight-500 {
+    font-weight: 500;
+}
+
+/* Modal mejoras */
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+    border-top: none;
+    padding: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .content-header {
+        padding: 1rem 0 !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .content-header h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    .content-header .lead {
+        font-size: 1rem;
+    }
+    
+    .btn-lg {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .info-card {
+        margin-bottom: 1rem;
+    }
+    
     .service-card {
-        transition: transform 0.2s;
-        cursor: pointer;
+        margin-bottom: 1.5rem;
     }
-    .service-card:hover {
-        transform: translateY(-5px);
+}
+
+/* Animaciones de carga */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
     }
-    .card-header { 
-        background-color: #364E76 !important; 
-        color: white;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
-    .btn-primary { 
-        background-color: #364E76; 
-        border-color: #364E76; 
-    }
-    .btn-primary:hover { 
-        background-color: #2B3E5F; 
-        border-color: #2B3E5F; 
-    }
+}
+
+.card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.service-card:nth-child(1) { animation-delay: 0.1s; }
+.service-card:nth-child(2) { animation-delay: 0.2s; }
+.service-card:nth-child(3) { animation-delay: 0.3s; }
+.service-card:nth-child(4) { animation-delay: 0.4s; }
+.service-card:nth-child(5) { animation-delay: 0.5s; }
+.service-card:nth-child(6) { animation-delay: 0.6s; }
 </style>
 @stop
 
 @section('js')
 <script>
 $(document).ready(function() {
-    $('.service-card').click(function() {
-        $(this).find('.collapse').collapse('toggle');
+    let currentService = '';
+    let currentSalidaId = {{ $salida->id }};
+
+    // Función para mostrar modal de confirmación
+    $('.confirm-service-btn').on('click', function() {
+        currentService = $(this).data('service');
+        const serviceTitle = $(this).data('title');
+        
+        $('#serviceTitle').text(serviceTitle);
+        $('#confirmServiceModal').modal('show');
+    });
+
+    // Confirmar servicio
+    $('#confirmServiceBtn').on('click', function() {
+        const $btn = $(this);
+        const originalText = $btn.html();
+        
+        $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i>Confirmando...').prop('disabled', true);
+
+        // Determinar la URL según el servicio
+        let url = '';
+        switch(currentService) {
+            case 'transporte':
+                url = "{{ route('salidas.confirmar-transporte', $salida->id) }}";
+                break;
+            case 'alimentacion':
+                url = "{{ route('salidas.confirmar-alimentacion', $salida->id) }}";
+                break;
+            case 'enfermeria':
+                url = "{{ route('salidas.confirmar-enfermeria', $salida->id) }}";
+                break;
+            case 'accesos':
+                url = "{{ route('salidas.confirmar-accesos', $salida->id) }}";
+                break;
+            case 'comunicaciones':
+                url = "{{ route('salidas.confirmar-comunicaciones', $salida->id) }}";
+                break;
+            case 'arl':
+                url = "{{ route('salidas.confirmar-arl', $salida->id) }}";
+                break;
+            default:
+                alert('Servicio no válido');
+                $btn.html(originalText).prop('disabled', false);
+                return;
+        }
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                $('#confirmServiceModal').modal('hide');
+                $('#successMessage').text('El servicio ha sido confirmado exitosamente.');
+                $('#successModal').modal('show');
+                
+                // Recargar la página después de cerrar el modal de éxito
+                $('#successModal').on('hidden.bs.modal', function() {
+                    location.reload();
+                });
+            },
+            error: function(xhr) {
+                $('#confirmServiceModal').modal('hide');
+                alert('Error: ' + (xhr.responseJSON?.message || 'Ha ocurrido un error inesperado.'));
+            },
+            complete: function() {
+                $btn.html(originalText).prop('disabled', false);
+            }
+        });
     });
 });
 </script>

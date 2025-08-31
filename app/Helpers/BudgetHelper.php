@@ -43,7 +43,6 @@ class BudgetHelper
         return [
             'Preescolar y Prim.' => [
                 'Capacitación',
-                'Administración',
                 'Material Importado',
                 'Material deportivo',
                 'Musicales',

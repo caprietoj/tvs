@@ -496,6 +496,20 @@ Route::middleware('auth')->group(function () {
     Route::resource('salidas', SalidaPedagogicaController::class);
     Route::get('salidas/confirmar/{id}/{area}/{token}', [SalidaPedagogicaController::class, 'confirmarArea'])
         ->name('salidas.confirmar-area');
+    
+    // Rutas para confirmaciones de servicios de salidas pedagógicas
+    Route::post('salidas/{salida}/confirmar-transporte', [SalidaPedagogicaController::class, 'confirmarTransporte'])
+        ->name('salidas.confirmar-transporte');
+    Route::post('salidas/{salida}/confirmar-alimentacion', [SalidaPedagogicaController::class, 'confirmarAlimentacion'])
+        ->name('salidas.confirmar-alimentacion');
+    Route::post('salidas/{salida}/confirmar-enfermeria', [SalidaPedagogicaController::class, 'confirmarEnfermeria'])
+        ->name('salidas.confirmar-enfermeria');
+    Route::post('salidas/{salida}/confirmar-accesos', [SalidaPedagogicaController::class, 'confirmarAccesos'])
+        ->name('salidas.confirmar-accesos');
+    Route::post('salidas/{salida}/confirmar-comunicaciones', [SalidaPedagogicaController::class, 'confirmarComunicaciones'])
+        ->name('salidas.confirmar-comunicaciones');
+    Route::post('salidas/{salida}/confirmar-arl', [SalidaPedagogicaController::class, 'confirmarArl'])
+        ->name('salidas.confirmar-arl');
 
     Route::prefix('proveedores')->group(function () {
         Route::get('/', [ProveedorController::class, 'index'])->name('proveedores.index');
@@ -692,6 +706,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('purchase-orders.edit');
     Route::put('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'update'])
         ->name('purchase-orders.update');
+    Route::post('purchase-orders/{purchaseOrder}/toggle-viewed', [PurchaseOrdersController::class, 'toggleViewed'])
+        ->name('purchase-orders.toggle-viewed');
     
     // Rutas específicas para administradores y personal de compras - Edición de PDF
     Route::middleware(['auth', 'admin_or_compras'])->group(function () {

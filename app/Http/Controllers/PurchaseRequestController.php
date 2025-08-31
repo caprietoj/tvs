@@ -329,9 +329,11 @@ class PurchaseRequestController extends Controller
             ->paginate(10);        // Mantener los parámetros de filtro en la paginación
         $requests->appends($request->query());
         
-        // Obtener todas las secciones para el filtro
+        // Obtener todas las secciones para el filtro (excluyendo "Primaria" y "Pre Escolar")
         $sections = PurchaseRequest::distinct()
             ->whereNotNull('section_area')
+            ->where('section_area', '!=', 'Primaria')
+            ->where('section_area', '!=', 'Pre Escolar')
             ->pluck('section_area')
             ->sort()
             ->values();

@@ -27,6 +27,8 @@ class SalidaPedagogica extends Model
         'detalles_inspeccion',
         'contacto_lugar',
         'transporte_confirmado',
+        'transporte_confirmado_por',
+        'transporte_confirmado_at',
         'hora_salida_bus',
         'hora_regreso_bus',
         'requiere_alimentacion',
@@ -36,14 +38,26 @@ class SalidaPedagogica extends Model
         'menu_sugerido',
         'observaciones_dieteticas',
         'alimentacion_confirmada',
+        'alimentacion_confirmada_por',
+        'alimentacion_confirmada_at',
         'hora_apertura_puertas',
         'accesos_confirmados',
+        'accesos_confirmados_por',
+        'accesos_confirmados_at',
         'requiere_enfermeria',
         'enfermeria_confirmada',
+        'enfermeria_confirmada_por',
+        'enfermeria_confirmada_at',
         'observaciones_medicas',
         'requiere_comunicaciones',
+        'comunicaciones_confirmada',
+        'comunicaciones_confirmado_por',
+        'comunicaciones_confirmado_at',
         'observaciones_comunicaciones',
         'requiere_arl',
+        'arl_confirmado',
+        'arl_confirmado_por',
+        'arl_confirmado_at',
         'estado',
         'motivo_cancelacion'
     ];
@@ -52,6 +66,12 @@ class SalidaPedagogica extends Model
         'fecha_solicitud' => 'datetime',
         'fecha_salida' => 'datetime',
         'fecha_regreso' => 'datetime',
+        'transporte_confirmado_at' => 'datetime',
+        'alimentacion_confirmada_at' => 'datetime',
+        'accesos_confirmados_at' => 'datetime',
+        'enfermeria_confirmada_at' => 'datetime',
+        'comunicaciones_confirmado_at' => 'datetime',
+        'arl_confirmado_at' => 'datetime',
         'calendario_general' => 'boolean',
         'visita_inspeccion' => 'boolean',
         'transporte_confirmado' => 'boolean',
@@ -61,12 +81,69 @@ class SalidaPedagogica extends Model
         'requiere_enfermeria' => 'boolean',
         'enfermeria_confirmada' => 'boolean',
         'requiere_comunicaciones' => 'boolean',
-        'requiere_arl' => 'boolean'
+        'comunicaciones_confirmada' => 'boolean',
+        'requiere_arl' => 'boolean',
+        'arl_confirmado' => 'boolean'
     ];
 
     public function responsable()
     {
         return $this->belongsTo(User::class, 'responsable_id');
+    }
+
+    // Relaciones con usuarios que confirmaron cada servicio
+    public function transporteConfirmadoPor()
+    {
+        return $this->belongsTo(User::class, 'transporte_confirmado_por');
+    }
+
+    public function alimentacionConfirmadaPor()
+    {
+        return $this->belongsTo(User::class, 'alimentacion_confirmada_por');
+    }
+
+    public function accesosConfirmadosPor()
+    {
+        return $this->belongsTo(User::class, 'accesos_confirmados_por');
+    }
+
+    public function enfermeriaConfirmadaPor()
+    {
+        return $this->belongsTo(User::class, 'enfermeria_confirmada_por');
+    }
+
+    public function comunicacionesConfirmadoPor()
+    {
+        return $this->belongsTo(User::class, 'comunicaciones_confirmado_por');
+    }
+
+    public function arlConfirmadoPor()
+    {
+        return $this->belongsTo(User::class, 'arl_confirmado_por');
+    }
+
+    /**
+     * Actualizar el estado automáticamente basado en la fecha de salida
+     */
+    public function updateEstadoAutomatico()
+    {
+        if ($this->estado === 'Programada' && $this->fecha_salida && $this->fecha_salida->isPast()) {
+            $this->update(['estado' => 'Realizada']);
+        }
+    }
+
+    /**
+     * Accessor para obtener el estado actualizado automáticamente
+     */
+    public function getEstadoAttribute($value)
+    {
+        // Si el estado es 'Programada' y la fecha ya pasó, actualizar automáticamente
+        if ($value === 'Programada' && $this->fecha_salida && $this->fecha_salida->isPast()) {
+            $this->updateQuietly(['estado' => 'Realizada']);
+            return 'Realizada';
+        }
+        
+        return $value;
     }
 
     protected static function boot()
@@ -81,6 +158,11 @@ class SalidaPedagogica extends Model
             if (!$salida->fecha_solicitud) {
                 $salida->fecha_solicitud = now();
             }
+        });
+
+        // Actualizar estado automáticamente al cargar el modelo
+        static::retrieved(function ($salida) {
+            $salida->updateEstadoAutomatico();
         });
     }
 }
