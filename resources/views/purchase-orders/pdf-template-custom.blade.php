@@ -401,6 +401,47 @@
                             'observations' => $selection->observations ?? ''
                         ];
                     }
+                } elseif ($order->purchaseRequest && $order->purchaseRequest->type === 'services' && $order->purchaseRequest->service_items) {
+                    // Para solicitudes de servicios, usar service_items
+                    $serviceItems = is_string($order->purchaseRequest->service_items) ? 
+                                   json_decode($order->purchaseRequest->service_items, true) : 
+                                   $order->purchaseRequest->service_items;
+                    
+                    $itemsToShow = [];
+                    if (is_array($serviceItems)) {
+                        // Para servicios con cotización, usar el SUBTOTAL de la cotización (sin IVA)
+                        // Para servicios sin cotización, usar el presupuesto de la solicitud
+                        $serviceBudget = 0;
+                        if ($order->purchaseRequest->selectedQuotation) {
+                            // Usar subtotal, no total_amount (que incluye IVA)
+                            $serviceBudget = floatval($order->purchaseRequest->selectedQuotation->subtotal ?? 
+                                                    $order->purchaseRequest->selectedQuotation->total_amount ?? 0);
+                        } else {
+                            $serviceBudget = floatval($order->purchaseRequest->budget ?? $order->total_amount ?? 0);
+                        }
+                        
+                        $itemCount = count($serviceItems);
+                        
+                        // Si hay presupuesto, dividirlo entre los items
+                        $pricePerItem = $itemCount > 0 ? $serviceBudget / $itemCount : $serviceBudget;
+                        
+                        foreach ($serviceItems as $index => $serviceItem) {
+                            $quantity = intval($serviceItem['quantity'] ?? 1);
+                            
+                            // Para servicios, calcular el valor por item
+                            $totalPerItem = $pricePerItem;
+                            $unitPrice = $quantity > 0 ? $totalPerItem / $quantity : $totalPerItem;
+                            
+                            $itemsToShow[] = [
+                                'description' => $serviceItem['description'] ?? 'Servicio ' . ($index + 1),
+                                'quantity' => $quantity,
+                                'unit_price' => $unitPrice,
+                                'total' => $totalPerItem,
+                                'unit' => 'Servicio',
+                                'observations' => ''
+                            ];
+                        }
+                    }
                 } elseif (isset($items) && !empty($items)) {
                     // Usar items regulares
                     $itemsToShow = $items;

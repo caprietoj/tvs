@@ -77,9 +77,50 @@ class PurchaseOrdersController extends Controller
                       ->orWhere(function($subQuery) {
                           $subQuery->where('type', 'services')
                                    ->where('service_type', 'no_quotation');
+                      })
+                      // O solicitudes de compra/servicios que se quedaron sin órdenes de compra (por eliminación)
+                      ->orWhere(function($subQuery) {
+                          $subQuery->whereIn('type', ['purchase', 'services'])
+                                   ->whereDoesntHave('purchaseOrders');
                       });
             })
             ->get()
+            ->map(function($request) {
+                // Auto-reparar solicitudes huérfanas que no tienen cotización seleccionada
+                if (!$request->selected_quotation_id && !$request->quotationItemSelections()->exists()) {
+                    $hadOrders = PurchaseOrder::where('purchase_request_id', $request->id)->withTrashed()->count() > 0;
+                    
+                    if ($hadOrders) {
+                        // Buscar la orden eliminada para obtener el proveedor correcto
+                        $deletedOrder = PurchaseOrder::where('purchase_request_id', $request->id)
+                            ->withTrashed()
+                            ->with(['provider'])
+                            ->first();
+                            
+                        if ($deletedOrder && $deletedOrder->provider) {
+                            // Buscar la cotización del mismo proveedor que tenía la orden eliminada
+                            $correctQuotation = $request->quotations()
+                                ->where('provider_name', $deletedOrder->provider->nombre)
+                                ->first();
+                                
+                            if ($correctQuotation) {
+                                $request->selected_quotation_id = $correctQuotation->id;
+                                $request->save();
+                                $request->refresh(); // Recargar la relación
+                            }
+                        } else {
+                            // Si no se puede encontrar el proveedor, usar la primera cotización como respaldo
+                            $firstQuotation = $request->quotations()->first();
+                            if ($firstQuotation) {
+                                $request->selected_quotation_id = $firstQuotation->id;
+                                $request->save();
+                                $request->refresh();
+                            }
+                        }
+                    }
+                }
+                return $request;
+            })
             ->filter(function($request) {
                 // Usar consultas directas para contar órdenes (las relaciones Eloquent tienen problemas con soft deletes)
                 $totalOrders = PurchaseOrder::where('purchase_request_id', $request->id)->withTrashed()->count();
@@ -151,7 +192,12 @@ class PurchaseOrdersController extends Controller
         $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
         $isNoQuotationService = $purchaseRequest->isNoQuotationService();
         
-        if (!$hasSelectedQuotation && !$hasMixedSelection && !$isNoQuotationService) {
+        // Verificar si es una solicitud "huérfana" (tuvo órdenes pero se eliminaron)
+        $hadPreviousOrders = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)
+            ->withTrashed()
+            ->count() > 0;
+        
+        if (!$hasSelectedQuotation && !$hasMixedSelection && !$isNoQuotationService && !$hadPreviousOrders) {
             return redirect()->route('purchase-requests.show', $purchaseRequest->id)
                 ->with('error', 'La solicitud no tiene una cotización seleccionada, selección mixta, ni es un servicio sin cotización.');
         }
@@ -1035,29 +1081,75 @@ class PurchaseOrdersController extends Controller
     {
         // Solo administradores y personal de compras pueden eliminar órdenes de compra
         if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
+            $errorMessage = 'No tienes permisos para eliminar órdenes de compra.';
+            
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 403);
+            }
+            
             return redirect()->route('purchase-orders.index')
-                ->with('error', 'No tienes permisos para eliminar órdenes de compra.');
+                ->with('error', $errorMessage);
         }
 
         // Se pueden eliminar órdenes pendientes o aprobadas (solo admin)
         if (!in_array($purchaseOrder->status, ['pending', 'approved'])) {
+            $errorMessage = 'No se puede eliminar una orden que ya ha sido procesada o enviada.';
+            
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 400);
+            }
+            
             return redirect()->route('purchase-orders.show', $purchaseOrder->id)
-                ->with('error', 'No se puede eliminar una orden que ya ha sido procesada o enviada.');
+                ->with('error', $errorMessage);
         }
         
-        // Registrar en historial antes de eliminar
-        RequestHistory::create([
-            'purchase_request_id' => $purchaseOrder->purchaseRequest->id,
-            'user_id' => Auth::id(),
-            'action' => 'Orden de compra eliminada',
-            'notes' => 'Orden ' . $purchaseOrder->order_number . ' eliminada por el administrador',
-        ]);
-        
-        // Eliminar la orden de compra
-        $purchaseOrder->delete();
-        
-        return redirect()->route('purchase-orders.index')
-            ->with('success', 'La orden de compra ha sido eliminada correctamente.');
+        try {
+            // Registrar en historial antes de eliminar
+            RequestHistory::create([
+                'purchase_request_id' => $purchaseOrder->purchaseRequest->id,
+                'user_id' => Auth::id(),
+                'action' => 'Orden de compra eliminada',
+                'notes' => 'Orden ' . $purchaseOrder->order_number . ' eliminada por el administrador',
+            ]);
+            
+            $orderNumber = $purchaseOrder->order_number;
+            
+            // Eliminar la orden de compra
+            $purchaseOrder->delete();
+            
+            $successMessage = "La orden de compra {$orderNumber} ha sido eliminada correctamente.";
+            
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMessage
+                ]);
+            }
+            
+            return redirect()->route('purchase-orders.index')
+                ->with('success', $successMessage);
+                
+        } catch (\Exception $e) {
+            Log::error('Error eliminando orden de compra: ' . $e->getMessage());
+            
+            $errorMessage = 'Error al eliminar la orden de compra. Por favor, inténtalo de nuevo.';
+            
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 500);
+            }
+            
+            return redirect()->route('purchase-orders.index')
+                ->with('error', $errorMessage);
+        }
     }
 
     /**
@@ -2120,9 +2212,54 @@ class PurchaseOrdersController extends Controller
             ));
             
         } else {
-            // Caso no identificado - redirigir con error
-            return redirect()->route('purchase-orders.index')
-                ->with('error', 'No se pudo determinar el tipo de solicitud para crear la orden de compra.');
+            // Verificar si es una solicitud "huérfana" (tuvo órdenes pero se eliminaron)
+            $hadPreviousOrders = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)
+                ->withTrashed()
+                ->count() > 0;
+                
+            if ($hadPreviousOrders) {
+                // Para solicitudes huérfanas, intentar encontrar la configuración original
+                // buscando en órdenes eliminadas para recuperar la configuración
+                $deletedOrder = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)
+                    ->withTrashed()
+                    ->with(['provider'])
+                    ->first();
+                
+                if ($deletedOrder && $deletedOrder->provider) {
+                    // Buscar cotización del mismo proveedor
+                    $quotation = $purchaseRequest->quotations()
+                        ->where('provider_name', $deletedOrder->provider->nombre)
+                        ->first();
+                        
+                    if ($quotation) {
+                        // Restaurar la cotización seleccionada
+                        $purchaseRequest->selected_quotation_id = $quotation->id;
+                        $purchaseRequest->save();
+                        
+                        Log::info('Restaurada cotización para solicitud huérfana', [
+                            'purchase_request_id' => $purchaseRequest->id,
+                            'quotation_id' => $quotation->id,
+                            'provider_name' => $deletedOrder->provider->nombre
+                        ]);
+                        
+                        // Redirigir para recargar con la cotización restaurada
+                        return redirect()->route('purchase-orders.create', $purchaseRequest->id);
+                    }
+                }
+                
+                // Si no se pudo restaurar, tratar como servicio sin cotización
+                Log::info('No se pudo restaurar cotización, tratando como servicio sin cotización', [
+                    'purchase_request_id' => $purchaseRequest->id
+                ]);
+
+                return view('purchase-orders.no-quotation-service', compact(
+                    'purchaseRequest'
+                ));
+            } else {
+                // Caso no identificado - redirigir con error
+                return redirect()->route('purchase-orders.index')
+                    ->with('error', 'No se pudo determinar el tipo de solicitud para crear la orden de compra.');
+            }
         }
     }
 
@@ -3275,6 +3412,34 @@ class PurchaseOrdersController extends Controller
                 ];
             }
         }
+        // NUEVO: Intentar usar service_items para solicitudes de servicios
+        elseif ($purchaseRequest && $purchaseRequest->type === 'services' && !empty($purchaseRequest->service_items)) {
+            Log::info('🎯 Usando service_items de solicitud de servicios', [
+                'request_id' => $purchaseRequest->id,
+                'items_count' => count($purchaseRequest->service_items)
+            ]);
+            
+            // Para servicios, usar el subtotal de la cotización dividido entre los items
+            $serviceItems = is_string($purchaseRequest->service_items) ? 
+                           json_decode($purchaseRequest->service_items, true) : 
+                           $purchaseRequest->service_items;
+            
+            $totalValue = $quotation ? $quotation->subtotal : $order->subtotal ?? $order->total_amount;
+            $itemCount = count($serviceItems);
+            $pricePerItem = $itemCount > 0 ? $totalValue / $itemCount : $totalValue;
+            
+            foreach ($serviceItems as $index => $item) {
+                $quantity = $item['quantity'] ?? 1;
+                $unitPrice = $quantity > 0 ? $pricePerItem / $quantity : $pricePerItem;
+                
+                $items[] = [
+                    'description' => $item['description'] ?? 'Servicio ' . ($index + 1),
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'total' => $pricePerItem
+                ];
+            }
+        }
         // Intentar usar precios originales de la cotización
         elseif ($quotation && !empty($quotation->original_item_prices)) {
             Log::info('🎯 Usando precios originales de cotización', [
@@ -3282,10 +3447,27 @@ class PurchaseOrdersController extends Controller
                 'precios_count' => count($quotation->original_item_prices)
             ]);
             
+            // Intentar obtener las descripciones reales de los items de la solicitud
+            $purchaseItems = $purchaseRequest ? $purchaseRequest->purchase_items : [];
+            
             foreach ($quotation->original_item_prices as $index => $price) {
                 $quantity = 1; // Cantidad por defecto
+                
+                // Usar descripción real si está disponible, sino usar fallback
+                $description = "Producto " . ($index + 1); // Fallback
+                if (isset($purchaseItems[$index]['description'])) {
+                    $description = $purchaseItems[$index]['description'];
+                } elseif (isset($purchaseItems[$index]['item_description'])) {
+                    $description = $purchaseItems[$index]['item_description'];
+                }
+                
+                // También intentar obtener la cantidad real
+                if (isset($purchaseItems[$index]['quantity'])) {
+                    $quantity = $purchaseItems[$index]['quantity'];
+                }
+                
                 $items[] = [
-                    'description' => "Producto " . ($index + 1),
+                    'description' => $description,
                     'quantity' => $quantity,
                     'unit_price' => floatval($price),
                     'total' => floatval($price) * $quantity

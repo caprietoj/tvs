@@ -103,7 +103,7 @@
                         </div>
                     </div>
 
-                    <!-- Items de la cotización -->
+                    <!-- Items de la cotización o descripción del servicio -->
                     @if($quotation->items && count($quotation->items) > 0)
                         <hr>
                         <h6>Items de la Cotización:</h6>
@@ -130,6 +130,65 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                        </div>
+                    @elseif($purchaseRequest->type === 'services' && $purchaseRequest->service_items)
+                        <hr>
+                        <h6>Detalles del Servicio Solicitado:</h6>
+                        
+                        @if($purchaseRequest->service_justification)
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Justificación:</strong> {{ $purchaseRequest->service_justification }}
+                        </div>
+                        @endif
+                        
+                        <h6>Items del Servicio:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Cantidad</th>
+                                        <th>Descripción</th>
+                                        <th>Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($purchaseRequest->service_items as $item)
+                                        <tr>
+                                            <td>{{ $item['item'] }}</td>
+                                            <td>{{ $item['quantity'] }}</td>
+                                            <td>{{ $item['description'] }}</td>
+                                            <td>{{ $item['observations'] ?? 'N/A' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <strong>Monto Total de la Cotización:</strong> ${{ number_format($quotation->total_amount, 2, ',', '.') }}
+                            </div>
+                        </div>
+                    @elseif($quotation->description)
+                        <hr>
+                        <h6>Descripción del Servicio:</h6>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Servicio:</strong> {{ $quotation->description }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Monto Total:</strong> ${{ number_format($quotation->total_amount, 2, ',', '.') }}
+                            </div>
+                        </div>
+                    @else
+                        <hr>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Servicio sin descripción detallada</strong><br>
+                            Monto Total: ${{ number_format($quotation->total_amount, 2, ',', '.') }}
                         </div>
                     @endif
                 </div>
@@ -158,30 +217,112 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('purchase-orders.create-from-quotation', $purchaseRequest) }}" method="POST">
+                        @php
+                            $isNoQuotationService = $purchaseRequest->type === 'services' && 
+                                                   !$purchaseRequest->selectedQuotation && 
+                                                   !$purchaseRequest->quotationItemSelections()->exists();
+                            $formAction = $isNoQuotationService ? 
+                                         route('purchase-orders.create-no-quotation', $purchaseRequest) : 
+                                         route('purchase-orders.create-from-quotation', $purchaseRequest);
+                        @endphp
+                        <form action="{{ $formAction }}" method="POST">
                             @csrf
                             
                             <div class="row">
                                 <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="provider_id">Proveedor</label>
-                                        @if($provider)
-                                            <input type="text" class="form-control" value="{{ $provider->nombre }} - {{ $provider->nit }}" disabled>
-                                            <input type="hidden" name="provider_id" value="{{ $provider->id }}">
-                                        @else
-                                            <select class="form-control @error('provider_id') is-invalid @enderror" id="provider_id" name="provider_id" required>
-                                                <option value="">Seleccione un proveedor...</option>
-                                                @foreach(\App\Models\Proveedor::orderBy('nombre')->get() as $prov)
-                                                    <option value="{{ $prov->id }}" {{ $prov->nombre == $providerName ? 'selected' : '' }}>
-                                                        {{ $prov->nombre }} - {{ $prov->nit }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        @endif
-                                        @error('provider_id')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
+                                    @if($isNoQuotationService)
+                                        <!-- Campos para servicio sin cotización -->
+                                        <div class="form-group">
+                                            <label for="provider_name">Nombre del Proveedor</label>
+                                            <input type="text" class="form-control @error('provider_name') is-invalid @enderror" 
+                                                   id="provider_name" name="provider_name" 
+                                                   value="{{ old('provider_name', $providerName ?? '') }}" required>
+                                            @error('provider_name')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="provider_nit">NIT del Proveedor</label>
+                                            <input type="text" class="form-control @error('provider_nit') is-invalid @enderror" 
+                                                   id="provider_nit" name="provider_nit" 
+                                                   value="{{ old('provider_nit') }}" required>
+                                            @error('provider_nit')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="provider_address">Dirección del Proveedor</label>
+                                            <input type="text" class="form-control @error('provider_address') is-invalid @enderror" 
+                                                   id="provider_address" name="provider_address" 
+                                                   value="{{ old('provider_address') }}">
+                                            @error('provider_address')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="provider_phone">Teléfono del Proveedor</label>
+                                            <input type="text" class="form-control @error('provider_phone') is-invalid @enderror" 
+                                                   id="provider_phone" name="provider_phone" 
+                                                   value="{{ old('provider_phone') }}">
+                                            @error('provider_phone')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="provider_email">Email del Proveedor</label>
+                                            <input type="email" class="form-control @error('provider_email') is-invalid @enderror" 
+                                                   id="provider_email" name="provider_email" 
+                                                   value="{{ old('provider_email') }}">
+                                            @error('provider_email')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="total_amount">Valor Total</label>
+                                            <input type="number" step="0.01" min="0" class="form-control @error('total_amount') is-invalid @enderror" 
+                                                   id="total_amount" name="total_amount" 
+                                                   value="{{ old('total_amount', $purchaseRequest->budget ?? '') }}" required>
+                                            @error('total_amount')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+
+                                        <div class="form-group">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input" id="includes_iva" name="includes_iva" value="1" 
+                                                       {{ old('includes_iva', true) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="includes_iva">
+                                                    El valor incluye IVA
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <!-- Campos para servicios con cotización -->
+                                        <div class="form-group">
+                                            <label for="provider_id">Proveedor</label>
+                                            @if($provider)
+                                                <input type="text" class="form-control" value="{{ $provider->nombre }} - {{ $provider->nit }}" disabled>
+                                                <input type="hidden" name="provider_id" value="{{ $provider->id }}">
+                                            @else
+                                                <select class="form-control @error('provider_id') is-invalid @enderror" id="provider_id" name="provider_id" required>
+                                                    <option value="">Seleccione un proveedor...</option>
+                                                    @foreach(\App\Models\Proveedor::orderBy('nombre')->get() as $prov)
+                                                        <option value="{{ $prov->id }}" {{ $prov->nombre == $providerName ? 'selected' : '' }}>
+                                                            {{ $prov->nombre }} - {{ $prov->nit }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            @endif
+                                            @error('provider_id')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    @endif
 
                                     <div class="form-group">
                                         <label for="payment_terms">Términos de Pago</label>

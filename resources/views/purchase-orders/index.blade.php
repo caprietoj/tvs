@@ -3,6 +3,7 @@
 @section('title', 'Órdenes de Compra')
 
 @section('content_header')
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <div class="row mb-2">
     <div class="col-sm-6">
         <h1>Órdenes de Compra</h1>
@@ -119,48 +120,6 @@
         </div>
         <!-- /.card-header -->
         <div class="card-body">
-            <!-- Filtros -->
-            <div class="row mb-3">
-                <div class="col-12">
-                    <form method="GET" action="{{ route('purchase-orders.index') }}" class="form-inline">
-                        <div class="form-group mr-3">
-                            <label for="request_number" class="mr-2"><strong>No. Solicitud:</strong></label>
-                            <input type="text" name="request_number" id="request_number" class="form-control" 
-                                   value="{{ $requestNumberFilter ?? '' }}" placeholder="Buscar por número...">
-                        </div>
-                        <div class="form-group mr-3">
-                            <label for="section" class="mr-2"><strong>Área/Sección:</strong></label>
-                            <select name="section" id="section" class="form-control">
-                                <option value="all">Todas las secciones</option>
-                                @foreach($sections as $section)
-                                    <option value="{{ $section }}" {{ ($sectionFilter ?? '') === $section ? 'selected' : '' }}>
-                                        {{ $section }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group mr-3">
-                            <label for="status" class="mr-2"><strong>Estado:</strong></label>
-                            <select name="status" id="status" class="form-control">
-                                <option value="all">Todos los estados</option>
-                                <option value="pending" {{ ($statusFilter ?? '') === 'pending' ? 'selected' : '' }}>Pendiente</option>
-                                <option value="approved" {{ ($statusFilter ?? '') === 'approved' ? 'selected' : '' }}>Aprobada</option>
-                                <option value="delivered" {{ ($statusFilter ?? '') === 'delivered' ? 'selected' : '' }}>Entregada</option>
-                                <option value="cancelled" {{ ($statusFilter ?? '') === 'cancelled' ? 'selected' : '' }}>Cancelada</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-filter"></i> Filtrar
-                            </button>
-                            <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary ml-2">
-                                <i class="fas fa-times"></i> Limpiar
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            
             <div class="table-responsive">
                 <table class="table table-bordered table-striped" id="ordersTable">
                     <thead>
@@ -173,6 +132,24 @@
                             <th>Fecha de Entrega</th>
                             <th>Creado</th>
                             <th>Acciones</th>
+                        </tr>
+                        <tr>
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar número..." data-column="0"></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar solicitud..." data-column="1"></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar proveedor..." data-column="2"></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar monto..." data-column="3"></th>
+                            <th>
+                                <select class="form-control form-control-sm column-filter" data-column="4">
+                                    <option value="">Todos los estados</option>
+                                    <option value="Pendiente">Pendiente</option>
+                                    <option value="Aprobada">Aprobada</option>
+                                    <option value="Entregada">Entregada</option>
+                                    <option value="Cancelada">Cancelada</option>
+                                </select>
+                            </th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar fecha..." data-column="5"></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar creado..." data-column="6"></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -232,10 +209,10 @@
                                 <a href="{{ route('purchase-orders.edit', $order->id) }}" class="btn btn-sm btn-primary">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
-                                <form action="{{ route('purchase-orders.destroy', $order->id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de que desea eliminar esta orden de compra?')">
+                                <form action="{{ route('purchase-orders.destroy', $order->id) }}" method="POST" class="d-inline delete-order-form" data-order-id="{{ $order->id }}" data-order-number="{{ $order->order_number }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
+                                    <button type="button" class="btn btn-sm btn-danger delete-order-btn">
                                         <i class="fas fa-trash"></i> Eliminar
                                     </button>
                                 </form>
@@ -558,6 +535,19 @@
     .regenerate-pdf-btn {
         transition: all 0.2s ease-in-out;
     }
+    
+    /* Estilos para los filtros */
+    .column-filter {
+        margin: 2px 0;
+        font-size: 12px;
+        height: 30px;
+    }
+    
+    thead tr:nth-child(2) th {
+        padding: 5px !important;
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
 </style>
 @stop
 
@@ -565,7 +555,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
     $(document).ready(function() {
-        $('#ordersTable').DataTable({
+        // Inicializar DataTable para la tabla principal
+        var ordersTable = $('#ordersTable').DataTable({
             "paging": false,
             "lengthChange": false,
             "searching": true,
@@ -576,6 +567,17 @@
             "language": {
                 "url": "https://cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
             }
+        });
+
+        // Filtros en tiempo real para cada columna
+        $('.column-filter').on('keyup change', function() {
+            var columnIndex = $(this).data('column');
+            var value = this.value;
+            
+            ordersTable
+                .column(columnIndex)
+                .search(value)
+                .draw();
         });
 
         $('#pendingRequestsTable').DataTable({
@@ -702,6 +704,70 @@
                 complete: function() {
                     // Rehabilitar el botón
                     button.prop('disabled', false);
+                }
+            });
+        });
+
+        // Manejar clics en botones de eliminar orden
+        $('.delete-order-btn').on('click', function(e) {
+            e.preventDefault();
+            
+            const button = $(this);
+            const form = button.closest('form');
+            const orderId = form.data('order-id');
+            const orderNumber = form.data('order-number');
+            const row = button.closest('tr');
+            
+            // Confirmar eliminación
+            if (!confirm(`¿Está seguro de que desea eliminar la orden de compra ${orderNumber}?`)) {
+                return;
+            }
+            
+            // Deshabilitar el botón y mostrar estado de carga
+            button.prop('disabled', true);
+            button.html('<i class="fas fa-spinner fa-spin"></i> Eliminando...');
+            
+            // Realizar petición AJAX usando la URL del formulario directamente
+            $.ajax({
+                url: form.attr('action'), // Usar directamente la URL del formulario
+                type: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Animar la fila antes de eliminarla
+                        row.fadeOut(300, function() {
+                            // Eliminar la fila del DataTable
+                            ordersTable.row(row).remove().draw();
+                        });
+                        
+                        toastr.success(response.message || 'Orden de compra eliminada correctamente');
+                    } else {
+                        toastr.error(response.message || 'Error al eliminar la orden de compra');
+                        // Restaurar el botón
+                        button.prop('disabled', false);
+                        button.html('<i class="fas fa-trash"></i> Eliminar');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    let errorMessage = 'Error al eliminar la orden de compra';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.status === 403) {
+                        errorMessage = 'No tienes permisos para eliminar esta orden';
+                    } else if (xhr.status === 404) {
+                        errorMessage = 'La orden de compra no fue encontrada';
+                    }
+                    
+                    toastr.error(errorMessage);
+                    
+                    // Restaurar el botón
+                    button.prop('disabled', false);
+                    button.html('<i class="fas fa-trash"></i> Eliminar');
                 }
             });
         });

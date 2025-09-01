@@ -706,6 +706,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('purchase-orders.edit');
     Route::put('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'update'])
         ->name('purchase-orders.update');
+    Route::delete('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'destroy'])
+        ->name('purchase-orders.destroy');
     Route::post('purchase-orders/{purchaseOrder}/toggle-viewed', [PurchaseOrdersController::class, 'toggleViewed'])
         ->name('purchase-orders.toggle-viewed');
     
