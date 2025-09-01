@@ -70,7 +70,7 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table table-striped table-hover">
+            <table id="approvalsTable" class="table table-striped table-hover">
                 <thead>
                     <tr>
                         <th>No. Solicitud</th>
@@ -82,6 +82,25 @@
                         <th>Cotización seleccionada</th>
                         <th>Monto</th>
                         <th>Acciones</th>
+                    </tr>
+                    <!-- Fila de filtros -->
+                    <tr>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Buscar No. Solicitud..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Buscar solicitante..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Buscar área..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Buscar fecha..."></th>
+                        <th>
+                            <select class="form-control form-control-sm">
+                                <option value="">Todos</option>
+                                <option value="Compra">Compra</option>
+                                <option value="Materiales">Materiales</option>
+                                <option value="Servicios">Servicios</option>
+                            </select>
+                        </th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Buscar pre-aprobador..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Buscar cotización..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Buscar monto..."></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -102,9 +121,17 @@
                                     <span class="badge badge-secondary">{{ ucfirst($request->type) }}</span>
                                 @endif
                             </td>
-                            <td>{{ $request->preApprover ? $request->preApprover->name : 'N/A' }}</td>
                             <td>
-                                @if($request->hasMixedSelection())
+                                @if($request->type === 'services' && $request->service_type === 'no_quotation')
+                                    <span class="text-info">Pendiente</span>
+                                @else
+                                    {{ $request->preApprover ? $request->preApprover->name : 'N/A' }}
+                                @endif
+                            </td>
+                            <td>
+                                @if($request->type === 'services' && $request->service_type === 'no_quotation')
+                                    <span class="text-info">Servicio sin cotización</span>
+                                @elseif($request->hasMixedSelection())
                                     <span class="badge badge-warning">Mixta</span>
                                 @elseif($request->preApprovedQuotation)
                                     {{ $request->preApprovedQuotation->provider_name }}
@@ -113,7 +140,9 @@
                                 @endif
                             </td>
                             <td>
-                                @if($request->hasMixedSelection())
+                                @if($request->type === 'services' && $request->service_type === 'no_quotation' && $request->service_budget)
+                                    ${{ number_format($request->service_budget, 2, ',', '.') }}
+                                @elseif($request->hasMixedSelection())
                                     ${{ number_format($request->getMixedSelectionTotal(), 2, ',', '.') }}
                                 @elseif($request->preApprovedQuotation)
                                     ${{ number_format($request->preApprovedQuotation->total_amount, 2, ',', '.') }}
@@ -144,6 +173,10 @@
 @stop
 
 @section('css')
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
+
 <style>
     .card {
         box-shadow: 0 0 15px rgba(0,0,0,0.1);
@@ -155,17 +188,148 @@
     }
     .table {
         margin-bottom: 0;
+        min-width: 1200px; /* Forzar ancho mínimo para mostrar todas las columnas */
+    }
+    
+    .table-responsive {
+        overflow-x: auto; /* Permitir scroll horizontal si es necesario */
     }
     .pagination {
         justify-content: center;
+    }
+    
+    /* Estilos para filtros de DataTables */
+    #approvalsTable thead tr:nth-child(2) th {
+        padding: 5px;
+        background-color: #f8f9fa;
+    }
+    
+    #approvalsTable thead tr:nth-child(2) input,
+    #approvalsTable thead tr:nth-child(2) select {
+        width: 100%;
+        padding: 4px 6px;
+        box-sizing: border-box;
+        font-size: 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+    
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_info {
+        margin-bottom: 1rem;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate {
+        margin-top: 1rem;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        #approvalsTable thead tr:nth-child(2) th {
+            padding: 2px;
+        }
+        
+        #approvalsTable thead tr:nth-child(2) input,
+        #approvalsTable thead tr:nth-child(2) select {
+            font-size: 11px;
+            padding: 2px 4px;
+        }
+        
+        .table {
+            min-width: 1000px; /* Ancho mínimo más pequeño en móviles */
+        }
+    }
+    
+    /* Asegurar que todas las columnas sean visibles */
+    #approvalsTable th,
+    #approvalsTable td {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    
+    /* Columnas específicas que pueden ser más anchas */
+    #approvalsTable th:nth-child(6),
+    #approvalsTable td:nth-child(6),
+    #approvalsTable th:nth-child(7),
+    #approvalsTable td:nth-child(7) {
+        min-width: 120px;
     }
 </style>
 @stop
 
 @section('js')
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
+
 <script>
     $(document).ready(function() {
         $('[data-toggle="tooltip"]').tooltip();
+        
+        // Inicializar DataTables con filtros de columna
+        var table = $('#approvalsTable').DataTable({
+            "language": {
+                "lengthMenu": "Mostrar _MENU_ registros por página",
+                "zeroRecords": "No se encontraron registros",
+                "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                "infoFiltered": "(filtrado de _MAX_ registros totales)",
+                "search": "Buscar:",
+                "paginate": {
+                    "first": "Primero",
+                    "last": "Último",
+                    "next": "Siguiente",
+                    "previous": "Anterior"
+                },
+                "emptyTable": "No hay datos disponibles en la tabla"
+            },
+            "pageLength": 25,
+            "responsive": false, // Desactivar responsive para mantener todas las columnas visibles
+            "autoWidth": false,
+            "scrollX": true, // Permitir scroll horizontal si es necesario
+            "order": [[3, 'desc']], // Ordenar por fecha por defecto
+            "columnDefs": [
+                { "orderable": false, "targets": 8 }, // Desactivar ordenamiento en columna de acciones
+                { "width": "10%", "targets": 0 }, // No. Solicitud
+                { "width": "15%", "targets": 1 }, // Solicitante
+                { "width": "10%", "targets": 2 }, // Área/Sección
+                { "width": "10%", "targets": 3 }, // Fecha
+                { "width": "8%", "targets": 4 },  // Tipo
+                { "width": "12%", "targets": 5 }, // Pre-aprobada por
+                { "width": "15%", "targets": 6 }, // Cotización
+                { "width": "10%", "targets": 7 }, // Monto
+                { "width": "10%", "targets": 8 }  // Acciones
+            ],
+            "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+            "initComplete": function () {
+                // Configurar filtros por columna
+                this.api().columns().every(function (index) {
+                    if (index === 8) return; // Saltar columna de acciones
+                    
+                    var column = this;
+                    var input = $('thead tr:eq(1) th:eq(' + index + ') input, thead tr:eq(1) th:eq(' + index + ') select');
+                    
+                    input.on('keyup change clear', function () {
+                        if (column.search() !== this.value) {
+                            column.search(this.value).draw();
+                        }
+                    });
+                });
+            }
+        });
+
+        // Función para resaltar texto de búsqueda
+        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            return true; // Permitir todo el filtrado normal
+        });
+        
+        // Ocultar el buscador global ya que usamos filtros por columna
+        $('.dataTables_filter').hide();
+        
+        // Remover los filtros antiguos del formulario ya que ahora usamos DataTables
+        $('.form-inline').hide();
     });
 </script>
 @stop
