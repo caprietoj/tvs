@@ -2349,6 +2349,3544 @@
                             </div>
                         </div>
                     </div>
+                @elseif($sheetKey == 'Equipo y Dotacion Salones')
+                    <!-- Hoja Equipo y Dotación Salones -->
+                    <div class="table-content">
+                        <div class="equipos-dotacion-container">
+                            <div class="sheet-header">
+                                <h2 style="text-align: center; color: #2c3e50; font-size: 18px; font-weight: bold; margin-bottom: 20px;">
+                                    PRESUPUESTO AÑO ESCOLAR 2024-2025
+                                </h2>
+                                <h3 style="text-align: center; color: #34495e; font-size: 16px; font-weight: 600; margin-bottom: 30px;">
+                                    Equipo y Dotación de Salones / Oficinas
+                                </h3>
+                            </div>
+
+                            <!-- Tabla Principal con Estructura de Excel -->
+                            <div class="card">
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered mb-0" style="font-size: 14px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                            <thead style="background: linear-gradient(135deg, #2c3e50, #34495e); color: white;">
+                                                <tr>
+                                                    <th style="width: 35%; padding: 12px; font-weight: 600;">Nombre Tercero</th>
+                                                    <th style="width: 50%; padding: 12px; font-weight: 600;">Descripción</th>
+                                                    <th style="width: 15%; padding: 12px; text-align: right; font-weight: 600;">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @php
+                                                    $totalGeneral = 0;
+                                                    $terceroAnterior = '';
+                                                    $rowStyle = '';
+                                                @endphp
+
+                                                @if(isset($equiposDotacionData['items_detallados']))
+                                                    @foreach($equiposDotacionData['items_detallados'] as $item)
+                                                        @php
+                                                            $totalGeneral += $item->valor;
+                                                            $esPrimeroDelTercero = ($terceroAnterior != $item->nombre_tercero);
+                                                            $terceroAnterior = $item->nombre_tercero;
+                                                            
+                                                            // Alternar colores de fila para mejor legibilidad
+                                                            $rowStyle = $esPrimeroDelTercero ? 'background-color: #f8f9fa;' : 'background-color: #ffffff;';
+                                                        @endphp
+                                                        <tr style="{{ $rowStyle }}">
+                                                            <td style="padding: 8px 12px; {{ $esPrimeroDelTercero ? 'font-weight: 600; border-left: 4px solid #3498db;' : 'padding-left: 30px; color: #6c757d;' }}">
+                                                                {{ $esPrimeroDelTercero ? $item->nombre_tercero : '' }}
+                                                            </td>
+                                                            <td style="padding: 8px 12px; {{ $esPrimeroDelTercero ? '' : 'font-style: italic;' }}">
+                                                                {{ $item->descripcion }}
+                                                            </td>
+                                                            <td style="padding: 8px 12px; text-align: right; font-family: 'Courier New', monospace; {{ $esPrimeroDelTercero ? 'font-weight: 600;' : '' }}">
+                                                                ${{ number_format($item->valor, 0, ',', '.') }}
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                @else
+                                                    <tr>
+                                                        <td colspan="3" class="text-center">No hay datos disponibles</td>
+                                                    </tr>
+                                                @endif
+
+                                                <!-- Fila de Total -->
+                                                <tr style="background: linear-gradient(135deg, #e9ecef, #dee2e6); border-top: 3px solid #495057; font-weight: bold;">
+                                                    <td style="padding: 12px; font-weight: bold; color: #495057;">Total general</td>
+                                                    <td style="padding: 12px;"></td>
+                                                    <td style="padding: 12px; text-align: right; font-family: 'Courier New', monospace; font-weight: bold; color: #495057; font-size: 16px;">
+                                                        ${{ number_format($totalGeneral, 0, ',', '.') }}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Resumen Mensual -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header" style="background: linear-gradient(135deg, #17a2b8, #138496); color: white;">
+                                            <h5 class="mb-0"><i class="fas fa-calendar-alt mr-2"></i>Distribución Mensual</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                @if(isset($equiposDotacionData['distribucion_mensual']))
+                                                    @foreach($equiposDotacionData['distribucion_mensual'] as $mes => $datos)
+                                                        <div class="col-md-3 col-sm-6 mb-3">
+                                                            <div class="d-flex justify-content-between align-items-center p-3" style="background: #f8f9fa; border-left: 4px solid #28a745; border-radius: 4px;">
+                                                                <strong>{{ $datos['nombre'] }}:</strong>
+                                                                <span class="badge badge-success" style="font-size: 14px;">${{ number_format($datos['valor'], 0, ',', '.') }}</span>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                @else
+                                                    <div class="col-12">
+                                                        <p class="text-muted">No hay datos de distribución mensual disponibles</p>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @elseif($sheetKey == 'Aseo y Cafeteria')
+                    <!-- Hoja Aseo y Cafetería -->
+                    <div class="table-content">
+                        <style>
+                        /* Forzar color azul institucional en títulos */
+                        .aseo-cafeteria-container h2,
+                        .aseo-cafeteria-container h3,
+                        .aseo-cafeteria-container .sheet-header h2,
+                        .aseo-cafeteria-container .sheet-header h3 {
+                            color: #364e76 !important;
+                        }
+                        </style>
+                        <div class="aseo-cafeteria-container">
+                            <div class="sheet-header">
+                                <h2 style="text-align: center; color: #364e76 !important; font-size: 18px; font-weight: bold; margin-bottom: 20px;">
+                                    PRESUPUESTO AÑO ESCOLAR 2025-2026
+                                </h2>
+                                <h3 style="text-align: center; color: #364e76 !important; font-size: 16px; font-weight: 600; margin-bottom: 30px;">
+                                    Aseo y Cafetería
+                                </h3>
+                            </div>
+
+                            <!-- Tabla Principal con Estructura de Excel -->
+                            <div class="card">
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered mb-0" style="font-size: 14px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                            <thead style="background: linear-gradient(135deg, #364e76, #2c3a5e); color: white;">
+                                                <tr>
+                                                    <th style="width: 35%; padding: 12px; font-weight: 600;">Nombre Tercero</th>
+                                                    <th style="width: 50%; padding: 12px; font-weight: 600;">Descripción</th>
+                                                    <th style="width: 15%; padding: 12px; text-align: right; font-weight: 600;">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @php
+                                                    $totalGeneral = 0;
+                                                    $terceroAnterior = '';
+                                                    $rowStyle = '';
+                                                @endphp
+
+                                                @if(isset($aseoCafeteriaData['items_detallados']))
+                                                    @foreach($aseoCafeteriaData['items_detallados'] as $item)
+                                                        @php
+                                                            $totalGeneral += (int)str_replace(['$', ',', '.'], '', $item['total']);
+                                                            $esPrimeroDelTercero = ($terceroAnterior != $item['nombre_tercero']);
+                                                            $terceroAnterior = $item['nombre_tercero'];
+                                                            
+                                                            // Alternar colores de fila para mejor legibilidad
+                                                            $rowStyle = $esPrimeroDelTercero ? 'background-color: #f8f9fa;' : 'background-color: #ffffff;';
+                                                        @endphp
+                                                        <tr style="{{ $rowStyle }}">
+                                                            <td style="padding: 8px 12px; {{ $esPrimeroDelTercero ? 'font-weight: 600; border-left: 4px solid #364e76;' : 'padding-left: 30px; color: #6c757d;' }}">
+                                                                {{ $esPrimeroDelTercero ? $item['nombre_tercero'] : '' }}
+                                                            </td>
+                                                            <td style="padding: 8px 12px; {{ $esPrimeroDelTercero ? '' : 'font-style: italic;' }}">
+                                                                {{ $item['descripcion'] }}
+                                                            </td>
+                                                            <td style="padding: 8px 12px; text-align: right; font-family: 'Courier New', monospace; {{ $esPrimeroDelTercero ? 'font-weight: 600;' : '' }}">
+                                                                ${{ $item['total'] }}
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                @else
+                                                    <tr>
+                                                        <td colspan="3" class="text-center">No hay datos disponibles</td>
+                                                    </tr>
+                                                @endif
+
+                                                <!-- Fila de Total -->
+                                                <tr style="background: linear-gradient(135deg, #e9ecef, #dee2e6); border-top: 3px solid #495057; font-weight: bold;">
+                                                    <td style="padding: 12px; font-weight: bold; color: #495057;">Total general</td>
+                                                    <td style="padding: 12px;"></td>
+                                                    <td style="padding: 12px; text-align: right; font-family: 'Courier New', monospace; font-weight: bold; color: #495057; font-size: 16px;">
+                                                        ${{ number_format($totalGeneral, 0, ',', '.') }}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Resumen Mensual -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header" style="background: linear-gradient(135deg, #364e76, #2c3a5e); color: white;">
+                                            <h5 class="mb-0"><i class="fas fa-calendar-alt mr-2"></i>Distribución Mensual</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                @if(isset($aseoCafeteriaData['distribucion_mensual']))
+                                                    @foreach($aseoCafeteriaData['distribucion_mensual'] as $datos)
+                                                        <div class="col-md-3 col-sm-6 mb-3">
+                                                            <div class="d-flex justify-content-between align-items-center p-3" style="background: #f8f9fa; border-left: 4px solid #364e76; border-radius: 4px;">
+                                                                <strong>{{ $datos['mes'] }}:</strong>
+                                                                <span class="badge" style="font-size: 14px; background: #364e76; color: white;">${{ $datos['valor'] }}</span>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                @else
+                                                    <div class="col-12">
+                                                        <p class="text-muted">No hay datos de distribución mensual disponibles</p>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                @elseif($sheetKey == 'Dotaciones')
+                    <!-- Hoja Dotaciones -->
+                    <div class="dotaciones-container">
+                        <div class="sheet-header">
+                            <h2 style="text-align: center; color: #2c3e50; font-size: 18px; font-weight: bold; margin-bottom: 20px;">
+                                PRESUPUESTO AÑO ESCOLAR 2024-2025
+                            </h2>
+                            <h3 style="text-align: center; color: #34495e; font-size: 16px; font-weight: 600; margin-bottom: 30px;">
+                                Dotación de Trabajo
+                            </h3>
+                        </div>
+
+                        <!-- Tabla Resumen -->
+                        <div class="table-wrapper" style="margin-bottom: 30px;">
+                            <table class="table table-bordered budget-table" style="font-size: 12px;">
+                                <thead style="background: linear-gradient(135deg, #8e44ad, #7d3c98); color: white;">
+                                    <tr>
+                                        <th style="width: 200px;">Concepto</th>
+                                        <th style="width: 120px;">Ppto Aprobado</th>
+                                        <th style="width: 120px;">Ejecutado</th>
+                                        <th style="width: 120px;">Ppto a Ejec</th>
+                                        <th style="width: 80px;">%Restante</th>
+                                        <th style="width: 100px;">Julio</th>
+                                        <th style="width: 100px;">Agosto</th>
+                                        <th style="width: 100px;">Septiembre</th>
+                                        <th style="width: 100px;">Octubre</th>
+                                        <th style="width: 100px;">Noviembre</th>
+                                        <th style="width: 100px;">Diciembre</th>
+                                        <th style="width: 100px;">Enero</th>
+                                        <th style="width: 100px;">Febrero</th>
+                                        <th style="width: 100px;">Marzo</th>
+                                        <th style="width: 100px;">Abril</th>
+                                        <th style="width: 100px;">Mayo</th>
+                                        <th style="width: 100px;">Junio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $resumen = $dotacionesData['resumen'];
+                                        $ejecucion = $dotacionesData['ejecucion_mensual'];
+                                    @endphp
+                                    <tr>
+                                        <td><strong>Mantenimiento</strong></td>
+                                        <td class="number-cell">${{ number_format($resumen['mantenimiento']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($resumen['mantenimiento']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($resumen['mantenimiento']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell"><strong>{{ $resumen['mantenimiento']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell">{{ $ejecucion['mantenimiento']['julio'] > 0 ? '$'.number_format($ejecucion['mantenimiento']['julio']) : '$0' }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['mantenimiento']['agosto']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['mantenimiento']['septiembre'] > 0 ? '$'.number_format($ejecucion['mantenimiento']['septiembre']) : '' }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['mantenimiento']['octubre']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['mantenimiento']['noviembre'] > 0 ? '$'.number_format($ejecucion['mantenimiento']['noviembre']) : '' }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['mantenimiento']['diciembre']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['mantenimiento']['enero'] > 0 ? '$'.number_format($ejecucion['mantenimiento']['enero']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['mantenimiento']['febrero'] > 0 ? '$'.number_format($ejecucion['mantenimiento']['febrero']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['mantenimiento']['marzo'] > 0 ? '$'.number_format($ejecucion['mantenimiento']['marzo']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['mantenimiento']['abril'] > 0 ? '$'.number_format($ejecucion['mantenimiento']['abril']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['mantenimiento']['mayo'] > 0 ? '$'.number_format($ejecucion['mantenimiento']['mayo']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['mantenimiento']['junio'] > 0 ? '$'.number_format($ejecucion['mantenimiento']['junio']) : '' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Administración</strong></td>
+                                        <td class="number-cell">{{ $resumen['administracion']['presupuesto_aprobado'] > 0 ? '$'.number_format($resumen['administracion']['presupuesto_aprobado']) : '' }}</td>
+                                        <td class="number-cell">{{ $resumen['administracion']['ejecutado'] > 0 ? '$'.number_format($resumen['administracion']['ejecutado']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $resumen['administracion']['presupuesto_ejecutar'] > 0 ? '$'.number_format($resumen['administracion']['presupuesto_ejecutar']) : '' }}</td>
+                                        <td class="number-cell">{{ $resumen['administracion']['porcentaje_restante'] > 0 ? $resumen['administracion']['porcentaje_restante'].'%' : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['administracion']['julio'] > 0 ? '$'.number_format($ejecucion['administracion']['julio']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['administracion']['agosto'] > 0 ? '$'.number_format($ejecucion['administracion']['agosto']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['administracion']['septiembre'] > 0 ? '$'.number_format($ejecucion['administracion']['septiembre']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['administracion']['octubre'] > 0 ? '$'.number_format($ejecucion['administracion']['octubre']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['administracion']['noviembre'] > 0 ? '$'.number_format($ejecucion['administracion']['noviembre']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['administracion']['diciembre'] > 0 ? '$'.number_format($ejecucion['administracion']['diciembre']) : '' }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['administracion']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['administracion']['febrero']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['administracion']['marzo'] > 0 ? '$'.number_format($ejecucion['administracion']['marzo']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['administracion']['abril'] > 0 ? '$'.number_format($ejecucion['administracion']['abril']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['administracion']['mayo'] > 0 ? '$'.number_format($ejecucion['administracion']['mayo']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['administracion']['junio'] > 0 ? '$'.number_format($ejecucion['administracion']['junio']) : '' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Servicios generales</strong></td>
+                                        <td class="number-cell">{{ $resumen['servicios_generales']['presupuesto_aprobado'] > 0 ? '$'.number_format($resumen['servicios_generales']['presupuesto_aprobado']) : '' }}</td>
+                                        <td class="number-cell">{{ $resumen['servicios_generales']['ejecutado'] > 0 ? '$'.number_format($resumen['servicios_generales']['ejecutado']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $resumen['servicios_generales']['presupuesto_ejecutar'] > 0 ? '$'.number_format($resumen['servicios_generales']['presupuesto_ejecutar']) : '' }}</td>
+                                        <td class="number-cell">{{ $resumen['servicios_generales']['porcentaje_restante'] > 0 ? $resumen['servicios_generales']['porcentaje_restante'].'%' : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['servicios_generales']['julio'] > 0 ? '$'.number_format($ejecucion['servicios_generales']['julio']) : '$0' }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['servicios_generales']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['servicios_generales']['septiembre']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['servicios_generales']['octubre'] > 0 ? '$'.number_format($ejecucion['servicios_generales']['octubre']) : '$0' }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['servicios_generales']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['servicios_generales']['diciembre']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['servicios_generales']['enero'] > 0 ? '$'.number_format($ejecucion['servicios_generales']['enero']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['servicios_generales']['febrero'] > 0 ? '$'.number_format($ejecucion['servicios_generales']['febrero']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['servicios_generales']['marzo'] > 0 ? '$'.number_format($ejecucion['servicios_generales']['marzo']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['servicios_generales']['abril'] > 0 ? '$'.number_format($ejecucion['servicios_generales']['abril']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['servicios_generales']['mayo'] > 0 ? '$'.number_format($ejecucion['servicios_generales']['mayo']) : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['servicios_generales']['junio'] > 0 ? '$'.number_format($ejecucion['servicios_generales']['junio']) : '' }}</td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa; font-weight: bold;">
+                                        <td><strong>Total</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($resumen['total']['presupuesto_aprobado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($resumen['total']['ejecutado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($resumen['total']['presupuesto_ejecutar']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $resumen['total']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['julio'] > 0 ? '$'.number_format($ejecucion['total']['julio']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['agosto']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['septiembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['octubre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['noviembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['diciembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['enero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['febrero']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['marzo'] > 0 ? '$'.number_format($ejecucion['total']['marzo']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['abril'] > 0 ? '$'.number_format($ejecucion['total']['abril']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['mayo'] > 0 ? '$'.number_format($ejecucion['total']['mayo']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['junio'] > 0 ? '$'.number_format($ejecucion['total']['junio']) : '$0' }}</strong></td>
+                                    </tr>
+                                    <!-- Fila vacía para separación -->
+                                    <tr style="height: 20px;">
+                                        <td colspan="17" style="border: none; background: white;"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Detalles por mes -->
+                        <div class="detalles-mensuales">
+                            <!-- Detalle Agosto -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Agosto</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($dotacionesData['detalle_agosto'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Septiembre -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Septiembre</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($dotacionesData['detalle_septiembre'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Octubre -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Octubre</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($dotacionesData['detalle_octubre'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Noviembre -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Noviembre</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($dotacionesData['detalle_noviembre'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Diciembre -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Diciembre</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($dotacionesData['detalle_diciembre'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Enero -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Enero</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($dotacionesData['detalle_enero'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Febrero -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Febrero</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($dotacionesData['detalle_febrero'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @elseif($sheetKey == 'Agasajos')
+                    <!-- Hoja Agasajos -->
+                    <div class="agasajos-container">
+                        <div class="sheet-header">
+                            <h2 style="text-align: center; color: #2c3e50; font-size: 18px; font-weight: bold; margin-bottom: 20px;">
+                                PRESUPUESTO AÑO ESCOLAR 2024-2025
+                            </h2>
+                            <h3 style="text-align: center; color: #34495e; font-size: 16px; font-weight: 600; margin-bottom: 30px;">
+                                Agasajos
+                            </h3>
+                        </div>
+
+                        <!-- Tabla Resumen -->
+                        <div class="table-wrapper" style="margin-bottom: 30px;">
+                            <table class="table table-bordered budget-table" style="font-size: 12px;">
+                                <thead style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white;">
+                                    <tr>
+                                        <th style="width: 200px;">Concepto</th>
+                                        <th style="width: 120px;">Ppto Aprobado</th>
+                                        <th style="width: 120px;">Ejecutado</th>
+                                        <th style="width: 120px;">Ppto a Ejec</th>
+                                        <th style="width: 80px;">%Restante</th>
+                                        <th style="width: 100px;">Julio</th>
+                                        <th style="width: 100px;">Agosto</th>
+                                        <th style="width: 100px;">Septiembre</th>
+                                        <th style="width: 100px;">Octubre</th>
+                                        <th style="width: 100px;">Noviembre</th>
+                                        <th style="width: 100px;">Diciembre</th>
+                                        <th style="width: 100px;">Enero</th>
+                                        <th style="width: 100px;">Febrero</th>
+                                        <th style="width: 100px;">Marzo</th>
+                                        <th style="width: 100px;">Abril</th>
+                                        <th style="width: 100px;">Mayo</th>
+                                        <th style="width: 100px;">Junio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $resumen = $agasajosData['resumen'];
+                                        $ejecucion = $agasajosData['ejecucion_mensual'];
+                                    @endphp
+                                    <tr>
+                                        <td><strong>Detalle cumpleaños</strong></td>
+                                        <td class="number-cell">${{ number_format($resumen['detalle_cumpleanos']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($resumen['detalle_cumpleanos']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($resumen['detalle_cumpleanos']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell"><strong>{{ $resumen['detalle_cumpleanos']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell">{{ $ejecucion['detalle_cumpleanos']['julio'] > 0 ? '$'.number_format($ejecucion['detalle_cumpleanos']['julio']) : '$0' }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['detalle_cumpleanos']['agosto']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['detalle_cumpleanos']['septiembre'] > 0 ? '$'.number_format($ejecucion['detalle_cumpleanos']['septiembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['detalle_cumpleanos']['octubre'] > 0 ? '$'.number_format($ejecucion['detalle_cumpleanos']['octubre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['detalle_cumpleanos']['noviembre'] > 0 ? '$'.number_format($ejecucion['detalle_cumpleanos']['noviembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['detalle_cumpleanos']['diciembre'] > 0 ? '$'.number_format($ejecucion['detalle_cumpleanos']['diciembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['detalle_cumpleanos']['enero'] > 0 ? '$'.number_format($ejecucion['detalle_cumpleanos']['enero']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['detalle_cumpleanos']['febrero'] > 0 ? '$'.number_format($ejecucion['detalle_cumpleanos']['febrero']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['detalle_cumpleanos']['marzo'] > 0 ? '$'.number_format($ejecucion['detalle_cumpleanos']['marzo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['detalle_cumpleanos']['abril'] > 0 ? '$'.number_format($ejecucion['detalle_cumpleanos']['abril']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['detalle_cumpleanos']['mayo'] > 0 ? '$'.number_format($ejecucion['detalle_cumpleanos']['mayo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['detalle_cumpleanos']['junio'] > 0 ? '$'.number_format($ejecucion['detalle_cumpleanos']['junio']) : '$0' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Día del Colaborador</strong></td>
+                                        <td class="number-cell">{{ $resumen['dia_colaborador']['presupuesto_aprobado'] > 0 ? '$'.number_format($resumen['dia_colaborador']['presupuesto_aprobado']) : '' }}</td>
+                                        <td class="number-cell">{{ $resumen['dia_colaborador']['ejecutado'] > 0 ? '$'.number_format($resumen['dia_colaborador']['ejecutado']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $resumen['dia_colaborador']['presupuesto_ejecutar'] > 0 ? '$'.number_format($resumen['dia_colaborador']['presupuesto_ejecutar']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $resumen['dia_colaborador']['porcentaje_restante'] > 0 ? $resumen['dia_colaborador']['porcentaje_restante'].'%' : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['julio'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['julio']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['agosto'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['agosto']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['septiembre'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['septiembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['octubre'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['octubre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['noviembre'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['noviembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['diciembre'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['diciembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['enero'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['enero']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['febrero'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['febrero']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['marzo'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['marzo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['abril'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['abril']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['mayo'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['mayo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_colaborador']['junio'] > 0 ? '$'.number_format($ejecucion['dia_colaborador']['junio']) : '$0' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Día del Profesor/MAYO</strong></td>
+                                        <td class="number-cell">{{ $resumen['dia_profesor']['presupuesto_aprobado'] > 0 ? '$'.number_format($resumen['dia_profesor']['presupuesto_aprobado']) : '' }}</td>
+                                        <td class="number-cell">{{ $resumen['dia_profesor']['ejecutado'] > 0 ? '$'.number_format($resumen['dia_profesor']['ejecutado']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $resumen['dia_profesor']['presupuesto_ejecutar'] > 0 ? '$'.number_format($resumen['dia_profesor']['presupuesto_ejecutar']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $resumen['dia_profesor']['porcentaje_restante'] > 0 ? $resumen['dia_profesor']['porcentaje_restante'].'%' : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['julio'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['julio']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['agosto'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['agosto']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['septiembre'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['septiembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['octubre'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['octubre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['noviembre'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['noviembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['diciembre'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['diciembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['enero'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['enero']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['febrero'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['febrero']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['marzo'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['marzo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['abril'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['abril']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['mayo'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['mayo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['dia_profesor']['junio'] > 0 ? '$'.number_format($ejecucion['dia_profesor']['junio']) : '$0' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Cena de fin de año</strong></td>
+                                        <td class="number-cell">{{ $resumen['cena_fin_ano']['presupuesto_aprobado'] > 0 ? '$'.number_format($resumen['cena_fin_ano']['presupuesto_aprobado']) : '' }}</td>
+                                        <td class="number-cell">${{ number_format($resumen['cena_fin_ano']['ejecutado']) }}</td>
+                                        <td class="number-cell">-${{ number_format(abs($resumen['cena_fin_ano']['presupuesto_ejecutar'])) }}</td>
+                                        <td class="number-cell">{{ $resumen['cena_fin_ano']['porcentaje_restante'] > 0 ? $resumen['cena_fin_ano']['porcentaje_restante'].'%' : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['cena_fin_ano']['julio'] > 0 ? '$'.number_format($ejecucion['cena_fin_ano']['julio']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['cena_fin_ano']['agosto'] > 0 ? '$'.number_format($ejecucion['cena_fin_ano']['agosto']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['cena_fin_ano']['septiembre'] > 0 ? '$'.number_format($ejecucion['cena_fin_ano']['septiembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['cena_fin_ano']['octubre'] > 0 ? '$'.number_format($ejecucion['cena_fin_ano']['octubre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['cena_fin_ano']['noviembre'] > 0 ? '$'.number_format($ejecucion['cena_fin_ano']['noviembre']) : '$0' }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['cena_fin_ano']['diciembre']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['cena_fin_ano']['enero'] > 0 ? '$'.number_format($ejecucion['cena_fin_ano']['enero']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['cena_fin_ano']['febrero'] > 0 ? '$'.number_format($ejecucion['cena_fin_ano']['febrero']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['cena_fin_ano']['marzo'] > 0 ? '$'.number_format($ejecucion['cena_fin_ano']['marzo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['cena_fin_ano']['abril'] > 0 ? '$'.number_format($ejecucion['cena_fin_ano']['abril']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['cena_fin_ano']['mayo'] > 0 ? '$'.number_format($ejecucion['cena_fin_ano']['mayo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['cena_fin_ano']['junio'] > 0 ? '$'.number_format($ejecucion['cena_fin_ano']['junio']) : '$0' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Ramos nacimientos, hospitalizaciones y otros</strong></td>
+                                        <td class="number-cell">{{ $resumen['ramos_nacimientos']['presupuesto_aprobado'] > 0 ? '$'.number_format($resumen['ramos_nacimientos']['presupuesto_aprobado']) : '' }}</td>
+                                        <td class="number-cell">${{ number_format($resumen['ramos_nacimientos']['ejecutado']) }}</td>
+                                        <td class="number-cell">-${{ number_format(abs($resumen['ramos_nacimientos']['presupuesto_ejecutar'])) }}</td>
+                                        <td class="number-cell">{{ $resumen['ramos_nacimientos']['porcentaje_restante'] > 0 ? $resumen['ramos_nacimientos']['porcentaje_restante'].'%' : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['ramos_nacimientos']['julio'] > 0 ? '$'.number_format($ejecucion['ramos_nacimientos']['julio']) : '$0' }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['ramos_nacimientos']['agosto']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['ramos_nacimientos']['septiembre'] > 0 ? '$'.number_format($ejecucion['ramos_nacimientos']['septiembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['ramos_nacimientos']['octubre'] > 0 ? '$'.number_format($ejecucion['ramos_nacimientos']['octubre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['ramos_nacimientos']['noviembre'] > 0 ? '$'.number_format($ejecucion['ramos_nacimientos']['noviembre']) : '$0' }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['ramos_nacimientos']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['ramos_nacimientos']['enero']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['ramos_nacimientos']['febrero'] > 0 ? '$'.number_format($ejecucion['ramos_nacimientos']['febrero']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['ramos_nacimientos']['marzo'] > 0 ? '$'.number_format($ejecucion['ramos_nacimientos']['marzo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['ramos_nacimientos']['abril'] > 0 ? '$'.number_format($ejecucion['ramos_nacimientos']['abril']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['ramos_nacimientos']['mayo'] > 0 ? '$'.number_format($ejecucion['ramos_nacimientos']['mayo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['ramos_nacimientos']['junio'] > 0 ? '$'.number_format($ejecucion['ramos_nacimientos']['junio']) : '$0' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Integración EMC (almuerzos)</strong></td>
+                                        <td class="number-cell">{{ $resumen['integracion_emc']['presupuesto_aprobado'] > 0 ? '$'.number_format($resumen['integracion_emc']['presupuesto_aprobado']) : '' }}</td>
+                                        <td class="number-cell">${{ number_format($resumen['integracion_emc']['ejecutado']) }}</td>
+                                        <td class="number-cell">-${{ number_format(abs($resumen['integracion_emc']['presupuesto_ejecutar'])) }}</td>
+                                        <td class="number-cell">{{ $resumen['integracion_emc']['porcentaje_restante'] > 0 ? $resumen['integracion_emc']['porcentaje_restante'].'%' : '' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['integracion_emc']['julio'] > 0 ? '$'.number_format($ejecucion['integracion_emc']['julio']) : '$0' }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['integracion_emc']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['integracion_emc']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['integracion_emc']['octubre']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['integracion_emc']['noviembre'] > 0 ? '$'.number_format($ejecucion['integracion_emc']['noviembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['integracion_emc']['diciembre'] > 0 ? '$'.number_format($ejecucion['integracion_emc']['diciembre']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['integracion_emc']['enero'] > 0 ? '$'.number_format($ejecucion['integracion_emc']['enero']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['integracion_emc']['febrero'] > 0 ? '$'.number_format($ejecucion['integracion_emc']['febrero']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['integracion_emc']['marzo'] > 0 ? '$'.number_format($ejecucion['integracion_emc']['marzo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['integracion_emc']['abril'] > 0 ? '$'.number_format($ejecucion['integracion_emc']['abril']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['integracion_emc']['mayo'] > 0 ? '$'.number_format($ejecucion['integracion_emc']['mayo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['integracion_emc']['junio'] > 0 ? '$'.number_format($ejecucion['integracion_emc']['junio']) : '$0' }}</td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa; font-weight: bold;">
+                                        <td><strong>Total</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($resumen['total']['presupuesto_aprobado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($resumen['total']['ejecutado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($resumen['total']['presupuesto_ejecutar']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $resumen['total']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['julio'] > 0 ? '$'.number_format($ejecucion['total']['julio']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['agosto']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['septiembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['octubre']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['noviembre'] > 0 ? '$'.number_format($ejecucion['total']['noviembre']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['diciembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['enero']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['febrero'] > 0 ? '$'.number_format($ejecucion['total']['febrero']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['marzo'] > 0 ? '$'.number_format($ejecucion['total']['marzo']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['abril'] > 0 ? '$'.number_format($ejecucion['total']['abril']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['mayo'] > 0 ? '$'.number_format($ejecucion['total']['mayo']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['junio'] > 0 ? '$'.number_format($ejecucion['total']['junio']) : '$0' }}</strong></td>
+                                    </tr>
+                                    <!-- Fila vacía para separación -->
+                                    <tr style="height: 20px;">
+                                        <td colspan="17" style="border: none; background: white;"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Detalles por mes -->
+                        <div class="detalles-mensuales">
+                            <!-- Detalle Agosto -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Agosto</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($agasajosData['detalle_agosto'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Septiembre -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Septiembre</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($agasajosData['detalle_septiembre'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Octubre -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Octubre</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($agasajosData['detalle_octubre'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Diciembre -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Diciembre</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($agasajosData['detalle_diciembre'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Enero -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Enero</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($agasajosData['detalle_enero'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @elseif($sheetKey == 'Tecnología')
+                    <!-- Hoja Tecnología -->
+                    <div class="tecnologia-container">
+                        <div class="sheet-header">
+                            <h2 style="text-align: center; color: #2c3e50; font-size: 18px; font-weight: bold; margin-bottom: 20px;">
+                                PRESUPUESTO AÑO ESCOLAR 2024-2025
+                            </h2>
+                            <h3 style="text-align: center; color: #34495e; font-size: 16px; font-weight: 600; margin-bottom: 30px;">
+                                Equipo y Dotación de Salones / Oficinas - Tecnología
+                            </h3>
+                        </div>
+
+                        <!-- Tabla Resumen -->
+                        <div class="table-wrapper" style="margin-bottom: 30px;">
+                            <table class="table table-bordered budget-table" style="font-size: 12px;">
+                                <thead style="background: linear-gradient(135deg, #17a2b8, #138496); color: white;">
+                                    <tr>
+                                        <th style="width: 200px;">Concepto</th>
+                                        <th style="width: 120px;">Ppto Aprobado</th>
+                                        <th style="width: 120px;">Ejecutado</th>
+                                        <th style="width: 120px;">Ppto a Ejec</th>
+                                        <th style="width: 80px;">%Restante</th>
+                                        <th style="width: 100px;">Julio</th>
+                                        <th style="width: 100px;">Agosto</th>
+                                        <th style="width: 100px;">Septiembre</th>
+                                        <th style="width: 100px;">Octubre</th>
+                                        <th style="width: 100px;">Noviembre</th>
+                                        <th style="width: 100px;">Diciembre</th>
+                                        <th style="width: 100px;">Enero</th>
+                                        <th style="width: 100px;">Febrero</th>
+                                        <th style="width: 100px;">Marzo</th>
+                                        <th style="width: 100px;">Abril</th>
+                                        <th style="width: 100px;">Mayo</th>
+                                        <th style="width: 100px;">Junio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $resumen = $tecnologiaData['resumen'];
+                                        $ejecucion = $tecnologiaData['ejecucion_mensual'];
+                                    @endphp
+                                    <tr>
+                                        <td><strong>Tecnología institucional</strong></td>
+                                        <td class="number-cell">${{ number_format($resumen['tecnologia_institucional']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($resumen['tecnologia_institucional']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($resumen['tecnologia_institucional']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell"><strong>{{ $resumen['tecnologia_institucional']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell">${{ number_format($ejecucion['tecnologia_institucional']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['tecnologia_institucional']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['tecnologia_institucional']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['tecnologia_institucional']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['tecnologia_institucional']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['tecnologia_institucional']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['tecnologia_institucional']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($ejecucion['tecnologia_institucional']['febrero']) }}</td>
+                                        <td class="number-cell">{{ $ejecucion['tecnologia_institucional']['marzo'] > 0 ? '$'.number_format($ejecucion['tecnologia_institucional']['marzo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['tecnologia_institucional']['abril'] > 0 ? '$'.number_format($ejecucion['tecnologia_institucional']['abril']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['tecnologia_institucional']['mayo'] > 0 ? '$'.number_format($ejecucion['tecnologia_institucional']['mayo']) : '$0' }}</td>
+                                        <td class="number-cell">{{ $ejecucion['tecnologia_institucional']['junio'] > 0 ? '$'.number_format($ejecucion['tecnologia_institucional']['junio']) : '$0' }}</td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa; font-weight: bold;">
+                                        <td><strong>Total</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($resumen['total']['presupuesto_aprobado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($resumen['total']['ejecutado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($resumen['total']['presupuesto_ejecutar']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $resumen['total']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['julio']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['agosto']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['septiembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['octubre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['noviembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['diciembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['enero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($ejecucion['total']['febrero']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['marzo'] > 0 ? '$'.number_format($ejecucion['total']['marzo']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['abril'] > 0 ? '$'.number_format($ejecucion['total']['abril']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['mayo'] > 0 ? '$'.number_format($ejecucion['total']['mayo']) : '$0' }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $ejecucion['total']['junio'] > 0 ? '$'.number_format($ejecucion['total']['junio']) : '$0' }}</strong></td>
+                                    </tr>
+                                    <!-- Fila vacía para separación -->
+                                    <tr style="height: 20px;">
+                                        <td colspan="17" style="border: none; background: white;"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Detalles por mes -->
+                        <div class="detalles-mensuales">
+                            <!-- Detalle Septiembre -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Septiembre</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($tecnologiaData['detalle_septiembre'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Octubre -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Octubre</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($tecnologiaData['detalle_octubre'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Detalle Noviembre -->
+                            <div class="detalle-mes" style="margin-bottom: 30px;">
+                                <h4 style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-bottom: 15px;">Noviembre</h4>
+                                <div class="table-wrapper">
+                                    <table class="table table-bordered" style="font-size: 11px;">
+                                        <thead style="background: #ecf0f1;">
+                                            <tr>
+                                                <th style="width: 200px;">Nombre Tercero</th>
+                                                <th style="width: 300px;">Descripción</th>
+                                                <th style="width: 150px;">Concepto</th>
+                                                <th style="width: 120px; text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($tecnologiaData['detalle_noviembre'] as $item)
+                                            <tr>
+                                                <td>{{ $item['proveedor'] }}</td>
+                                                <td>{{ $item['descripcion'] }}</td>
+                                                <td>{{ $item['concepto'] }}</td>
+                                                <td class="number-cell">${{ number_format($item['valor']) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                @elseif($sheetKey == 'Afiliaciones y Suscrip')
+                    <!-- AFILIACIONES Y SUSCRIPCIONES -->
+                    <div class="afiliaciones-suscripciones-container">
+                        <h2 class="section-title">🏛️ AFILIACIONES Y SUSCRIPCIONES</h2>
+                        
+                        <!-- Tabla de Resumen por Concepto -->
+                        <div class="budget-table">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Ppto Aprobado</th>
+                                        <th>Ejecutado</th>
+                                        <th>Ppto a Ejecutar</th>
+                                        <th>% Restante</th>
+                                        <th>Jul</th>
+                                        <th>Ago</th>
+                                        <th>Sep</th>
+                                        <th>Oct</th>
+                                        <th>Nov</th>
+                                        <th>Dic</th>
+                                        <th>Ene</th>
+                                        <th>Feb</th>
+                                        <th>Mar</th>
+                                        <th>Abr</th>
+                                        <th>May</th>
+                                        <th>Jun</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>AACBI</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['aacbi']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['aacbi']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['aacbi']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['aacbi']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['aacbi']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>ADVANCED</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['advanced']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['advanced']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['advanced']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['advanced']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['advanced']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Red Papaz</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['red_papaz']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['red_papaz']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['red_papaz']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['red_papaz']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['red_papaz']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Impuestos Asumidos</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['impuestos_asumidos']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['impuestos_asumidos']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['impuestos_asumidos']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['impuestos_asumidos']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['impuestos_asumidos']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Data Coaching Service MAP</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['data_coaching_service']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['data_coaching_service']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['data_coaching_service']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['data_coaching_service']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['data_coaching_service']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Andep</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['andep']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['andep']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['andep']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['andep']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['andep']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>El Tiempo</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['el_tiempo']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['el_tiempo']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['el_tiempo']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['el_tiempo']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['el_tiempo']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Bordenorte</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['bordenorte']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['bordenorte']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['bordenorte']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['bordenorte']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['bordenorte']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Datacrédito</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['datacredito']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['datacredito']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['datacredito']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['datacredito']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['datacredito']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Licencias Sokanu Inthinking</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['licencias_sokanu']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['licencias_sokanu']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['licencias_sokanu']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['licencias_sokanu']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['licencias_sokanu']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Cognia</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['cognia']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['cognia']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['cognia']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['cognia']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cognia']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Cipres (Mejores Colegios)</strong></td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['cipres']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['cipres']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['resumen']['cipres']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $afiliacionesSuscripcionesData['resumen']['cipres']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['cipres']['junio']) }}</td>
+                                    </tr>
+                                    <tr style="background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
+                                        <td><strong>TOTAL</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['resumen']['total']['presupuesto_aprobado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['resumen']['total']['ejecutado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['resumen']['total']['presupuesto_ejecutar']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $afiliacionesSuscripcionesData['resumen']['total']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['julio']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['agosto']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['septiembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['octubre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['noviembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['diciembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['enero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['febrero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['marzo']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['abril']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['mayo']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($afiliacionesSuscripcionesData['ejecucion_mensual']['total']['junio']) }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Detalles por Mes -->
+                        <div class="row mt-4">
+                            @php
+                                $mesesDetalle = [
+                                    'septiembre' => 'Septiembre 2024',
+                                    'octubre' => 'Octubre 2024',
+                                    'noviembre' => 'Noviembre 2024',
+                                    'diciembre' => 'Diciembre 2024',
+                                    'enero' => 'Enero 2025'
+                                ];
+                            @endphp
+
+                            @foreach($mesesDetalle as $mes => $nombreMes)
+                                @if(isset($afiliacionesSuscripcionesData['detalle_' . $mes]) && count($afiliacionesSuscripcionesData['detalle_' . $mes]) > 0)
+                                    <div class="col-md-6 col-lg-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-header bg-primary text-white">
+                                                <h6 class="card-title mb-0">📅 {{ $nombreMes }}</h6>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-hover mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th style="font-size: 0.8em;">Proveedor</th>
+                                                                <th style="font-size: 0.8em;">Concepto</th>
+                                                                <th style="font-size: 0.8em;" class="text-end">Valor</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($afiliacionesSuscripcionesData['detalle_' . $mes] as $item)
+                                                            <tr>
+                                                                <td style="font-size: 0.85em;">
+                                                                    <strong>{{ $item['proveedor'] }}</strong>
+                                                                    <br>
+                                                                    <small class="text-muted">{{ $item['descripcion'] }}</small>
+                                                                </td>
+                                                                <td style="font-size: 0.85em;">{{ $item['concepto'] }}</td>
+                                                                <td style="font-size: 0.85em;" class="text-end">
+                                                                    <span class="badge bg-success">${{ number_format($item['valor']) }}</span>
+                                                                </td>
+                                                            </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer bg-light text-center">
+                                                @php
+                                                    $totalMes = collect($afiliacionesSuscripcionesData['detalle_' . $mes])->sum('valor');
+                                                @endphp
+                                                <strong>Total: ${{ number_format($totalMes) }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                    
+                @elseif($sheetKey == 'IB')
+                    <!-- BACHILLERATO INTERNACIONAL -->
+                    <div id="sheet-ib" class="sheet-section">
+                        <h2 class="section-title">🎓 BACHILLERATO INTERNACIONAL</h2>
+                        
+                        <!-- Resumen Ejecutivo -->
+                        <div class="summary-section">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($bachilleratoInternacionalData['resumen']['presupuesto_aprobado']) }}</div>
+                                        <div class="summary-label">Presupuesto Aprobado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($bachilleratoInternacionalData['resumen']['ejecutado']) }}</div>
+                                        <div class="summary-label">Ejecutado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($bachilleratoInternacionalData['resumen']['presupuesto_ejecutar']) }}</div>
+                                        <div class="summary-label">Por Ejecutar</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">{{ $bachilleratoInternacionalData['resumen']['porcentaje_restante'] }}%</div>
+                                        <div class="summary-label">% Restante</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Conceptos -->
+                        <div class="table-container">
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Ppto Aprobado</th>
+                                        <th>Ejecutado</th>
+                                        <th>Ppto a Ejec</th>
+                                        <th>%Restante</th>
+                                        <th>Julio</th>
+                                        <th>Agosto</th>
+                                        <th>Septiembre</th>
+                                        <th>Octubre</th>
+                                        <th>Noviembre</th>
+                                        <th>Diciembre</th>
+                                        <th>Enero</th>
+                                        <th>Febrero</th>
+                                        <th>Marzo</th>
+                                        <th>Abril</th>
+                                        <th>Mayo</th>
+                                        <th>Junio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($bachilleratoInternacionalData['conceptos'] as $concepto)
+                                    <tr>
+                                        <td><strong>{{ $concepto['concepto'] }}</strong></td>
+                                        <td class="number-cell">${{ number_format($concepto['ppto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($concepto['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($concepto['ppto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $concepto['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'PYP ANNUAL FEE- SEP US $ 7,443 TRM 4.300')
+                                                ${{ number_format(29735564) }}
+                                            @elseif($concepto['concepto'] == 'DP ANNUAL FEE - agosto US $10,177 TRM 4.300')
+                                                ${{ number_format(40653589) }}
+                                            @elseif($concepto['concepto'] == 'RETENCION EN LA FUENTE ASUMIDA PAGOS EXTERIOR')
+                                                ${{ number_format(16559593) }}
+                                            @elseif($concepto['concepto'] == 'REACREDITACION COGNIA 8000 usd +15000000')
+                                                ${{ number_format(12408810) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'MYP ANNUAL FEE - SEP US $ 8780 TRM 4.300')
+                                                ${{ number_format(36252565) }}
+                                            @elseif($concepto['concepto'] == 'RETENCION EN LA FUENTE ASUMIDA PAGOS EXTERIOR')
+                                                ${{ number_format(7250513) }}
+                                            @elseif($concepto['concepto'] == 'REACREDITACION COGNIA 8000 usd +15000000')
+                                                ${{ number_format(33360800) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'DERECHO EXAMENES US 14409 TRM 4.000')
+                                                ${{ number_format(88440551) }}
+                                            @elseif($concepto['concepto'] == 'RETENCION EN LA FUENTE ASUMIDA PAGOS EXTERIOR')
+                                                ${{ number_format(17688110) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                    </tr>
+                                    @endforeach
+                                    <tr class="total-row">
+                                        <td><strong>Total</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['resumen']['presupuesto_aprobado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['resumen']['ejecutado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['resumen']['presupuesto_ejecutar']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $bachilleratoInternacionalData['resumen']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['julio']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['agosto']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['septiembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['octubre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['noviembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['diciembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['enero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['febrero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['marzo']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['abril']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['mayo']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($bachilleratoInternacionalData['meses']['junio']) }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Detalle Mensual con Cards -->
+                        <div class="monthly-details-section mt-5 mb-4">
+                            <h3 class="mb-4">📅 Detalle de Ejecución Mensual</h3>
+                            <div class="row">
+                                @foreach(['agosto', 'septiembre', 'noviembre'] as $mes)
+                                    @if($bachilleratoInternacionalData['meses'][$mes] > 0)
+                                        <div class="col-lg-4 col-md-6 mb-4">
+                                            <div class="card shadow-sm h-100">
+                                                <div class="card-header bg-gradient-info text-white">
+                                                    <h5 class="card-title mb-0">
+                                                        <i class="fas fa-calendar-alt me-2"></i>
+                                                        {{ ucfirst($mes) }} 2024
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    @if($mes == 'agosto')
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-graduation-cap text-primary me-2"></i>
+                                                                PYP Annual Fee
+                                                            </span>
+                                                            <span class="detail-amount badge bg-success">$29,735,564</span>
+                                                        </div>
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-graduation-cap text-primary me-2"></i>
+                                                                DP Annual Fee
+                                                            </span>
+                                                            <span class="detail-amount badge bg-success">$40,653,589</span>
+                                                        </div>
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-receipt text-warning me-2"></i>
+                                                                Retención en la Fuente
+                                                            </span>
+                                                            <span class="detail-amount badge bg-warning">$16,559,593</span>
+                                                        </div>
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-certificate text-info me-2"></i>
+                                                                Reacreditación COGNIA
+                                                            </span>
+                                                            <span class="detail-amount badge bg-info">$12,408,810</span>
+                                                        </div>
+                                                    @elseif($mes == 'septiembre')
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-graduation-cap text-primary me-2"></i>
+                                                                MYP Annual Fee
+                                                            </span>
+                                                            <span class="detail-amount badge bg-success">$36,252,565</span>
+                                                        </div>
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-receipt text-warning me-2"></i>
+                                                                Retención en la Fuente
+                                                            </span>
+                                                            <span class="detail-amount badge bg-warning">$7,250,513</span>
+                                                        </div>
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-certificate text-info me-2"></i>
+                                                                Reacreditación COGNIA
+                                                            </span>
+                                                            <span class="detail-amount badge bg-info">$33,360,800</span>
+                                                        </div>
+                                                    @elseif($mes == 'noviembre')
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-file-alt text-danger me-2"></i>
+                                                                Derecho Exámenes
+                                                            </span>
+                                                            <span class="detail-amount badge bg-danger">$88,440,551</span>
+                                                        </div>
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-receipt text-warning me-2"></i>
+                                                                Retención en la Fuente
+                                                            </span>
+                                                            <span class="detail-amount badge bg-warning">$17,688,110</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <div class="card-footer bg-light">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <strong class="text-primary">Total del Mes:</strong>
+                                                        <strong class="text-success h5 mb-0">${{ number_format($bachilleratoInternacionalData['meses'][$mes]) }}</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    
+                @elseif($sheetKey == 'Deportes')
+                    <!-- DEPORTES -->
+                    <div id="sheet-deportes" class="sheet-section">
+                        <h2 class="section-title">⚽ DEPORTES</h2>
+                        
+                        <!-- Resumen Ejecutivo -->
+                        <div class="summary-section">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($deportesData['resumen']['presupuesto_aprobado']) }}</div>
+                                        <div class="summary-label">Presupuesto Aprobado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($deportesData['resumen']['ejecutado']) }}</div>
+                                        <div class="summary-label">Ejecutado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($deportesData['resumen']['presupuesto_ejecutar']) }}</div>
+                                        <div class="summary-label">Por Ejecutar</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">{{ $deportesData['resumen']['porcentaje_restante'] }}%</div>
+                                        <div class="summary-label">% Restante</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Conceptos -->
+                        <div class="table-container">
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Ppto Aprobado</th>
+                                        <th>Ejecutado</th>
+                                        <th>Ppto a Ejec</th>
+                                        <th>%Restante</th>
+                                        <th>Julio</th>
+                                        <th>Agosto</th>
+                                        <th>Septiembre</th>
+                                        <th>Octubre</th>
+                                        <th>Noviembre</th>
+                                        <th>Diciembre</th>
+                                        <th>Enero</th>
+                                        <th>Febrero</th>
+                                        <th>Marzo</th>
+                                        <th>Abril</th>
+                                        <th>Mayo</th>
+                                        <th>Junio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($deportesData['conceptos'] as $concepto)
+                                    <tr>
+                                        <td><strong>{{ $concepto['concepto'] }}</strong></td>
+                                        <td class="number-cell">${{ number_format($concepto['ppto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($concepto['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($concepto['ppto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $concepto['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'AFILIACION')
+                                                ${{ number_format(4195000) }}
+                                            @elseif($concepto['concepto'] == 'TRANSPORTE SALIDAS DEPORTIVAS')
+                                                ${{ number_format(3366000) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'PARTICIPACION EN TEMPORADAS')
+                                                ${{ number_format(1950000) }}
+                                            @elseif($concepto['concepto'] == 'TRANSPORTE SALIDAS DEPORTIVAS')
+                                                ${{ number_format(2448000) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'TRANSPORTE SALIDAS DEPORTIVAS')
+                                                ${{ number_format(1125000) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                    </tr>
+                                    @endforeach
+                                    <tr class="total-row">
+                                        <td><strong>Total Gastos</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['resumen']['presupuesto_aprobado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['resumen']['ejecutado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['resumen']['presupuesto_ejecutar']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $deportesData['resumen']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['julio']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['agosto']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['septiembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['octubre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['noviembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['diciembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['enero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['febrero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['marzo']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['abril']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['mayo']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($deportesData['meses']['junio']) }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Detalle Mensual con Cards -->
+                        <div class="monthly-details-section mt-5 mb-4">
+                            <h3 class="mb-4">📅 Detalle de Ejecución Mensual</h3>
+                            <div class="row">
+                                @foreach(['septiembre', 'octubre', 'noviembre'] as $mes)
+                                    @if($deportesData['meses'][$mes] > 0)
+                                        <div class="col-lg-4 col-md-6 mb-4">
+                                            <div class="card shadow-sm h-100">
+                                                <div class="card-header bg-gradient-primary text-white">
+                                                    <h5 class="card-title mb-0">
+                                                        <i class="fas fa-calendar-alt me-2"></i>
+                                                        {{ ucfirst($mes) }} 2024
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    @if($mes == 'septiembre')
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-id-card text-success me-2"></i>
+                                                                Afiliación
+                                                            </span>
+                                                            <span class="detail-amount badge bg-success">$4,195,000</span>
+                                                        </div>
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-bus text-warning me-2"></i>
+                                                                Transporte Salidas
+                                                            </span>
+                                                            <span class="detail-amount badge bg-warning">$3,366,000</span>
+                                                        </div>
+                                                    @elseif($mes == 'octubre')
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-trophy text-primary me-2"></i>
+                                                                Participación Temporadas
+                                                            </span>
+                                                            <span class="detail-amount badge bg-primary">$1,950,000</span>
+                                                        </div>
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-bus text-warning me-2"></i>
+                                                                Transporte Salidas
+                                                            </span>
+                                                            <span class="detail-amount badge bg-warning">$2,448,000</span>
+                                                        </div>
+                                                    @elseif($mes == 'noviembre')
+                                                        <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                            <span class="detail-concept">
+                                                                <i class="fas fa-bus text-warning me-2"></i>
+                                                                Transporte Salidas
+                                                            </span>
+                                                            <span class="detail-amount badge bg-warning">$1,125,000</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <div class="card-footer bg-light">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <strong class="text-primary">Total del Mes:</strong>
+                                                        <strong class="text-success h5 mb-0">${{ number_format($deportesData['meses'][$mes]) }}</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    
+                @elseif($sheetKey == 'Entrenamientos')
+                    <!-- ENTRENAMIENTOS -->
+                    <div id="sheet-entrenamientos" class="sheet-section">
+                        <h2 class="section-title">🏃‍♂️ ENTRENAMIENTOS 2024-2025</h2>
+                        
+                        <!-- Resumen Ejecutivo -->
+                        <div class="summary-section">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-success">${{ number_format($entrenamientosData['resumen']['total_ingresos']) }}</div>
+                                        <div class="summary-label">Total Ingresos</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-danger">${{ number_format($entrenamientosData['resumen']['total_gastos']) }}</div>
+                                        <div class="summary-label">Total Gastos</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value {{ $entrenamientosData['resumen']['deficit_utilidad'] < 0 ? 'text-danger' : 'text-success' }}">
+                                            ${{ number_format($entrenamientosData['resumen']['deficit_utilidad']) }}
+                                        </div>
+                                        <div class="summary-label">{{ $entrenamientosData['resumen']['deficit_utilidad'] < 0 ? 'Déficit' : 'Utilidad' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">{{ number_format($entrenamientosData['resumen']['porcentaje_deficit'], 1) }}%</div>
+                                        <div class="summary-label">% Déficit</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Ingresos -->
+                        <div class="table-container mb-4">
+                            <h3 class="mb-3">💰 INGRESOS</h3>
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Julio</th>
+                                        <th>Agosto</th>
+                                        <th>Septiembre</th>
+                                        <th>Octubre</th>
+                                        <th>Noviembre</th>
+                                        <th>Diciembre</th>
+                                        <th>Enero</th>
+                                        <th>Febrero</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Valor Facturado</strong></td>
+                                        @foreach(['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'] as $mes)
+                                        <td class="number-cell">
+                                            @if($entrenamientosData['ingresos'][$mes]['estudiantes'] > 0)
+                                                {{ $entrenamientosData['ingresos'][$mes]['estudiantes'] }} est.<br>
+                                                ${{ number_format($entrenamientosData['ingresos'][$mes]['valor']) }}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        @endforeach
+                                        <td class="number-cell"><strong>${{ number_format($entrenamientosData['resumen']['total_ingresos']) }}</strong></td>
+                                    </tr>
+                                    <tr class="total-row">
+                                        <td><strong>Total Ingreso</strong></td>
+                                        @foreach(['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'] as $mes)
+                                        <td class="number-cell"><strong>${{ number_format($entrenamientosData['ingresos'][$mes]['valor']) }}</strong></td>
+                                        @endforeach
+                                        <td class="number-cell"><strong>${{ number_format($entrenamientosData['resumen']['total_ingresos']) }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Tabla de Gastos -->
+                        <div class="table-container mb-4">
+                            <h3 class="mb-3">💸 GASTOS</h3>
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Julio</th>
+                                        <th>Agosto</th>
+                                        <th>Septiembre</th>
+                                        <th>Octubre</th>
+                                        <th>Noviembre</th>
+                                        <th>Diciembre</th>
+                                        <th>Enero</th>
+                                        <th>Febrero</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Transporte Entrenamientos</strong></td>
+                                        @foreach(['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'] as $mes)
+                                        <td class="number-cell">
+                                            @if($entrenamientosData['gastos']['transporte'][$mes]['valor'] > 0)
+                                                {{ $entrenamientosData['gastos']['transporte'][$mes]['rutas_dias'] }}<br>
+                                                ${{ number_format($entrenamientosData['gastos']['transporte'][$mes]['valor']) }}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        @endforeach
+                                        <td class="number-cell"><strong>${{ number_format($entrenamientosData['gastos']['transporte']['total']) }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Cobro Entrenadores</strong></td>
+                                        @foreach(['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'] as $mes)
+                                        <td class="number-cell">
+                                            @if($entrenamientosData['gastos']['entrenadores'][$mes] > 0)
+                                                ${{ number_format($entrenamientosData['gastos']['entrenadores'][$mes]) }}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        @endforeach
+                                        <td class="number-cell"><strong>${{ number_format($entrenamientosData['gastos']['entrenadores']['total']) }}</strong></td>
+                                    </tr>
+                                    <tr class="total-row">
+                                        <td><strong>Total Gastos</strong></td>
+                                        @foreach(['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'] as $mes)
+                                        <td class="number-cell"><strong>${{ number_format($entrenamientosData['totales_mensuales'][$mes]['gastos']) }}</strong></td>
+                                        @endforeach
+                                        <td class="number-cell"><strong>${{ number_format($entrenamientosData['resumen']['total_gastos']) }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Tabla de Resultados -->
+                        <div class="table-container">
+                            <h3 class="mb-3">📊 (DÉFICIT) / UTILIDAD</h3>
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th>Resultado</th>
+                                        <th>Julio</th>
+                                        <th>Agosto</th>
+                                        <th>Septiembre</th>
+                                        <th>Octubre</th>
+                                        <th>Noviembre</th>
+                                        <th>Diciembre</th>
+                                        <th>Enero</th>
+                                        <th>Febrero</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="total-row">
+                                        <td><strong>(Déficit) / Utilidad</strong></td>
+                                        @foreach(['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'] as $mes)
+                                        <td class="number-cell">
+                                            <strong class="{{ $entrenamientosData['totales_mensuales'][$mes]['resultado'] < 0 ? 'text-danger' : 'text-success' }}">
+                                                @if($entrenamientosData['totales_mensuales'][$mes]['resultado'] < 0)
+                                                    (${{ number_format(abs($entrenamientosData['totales_mensuales'][$mes]['resultado'])) }})
+                                                @else
+                                                    ${{ number_format($entrenamientosData['totales_mensuales'][$mes]['resultado']) }}
+                                                @endif
+                                            </strong>
+                                        </td>
+                                        @endforeach
+                                        <td class="number-cell">
+                                            <strong class="{{ $entrenamientosData['resumen']['deficit_utilidad'] < 0 ? 'text-danger' : 'text-success' }}">
+                                                @if($entrenamientosData['resumen']['deficit_utilidad'] < 0)
+                                                    (${{ number_format(abs($entrenamientosData['resumen']['deficit_utilidad'])) }})
+                                                @else
+                                                    ${{ number_format($entrenamientosData['resumen']['deficit_utilidad']) }}
+                                                @endif
+                                            </strong>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Detalle Mensual con Cards -->
+                        <div class="monthly-details-section mt-5 mb-4">
+                            <h3 class="mb-4">📅 Resumen Mensual</h3>
+                            <div class="row">
+                                @foreach(['septiembre', 'octubre', 'noviembre', 'febrero'] as $mes)
+                                    @if($entrenamientosData['ingresos'][$mes]['valor'] > 0 || $entrenamientosData['totales_mensuales'][$mes]['gastos'] > 0)
+                                        <div class="col-lg-3 col-md-6 mb-4">
+                                            <div class="card shadow-sm h-100">
+                                                <div class="card-header {{ $entrenamientosData['totales_mensuales'][$mes]['resultado'] >= 0 ? 'bg-gradient-success' : 'bg-gradient-danger' }} text-white">
+                                                    <h5 class="card-title mb-0">
+                                                        <i class="fas fa-calendar-alt me-2"></i>
+                                                        {{ ucfirst($mes) }} 2024
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                        <span class="detail-concept">
+                                                            <i class="fas fa-users text-info me-2"></i>
+                                                            Estudiantes
+                                                        </span>
+                                                        <span class="detail-amount badge bg-info">{{ $entrenamientosData['ingresos'][$mes]['estudiantes'] }}</span>
+                                                    </div>
+                                                    <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                        <span class="detail-concept">
+                                                            <i class="fas fa-dollar-sign text-success me-2"></i>
+                                                            Ingresos
+                                                        </span>
+                                                        <span class="detail-amount badge bg-success">${{ number_format($entrenamientosData['ingresos'][$mes]['valor']) }}</span>
+                                                    </div>
+                                                    <div class="detail-item d-flex justify-content-between align-items-center mb-3">
+                                                        <span class="detail-concept">
+                                                            <i class="fas fa-credit-card text-warning me-2"></i>
+                                                            Gastos
+                                                        </span>
+                                                        <span class="detail-amount badge bg-warning">${{ number_format($entrenamientosData['totales_mensuales'][$mes]['gastos']) }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer {{ $entrenamientosData['totales_mensuales'][$mes]['resultado'] >= 0 ? 'bg-light' : 'bg-light' }}">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <strong class="text-primary">{{ $entrenamientosData['totales_mensuales'][$mes]['resultado'] >= 0 ? 'Utilidad:' : 'Déficit:' }}</strong>
+                                                        <strong class="{{ $entrenamientosData['totales_mensuales'][$mes]['resultado'] >= 0 ? 'text-success' : 'text-danger' }} h5 mb-0">
+                                                            @if($entrenamientosData['totales_mensuales'][$mes]['resultado'] < 0)
+                                                                (${{ number_format(abs($entrenamientosData['totales_mensuales'][$mes]['resultado'])) }})
+                                                            @else
+                                                                ${{ number_format($entrenamientosData['totales_mensuales'][$mes]['resultado']) }}
+                                                            @endif
+                                                        </strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    
+                @elseif($sheetKey == 'Servicios Publicos')
+                    <!-- SERVICIOS PÚBLICOS Y ARRENDAMIENTOS -->
+                    <div id="sheet-servicios-publicos" class="sheet-section">
+                        <h2 class="section-title">🏢 SERVICIOS PÚBLICOS Y ARRENDAMIENTOS</h2>
+                        
+                        <!-- Resumen Ejecutivo -->
+                        <div class="summary-section">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($serviciosPublicosData['resumen']['presupuesto_aprobado']) }}</div>
+                                        <div class="summary-label">Presupuesto Aprobado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($serviciosPublicosData['resumen']['ejecutado']) }}</div>
+                                        <div class="summary-label">Ejecutado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($serviciosPublicosData['resumen']['presupuesto_ejecutar']) }}</div>
+                                        <div class="summary-label">Por Ejecutar</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">{{ $serviciosPublicosData['resumen']['porcentaje_restante'] }}%</div>
+                                        <div class="summary-label">% Restante</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Conceptos -->
+                        <div class="table-container">
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Ppto Aprobado</th>
+                                        <th>Ejecutado</th>
+                                        <th>Ppto a Ejec</th>
+                                        <th>%Restante</th>
+                                        <th>Julio</th>
+                                        <th>Agosto</th>
+                                        <th>Septiembre</th>
+                                        <th>Octubre</th>
+                                        <th>Noviembre</th>
+                                        <th>Diciembre</th>
+                                        <th>Enero</th>
+                                        <th>Febrero</th>
+                                        <th>Marzo</th>
+                                        <th>Abril</th>
+                                        <th>Mayo</th>
+                                        <th>Junio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($serviciosPublicosData['conceptos'] as $concepto)
+                                    <tr>
+                                        <td><strong>{{ $concepto['concepto'] }}</strong></td>
+                                        <td class="number-cell">${{ number_format($concepto['ppto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($concepto['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($concepto['ppto_ejecutar']) }}</td>
+                                        <td class="number-cell {{ $concepto['porcentaje_restante'] < 0 ? 'text-danger' : '' }}">{{ $concepto['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'AGUA')
+                                                ${{ number_format(143558) }}
+                                            @elseif($concepto['concepto'] == 'LUZ')
+                                                ${{ number_format(6016849) }}
+                                            @elseif($concepto['concepto'] == 'TELEFONO - ETB')
+                                                ${{ number_format(1599660) }}
+                                            @elseif($concepto['concepto'] == 'TELEFONO - CORPORATIVO')
+                                                ${{ number_format(837904) }}
+                                            @elseif($concepto['concepto'] == 'VIGILANCIA - Metros cuadrados')
+                                                ${{ number_format(11665732) }}
+                                            @elseif($concepto['concepto'] == 'INTERNET IFX')
+                                                ${{ number_format(10445750) }}
+                                            @elseif($concepto['concepto'] == 'Phidias')
+                                                ${{ number_format(1847670) }}
+                                            @elseif($concepto['concepto'] == 'Zeus Nomina/contabilidad/activos fijos')
+                                                ${{ number_format(2669765) }}
+                                            @elseif($concepto['concepto'] == 'Credibanco')
+                                                ${{ number_format(53767) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'AGUA')
+                                                ${{ number_format(298596) }}
+                                            @elseif($concepto['concepto'] == 'LUZ')
+                                                ${{ number_format(14485034) }}
+                                            @elseif($concepto['concepto'] == 'TELEFONO - ETB')
+                                                ${{ number_format(1588800) }}
+                                            @elseif($concepto['concepto'] == 'TELEFONO - CORPORATIVO')
+                                                ${{ number_format(837904) }}
+                                            @elseif($concepto['concepto'] == 'VIGILANCIA - Metros cuadrados')
+                                                ${{ number_format(11716836) }}
+                                            @elseif($concepto['concepto'] == 'INTERNET IFX')
+                                                ${{ number_format(8308009) }}
+                                            @elseif($concepto['concepto'] == 'Phidias')
+                                                ${{ number_format(1847670) }}
+                                            @elseif($concepto['concepto'] == 'Zeus Nomina/contabilidad/activos fijos')
+                                                ${{ number_format(2669765) }}
+                                            @elseif($concepto['concepto'] == 'Credibanco')
+                                                ${{ number_format(112809) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'AGUA')
+                                                ${{ number_format(148049) }}
+                                            @elseif($concepto['concepto'] == 'LUZ')
+                                                ${{ number_format(8451133) }}
+                                            @elseif($concepto['concepto'] == 'TELEFONO - ETB')
+                                                ${{ number_format(1584035) }}
+                                            @elseif($concepto['concepto'] == 'TELEFONO - CORPORATIVO')
+                                                ${{ number_format(964265) }}
+                                            @elseif($concepto['concepto'] == 'VIGILANCIA - Metros cuadrados')
+                                                ${{ number_format(11716836) }}
+                                            @elseif($concepto['concepto'] == 'INTERNET IFX')
+                                                ${{ number_format(8308009) }}
+                                            @elseif($concepto['concepto'] == 'Phidias')
+                                                ${{ number_format(1847670) }}
+                                            @elseif($concepto['concepto'] == 'Zeus Nomina/contabilidad/activos fijos')
+                                                ${{ number_format(2669765) }}
+                                            @elseif($concepto['concepto'] == 'Credibanco')
+                                                ${{ number_format(112809) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                    </tr>
+                                    @endforeach
+                                    <tr class="total-row">
+                                        <td><strong>Total</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['resumen']['presupuesto_aprobado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['resumen']['ejecutado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['resumen']['presupuesto_ejecutar']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $serviciosPublicosData['resumen']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['julio']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['agosto']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['septiembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['octubre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['noviembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['diciembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['enero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['febrero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['marzo']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['abril']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['mayo']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($serviciosPublicosData['meses']['junio']) }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Detalle Mensual con Cards -->
+                        <div class="monthly-details-section mt-5 mb-4">
+                            <h3 class="mb-4">📅 Distribución de Gastos Principales</h3>
+                            <div class="row">
+                                @foreach(['julio', 'agosto', 'septiembre'] as $mes)
+                                    @if($serviciosPublicosData['meses'][$mes] > 0)
+                                        <div class="col-lg-4 col-md-6 mb-4">
+                                            <div class="card shadow-sm h-100">
+                                                <div class="card-header bg-gradient-secondary text-white">
+                                                    <h5 class="card-title mb-0">
+                                                        <i class="fas fa-calendar-alt me-2"></i>
+                                                        {{ ucfirst($mes) }} 2024
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="detail-item d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="detail-concept">
+                                                            <i class="fas fa-tint text-primary me-2"></i>
+                                                            Agua
+                                                        </span>
+                                                        <span class="detail-amount badge bg-primary">${{ number_format($serviciosPublicosData['detalle_meses'][$mes]['agua']) }}</span>
+                                                    </div>
+                                                    <div class="detail-item d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="detail-concept">
+                                                            <i class="fas fa-bolt text-warning me-2"></i>
+                                                            Luz
+                                                        </span>
+                                                        <span class="detail-amount badge bg-warning">${{ number_format($serviciosPublicosData['detalle_meses'][$mes]['luz']) }}</span>
+                                                    </div>
+                                                    <div class="detail-item d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="detail-concept">
+                                                            <i class="fas fa-phone text-info me-2"></i>
+                                                            Teléfonos
+                                                        </span>
+                                                        <span class="detail-amount badge bg-info">${{ number_format($serviciosPublicosData['detalle_meses'][$mes]['telefono_etb'] + $serviciosPublicosData['detalle_meses'][$mes]['telefono_corp']) }}</span>
+                                                    </div>
+                                                    <div class="detail-item d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="detail-concept">
+                                                            <i class="fas fa-shield-alt text-success me-2"></i>
+                                                            Vigilancia
+                                                        </span>
+                                                        <span class="detail-amount badge bg-success">${{ number_format($serviciosPublicosData['detalle_meses'][$mes]['vigilancia']) }}</span>
+                                                    </div>
+                                                    <div class="detail-item d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="detail-concept">
+                                                            <i class="fas fa-wifi text-secondary me-2"></i>
+                                                            Internet
+                                                        </span>
+                                                        <span class="detail-amount badge bg-secondary">${{ number_format($serviciosPublicosData['detalle_meses'][$mes]['internet']) }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer bg-light">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <strong class="text-primary">Total del Mes:</strong>
+                                                        <strong class="text-dark h5 mb-0">${{ number_format($serviciosPublicosData['meses'][$mes]) }}</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                            
+                            <!-- Sección de Categorías de Gastos -->
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-info text-white">
+                                            <h5 class="mb-0">🏠 Servicios Básicos</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="service-item d-flex justify-content-between mb-2">
+                                                <span>💧 Agua</span>
+                                                <span class="badge bg-primary">${{ number_format(4087293) }}</span>
+                                            </div>
+                                            <div class="service-item d-flex justify-content-between mb-2">
+                                                <span>⚡ Energía Eléctrica</span>
+                                                <span class="badge bg-warning">${{ number_format(62345219) }}</span>
+                                            </div>
+                                            <div class="service-item d-flex justify-content-between mb-2">
+                                                <span>📞 Telefonía</span>
+                                                <span class="badge bg-info">${{ number_format(17275774) }}</span>
+                                            </div>
+                                            <div class="service-item d-flex justify-content-between">
+                                                <span>🛜 Internet</span>
+                                                <span class="badge bg-secondary">${{ number_format(60230819) }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-success text-white">
+                                            <h5 class="mb-0">🔒 Servicios Especializados</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="service-item d-flex justify-content-between mb-2">
+                                                <span>👮 Vigilancia</span>
+                                                <span class="badge bg-success">${{ number_format(102627572) }}</span>
+                                            </div>
+                                            <div class="service-item d-flex justify-content-between mb-2">
+                                                <span>💻 Software Phidias</span>
+                                                <span class="badge bg-primary">${{ number_format(14983787) }}</span>
+                                            </div>
+                                            <div class="service-item d-flex justify-content-between mb-2">
+                                                <span>📊 Software Zeus</span>
+                                                <span class="badge bg-warning">${{ number_format(18966011) }}</span>
+                                            </div>
+                                            <div class="service-item d-flex justify-content-between">
+                                                <span>🧾 Otros Servicios</span>
+                                                <span class="badge bg-secondary">${{ number_format(1607095) }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                @elseif($sheetKey == 'Reparaciones Mayores')
+                    <!-- REPARACIONES MAYORES -->
+                    <div id="sheet-reparaciones-mayores" class="sheet-section">
+                        <h2 class="section-title">🔧 REPARACIONES MAYORES - MANTENIMIENTO</h2>
+                        
+                        <!-- Alerta de Sobreejecución -->
+                        <div class="alert alert-warning mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle me-3 fa-2x"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-1">⚠️ Sobreejecución Presupuestal Detectada</h5>
+                                    <p class="mb-0">Este rubro presenta una sobreejecución del <strong>52%</strong> ($90,230,748) sobre el presupuesto aprobado. Se requiere análisis y control inmediato.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Resumen Ejecutivo -->
+                        <div class="summary-section">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($reparacionesMayoresData['resumen']['presupuesto_aprobado']) }}</div>
+                                        <div class="summary-label">Presupuesto Aprobado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-danger">${{ number_format($reparacionesMayoresData['resumen']['ejecutado']) }}</div>
+                                        <div class="summary-label">Ejecutado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-danger">(${{ number_format(abs($reparacionesMayoresData['resumen']['presupuesto_ejecutar'])) }})</div>
+                                        <div class="summary-label">Sobreejecución</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-danger">{{ $reparacionesMayoresData['resumen']['porcentaje_restante'] }}%</div>
+                                        <div class="summary-label">% Sobreejecución</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Conceptos -->
+                        <div class="table-container">
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Ppto Aprobado</th>
+                                        <th>Ejecutado</th>
+                                        <th>Sobreejecución</th>
+                                        <th>%Sobreejecución</th>
+                                        <th>Julio</th>
+                                        <th>Agosto</th>
+                                        <th>Septiembre</th>
+                                        <th>Octubre</th>
+                                        <th>Noviembre</th>
+                                        <th>Diciembre</th>
+                                        <th>Enero</th>
+                                        <th>Febrero</th>
+                                        <th>Marzo</th>
+                                        <th>Abril</th>
+                                        <th>Mayo</th>
+                                        <th>Junio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($reparacionesMayoresData['conceptos'] as $concepto)
+                                    <tr>
+                                        <td><strong>{{ $concepto['concepto'] }}</strong></td>
+                                        <td class="number-cell">${{ number_format($concepto['ppto_aprobado']) }}</td>
+                                        <td class="number-cell text-danger">${{ number_format($concepto['ejecutado']) }}</td>
+                                        <td class="number-cell text-danger">(${{ number_format(abs($concepto['ppto_ejecutar'])) }})</td>
+                                        <td class="number-cell text-danger">{{ $concepto['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($reparacionesMayoresData['meses']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($reparacionesMayoresData['meses']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($reparacionesMayoresData['meses']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($reparacionesMayoresData['meses']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($reparacionesMayoresData['meses']['noviembre']) }}</td>
+                                        <td class="number-cell {{ $reparacionesMayoresData['meses']['diciembre'] < 0 ? 'text-success' : '' }}">
+                                            @if($reparacionesMayoresData['meses']['diciembre'] < 0)
+                                                (${{ number_format(abs($reparacionesMayoresData['meses']['diciembre'])) }})
+                                            @else
+                                                ${{ number_format($reparacionesMayoresData['meses']['diciembre']) }}
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">${{ number_format($reparacionesMayoresData['meses']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($reparacionesMayoresData['meses']['febrero']) }}</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Análisis de Gastos por Categoría -->
+                        <div class="monthly-details-section mt-5 mb-4">
+                            <h3 class="mb-4">📊 Análisis de Gastos por Categoría</h3>
+                            <div class="row">
+                                @foreach($reparacionesMayoresData['categorias_gastos'] as $categoria)
+                                    <div class="col-lg-3 col-md-6 mb-4">
+                                        <div class="card shadow-sm h-100">
+                                            <div class="card-header bg-gradient-warning text-dark">
+                                                <h6 class="card-title mb-0">
+                                                    <i class="fas fa-tools me-2"></i>
+                                                    {{ $categoria['nombre'] }}
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="text-center">
+                                                    <h4 class="text-warning">${{ number_format($categoria['total']) }}</h4>
+                                                    <p class="text-muted small">{{ $categoria['descripcion'] }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Detalle de Proveedores Principales -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0">🛠️ Septiembre - Principales Proveedores</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @foreach(array_slice($reparacionesMayoresData['detalle_septiembre'], 0, 8, true) as $proveedor => $valor)
+                                        <div class="provider-item d-flex justify-content-between mb-2">
+                                            <span class="text-truncate me-2" style="max-width: 70%;">{{ $proveedor }}</span>
+                                            <span class="badge bg-primary">${{ number_format($valor) }}</span>
+                                        </div>
+                                        @endforeach
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total Septiembre:</strong>
+                                            <strong class="text-primary">${{ number_format($reparacionesMayoresData['meses']['septiembre']) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="mb-0">🔧 Octubre - Principales Proveedores</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @foreach(array_slice($reparacionesMayoresData['detalle_octubre'], 0, 8, true) as $proveedor => $valor)
+                                        <div class="provider-item d-flex justify-content-between mb-2">
+                                            <span class="text-truncate me-2" style="max-width: 70%;">{{ $proveedor }}</span>
+                                            <span class="badge {{ $valor < 0 ? 'bg-danger' : 'bg-success' }}">
+                                                @if($valor < 0)
+                                                    (${{ number_format(abs($valor)) }})
+                                                @else
+                                                    ${{ number_format($valor) }}
+                                                @endif
+                                            </span>
+                                        </div>
+                                        @endforeach
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total Octubre:</strong>
+                                            <strong class="text-success">${{ number_format($reparacionesMayoresData['meses']['octubre']) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Evolución Mensual -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <h5 class="mb-0">📈 Evolución Mensual de Gastos</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            @foreach(['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'] as $mes)
+                                                @if($reparacionesMayoresData['meses'][$mes] != 0)
+                                                <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                                                    <div class="month-stat text-center">
+                                                        <div class="month-name text-uppercase text-muted small">{{ $mes }}</div>
+                                                        <div class="month-value {{ $reparacionesMayoresData['meses'][$mes] < 0 ? 'text-success' : ($reparacionesMayoresData['meses'][$mes] > 50000000 ? 'text-danger' : 'text-warning') }}">
+                                                            @if($reparacionesMayoresData['meses'][$mes] < 0)
+                                                                (${{ number_format(abs($reparacionesMayoresData['meses'][$mes])) }})
+                                                            @else
+                                                                ${{ number_format($reparacionesMayoresData['meses'][$mes]) }}
+                                                            @endif
+                                                        </div>
+                                                        <div class="progress mt-2" style="height: 8px;">
+                                                            <div class="progress-bar {{ $reparacionesMayoresData['meses'][$mes] < 0 ? 'bg-success' : ($reparacionesMayoresData['meses'][$mes] > 50000000 ? 'bg-danger' : 'bg-warning') }}" 
+                                                                 style="width: {{ min(100, abs($reparacionesMayoresData['meses'][$mes]) / 1200000) }}%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                @elseif($sheetKey == 'Honorarios')
+                    <!-- HONORARIOS -->
+                    <div id="sheet-honorarios" class="sheet-section">
+                        <h2 class="section-title">💼 HONORARIOS</h2>
+                        
+                        <!-- Resumen Ejecutivo -->
+                        <div class="summary-section">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($honorariosData['resumen']['presupuesto_aprobado']) }}</div>
+                                        <div class="summary-label">Presupuesto Aprobado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-info">${{ number_format($honorariosData['resumen']['ejecutado']) }}</div>
+                                        <div class="summary-label">Ejecutado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-success">${{ number_format($honorariosData['resumen']['presupuesto_ejecutar']) }}</div>
+                                        <div class="summary-label">Por Ejecutar</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-success">{{ $honorariosData['resumen']['porcentaje_restante'] }}%</div>
+                                        <div class="summary-label">% Restante</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Conceptos -->
+                        <div class="table-container">
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Ppto Aprobado</th>
+                                        <th>Ejecutado</th>
+                                        <th>Ppto a Ejecutar</th>
+                                        <th>%Restante</th>
+                                        <th>Julio</th>
+                                        <th>Agosto</th>
+                                        <th>Septiembre</th>
+                                        <th>Octubre</th>
+                                        <th>Noviembre</th>
+                                        <th>Diciembre</th>
+                                        <th>Enero</th>
+                                        <th>Febrero</th>
+                                        <th>Marzo</th>
+                                        <th>Abril</th>
+                                        <th>Mayo</th>
+                                        <th>Junio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($honorariosData['conceptos'] as $concepto)
+                                    <tr>
+                                        <td><strong>{{ $concepto['concepto'] }}</strong></td>
+                                        <td class="number-cell">${{ number_format($concepto['ppto_aprobado']) }}</td>
+                                        <td class="number-cell text-info">${{ number_format($concepto['ejecutado']) }}</td>
+                                        <td class="number-cell {{ $concepto['porcentaje_restante'] > 50 ? 'text-success' : ($concepto['porcentaje_restante'] > 20 ? 'text-warning' : 'text-danger') }}">
+                                            ${{ number_format($concepto['ppto_ejecutar']) }}
+                                        </td>
+                                        <td class="number-cell {{ $concepto['porcentaje_restante'] > 50 ? 'text-success' : ($concepto['porcentaje_restante'] > 20 ? 'text-warning' : 'text-danger') }}">
+                                            {{ $concepto['porcentaje_restante'] }}%
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'Honorarios Financiera')
+                                                ${{ number_format($honorariosData['detalle_financiera']['Julio']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Astaff')
+                                                ${{ number_format($honorariosData['detalle_astaff']['Julio']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Morand')
+                                                ${{ number_format($honorariosData['detalle_morand']['Julio']) }}
+                                            @elseif($concepto['concepto'] == 'Mary Hayes')
+                                                ${{ number_format(2379906) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'Honorarios Financiera')
+                                                ${{ number_format($honorariosData['detalle_financiera']['Agosto']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Astaff')
+                                                ${{ number_format($honorariosData['detalle_astaff']['Agosto']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Morand')
+                                                ${{ number_format($honorariosData['detalle_morand']['Agosto']) }}
+                                            @elseif($concepto['concepto'] == 'Mary Hayes')
+                                                ${{ number_format(2379906) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'Honorarios Financiera')
+                                                ${{ number_format($honorariosData['detalle_financiera']['Septiembre']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Astaff')
+                                                ${{ number_format($honorariosData['detalle_astaff']['Septiembre']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Morand')
+                                                ${{ number_format($honorariosData['detalle_morand']['Septiembre']) }}
+                                            @elseif($concepto['concepto'] == 'Mary Hayes')
+                                                ${{ number_format(5045401) }}
+                                            @elseif($concepto['concepto'] == 'Otras Asesorias')
+                                                ${{ number_format(1168500) }}
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'Honorarios Astaff')
+                                                ${{ number_format($honorariosData['detalle_astaff']['Octubre']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Morand')
+                                                ${{ number_format($honorariosData['detalle_morand']['Octubre']) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'Honorarios Financiera')
+                                                ${{ number_format($honorariosData['detalle_financiera']['Noviembre']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Astaff')
+                                                ${{ number_format($honorariosData['detalle_astaff']['Noviembre']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Morand')
+                                                ${{ number_format($honorariosData['detalle_morand']['Noviembre']) }}
+                                            @elseif($concepto['concepto'] == 'Mary Hayes')
+                                                ${{ number_format(5634809) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'Honorarios Financiera')
+                                                ${{ number_format($honorariosData['detalle_financiera']['Diciembre']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Astaff')
+                                                ${{ number_format($honorariosData['detalle_astaff']['Diciembre']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Morand')
+                                                ${{ number_format($honorariosData['detalle_morand']['Diciembre']) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'Honorarios Financiera')
+                                                ${{ number_format($honorariosData['detalle_financiera']['Enero']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Astaff')
+                                                ${{ number_format($honorariosData['detalle_astaff']['Enero']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Morand')
+                                                ${{ number_format($honorariosData['detalle_morand']['Enero']) }}
+                                            @elseif($concepto['concepto'] == 'Mary Hayes')
+                                                ${{ number_format(2665495) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">
+                                            @if($concepto['concepto'] == 'Honorarios Financiera')
+                                                ${{ number_format($honorariosData['detalle_financiera']['Febrero']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Astaff')
+                                                ${{ number_format($honorariosData['detalle_astaff']['Febrero']) }}
+                                            @elseif($concepto['concepto'] == 'Honorarios Morand')
+                                                ${{ number_format($honorariosData['detalle_morand']['Febrero']) }}
+                                            @elseif($concepto['concepto'] == 'Mary Hayes')
+                                                ${{ number_format(5330990) }}
+                                            @else
+                                                $0
+                                            @endif
+                                        </td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                    </tr>
+                                    @endforeach
+                                    <!-- Fila Total -->
+                                    <tr class="table-total">
+                                        <td><strong>Total</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($honorariosData['resumen']['presupuesto_aprobado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($honorariosData['resumen']['ejecutado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($honorariosData['resumen']['presupuesto_ejecutar']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $honorariosData['resumen']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($honorariosData['meses']['julio']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($honorariosData['meses']['agosto']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($honorariosData['meses']['septiembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($honorariosData['meses']['octubre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($honorariosData['meses']['noviembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($honorariosData['meses']['diciembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($honorariosData['meses']['enero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($honorariosData['meses']['febrero']) }}</strong></td>
+                                        <td class="number-cell"><strong>$0</strong></td>
+                                        <td class="number-cell"><strong>$0</strong></td>
+                                        <td class="number-cell"><strong>$0</strong></td>
+                                        <td class="number-cell"><strong>$0</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Análisis de Honorarios por Categoría -->
+                        <div class="monthly-details-section mt-5 mb-4">
+                            <h3 class="mb-4">👥 Análisis de Honorarios por Categoría</h3>
+                            <div class="row">
+                                @foreach($honorariosData['categorias_gastos'] as $categoria)
+                                    <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
+                                        <div class="card shadow-sm h-100">
+                                            <div class="card-header bg-gradient-secondary text-white">
+                                                <h6 class="card-title mb-0">
+                                                    <i class="fas fa-user-tie me-2"></i>
+                                                    {{ $categoria['nombre'] }}
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="text-center">
+                                                    <h5 class="text-secondary">${{ number_format($categoria['total']) }}</h5>
+                                                    <p class="text-muted small">{{ $categoria['descripcion'] }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Evolución Mensual -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <h5 class="mb-0">📈 Evolución Mensual de Honorarios</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            @foreach(['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'] as $mes)
+                                                @if($honorariosData['meses'][$mes] != 0)
+                                                <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                                                    <div class="month-stat text-center">
+                                                        <div class="month-name text-uppercase text-muted small">{{ $mes }}</div>
+                                                        <div class="month-value {{ $honorariosData['meses'][$mes] > 15000000 ? 'text-primary' : ($honorariosData['meses'][$mes] > 10000000 ? 'text-warning' : 'text-secondary') }}">
+                                                            ${{ number_format($honorariosData['meses'][$mes]) }}
+                                                        </div>
+                                                        <div class="progress mt-2" style="height: 8px;">
+                                                            <div class="progress-bar {{ $honorariosData['meses'][$mes] > 15000000 ? 'bg-primary' : ($honorariosData['meses'][$mes] > 10000000 ? 'bg-warning' : 'bg-secondary') }}" 
+                                                                 style="width: {{ min(100, $honorariosData['meses'][$mes] / 200000) }}%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalle por Consultor -->
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0">💰 Honorarios Financiera</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center mb-3">
+                                            <h4 class="text-primary">${{ number_format(35558213) }}</h4>
+                                            <span class="badge bg-danger">14% restante</span>
+                                        </div>
+                                        <div class="progress mb-2">
+                                            <div class="progress-bar bg-primary" style="width: 86%"></div>
+                                        </div>
+                                        <small class="text-muted">Ejecutado: ${{ number_format(30638210) }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0">👥 Honorarios Astaff</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center mb-3">
+                                            <h4 class="text-info">${{ number_format(43699942) }}</h4>
+                                            <span class="badge bg-warning">33% restante</span>
+                                        </div>
+                                        <div class="progress mb-2">
+                                            <div class="progress-bar bg-info" style="width: 67%"></div>
+                                        </div>
+                                        <small class="text-muted">Ejecutado: ${{ number_format(29433460) }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="mb-0">🎯 Otras Asesorías</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center mb-3">
+                                            <h4 class="text-success">${{ number_format(20674135) }}</h4>
+                                            <span class="badge bg-success">94% disponible</span>
+                                        </div>
+                                        <div class="progress mb-2">
+                                            <div class="progress-bar bg-success" style="width: 6%"></div>
+                                        </div>
+                                        <small class="text-muted">Ejecutado: ${{ number_format(1168500) }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                @elseif($sheetKey == 'Mercadeo')
+                    <!-- MERCADEO -->
+                    <div id="sheet-mercadeo" class="sheet-section">
+                        <h2 class="section-title">📢 MERCADEO</h2>
+                        
+                        <!-- Alerta de Estado Presupuestal -->
+                        <div class="alert alert-warning mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-chart-line me-3 fa-2x"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-1">⚠️ Presupuesto Próximo al Límite</h5>
+                                    <p class="mb-0">Se ha ejecutado el <strong>93%</strong> del presupuesto. Solo queda <strong>$5.255.060</strong> disponible para el resto del año escolar.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Resumen Ejecutivo -->
+                        <div class="summary-section">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($mercadeoData['resumen']['presupuesto_aprobado']) }}</div>
+                                        <div class="summary-label">Presupuesto Aprobado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-warning">${{ number_format($mercadeoData['resumen']['ejecutado']) }}</div>
+                                        <div class="summary-label">Ejecutado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-danger">${{ number_format($mercadeoData['resumen']['presupuesto_ejecutar']) }}</div>
+                                        <div class="summary-label">Por Ejecutar</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-danger">{{ $mercadeoData['resumen']['porcentaje_restante'] }}%</div>
+                                        <div class="summary-label">% Restante</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Conceptos -->
+                        <div class="table-container">
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Ppto Aprobado</th>
+                                        <th>Ejecutado</th>
+                                        <th>Ppto a Ejecutar</th>
+                                        <th>%Restante</th>
+                                        <th>Julio</th>
+                                        <th>Agosto</th>
+                                        <th>Septiembre</th>
+                                        <th>Octubre</th>
+                                        <th>Noviembre</th>
+                                        <th>Diciembre</th>
+                                        <th>Enero</th>
+                                        <th>Febrero</th>
+                                        <th>Marzo</th>
+                                        <th>Abril</th>
+                                        <th>Mayo</th>
+                                        <th>Junio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($mercadeoData['conceptos'] as $concepto)
+                                    <tr>
+                                        <td><strong>{{ $concepto['concepto'] }}</strong></td>
+                                        <td class="number-cell">${{ number_format($concepto['ppto_aprobado']) }}</td>
+                                        <td class="number-cell text-warning">${{ number_format($concepto['ejecutado']) }}</td>
+                                        <td class="number-cell text-danger">${{ number_format($concepto['ppto_ejecutar']) }}</td>
+                                        <td class="number-cell text-danger">{{ $concepto['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($mercadeoData['meses']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($mercadeoData['meses']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($mercadeoData['meses']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($mercadeoData['meses']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($mercadeoData['meses']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($mercadeoData['meses']['diciembre']) }}</td>
+                                        <td class="number-cell text-primary">${{ number_format($mercadeoData['meses']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($mercadeoData['meses']['febrero']) }}</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Análisis de Gastos por Categoría -->
+                        <div class="monthly-details-section mt-5 mb-4">
+                            <h3 class="mb-4">📊 Análisis de Gastos por Categoría</h3>
+                            <div class="row">
+                                @foreach($mercadeoData['categorias_gastos'] as $categoria)
+                                    <div class="col-lg-3 col-md-6 mb-4">
+                                        <div class="card shadow-sm h-100">
+                                            <div class="card-header bg-gradient-info text-white">
+                                                <h6 class="card-title mb-0">
+                                                    <i class="fas fa-bullhorn me-2"></i>
+                                                    {{ $categoria['nombre'] }}
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="text-center">
+                                                    <h4 class="text-info">${{ number_format($categoria['total']) }}</h4>
+                                                    <p class="text-muted small">{{ $categoria['descripcion'] }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Detalle de Proveedores por Mes -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="mb-0">🗓️ Septiembre - Principales Proveedores</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @foreach(array_slice($mercadeoData['detalle_septiembre'], 0, 7, true) as $proveedor => $valor)
+                                        <div class="provider-item d-flex justify-content-between mb-2">
+                                            <span class="text-truncate me-2" style="max-width: 65%;">{{ $proveedor }}</span>
+                                            <span class="badge bg-success">${{ number_format($valor) }}</span>
+                                        </div>
+                                        @endforeach
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total Septiembre:</strong>
+                                            <strong class="text-success">${{ number_format($mercadeoData['meses']['septiembre']) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h5 class="mb-0">🗓️ Octubre - Principales Proveedores</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @foreach(array_slice($mercadeoData['detalle_octubre'], 0, 7, true) as $proveedor => $valor)
+                                        <div class="provider-item d-flex justify-content-between mb-2">
+                                            <span class="text-truncate me-2" style="max-width: 65%;">{{ $proveedor }}</span>
+                                            <span class="badge bg-warning text-dark">${{ number_format($valor) }}</span>
+                                        </div>
+                                        @endforeach
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total Octubre:</strong>
+                                            <strong class="text-warning">${{ number_format($mercadeoData['meses']['octubre']) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Más Detalles por Mes -->
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0">🗓️ Noviembre</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @foreach($mercadeoData['detalle_noviembre'] as $proveedor => $valor)
+                                        <div class="provider-item d-flex justify-content-between mb-2">
+                                            <span class="text-truncate me-2" style="max-width: 65%;">{{ $proveedor }}</span>
+                                            <span class="badge bg-info">${{ number_format($valor) }}</span>
+                                        </div>
+                                        @endforeach
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total:</strong>
+                                            <strong class="text-info">${{ number_format($mercadeoData['meses']['noviembre']) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-secondary text-white">
+                                        <h5 class="mb-0">🗓️ Diciembre</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @foreach($mercadeoData['detalle_diciembre'] as $proveedor => $valor)
+                                        <div class="provider-item d-flex justify-content-between mb-2">
+                                            <span class="text-truncate me-2" style="max-width: 65%;">{{ $proveedor }}</span>
+                                            <span class="badge bg-secondary">${{ number_format($valor) }}</span>
+                                        </div>
+                                        @endforeach
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total:</strong>
+                                            <strong class="text-secondary">${{ number_format($mercadeoData['meses']['diciembre']) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0">🗓️ Enero - Mayor Inversión</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @foreach($mercadeoData['detalle_enero'] as $proveedor => $valor)
+                                        <div class="provider-item d-flex justify-content-between mb-2">
+                                            <span class="text-truncate me-2" style="max-width: 65%;">{{ $proveedor }}</span>
+                                            <span class="badge bg-primary">${{ number_format($valor) }}</span>
+                                        </div>
+                                        @endforeach
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total:</strong>
+                                            <strong class="text-primary">${{ number_format($mercadeoData['meses']['enero']) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Evolución Mensual -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <h5 class="mb-0">📈 Evolución Mensual de Mercadeo</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            @foreach(['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'] as $mes)
+                                                @if($mercadeoData['meses'][$mes] != 0)
+                                                <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                                                    <div class="month-stat text-center">
+                                                        <div class="month-name text-uppercase text-muted small">{{ $mes }}</div>
+                                                        <div class="month-value {{ $mercadeoData['meses'][$mes] > 15000000 ? 'text-primary' : ($mercadeoData['meses'][$mes] > 10000000 ? 'text-warning' : 'text-info') }}">
+                                                            ${{ number_format($mercadeoData['meses'][$mes]) }}
+                                                        </div>
+                                                        <div class="progress mt-2" style="height: 8px;">
+                                                            <div class="progress-bar {{ $mercadeoData['meses'][$mes] > 15000000 ? 'bg-primary' : ($mercadeoData['meses'][$mes] > 10000000 ? 'bg-warning' : 'bg-info') }}" 
+                                                                 style="width: {{ min(100, $mercadeoData['meses'][$mes] / 200000) }}%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                @elseif($sheetKey == 'Reparacion muebles')
+                    <!-- REPARACIÓN DE MUEBLES -->
+                    <div id="sheet-reparacion-muebles" class="sheet-section">
+                        <h2 class="section-title">🪑 REPARACIÓN DE MUEBLES</h2>
+                        
+                        <!-- Nota Informativa -->
+                        <div class="alert alert-info mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-info-circle me-3 fa-2x"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-1">💡 Estado del Presupuesto</h5>
+                                    <p class="mb-0">Este rubro presenta un <strong>crédito neto</strong> de $1,064,523, dejando <strong>107%</strong> del presupuesto disponible para uso futuro.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Resumen Ejecutivo -->
+                        <div class="summary-section">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value">${{ number_format($reparacionMueblesData['resumen']['presupuesto_aprobado']) }}</div>
+                                        <div class="summary-label">Presupuesto Aprobado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-success">(${{ number_format(abs($reparacionMueblesData['resumen']['ejecutado'])) }})</div>
+                                        <div class="summary-label">Crédito Neto</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-primary">${{ number_format($reparacionMueblesData['resumen']['presupuesto_ejecutar']) }}</div>
+                                        <div class="summary-label">Disponible</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="summary-card">
+                                        <div class="summary-value text-success">{{ $reparacionMueblesData['resumen']['porcentaje_restante'] }}%</div>
+                                        <div class="summary-label">% Disponible</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Conceptos -->
+                        <div class="table-container">
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Ppto Aprobado</th>
+                                        <th>Ejecutado</th>
+                                        <th>Ppto a Ejecutar</th>
+                                        <th>%Restante</th>
+                                        <th>Julio</th>
+                                        <th>Agosto</th>
+                                        <th>Septiembre</th>
+                                        <th>Octubre</th>
+                                        <th>Noviembre</th>
+                                        <th>Diciembre</th>
+                                        <th>Enero</th>
+                                        <th>Febrero</th>
+                                        <th>Marzo</th>
+                                        <th>Abril</th>
+                                        <th>Mayo</th>
+                                        <th>Junio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($reparacionMueblesData['conceptos'] as $concepto)
+                                    <tr>
+                                        <td><strong>{{ $concepto['concepto'] }}</strong></td>
+                                        <td class="number-cell">${{ number_format($concepto['ppto_aprobado']) }}</td>
+                                        <td class="number-cell text-success">(${{ number_format(abs($concepto['ejecutado'])) }})</td>
+                                        <td class="number-cell text-primary">${{ number_format($concepto['ppto_ejecutar']) }}</td>
+                                        <td class="number-cell text-success">{{ $concepto['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($reparacionMueblesData['meses']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($reparacionMueblesData['meses']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($reparacionMueblesData['meses']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($reparacionMueblesData['meses']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($reparacionMueblesData['meses']['noviembre']) }}</td>
+                                        <td class="number-cell text-success">(${{ number_format(abs($reparacionMueblesData['meses']['diciembre'])) }})</td>
+                                        <td class="number-cell">${{ number_format($reparacionMueblesData['meses']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($reparacionMueblesData['meses']['febrero']) }}</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                        <td class="number-cell">$0</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Análisis de Gastos por Categoría -->
+                        <div class="monthly-details-section mt-5 mb-4">
+                            <h3 class="mb-4">🪑 Análisis de Mobiliario por Categoría</h3>
+                            <div class="row">
+                                @foreach($reparacionMueblesData['categorias_gastos'] as $categoria)
+                                    <div class="col-lg-3 col-md-6 mb-4">
+                                        <div class="card shadow-sm h-100">
+                                            <div class="card-header bg-gradient-primary text-white">
+                                                <h6 class="card-title mb-0">
+                                                    <i class="fas fa-chair me-2"></i>
+                                                    {{ $categoria['nombre'] }}
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="text-center">
+                                                    <h4 class="text-primary">${{ number_format($categoria['total']) }}</h4>
+                                                    <p class="text-muted small">{{ $categoria['descripcion'] }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Detalle de Movimientos por Mes -->
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h5 class="mb-0">🔨 Noviembre - Reparaciones</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @foreach($reparacionMueblesData['detalle_noviembre'] as $proveedor => $valor)
+                                        <div class="provider-item d-flex justify-content-between mb-2">
+                                            <span class="text-truncate me-2" style="max-width: 65%;">{{ $proveedor }}</span>
+                                            <span class="badge bg-warning text-dark">${{ number_format($valor) }}</span>
+                                        </div>
+                                        @endforeach
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total Noviembre:</strong>
+                                            <strong class="text-warning">${{ number_format($reparacionMueblesData['meses']['noviembre']) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="mb-0">💰 Diciembre - Créditos</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @foreach($reparacionMueblesData['detalle_diciembre'] as $concepto => $valor)
+                                        <div class="provider-item d-flex justify-content-between mb-2">
+                                            <span class="text-truncate me-2" style="max-width: 65%;">{{ $concepto }}</span>
+                                            <span class="badge bg-success">(${{ number_format(abs($valor)) }})</span>
+                                        </div>
+                                        @endforeach
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total Diciembre:</strong>
+                                            <strong class="text-success">(${{ number_format(abs($reparacionMueblesData['meses']['diciembre'])) }})</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0">🔄 Enero - Renovaciones</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @foreach($reparacionMueblesData['detalle_enero'] as $actividad => $valor)
+                                        <div class="provider-item d-flex justify-content-between mb-2">
+                                            <span class="text-truncate me-2" style="max-width: 65%;">{{ $actividad }}</span>
+                                            <span class="badge bg-info">${{ number_format($valor) }}</span>
+                                        </div>
+                                        @endforeach
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total Enero:</strong>
+                                            <strong class="text-info">${{ number_format($reparacionMueblesData['meses']['enero']) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Evolución Mensual -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <h5 class="mb-0">📈 Evolución Mensual - Reparación de Muebles</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            @foreach(['agosto', 'septiembre', 'noviembre', 'diciembre', 'enero'] as $mes)
+                                                @if($reparacionMueblesData['meses'][$mes] != 0)
+                                                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                                                    <div class="month-stat text-center">
+                                                        <div class="month-name text-uppercase text-muted small">{{ $mes }}</div>
+                                                        <div class="month-value {{ $reparacionMueblesData['meses'][$mes] < 0 ? 'text-success' : 'text-primary' }}">
+                                                            @if($reparacionMueblesData['meses'][$mes] < 0)
+                                                                (${{ number_format(abs($reparacionMueblesData['meses'][$mes])) }})
+                                                            @else
+                                                                ${{ number_format($reparacionMueblesData['meses'][$mes]) }}
+                                                            @endif
+                                                        </div>
+                                                        <div class="progress mt-2" style="height: 8px;">
+                                                            <div class="progress-bar {{ $reparacionMueblesData['meses'][$mes] < 0 ? 'bg-success' : 'bg-primary' }}" 
+                                                                 style="width: {{ min(100, abs($reparacionMueblesData['meses'][$mes]) / 100000) }}%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                @elseif($sheetKey == 'Gts Contrat')
+                    <!-- GASTOS DE CONTRATACIÓN -->
+                    <div class="gastos-contratos-container">
+                        <h2 class="section-title">💼 GASTOS DE CONTRATACIÓN</h2>
+                        
+                        <!-- Tabla de Resumen por Concepto -->
+                        <div class="budget-table">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Ppto Aprobado</th>
+                                        <th>Ejecutado</th>
+                                        <th>Ppto a Ejecutar</th>
+                                        <th>% Restante</th>
+                                        <th>Jul</th>
+                                        <th>Ago</th>
+                                        <th>Sep</th>
+                                        <th>Oct</th>
+                                        <th>Nov</th>
+                                        <th>Dic</th>
+                                        <th>Ene</th>
+                                        <th>Feb</th>
+                                        <th>Mar</th>
+                                        <th>Abr</th>
+                                        <th>May</th>
+                                        <th>Jun</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Visitas Domiciliarias</strong></td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['visitas_domiciliarias']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['visitas_domiciliarias']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['visitas_domiciliarias']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $gastosContratosData['resumen']['visitas_domiciliarias']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['visitas_domiciliarias']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Computrabajo</strong></td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['computrabajo']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['computrabajo']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['computrabajo']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $gastosContratosData['resumen']['computrabajo']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['computrabajo']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Anuncio Periódico</strong></td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['anuncio_periodico']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['anuncio_periodico']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['anuncio_periodico']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $gastosContratosData['resumen']['anuncio_periodico']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['anuncio_periodico']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Docentes Extranjeros</strong></td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['docentes_extranjeros']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['docentes_extranjeros']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['docentes_extranjeros']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $gastosContratosData['resumen']['docentes_extranjeros']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['docentes_extranjeros']['junio']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Pruebas Psicología</strong></td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['pruebas_psicologia']['presupuesto_aprobado']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['pruebas_psicologia']['ejecutado']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['resumen']['pruebas_psicologia']['presupuesto_ejecutar']) }}</td>
+                                        <td class="number-cell">{{ $gastosContratosData['resumen']['pruebas_psicologia']['porcentaje_restante'] }}%</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['julio']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['agosto']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['septiembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['octubre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['noviembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['diciembre']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['enero']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['febrero']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['marzo']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['abril']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['mayo']) }}</td>
+                                        <td class="number-cell">${{ number_format($gastosContratosData['ejecucion_mensual']['pruebas_psicologia']['junio']) }}</td>
+                                    </tr>
+                                    <tr style="background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
+                                        <td><strong>TOTAL</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['resumen']['total']['presupuesto_aprobado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['resumen']['total']['ejecutado']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['resumen']['total']['presupuesto_ejecutar']) }}</strong></td>
+                                        <td class="number-cell"><strong>{{ $gastosContratosData['resumen']['total']['porcentaje_restante'] }}%</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['julio']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['agosto']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['septiembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['octubre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['noviembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['diciembre']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['enero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['febrero']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['marzo']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['abril']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['mayo']) }}</strong></td>
+                                        <td class="number-cell"><strong>${{ number_format($gastosContratosData['ejecucion_mensual']['total']['junio']) }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Detalles por Mes -->
+                        <div class="row mt-4">
+                            @php
+                                $mesesDetalle = [
+                                    'julio' => 'Julio 2024',
+                                    'agosto' => 'Agosto 2024', 
+                                    'septiembre' => 'Septiembre 2024',
+                                    'octubre' => 'Octubre 2024',
+                                    'noviembre' => 'Noviembre 2024'
+                                ];
+                            @endphp
+
+                            @foreach($mesesDetalle as $mes => $nombreMes)
+                                @if(isset($gastosContratosData['detalle_' . $mes]) && count($gastosContratosData['detalle_' . $mes]) > 0)
+                                    <div class="col-md-6 col-lg-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-header bg-primary text-white">
+                                                <h6 class="card-title mb-0">📅 {{ $nombreMes }}</h6>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-hover mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th style="font-size: 0.8em;">Proveedor</th>
+                                                                <th style="font-size: 0.8em;">Concepto</th>
+                                                                <th style="font-size: 0.8em;" class="text-end">Valor</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($gastosContratosData['detalle_' . $mes] as $item)
+                                                            <tr>
+                                                                <td style="font-size: 0.85em;">
+                                                                    <strong>{{ $item['proveedor'] }}</strong>
+                                                                    <br>
+                                                                    <small class="text-muted">{{ $item['descripcion'] }}</small>
+                                                                </td>
+                                                                <td style="font-size: 0.85em;">{{ $item['concepto'] }}</td>
+                                                                <td style="font-size: 0.85em;" class="text-end">
+                                                                    <span class="badge bg-success">${{ number_format($item['valor']) }}</span>
+                                                                </td>
+                                                            </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer bg-light text-center">
+                                                @php
+                                                    $totalMes = collect($gastosContratosData['detalle_' . $mes])->sum('valor');
+                                                @endphp
+                                                <strong>Total: ${{ number_format($totalMes) }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                    
                 @else
                     <!-- Otras hojas - SIN DATOS POR AHORA -->
                     <div class="table-wrapper">
@@ -2905,6 +6443,12 @@
 
 .table-section.active {
     display: block;
+}
+
+.table-content {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
 }
 
 .table-header {
@@ -3668,6 +7212,247 @@ tr.editing {
 .section-table.loading {
     opacity: 0.5;
     pointer-events: none;
+}
+
+/* Estilos específicos para la hoja Equipos y Dotación Salones */
+.equipos-dotacion-container {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.equipos-dotacion-container .sheet-header h2 {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+.equipos-dotacion-container .sheet-header h3 {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #2c3e50;
+}
+
+.equipos-dotacion-container .table-wrapper {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.equipos-dotacion-container .detalle-mes h4 {
+    background: linear-gradient(135deg, #34495e, #2c3e50);
+    color: white;
+    padding: 8px 15px;
+    margin: 0 0 15px 0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.equipos-dotacion-container .detalles-mensuales {
+    margin-top: 40px;
+}
+
+.equipos-dotacion-container .number-cell {
+    text-align: right;
+    font-weight: 500;
+    font-family: 'Courier New', monospace;
+}
+
+/* Estilos específicos para la hoja Aseo y Cafetería */
+.aseo-cafeteria-container {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.aseo-cafeteria-container .sheet-header h2 {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border-bottom: 2px solid #ff6b35;
+    padding-bottom: 10px;
+}
+
+.aseo-cafeteria-container .sheet-header h3 {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #ff6b35 !important;
+}
+
+.aseo-cafeteria-container .table-wrapper {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.aseo-cafeteria-container .detalle-mes h4 {
+    background: linear-gradient(135deg, #ff6b35, #e55a2b);
+    color: white;
+    padding: 8px 15px;
+    margin: 0 0 15px 0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.aseo-cafeteria-container .detalles-mensuales {
+    margin-top: 40px;
+}
+
+.aseo-cafeteria-container .number-cell {
+    text-align: right;
+    font-weight: 500;
+    font-family: 'Courier New', monospace;
+}
+
+/* Estilos específicos para Dotaciones */
+.dotaciones-container {
+    background: linear-gradient(135deg, #f4f3ff, #ebe9ff);
+    border-radius: 12px;
+    padding: 25px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(142, 68, 173, 0.15);
+    border: 1px solid #d1c4e9;
+}
+
+.dotaciones-container .sheet-header h2 {
+    color: #4a148c;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    border-bottom: 2px solid #8e44ad;
+    padding-bottom: 10px;
+}
+
+.dotaciones-container .sheet-header h3 {
+    color: #6a1b9a;
+    font-weight: 600;
+}
+
+.dotaciones-container .table-wrapper {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(142, 68, 173, 0.1);
+}
+
+.dotaciones-container .detalle-mes h4 {
+    background: linear-gradient(135deg, #8e44ad, #7d3c98);
+    color: white;
+    padding: 10px 15px;
+    margin: 0;
+    border-radius: 6px 6px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dotaciones-container .detalles-mensuales {
+    margin-top: 30px;
+}
+
+.dotaciones-container .number-cell {
+    text-align: right;
+    font-weight: 500;
+    font-family: 'Courier New', monospace;
+}
+
+/* Estilos específicos para Agasajos */
+.agasajos-container {
+    background: linear-gradient(135deg, #fdf2f2, #fce8e8);
+    border-radius: 12px;
+    padding: 25px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.15);
+    border: 1px solid #f5b7b1;
+}
+
+.agasajos-container .sheet-header h2 {
+    color: #c0392b;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    border-bottom: 2px solid #e74c3c;
+    padding-bottom: 10px;
+}
+
+.agasajos-container .sheet-header h3 {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.agasajos-container .table-wrapper {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.1);
+}
+
+.agasajos-container .detalle-mes h4 {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    padding: 10px 15px;
+    margin: 0;
+    border-radius: 6px 6px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.agasajos-container .detalles-mensuales {
+    margin-top: 30px;
+}
+
+.agasajos-container .number-cell {
+    text-align: right;
+    font-weight: 500;
+    font-family: 'Courier New', monospace;
+}
+
+/* Estilos específicos para Tecnología */
+.tecnologia-container {
+    background: linear-gradient(135deg, #e8f8fa, #d1ecf1);
+    border-radius: 12px;
+    padding: 25px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.15);
+    border: 1px solid #b3d9e6;
+}
+
+.tecnologia-container .sheet-header h2 {
+    color: #0c5460;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    border-bottom: 2px solid #17a2b8;
+    padding-bottom: 10px;
+}
+
+.tecnologia-container .sheet-header h3 {
+    color: #138496;
+    font-weight: 600;
+}
+
+.tecnologia-container .table-wrapper {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.1);
+}
+
+.tecnologia-container .detalle-mes h4 {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+    padding: 10px 15px;
+    margin: 0;
+    border-radius: 6px 6px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tecnologia-container .detalles-mensuales {
+    margin-top: 30px;
+}
+
+.tecnologia-container .number-cell {
+    text-align: right;
+    font-weight: 500;
+    font-family: 'Courier New', monospace;
 }
 </style>
 @stop
