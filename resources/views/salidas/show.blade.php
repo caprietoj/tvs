@@ -380,13 +380,6 @@
                                         </button>
                                         <p class="text-muted text-center mt-2 mb-0" style="font-size: 0.875rem;">
                                             <i class="fas fa-info-circle mr-1"></i>Pendiente de confirmación
-                                        </p> 
-                                                data-title="Alimentación"
-                                                style="border-radius: 8px; font-weight: bold;">
-                                            <i class="fas fa-check mr-2"></i>Confirmar Servicio
-                                        </button>
-                                        <p class="text-muted text-center mt-2 mb-0">
-                                            <i class="fas fa-info-circle mr-1"></i>Pendiente de confirmación
                                         </p>
                                     @endif
                                 </div>
