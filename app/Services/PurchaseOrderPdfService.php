@@ -29,19 +29,27 @@ class PurchaseOrderPdfService
             'customData' => $customData
         ];
 
-        // Agregar totales correctos desde customData si están disponibles
-        if (isset($customData['subtotal'])) {
-            $data['subtotal'] = $customData['subtotal'];
-        }
-        if (isset($customData['iva_amount'])) {
-            $data['ivaAmount'] = $customData['iva_amount'];
-        }
-        if (isset($customData['total'])) {
-            $data['totalAmount'] = $customData['total'];
-        }
+        // Priorizar los valores de la orden sobre customData para consistencia
+        $data['subtotal'] = $order->subtotal ?? ($customData['subtotal'] ?? 0);
+        $data['ivaAmount'] = $order->iva_amount ?? ($customData['iva_amount'] ?? 0);
+        $data['totalAmount'] = $order->total_amount ?? ($customData['total'] ?? 0);
+        
+        // Log para verificar valores utilizados
+        Log::info('Valores utilizados en PDF', [
+            'order_id' => $order->id,
+            'subtotal' => $data['subtotal'],
+            'iva_amount' => $data['ivaAmount'],
+            'total_amount' => $data['totalAmount'],
+            'source' => $order->subtotal ? 'order_fields' : 'custom_data'
+        ]);
 
-        // Si no hay customData pero hay cotización seleccionada, calcular totales dinámicamente
-        if (empty($customData) && $order->purchaseRequest && $order->purchaseRequest->selectedQuotation) {
+        // Solo calcular dinámicamente si no hay valores en la orden ni en customData
+        if (($data['subtotal'] <= 0 || $data['totalAmount'] <= 0) && $order->purchaseRequest && $order->purchaseRequest->selectedQuotation) {
+            Log::warning('Calculando totales dinámicamente debido a valores inválidos', [
+                'order_id' => $order->id,
+                'current_subtotal' => $data['subtotal'],
+                'current_total' => $data['totalAmount']
+            ]);
             $this->calculateDynamicTotals($order, $data);
         }
 
@@ -246,6 +254,7 @@ class PurchaseOrderPdfService
 
     /**
      * Calcula totales dinámicamente desde los items de la cotización seleccionada
+     * Consistente con la lógica del controlador: asume que los precios incluyen IVA
      */
     private function calculateDynamicTotals(PurchaseOrder $order, &$data)
     {
@@ -253,29 +262,46 @@ class PurchaseOrderPdfService
         $quotation = $purchaseRequest->selectedQuotation;
         
         if (!$quotation || !$purchaseRequest->purchase_items) {
+            Log::warning('No se puede calcular totales dinámicamente', [
+                'order_id' => $order->id,
+                'has_quotation' => !!$quotation,
+                'has_items' => !!$purchaseRequest->purchase_items
+            ]);
             return;
         }
         
         $items = $purchaseRequest->purchase_items;
         $prices = $quotation->original_item_prices ?? $quotation->item_prices ?? [];
         
-        $subtotal = 0;
+        $totalWithIva = 0;
         
         foreach ($items as $index => $item) {
             $unitPrice = 0;
             
             // Obtener precio si existe para este índice
             if (is_array($prices) && isset($prices[$index])) {
-                $unitPrice = $prices[$index];
+                $unitPrice = floatval($prices[$index]);
             }
             
-            $quantity = $item['quantity'] ?? 1;
+            $quantity = floatval($item['quantity'] ?? 1);
             $itemTotal = $unitPrice * $quantity;
-            $subtotal += $itemTotal;
+            $totalWithIva += $itemTotal;
         }
         
-        $ivaAmount = $subtotal * 0.19;
-        $totalAmount = $subtotal + $ivaAmount;
+        // Verificar si la cotización especifica si incluye IVA
+        $includesIva = $quotation->includes_iva ?? true;
+        
+        if ($includesIva) {
+            // Los precios ya incluyen IVA (19%)
+            $subtotal = round($totalWithIva / 1.19, 2);
+            $ivaAmount = round($totalWithIva - $subtotal, 2);
+            $totalAmount = $totalWithIva;
+        } else {
+            // Los precios no incluyen IVA
+            $subtotal = $totalWithIva;
+            $ivaAmount = round($totalWithIva * 0.19, 2);
+            $totalAmount = $subtotal + $ivaAmount;
+        }
         
         // Asignar los valores calculados
         $data['subtotal'] = $subtotal;
@@ -284,6 +310,9 @@ class PurchaseOrderPdfService
         
         Log::info('Totales calculados dinámicamente', [
             'order_id' => $order->id,
+            'includes_iva' => $includesIva,
+            'items_count' => count($items),
+            'total_with_iva' => $totalWithIva,
             'subtotal' => $subtotal,
             'iva' => $ivaAmount,
             'total' => $totalAmount

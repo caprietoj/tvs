@@ -268,9 +268,6 @@ class PurchaseOrdersController extends Controller
                 return redirect()->route('purchase-orders.index')->with('error', 'Solo se pueden crear órdenes de compra para solicitudes aprobadas.');
             }
 
-            // Redirigir SIEMPRE a la interfaz de creación manual
-            return $this->showOrderCreationInterface($request, $purchaseRequest);
-            
             // Verificar que no exista una orden para esta solicitud
             $existingOrder = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->exists();
             if ($existingOrder) {
@@ -301,9 +298,18 @@ class PurchaseOrdersController extends Controller
             // Obtener los datos de precio
             if ($isNoQuotationService) {
                 // Para servicios sin cotización, usar los datos del presupuesto
-                $total = $purchaseRequest->service_budget ?? 0;
-                $subtotal = $total / 1.19; // Asumir IVA incluido
-                $ivaAmount = $total - $subtotal;
+                $total = floatval($purchaseRequest->service_budget ?? 0);
+                
+                if ($total <= 0) {
+                    Log::error('Servicio sin cotización con presupuesto inválido', [
+                        'purchase_request_id' => $purchaseRequest->id,
+                        'service_budget' => $purchaseRequest->service_budget
+                    ]);
+                    return redirect()->back()->with('error', 'El presupuesto del servicio debe ser mayor a cero.');
+                }
+                
+                $subtotal = round($total / 1.19, 2); // Asumir IVA incluido
+                $ivaAmount = round($total - $subtotal, 2);
                 $includesIva = true;
                 $additionalItems = [];
                 
@@ -315,19 +321,69 @@ class PurchaseOrdersController extends Controller
                 ]);
             } elseif ($hasMixedSelection) {
                 // Para selección mixta, calcular totales
-                $total = $purchaseRequest->quotationItemSelections()->sum('total_price');
-                $subtotal = $total / 1.19; // Asumir IVA incluido
-                $ivaAmount = $total - $subtotal;
+                $total = floatval($purchaseRequest->quotationItemSelections()->sum('total_price'));
+                
+                if ($total <= 0) {
+                    Log::error('Selección mixta con total inválido', [
+                        'purchase_request_id' => $purchaseRequest->id,
+                        'selections_total' => $total
+                    ]);
+                    return redirect()->back()->with('error', 'El total de la selección mixta debe ser mayor a cero.');
+                }
+                
+                $subtotal = round($total / 1.19, 2); // Asumir IVA incluido
+                $ivaAmount = round($total - $subtotal, 2);
                 $includesIva = true;
                 $additionalItems = [];
+                
+                Log::info('Calculando precios para selección mixta', [
+                    'selections_count' => $purchaseRequest->quotationItemSelections()->count(),
+                    'total' => $total,
+                    'subtotal' => $subtotal,
+                    'iva_amount' => $ivaAmount
+                ]);
             } else {
                 // Para cotización única tradicional
                 $selectedQuotation = $purchaseRequest->selectedQuotation;
-                $total = $selectedQuotation->total_amount;
-                $subtotal = $selectedQuotation->subtotal ?? $selectedQuotation->total_amount;
-                $ivaAmount = $selectedQuotation->iva_amount ?? 0;
-                $includesIva = $selectedQuotation->includes_iva ?? false;
+                
+                if (!$selectedQuotation) {
+                    Log::error('No se encontró cotización seleccionada', [
+                        'purchase_request_id' => $purchaseRequest->id,
+                        'selected_quotation_id' => $purchaseRequest->selected_quotation_id
+                    ]);
+                    return redirect()->back()->with('error', 'No se encontró la cotización seleccionada.');
+                }
+                
+                $total = floatval($selectedQuotation->total_amount ?? 0);
+                
+                if ($total <= 0) {
+                    Log::error('Cotización con total inválido', [
+                        'quotation_id' => $selectedQuotation->id,
+                        'total_amount' => $selectedQuotation->total_amount
+                    ]);
+                    return redirect()->back()->with('error', 'El total de la cotización debe ser mayor a cero.');
+                }
+                
+                $includesIva = $selectedQuotation->includes_iva ?? true;
+                
+                if ($includesIva) {
+                    $subtotal = round($total / 1.19, 2);
+                    $ivaAmount = round($total - $subtotal, 2);
+                } else {
+                    $subtotal = $total;
+                    $ivaAmount = round($total * 0.19, 2);
+                    $total = $subtotal + $ivaAmount;
+                }
+                
                 $additionalItems = $selectedQuotation->additional_items ?? [];
+                
+                Log::info('Calculando precios para cotización única', [
+                    'quotation_id' => $selectedQuotation->id,
+                    'includes_iva' => $includesIva,
+                    'total' => $total,
+                    'subtotal' => $subtotal,
+                    'iva_amount' => $ivaAmount
+                ]);
             }
             
             DB::beginTransaction();
@@ -374,10 +430,23 @@ class PurchaseOrdersController extends Controller
                 }
             }
             
+            // Validar que los valores calculados sean válidos antes de crear la orden
+            if ($total <= 0 || $subtotal <= 0) {
+                Log::error('Valores calculados inválidos para crear orden', [
+                    'purchase_request_id' => $purchaseRequest->id,
+                    'total' => $total,
+                    'subtotal' => $subtotal,
+                    'iva_amount' => $ivaAmount
+                ]);
+                throw new \Exception('Los valores calculados para la orden son inválidos. Total: ' . $total . ', Subtotal: ' . $subtotal);
+            }
+            
             Log::info('Creando orden de compra', [
                 'order_number' => $orderNumber,
                 'provider_id' => $providerId,
                 'total_amount' => $total,
+                'subtotal' => $subtotal,
+                'iva_amount' => $ivaAmount,
                 'observations' => $observations
             ]);
             
