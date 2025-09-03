@@ -210,13 +210,18 @@ class PurchaseRequestPermissionService
     {
         $user = $user ?: Auth::user();
         
+        // RESTRICCIÓN ESPECÍFICA: compras@tvs.edu.co NO puede eliminar ningún tipo de solicitud
+        if ($user->email === 'compras@tvs.edu.co') {
+            return false;
+        }
+        
         // Admin siempre puede eliminar
         if ($user->hasRole('admin')) {
             return true;
         }
         
-        // Usuarios específicos autorizados pueden eliminar solicitudes de materiales
-        $authorizedEmails = ['compras@tvs.edu.co', 'auxiliaralmacen@tvs.edu.co'];
+        // Usuarios específicos autorizados pueden eliminar solicitudes de materiales (excepto compras@tvs.edu.co)
+        $authorizedEmails = ['auxiliaralmacen@tvs.edu.co'];
         if (in_array($user->email, $authorizedEmails)) {
             return true;
         }

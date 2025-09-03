@@ -58,6 +58,11 @@ class PurchaseRequestPolicy
      */
     public function delete(User $user, PurchaseRequest $purchaseRequest)
     {
+        // RESTRICCIÓN ESPECÍFICA: compras@tvs.edu.co NO puede eliminar ningún tipo de solicitud
+        if ($user->email === 'compras@tvs.edu.co') {
+            return false;
+        }
+        
         // Restricción específica: rol profesor no puede eliminar solicitudes de fotocopias
         if ($user->hasRole('profesor') && $purchaseRequest->isCopiesRequest()) {
             return false;

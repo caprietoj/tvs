@@ -28,6 +28,12 @@ class PurchaseOrderObserver
                     return;
                 }
                 
+                // Evitar validación durante operaciones de edición PDF para prevenir errores 500
+                if (request()->routeIs('purchase-orders.edit-pdf*') || 
+                    request()->routeIs('purchase-orders.update-pdf*')) {
+                    return;
+                }
+                
                 $this->validationService->validateOnSave($purchaseOrder);
                 
             } catch (\Exception $e) {

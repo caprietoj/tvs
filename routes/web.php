@@ -719,6 +719,8 @@ Route::middleware(['auth'])->group(function () {
             ->name('purchase-orders.edit-pdf-new');
         Route::put('purchase-orders/{purchaseOrder}/update-pdf', [PurchaseOrdersController::class, 'updatePdf'])
             ->name('purchase-orders.update-pdf');
+        Route::post('purchase-orders/{purchaseOrder}/update-pdf', [PurchaseOrdersController::class, 'updatePdf'])
+            ->name('purchase-orders.update-pdf-post');
         Route::post('purchase-orders/{purchaseOrder}/regenerate-pdf', [PurchaseOrdersController::class, 'regeneratePdf'])
             ->name('purchase-orders.regenerate-pdf');
         Route::post('purchase-orders/{purchaseOrder}/separate-mixed-order', [PurchaseOrdersController::class, 'separateMixedOrder'])

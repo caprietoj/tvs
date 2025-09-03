@@ -76,6 +76,12 @@ class PurchaseOrderValidationService
             return [];
         }
         
+        // Si ya es un array, devolverlo directamente (Laravel 11+ auto-cast)
+        if (is_array($order->pdf_custom_data)) {
+            return $order->pdf_custom_data;
+        }
+        
+        // Si es string, decodificar JSON
         $data = json_decode($order->pdf_custom_data, true);
         return is_array($data) ? $data : [];
     }

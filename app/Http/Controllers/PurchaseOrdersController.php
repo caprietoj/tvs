@@ -1270,9 +1270,20 @@ class PurchaseOrdersController extends Controller
             'provider'
         ]);
 
-        // CORRECCIÓN CRÍTICA: Filtrar selecciones mixtas por proveedor específico
         $purchaseRequest = $purchaseOrder->purchaseRequest;
         $providerSpecificSelections = collect();
+        
+        // SOLUCIÓN DE FONDO: Asegurar que SIEMPRE haya datos válidos para editar
+        try {
+            $editableItems = $this->ensureEditableData($purchaseOrder);
+        } catch (\Exception $e) {
+            Log::error('Error en ensureEditableData', [
+                'order' => $purchaseOrder->order_number,
+                'error' => $e->getMessage()
+            ]);
+            // Usar datos básicos como fallback
+            $editableItems = [];
+        }
         
         if ($purchaseRequest && $purchaseRequest->quotationItemSelections()->exists()) {
             // Para órdenes de selección mixta, filtrar por proveedor específico
@@ -1292,37 +1303,17 @@ class PurchaseOrdersController extends Controller
                     // 1) Intentar por índice exacto
                     if (isset($prices[$selection->item_index])) {
                         $realPrice = $prices[$selection->item_index];
-                        Log::info('✅ Precio por índice exacto', [
-                            'item_index' => $selection->item_index,
-                            'real_price' => $realPrice
-                        ]);
                     } elseif (is_array($prices)) {
                         // 2) Fallback: usar array_values y tomar la posición
                         $values = array_values($prices);
                         if (isset($values[$selection->item_index])) {
                             $realPrice = $values[$selection->item_index];
-                            Log::info('✅ Precio por posición en array_values', [
-                                'item_index' => $selection->item_index,
-                                'real_price' => $realPrice
-                            ]);
                         }
                     }
 
                     if ($realPrice !== null) {
                         $selection->unit_price = $realPrice;
                         $selection->total_price = $realPrice * $selection->quantity;
-                        Log::info('✅ PRECIO CORREGIDO', [
-                            'item' => $selection->item_description,
-                            'new_price' => $realPrice,
-                            'quantity' => $selection->quantity,
-                            'new_total' => $selection->total_price
-                        ]);
-                    } else {
-                        Log::warning('⚠️ No se encontró precio específico para item, se mantiene unit_price existente', [
-                            'item' => $selection->item_description,
-                            'item_index' => $selection->item_index,
-                            'existing_unit_price' => $selection->unit_price
-                        ]);
                     }
                 }
                 return $selection;
@@ -1336,26 +1327,13 @@ class PurchaseOrdersController extends Controller
             ]);
         }
 
-        // GENERAR DATOS PERSONALIZADOS AUTOMÁTICAMENTE SI NO EXISTEN
-        if (empty($purchaseOrder->pdf_custom_data) && !$purchaseRequest->quotationItemSelections()->exists()) {
-            Log::info('🔧 GENERANDO DATOS PERSONALIZADOS AUTOMÁTICOS', [
-                'order' => $purchaseOrder->order_number,
-                'reason' => 'pdf_custom_data vacío para orden regular'
-            ]);
-            
-            $this->generateInitialCustomData($purchaseOrder);
-            
-            // Recargar la orden con los nuevos datos
-            $purchaseOrder->refresh();
-        }
-
         // Usar el alias 'order' para compatibilidad con la vista
         $order = $purchaseOrder;
 
         // Obtener opciones de presupuesto
         $budgetOptions = BudgetHelper::getBudgetOptions();
 
-        return view('purchase-orders.edit-pdf-new', compact('order', 'budgetOptions', 'providerSpecificSelections'));
+        return view('purchase-orders.edit-pdf-new', compact('order', 'budgetOptions', 'providerSpecificSelections', 'editableItems'));
     }
 
     /**
@@ -3598,6 +3576,276 @@ class PurchaseOrdersController extends Controller
         ]);
         
         return $customData;
+    }
+
+    /**
+     * Asegurar que una orden tenga datos editables válidos
+     * Esta es la SOLUCIÓN DE FONDO para evitar órdenes en blanco
+     */
+    private function ensureEditableData(PurchaseOrder $order)
+    {
+        Log::info('🔍 Verificando datos editables para orden', [
+            'order' => $order->order_number,
+            'status' => $order->status
+        ]);
+
+        // Verificar si ya tiene datos válidos en pdf_custom_data
+        $customData = $order->pdf_custom_data;
+        if (is_array($customData) && !empty($customData['items'])) {
+            $validItems = collect($customData['items'])->filter(function($item) {
+                return !empty($item['description']) && 
+                       $item['description'] !== 'Sin descripción disponible' &&
+                       ($item['unit_price'] ?? 0) > 0;
+            });
+
+            if ($validItems->count() > 0) {
+                Log::info('✅ Orden ya tiene datos válidos', [
+                    'valid_items_count' => $validItems->count()
+                ]);
+                return $customData['items'];
+            }
+        }
+
+        Log::info('🔧 Generando datos editables para orden', [
+            'order' => $order->order_number
+        ]);
+
+        // Generar datos editables desde la información original
+        $editableItems = $this->generateEditableItems($order);
+
+        // Si se generaron items válidos, actualizar pdf_custom_data
+        if (!empty($editableItems)) {
+            $this->updateCustomDataWithItems($order, $editableItems);
+        }
+
+        return $editableItems;
+    }
+
+    /**
+     * Generar items editables desde la información original de la orden
+     */
+    private function generateEditableItems(PurchaseOrder $order)
+    {
+        $purchaseRequest = $order->purchaseRequest;
+        if (!$purchaseRequest) {
+            return $this->generateFallbackItems($order);
+        }
+
+        // Método 1: Selecciones mixtas específicas del proveedor
+        $hasMixedSelection = $purchaseRequest->quotationItemSelections()->exists();
+        if ($hasMixedSelection) {
+            $items = $this->getItemsFromMixedSelections($order, $purchaseRequest);
+            if (!empty($items)) {
+                Log::info('✅ Items generados desde selecciones mixtas', ['count' => count($items)]);
+                return $items;
+            }
+        }
+
+        // Método 2: Cotización seleccionada con purchase_items
+        $selectedQuotation = $purchaseRequest->selectedQuotation;
+        if ($selectedQuotation && !empty($purchaseRequest->purchase_items)) {
+            $items = $this->getItemsFromQuotationAndRequest($selectedQuotation, $purchaseRequest);
+            if (!empty($items)) {
+                Log::info('✅ Items generados desde cotización y solicitud', ['count' => count($items)]);
+                return $items;
+            }
+        }
+
+        // Método 3: Items de servicio
+        if ($purchaseRequest->type === 'services' && !empty($purchaseRequest->service_items)) {
+            $items = $this->getItemsFromServices($order, $purchaseRequest);
+            if (!empty($items)) {
+                Log::info('✅ Items generados desde servicios', ['count' => count($items)]);
+                return $items;
+            }
+        }
+
+        // Método 4: Purchase items sin cotización
+        if (!empty($purchaseRequest->purchase_items)) {
+            $items = $this->getItemsFromPurchaseRequest($order, $purchaseRequest);
+            if (!empty($items)) {
+                Log::info('✅ Items generados desde purchase request', ['count' => count($items)]);
+                return $items;
+            }
+        }
+
+        // Fallback: generar item básico
+        Log::info('⚠️ Usando fallback para generar items');
+        return $this->generateFallbackItems($order);
+    }
+
+    private function getItemsFromMixedSelections(PurchaseOrder $order, PurchaseRequest $purchaseRequest)
+    {
+        $items = [];
+        
+        $providerSelections = $purchaseRequest->quotationItemSelections()
+            ->whereHas('quotation', function($query) use ($order) {
+                $query->where('provider_name', $order->provider->nombre);
+            })
+            ->with('quotation')
+            ->get();
+
+        foreach ($providerSelections as $selection) {
+            $unitPrice = $selection->unit_price;
+
+            // Intentar obtener precio real de la cotización original
+            if ($selection->quotation && isset($selection->quotation->original_item_prices)) {
+                $originalPrices = $selection->quotation->original_item_prices;
+                if (isset($originalPrices[$selection->item_index])) {
+                    $unitPrice = $originalPrices[$selection->item_index];
+                }
+            }
+
+            $items[] = [
+                'description' => $selection->item_description ?: 'Producto/Servicio',
+                'quantity' => $selection->quantity ?: 1,
+                'unit_price' => $unitPrice,
+                'total' => $unitPrice * ($selection->quantity ?: 1)
+            ];
+        }
+
+        return $items;
+    }
+
+    private function getItemsFromQuotationAndRequest($selectedQuotation, $purchaseRequest)
+    {
+        $items = [];
+        
+        $purchaseItems = is_array($purchaseRequest->purchase_items) 
+            ? $purchaseRequest->purchase_items 
+            : json_decode($purchaseRequest->purchase_items, true);
+
+        $originalPrices = $selectedQuotation->original_item_prices ?? [];
+
+        foreach ($purchaseItems as $index => $item) {
+            $unitPrice = 0;
+
+            if (isset($originalPrices[$index])) {
+                $unitPrice = $originalPrices[$index];
+            } else if (!empty($originalPrices)) {
+                // Usar precio promedio si no hay correspondencia exacta
+                $unitPrice = array_sum($originalPrices) / count($originalPrices);
+            }
+
+            $quantity = $item['quantity'] ?? 1;
+
+            $items[] = [
+                'description' => $item['description'] ?: 'Producto/Servicio',
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'total' => $unitPrice * $quantity
+            ];
+        }
+
+        return $items;
+    }
+
+    private function getItemsFromServices(PurchaseOrder $order, PurchaseRequest $purchaseRequest)
+    {
+        $items = [];
+        
+        $serviceItems = is_array($purchaseRequest->service_items) 
+            ? $purchaseRequest->service_items 
+            : json_decode($purchaseRequest->service_items, true);
+
+        $totalValue = $order->subtotal ?: ($order->total_amount ?: 0);
+        $itemCount = count($serviceItems);
+        $pricePerItem = $itemCount > 0 ? $totalValue / $itemCount : $totalValue;
+
+        foreach ($serviceItems as $index => $item) {
+            $quantity = $item['quantity'] ?? 1;
+            $unitPrice = $quantity > 0 ? $pricePerItem / $quantity : $pricePerItem;
+
+            $items[] = [
+                'description' => $item['description'] ?: ('Servicio ' . ($index + 1)),
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'total' => $pricePerItem
+            ];
+        }
+
+        return $items;
+    }
+
+    private function getItemsFromPurchaseRequest(PurchaseOrder $order, PurchaseRequest $purchaseRequest)
+    {
+        $items = [];
+        
+        $purchaseItems = is_array($purchaseRequest->purchase_items) 
+            ? $purchaseRequest->purchase_items 
+            : json_decode($purchaseRequest->purchase_items, true);
+
+        $totalValue = $order->subtotal ?: ($order->total_amount ?: 0);
+        $itemCount = count($purchaseItems);
+        $pricePerItem = $itemCount > 0 ? $totalValue / $itemCount : $totalValue;
+
+        foreach ($purchaseItems as $index => $item) {
+            $quantity = $item['quantity'] ?? 1;
+            $unitPrice = $quantity > 0 ? $pricePerItem / $quantity : $pricePerItem;
+
+            $items[] = [
+                'description' => $item['description'] ?: 'Producto/Servicio',
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'total' => $unitPrice * $quantity
+            ];
+        }
+
+        return $items;
+    }
+
+    private function generateFallbackItems(PurchaseOrder $order)
+    {
+        $totalAmount = $order->subtotal ?: ($order->total_amount ?: 0);
+        
+        if ($totalAmount <= 0) {
+            return [];
+        }
+
+        return [
+            [
+                'description' => 'Producto/Servicio según orden de compra',
+                'quantity' => 1,
+                'unit_price' => $totalAmount,
+                'total' => $totalAmount
+            ]
+        ];
+    }
+
+    private function updateCustomDataWithItems(PurchaseOrder $order, array $items)
+    {
+        $subtotal = array_sum(array_column($items, 'total'));
+        $ivaAmount = $order->iva_amount ?? 0;
+        $total = $subtotal + $ivaAmount;
+
+        $customData = [
+            'items' => $items,
+            'subtotal' => $subtotal,
+            'iva_amount' => $ivaAmount,
+            'total' => $total,
+            'provider_info' => [
+                'name' => $order->provider->nombre ?? '',
+                'nit' => $order->provider->nit ?? '',
+                'address' => $order->provider->direccion ?? '',
+                'phone' => $order->provider->telefono ?? '',
+                'email' => $order->provider->email ?? ''
+            ],
+            'ensured_at' => now()->toDateTimeString(),
+            'ensured_for_editing' => true
+        ];
+
+        // Evitar guardar durante operaciones de edición para prevenir errores 500
+        if (!request()->routeIs('purchase-orders.edit-pdf*')) {
+            $order->pdf_custom_data = $customData;
+            $order->saveQuietly(); // Usar saveQuietly para evitar disparar observers
+        }
+
+        Log::info('✅ Datos custom actualizados para edición', [
+            'order' => $order->order_number,
+            'items_count' => count($items),
+            'subtotal' => number_format($subtotal, 0, '.', ','),
+            'saved_to_db' => !request()->routeIs('purchase-orders.edit-pdf*')
+        ]);
     }
     
     /**
