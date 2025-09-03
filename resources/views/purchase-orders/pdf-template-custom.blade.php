@@ -244,8 +244,206 @@
             $showTaxColumn = false;
             $hasIndividualTaxes = false;
             
-            // Verificar si hay impuestos individuales en customData
+            // PRIMERO: Construir la lista de items a mostrar
+            $itemsToShow = [];
+            
+            // Extraer items de customData si están disponibles
+            $customItems = [];
+            if (isset($customData) && is_array($customData) && isset($customData['items'])) {
+                $customItems = $customData['items'];
+            }
+            
+            $useCustomData = isset($customItems) && !empty($customItems);
+            
+            // Detectar si es orden mixta
+            $isMixedOrder = false;
+            $isSharedPurchase = false;
+            $sharedSections = [];
+            $providerSpecificInfo = null;
+            
+            // Obtener el presupuesto correcto
+            $budget = null;
+            if (isset($customData) && is_array($customData) && isset($customData['budget'])) {
+                $budget = $customData['budget'];
+            } elseif ($order->purchaseRequest && $order->purchaseRequest->budget) {
+                $budget = $order->purchaseRequest->budget;
+            }
+            
+            // Verificar datos personalizados para información adicional
             if (isset($customData) && is_array($customData)) {
+                $isSharedPurchase = $customData['is_shared_purchase'] ?? false;
+                $sharedSections = $customData['shared_sections'] ?? [];
+                if (is_string($sharedSections)) {
+                    $sharedSections = explode(' • ', $sharedSections);
+                }
+            }
+            
+            // Detectar orden mixta por selecciones de cotización
+            if ($order->purchaseRequest && $order->purchaseRequest->quotationItemSelections()->exists()) {
+                $isMixedOrder = true;
+                $allSelections = $order->purchaseRequest->quotationItemSelections;
+                $providerSelections = $allSelections->filter(function($sel) use ($order) {
+                    return $sel->quotation && $sel->quotation->provider_name === $order->provider->nombre;
+                });
+                
+                if ($providerSelections->count() > 0) {
+                    $providerSpecificInfo = [
+                        'total_providers' => $allSelections->pluck('quotation.provider_name')->unique()->count(),
+                        'this_provider_items' => $providerSelections->count(),
+                        'total_items' => $allSelections->count()
+                    ];
+                }
+            }
+            
+            if ($useCustomData) {
+                // Usar datos personalizados
+                $itemsToShow = $customItems;
+            } elseif (isset($quotationItemSelections) && $quotationItemSelections->count() > 0) {
+                // Para órdenes mixtas, usar solo las selecciones del proveedor específico
+                $itemsToShow = [];
+                foreach ($quotationItemSelections as $selection) {
+                    $unitPrice = 0;
+                    if ($selection->quotation && isset($selection->quotation->original_item_prices[$selection->item_index])) {
+                        $unitPrice = $selection->quotation->original_item_prices[$selection->item_index];
+                    } elseif ($selection->quotation && isset($selection->quotation->item_prices[$selection->item_index])) {
+                        $unitPrice = $selection->quotation->item_prices[$selection->item_index];
+                    }
+                    
+                    $itemsToShow[] = [
+                        'description' => $selection->item_description ?? 'N/A',
+                        'quantity' => $selection->quantity ?? 1,
+                        'unit_price' => $unitPrice,
+                        'total' => ($selection->quantity ?? 1) * $unitPrice,
+                        'unit' => $selection->unit ?? 'Unidad',
+                        'observations' => $selection->observations ?? ''
+                    ];
+                }
+            } elseif ($order->purchaseRequest && $order->purchaseRequest->type === 'services' && $order->purchaseRequest->service_items) {
+                // Para solicitudes de servicios, usar service_items
+                $serviceItems = is_string($order->purchaseRequest->service_items) ? 
+                               json_decode($order->purchaseRequest->service_items, true) : 
+                               $order->purchaseRequest->service_items;
+                
+                $itemsToShow = [];
+                if (is_array($serviceItems)) {
+                    // Para servicios con cotización, usar el SUBTOTAL de la cotización (sin IVA)
+                    // Para servicios sin cotización, usar el subtotal de la orden de compra
+                    $serviceBudget = 0;
+                    if ($order->purchaseRequest->selectedQuotation) {
+                        // Usar subtotal, no total_amount (que incluye IVA)
+                        $serviceBudget = floatval($order->purchaseRequest->selectedQuotation->subtotal ?? 
+                                                $order->purchaseRequest->selectedQuotation->total_amount ?? 0);
+                    } else {
+                        // Si no hay cotización, usar el subtotal de la orden de compra
+                        $serviceBudget = floatval($order->subtotal ?? $order->total_amount ?? 0);
+                        // Si el subtotal no está disponible, intentar calcular desde el total menos IVA
+                        if (!$serviceBudget && $order->total_amount && $order->iva_amount) {
+                            $serviceBudget = floatval($order->total_amount) - floatval($order->iva_amount);
+                        }
+                    }
+                    
+                    $itemCount = count($serviceItems);
+                    
+                    // Si hay presupuesto, dividirlo entre los items
+                    $pricePerItem = $itemCount > 0 ? $serviceBudget / $itemCount : $serviceBudget;
+                    
+                    foreach ($serviceItems as $index => $serviceItem) {
+                        $quantity = intval($serviceItem['quantity'] ?? 1);
+                        
+                        // Para servicios, calcular el valor por item
+                        $totalPerItem = $pricePerItem;
+                        $unitPrice = $quantity > 0 ? $totalPerItem / $quantity : $totalPerItem;
+                        
+                        $itemsToShow[] = [
+                            'description' => $serviceItem['description'] ?? 'Servicio ' . ($index + 1),
+                            'quantity' => $quantity,
+                            'unit_price' => $unitPrice,
+                            'total' => $totalPerItem,
+                            'unit' => 'Servicio',
+                            'observations' => ''
+                        ];
+                    }
+                }
+            } elseif (isset($items) && !empty($items)) {
+                // Usar items regulares
+                $itemsToShow = $items;
+            } elseif ($order->purchaseRequest && $order->purchaseRequest->purchase_items) {
+                // Combinar items de la solicitud con precios de la cotización
+                $purchaseItems = $order->purchaseRequest->purchase_items;
+                $prices = [];
+                
+                if ($order->purchaseRequest->selectedQuotation) {
+                    $prices = $order->purchaseRequest->selectedQuotation->original_item_prices ?? 
+                             $order->purchaseRequest->selectedQuotation->item_prices ?? [];
+                }
+                
+                $itemsToShow = [];
+                $totalItemCount = count($purchaseItems);
+                $totalPriceCount = count($prices);
+                
+                foreach ($purchaseItems as $index => $item) {
+                    $unitPrice = 0;
+                    
+                    // Si hay exactamente la misma cantidad de precios que items
+                    if ($totalPriceCount == $totalItemCount && isset($prices[$index])) {
+                        $unitPrice = $prices[$index];
+                    }
+                    // Si hay precios disponibles, usarlos hasta que se agoten
+                    elseif ($totalPriceCount > 0 && isset($prices[$index])) {
+                        $unitPrice = $prices[$index];
+                    }
+                    
+                    $quantity = $item['quantity'] ?? 1;
+                    
+                    $itemsToShow[] = [
+                        'description' => $item['description'] ?? 'N/A',
+                        'quantity' => $quantity,
+                        'unit_price' => $unitPrice,
+                        'total' => $quantity * $unitPrice,
+                        'unit' => $item['unit'] ?? 'Unidad',
+                        'observations' => $item['observations'] ?? ''
+                    ];
+                }
+            }
+            
+            // Agregar additional_items si existen
+            if (isset($customData['additional_items']) && is_array($customData['additional_items'])) {
+                foreach ($customData['additional_items'] as $additionalItem) {
+                    // Solo agregar items que tengan datos válidos
+                    if (!empty($additionalItem['description']) || !empty($additionalItem['quantity']) || !empty($additionalItem['unit_price'])) {
+                        $quantity = floatval($additionalItem['quantity'] ?? 0);
+                        $unitPrice = floatval($additionalItem['unit_price'] ?? 0);
+                        $total = $quantity * $unitPrice;
+                        
+                        $itemsToShow[] = [
+                            'description' => $additionalItem['description'] ?? 'N/A',
+                            'quantity' => $quantity,
+                            'unit_price' => $unitPrice,
+                            'total' => $total,
+                            'unit' => $additionalItem['unit'] ?? 'Unidad',
+                            'observations' => $additionalItem['observations'] ?? '',
+                            'tax_rate' => $additionalItem['tax_rate'] ?? 19
+                        ];
+                    }
+                }
+            }
+            
+            // SEGUNDO: Verificar si hay impuestos individuales en los items que se van a mostrar
+            if (!empty($itemsToShow)) {
+                foreach ($itemsToShow as $item) {
+                    if (isset($item['tax_rate']) && is_numeric($item['tax_rate'])) {
+                        $taxRate = floatval($item['tax_rate']);
+                        // Mostrar columna si hay cualquier impuesto diferente de 19% (incluyendo 0%)
+                        if ($taxRate != 19) {
+                            $hasIndividualTaxes = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // Verificar si hay impuestos individuales en customData
+            if (!$hasIndividualTaxes && isset($customData) && is_array($customData)) {
                 // Verificar items regulares
                 if (isset($customData['items']) && is_array($customData['items'])) {
                     foreach ($customData['items'] as $item) {
@@ -292,26 +490,88 @@
             
             $showTaxColumn = $hasIndividualTaxes;
             
-            // Calcular el total correcto incluyendo impuestos individuales
-            $calculatedSubtotal = $subtotal ?? $order->subtotal ?? 0;
-            $calculatedIva = $ivaAmount ?? $order->iva_amount ?? 0;
-            $calculatedIndividualTaxes = 0;
+            // Calcular el subtotal dinámicamente basado en todos los items mostrados
+            $dynamicSubtotal = 0;
+            $dynamicIndividualTaxes = 0;
+            $dynamicIvaBase = 0; // Items con IVA 19%
             
-            if (isset($customData['individual_taxes_total'])) {
-                $calculatedIndividualTaxes = floatval($customData['individual_taxes_total']);
+            // Primero calcular basado en los items que se van a mostrar
+            if (!empty($itemsToShow)) {
+                foreach ($itemsToShow as $item) {
+                    $itemTotal = floatval($item['total'] ?? (($item['quantity'] ?? 1) * floatval($item['unit_price'] ?? 0)));
+                    $dynamicSubtotal += $itemTotal;
+                    
+                    // Calcular impuestos individuales por item
+                    $itemTaxRate = floatval($item['tax_rate'] ?? 19);
+                    if ($itemTaxRate == 19) {
+                        // Items con IVA 19% - calcular la base gravable
+                        $dynamicIvaBase += $itemTotal;
+                    } elseif ($itemTaxRate > 0) {
+                        // Items con otros impuestos
+                        $itemTaxAmount = ($itemTotal * $itemTaxRate) / 100;
+                        $dynamicIndividualTaxes += $itemTaxAmount;
+                    }
+                    // Items sin impuesto (0%) no generan IVA ni impuestos individuales
+                }
             }
             
-            $calculatedTotal = $calculatedSubtotal + $calculatedIva + $calculatedIndividualTaxes;
+            // Si hay customData con subtotal, usar el mayor entre el calculado y el guardado
+            $savedSubtotal = $subtotal ?? $order->subtotal ?? 0;
             
-            // Debug: log de la decisión
-            \Log::info('Cálculo de totales en PDF:', [
-                'subtotal' => $calculatedSubtotal,
-                'iva' => $calculatedIva, 
-                'individual_taxes' => $calculatedIndividualTaxes,
-                'total_calculado' => $calculatedTotal,
-                'total_original' => $totalAmount ?? $order->total_amount ?? 0,
-                'showTaxColumn' => $showTaxColumn
-            ]);
+            // Verificar si hay subtotal personalizado en customData
+            $useCustomSubtotal = false;
+            if (isset($customData) && is_array($customData) && isset($customData['subtotal']) && is_numeric($customData['subtotal'])) {
+                $calculatedSubtotal = floatval($customData['subtotal']);
+                $useCustomSubtotal = true;
+            } elseif (!empty($itemsToShow) && $dynamicSubtotal > 0) {
+                // CAMBIO: Usar siempre el cálculo dinámico si hay items y no hay subtotal personalizado
+                $calculatedSubtotal = $dynamicSubtotal;
+            } else {
+                // Usar el subtotal guardado si no hay items dinámicos ni personalizado
+                $calculatedSubtotal = $savedSubtotal;
+            }
+            
+            // Para IVA, verificar primero si hay un valor específico guardado en customData
+            $calculatedIva = 0;
+            $useCustomIva = false;
+            
+            // Si hay datos personalizados con IVA específico, usarlo
+            if (isset($customData) && is_array($customData)) {
+                if (isset($customData['iva_amount']) && is_numeric($customData['iva_amount'])) {
+                    $calculatedIva = floatval($customData['iva_amount']);
+                    $useCustomIva = true;
+                } elseif (isset($customData['iva_rate']) && is_numeric(str_replace('%', '', $customData['iva_rate']))) {
+                    $ivaRate = floatval(str_replace('%', '', $customData['iva_rate']));
+                    $calculatedIva = round($calculatedSubtotal * ($ivaRate / 100));
+                    $useCustomIva = true;
+                }
+            }
+            
+            // Si no hay datos personalizados de IVA, usar cálculo dinámico o valores guardados
+            if (!$useCustomIva) {
+                if (!empty($itemsToShow)) {
+                    // Si hay items, calcular IVA sobre el subtotal total porque por defecto todos tienen IVA 19%
+                    $calculatedIva = round($calculatedSubtotal * 0.19);
+                } else {
+                    // Solo usar IVA guardado si NO hay items dinámicos
+                    if (isset($ivaAmount)) {
+                        $calculatedIva = $ivaAmount;
+                    } elseif (isset($order->iva_amount)) {
+                        $calculatedIva = $order->iva_amount;
+                    }
+                }
+            }
+            
+            // Para impuestos individuales, usar el calculado dinámicamente
+            $calculatedIndividualTaxes = $dynamicIndividualTaxes;
+            // Solo usar el guardado si NO hay cálculo dinámico
+            if (!(!empty($itemsToShow) && $dynamicIndividualTaxes >= 0)) {
+                if (isset($customData['individual_taxes_total']) && floatval($customData['individual_taxes_total']) > $dynamicIndividualTaxes) {
+                    $calculatedIndividualTaxes = floatval($customData['individual_taxes_total']);
+                }
+            }
+            
+            $calculatedTotal = round($calculatedSubtotal + $calculatedIva + $calculatedIndividualTaxes);
         @endphp
 
         <!-- Items -->
@@ -326,164 +586,6 @@
                 @endif
                 <td class="items-header" style="width: 100px;">VALOR TOTAL</td>
             </tr>
-            
-            @php
-                $itemsToShow = [];
-                
-                // Extraer items de customData si están disponibles
-                $customItems = [];
-                if (isset($customData) && is_array($customData) && isset($customData['items'])) {
-                    $customItems = $customData['items'];
-                }
-                
-                $useCustomData = isset($customItems) && !empty($customItems);
-                
-                // Detectar si es orden mixta
-                $isMixedOrder = false;
-                $isSharedPurchase = false;
-                $sharedSections = [];
-                $providerSpecificInfo = null;
-                
-                // Obtener el presupuesto correcto
-                $budget = null;
-                if (isset($customData) && is_array($customData) && isset($customData['budget'])) {
-                    $budget = $customData['budget'];
-                } elseif ($order->purchaseRequest && $order->purchaseRequest->budget) {
-                    $budget = $order->purchaseRequest->budget;
-                }
-                
-                // Verificar datos personalizados para información adicional
-                if (isset($customData) && is_array($customData)) {
-                    $isSharedPurchase = $customData['is_shared_purchase'] ?? false;
-                    $sharedSections = $customData['shared_sections'] ?? [];
-                    if (is_string($sharedSections)) {
-                        $sharedSections = explode(' • ', $sharedSections);
-                    }
-                }
-                
-                // Detectar orden mixta por selecciones de cotización
-                if ($order->purchaseRequest && $order->purchaseRequest->quotationItemSelections()->exists()) {
-                    $isMixedOrder = true;
-                    $allSelections = $order->purchaseRequest->quotationItemSelections;
-                    $providerSelections = $allSelections->filter(function($sel) use ($order) {
-                        return $sel->quotation && $sel->quotation->provider_name === $order->provider->nombre;
-                    });
-                    
-                    if ($providerSelections->count() > 0) {
-                        $providerSpecificInfo = [
-                            'total_providers' => $allSelections->pluck('quotation.provider_name')->unique()->count(),
-                            'this_provider_items' => $providerSelections->count(),
-                            'total_items' => $allSelections->count()
-                        ];
-                    }
-                }
-                
-                if ($useCustomData) {
-                    // Usar datos personalizados
-                    $itemsToShow = $customItems;
-                } elseif (isset($quotationItemSelections) && $quotationItemSelections->count() > 0) {
-                    // Para órdenes mixtas, usar solo las selecciones del proveedor específico
-                    $itemsToShow = [];
-                    foreach ($quotationItemSelections as $selection) {
-                        $unitPrice = 0;
-                        if ($selection->quotation && isset($selection->quotation->original_item_prices[$selection->item_index])) {
-                            $unitPrice = $selection->quotation->original_item_prices[$selection->item_index];
-                        } elseif ($selection->quotation && isset($selection->quotation->item_prices[$selection->item_index])) {
-                            $unitPrice = $selection->quotation->item_prices[$selection->item_index];
-                        }
-                        
-                        $itemsToShow[] = [
-                            'description' => $selection->item_description ?? 'N/A',
-                            'quantity' => $selection->quantity ?? 1,
-                            'unit_price' => $unitPrice,
-                            'total' => ($selection->quantity ?? 1) * $unitPrice,
-                            'unit' => $selection->unit ?? 'Unidad',
-                            'observations' => $selection->observations ?? ''
-                        ];
-                    }
-                } elseif ($order->purchaseRequest && $order->purchaseRequest->type === 'services' && $order->purchaseRequest->service_items) {
-                    // Para solicitudes de servicios, usar service_items
-                    $serviceItems = is_string($order->purchaseRequest->service_items) ? 
-                                   json_decode($order->purchaseRequest->service_items, true) : 
-                                   $order->purchaseRequest->service_items;
-                    
-                    $itemsToShow = [];
-                    if (is_array($serviceItems)) {
-                        // Para servicios con cotización, usar el SUBTOTAL de la cotización (sin IVA)
-                        // Para servicios sin cotización, usar el presupuesto de la solicitud
-                        $serviceBudget = 0;
-                        if ($order->purchaseRequest->selectedQuotation) {
-                            // Usar subtotal, no total_amount (que incluye IVA)
-                            $serviceBudget = floatval($order->purchaseRequest->selectedQuotation->subtotal ?? 
-                                                    $order->purchaseRequest->selectedQuotation->total_amount ?? 0);
-                        } else {
-                            $serviceBudget = floatval($order->purchaseRequest->budget ?? $order->total_amount ?? 0);
-                        }
-                        
-                        $itemCount = count($serviceItems);
-                        
-                        // Si hay presupuesto, dividirlo entre los items
-                        $pricePerItem = $itemCount > 0 ? $serviceBudget / $itemCount : $serviceBudget;
-                        
-                        foreach ($serviceItems as $index => $serviceItem) {
-                            $quantity = intval($serviceItem['quantity'] ?? 1);
-                            
-                            // Para servicios, calcular el valor por item
-                            $totalPerItem = $pricePerItem;
-                            $unitPrice = $quantity > 0 ? $totalPerItem / $quantity : $totalPerItem;
-                            
-                            $itemsToShow[] = [
-                                'description' => $serviceItem['description'] ?? 'Servicio ' . ($index + 1),
-                                'quantity' => $quantity,
-                                'unit_price' => $unitPrice,
-                                'total' => $totalPerItem,
-                                'unit' => 'Servicio',
-                                'observations' => ''
-                            ];
-                        }
-                    }
-                } elseif (isset($items) && !empty($items)) {
-                    // Usar items regulares
-                    $itemsToShow = $items;
-                } elseif ($order->purchaseRequest && $order->purchaseRequest->purchase_items) {
-                    // Combinar items de la solicitud con precios de la cotización
-                    $purchaseItems = $order->purchaseRequest->purchase_items;
-                    $prices = [];
-                    
-                    if ($order->purchaseRequest->selectedQuotation) {
-                        $prices = $order->purchaseRequest->selectedQuotation->original_item_prices ?? 
-                                 $order->purchaseRequest->selectedQuotation->item_prices ?? [];
-                    }
-                    
-                    $itemsToShow = [];
-                    $totalItemCount = count($purchaseItems);
-                    $totalPriceCount = count($prices);
-                    
-                    foreach ($purchaseItems as $index => $item) {
-                        $unitPrice = 0;
-                        
-                        // Si hay exactamente la misma cantidad de precios que items
-                        if ($totalPriceCount == $totalItemCount && isset($prices[$index])) {
-                            $unitPrice = $prices[$index];
-                        }
-                        // Si hay precios disponibles, usarlos hasta que se agoten
-                        elseif ($totalPriceCount > 0 && isset($prices[$index])) {
-                            $unitPrice = $prices[$index];
-                        }
-                        
-                        $quantity = $item['quantity'] ?? 1;
-                        
-                        $itemsToShow[] = [
-                            'description' => $item['description'] ?? 'N/A',
-                            'quantity' => $quantity,
-                            'unit_price' => $unitPrice,
-                            'total' => $quantity * $unitPrice,
-                            'unit' => $item['unit'] ?? 'Unidad',
-                            'observations' => $item['observations'] ?? ''
-                        ];
-                    }
-                }
-            @endphp
 
             @if(!empty($itemsToShow))
                 @foreach($itemsToShow as $index => $item)
@@ -491,7 +593,7 @@
                     <td class="center">{{ $index + 1 }}</td>
                     <td>{{ $item['description'] ?? $item['item_description'] ?? 'N/A' }}</td>
                     <td class="center">{{ $item['quantity'] ?? $item['cantidad'] ?? 1 }}</td>
-                    <td class="right">${{ number_format(intval($item['unit_price'] ?? $item['precio_unitario'] ?? $item['unit_price_display'] ?? 0), 0, ',', '.') }}</td>
+                    <td class="right">${{ number_format(round(floatval($item['unit_price'] ?? $item['precio_unitario'] ?? $item['unit_price_display'] ?? 0)), 0, ',', '.') }}</td>
                     @if($showTaxColumn)
                     <td class="center">
                         @php
@@ -504,7 +606,7 @@
                         @endif
                     </td>
                     @endif
-                    <td class="right">${{ number_format(intval($item['total'] ?? $item['total_price'] ?? (($item['quantity'] ?? 1) * intval($item['unit_price'] ?? 0))), 0, ',', '.') }}</td>
+                    <td class="right">${{ number_format(round(floatval($item['total'] ?? $item['total_price'] ?? (($item['quantity'] ?? 1) * floatval($item['unit_price'] ?? 0)))), 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
             @else
@@ -582,7 +684,7 @@
                 <td class="label">APROBACIÓN</td>
                 <td class="value">{{ $order->purchaseRequest->approver->name ?? 'Juliana Pérez López' }}</td>
                 <td class="label bold">SUB TOTAL</td>
-                <td class="value bold right">${{ number_format($subtotal ?? $order->subtotal ?? 0, 0, ',', '.') }}</td>
+                <td class="value bold right">${{ number_format($calculatedSubtotal, 0, ',', '.') }}</td>
             </tr>
             <tr>
                 <td class="label">FECHA:</td>

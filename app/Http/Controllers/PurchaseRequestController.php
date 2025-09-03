@@ -15,6 +15,7 @@ use App\Mail\ServiceNoQuotationCreated;
 use App\Services\PurchaseRequestPdfService;
 use App\Services\SectionClassifierService;
 use App\Services\PurchaseRequestPermissionService;
+use App\Services\AllowedSectionsService;
 
 class PurchaseRequestController extends Controller
 {    
@@ -329,14 +330,8 @@ class PurchaseRequestController extends Controller
             ->paginate(10);        // Mantener los parámetros de filtro en la paginación
         $requests->appends($request->query());
         
-        // Obtener todas las secciones para el filtro (excluyendo "Primaria" y "Pre Escolar")
-        $sections = PurchaseRequest::distinct()
-            ->whereNotNull('section_area')
-            ->where('section_area', '!=', 'Primaria')
-            ->where('section_area', '!=', 'Pre Escolar')
-            ->pluck('section_area')
-            ->sort()
-            ->values();
+        // Mostrar todas las secciones permitidas en el filtro
+        $sections = collect(AllowedSectionsService::getAllowedSections())->sort()->values();
         
         // Verificar si se puede mostrar aprobación masiva de fotocopias
         $canBulkApproveCopies = false;

@@ -719,8 +719,6 @@ Route::middleware(['auth'])->group(function () {
             ->name('purchase-orders.edit-pdf-new');
         Route::put('purchase-orders/{purchaseOrder}/update-pdf', [PurchaseOrdersController::class, 'updatePdf'])
             ->name('purchase-orders.update-pdf');
-        Route::post('purchase-orders/{purchaseOrder}/update-pdf', [PurchaseOrdersController::class, 'updatePdf'])
-            ->name('purchase-orders.update-pdf-post');
         Route::post('purchase-orders/{purchaseOrder}/regenerate-pdf', [PurchaseOrdersController::class, 'regeneratePdf'])
             ->name('purchase-orders.regenerate-pdf');
         Route::post('purchase-orders/{purchaseOrder}/separate-mixed-order', [PurchaseOrdersController::class, 'separateMixedOrder'])
@@ -799,6 +797,16 @@ Route::middleware(['auth'])->group(function () {
     Route::post('approvals/{id}/update-shared-budget', [ApprovalController::class, 'updateSharedBudget'])->name('approvals.update-shared-budget');
     Route::post('approvals/{id}/update-third-budget', [ApprovalController::class, 'updateThirdBudget'])->name('approvals.update-third-budget');
     Route::post('approvals/{id}/update-quotation-amount', [ApprovalController::class, 'updateQuotationAmount'])->name('approvals.update-quotation-amount');
+    
+    // Ruta temporal para pruebas de aprobación
+    Route::get('approvals/test-approval', function () {
+        return view('approvals.test-approval');
+    })->name('approvals.test');
+    
+    // Ruta para debug de modales
+    Route::get('approvals/debug-show', function () {
+        return view('approvals.debug-show');
+    })->name('approvals.debug');
 });
 
 // Add impersonation routes

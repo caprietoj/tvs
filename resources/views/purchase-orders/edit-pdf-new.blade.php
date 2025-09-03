@@ -463,7 +463,7 @@
                             @endphp
                             {{-- IGNORAR customData completamente para órdenes mixtas --}}
                             @foreach($providerSpecificSelections as $item)
-                                <tr>
+                                <tr class="item-row">
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
                                     <td style="border: 1px solid #000; padding: 4px;">
                                         <textarea name="items[{{ $loop->index }}][description]" 
@@ -527,7 +527,7 @@
                             @endphp
                             {{-- Para cotizaciones tradicionales, usar items de la cotización --}}
                             @foreach($selectedQuotation->items as $item)
-                                <tr>
+                                <tr class="item-row">
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
                                     <td style="border: 1px solid #000; padding: 4px;">
                                         <textarea name="items[{{ $loop->index }}][description]" 
@@ -662,7 +662,7 @@
                         {{-- Si hay selecciones específicas del proveedor, usar los purchaseItems corregidos con precios reales --}}
                         @elseif(isset($providerSpecificSelections) && $providerSpecificSelections->count() > 0 && !empty($purchaseItems) && is_array($purchaseItems))
                             @foreach($purchaseItems as $index => $item)
-                                <tr>
+                                <tr class="item-row">
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
                                     <td style="border: 1px solid #000; padding: 4px;">
                                         <div style="width: 100%; min-height: 40px; font-size: 12px; padding: 4px; background-color: #f8f9fa;">
@@ -705,7 +705,7 @@
                         {{-- Si no hay customData ni selecciones específicas, usar purchase_items originales --}}
                         @elseif(!isset($providerSpecificSelections) && !empty($purchaseItems) && is_array($purchaseItems))
                             @foreach($purchaseItems as $index => $item)
-                                <tr>
+                                <tr class="item-row">
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
                                     <td style="border: 1px solid #000; padding: 4px;">
                                         <div style="width: 100%; min-height: 40px; font-size: 12px; padding: 4px; background-color: #f8f9fa;">
@@ -818,7 +818,7 @@
                             @endphp
                             
                             @if($showRow)
-                                <tr>
+                                <tr class="additional-item-row">
                                     <td style="border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
                                     <td style="border: 1px solid #000; padding: 4px;">
                                         <textarea name="additional_items[{{ $i }}][description]" 
@@ -882,6 +882,24 @@
                                 </tr>
                             @endif
                         @endfor
+                        
+                        <!-- Fila para agregar nuevos items adicionales -->
+                        <tr>
+                            <td colspan="7" style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #f8f9fa;">
+                                <button type="button" 
+                                        class="btn btn-outline-primary btn-sm px-4 py-2" 
+                                        id="add-additional-item-btn"
+                                        onclick="addNewAdditionalItem()"
+                                        title="Agregar un nuevo producto o servicio adicional">
+                                    <i class="fas fa-plus-circle me-2"></i> 
+                                    <span class="fw-semibold">Agregar Item Adicional</span>
+                                </button>
+                                <small class="text-muted d-block mt-1">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Puede agregar tantos items como necesite
+                                </small>
+                            </td>
+                        </tr>
                         @endif
 
                         <!-- Observaciones -->
@@ -1438,6 +1456,76 @@ $(document).ready(function() {
         });
         
         calculateTotal();
+    }
+
+    // Función para aplicar formato a campos nuevos
+    function applyMaskToNewFields() {
+        console.log('Aplicando formato a nuevos campos...');
+        
+        // Formatear campos de precio nuevos
+        $('.currency-input').each(function() {
+            const $input = $(this);
+            if (!$input.hasClass('formatted')) {
+                $input.addClass('formatted');
+                
+                // Aplicar eventos de formateo
+                $input.off('input.currency-format').on('input.currency-format', function() {
+                    // Permitir solo números y punto decimal
+                    let value = $(this).val().replace(/[^\d.]/g, '');
+                    
+                    // Evitar múltiples puntos
+                    const parts = value.split('.');
+                    if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    
+                    $(this).val(value);
+                });
+                
+                $input.off('blur.currency-format').on('blur.currency-format', function() {
+                    const value = $(this).val();
+                    if (value && !isNaN(value)) {
+                        const numericValue = parseFloat(value);
+                        $(this).val(formatNumber(numericValue));
+                        
+                        // Trigger cálculo si es un campo de item adicional
+                        const index = $(this).data('index');
+                        if (index !== undefined) {
+                            calculateItemTotal(index, true);
+                        }
+                    }
+                });
+            }
+        });
+        
+        // Formatear campos de cantidad
+        $('.additional-quantity').each(function() {
+            const $input = $(this);
+            if (!$input.hasClass('quantity-formatted')) {
+                $input.addClass('quantity-formatted');
+                
+                $input.off('input.quantity-format').on('input.quantity-format', function() {
+                    // Permitir solo números y punto decimal
+                    let value = $(this).val().replace(/[^\d.]/g, '');
+                    
+                    // Evitar múltiples puntos
+                    const parts = value.split('.');
+                    if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    
+                    $(this).val(value);
+                    
+                    // Trigger cálculo
+                    const index = $(this).data('index');
+                    if (index !== undefined) {
+                        calculateItemTotal(index, true);
+                    }
+                });
+            }
+        });
+        
+        console.log('Formato aplicado exitosamente');
     }
 
     // Formatear inputs al cargar la página
@@ -2081,6 +2169,7 @@ $(document).ready(function() {
         }
     };
 
+    // Función profesional para eliminar items adicionales
     window.removeAdditionalItem = function(index) {
         if (confirm('¿Está seguro de que desea eliminar este item adicional?')) {
             // Buscar la fila correspondiente
@@ -2123,6 +2212,121 @@ $(document).ready(function() {
             }
         }
     };
+
+    // Función profesional para restaurar items adicionales eliminados
+    window.restoreAdditionalItem = function(index) {
+        console.log(`🔄 Iniciando restauración del item adicional con índice: ${index}`);
+        
+        try {
+            // Buscar la fila correspondiente
+            let row = $(`input[data-index="${index}"].additional-quantity`).closest('tr');
+            
+            // Búsqueda alternativa
+            if (!row.length) {
+                row = $(`.additional-item-row[data-item-index="${index}"]`);
+            }
+            
+            if (!row.length) {
+                row = $(`input[name="additional_items[${index}][quantity]"]`).closest('tr');
+            }
+            
+            if (!row.length) {
+                console.error(`❌ No se encontró la fila para restaurar el item con índice: ${index}`);
+                alert('Error: No se pudo encontrar el item a restaurar.');
+                return;
+            }
+            
+            // Quitar la marca de eliminado
+            row.removeClass('deleted-additional-item');
+            row.removeAttr('data-deleted');
+            
+            // Remover el campo oculto de eliminado
+            row.find(`input[name="additional_items[${index}][deleted]"]`).remove();
+            
+            // Restaurar valores originales si existen
+            const originalValues = row.data('originalValues');
+            if (originalValues) {
+                Object.keys(originalValues).forEach(fieldName => {
+                    const $field = row.find(`[name="${fieldName}"]`);
+                    if ($field.length) {
+                        $field.val(originalValues[fieldName]);
+                    }
+                });
+                // Limpiar datos temporales
+                row.removeData('originalValues');
+            }
+            
+            // Restaurar estilos visuales con transición suave
+            row.css({
+                'opacity': '1',
+                'background-color': '',
+                'text-decoration': 'none',
+                'transition': 'all 0.3s ease'
+            });
+            
+            // Cambiar el botón de vuelta a eliminar
+            const restoreBtn = row.find('button[onclick*="restoreAdditionalItem"]');
+            restoreBtn.removeClass('btn-outline-warning')
+                     .addClass('btn-outline-danger')
+                     .attr('onclick', `removeAdditionalItem(${index})`)
+                     .attr('title', 'Eliminar este item')
+                     .html('<i class="fas fa-trash"></i>');
+            
+            // Actualizar numeración de todos los items
+            updateAllItemNumbers();
+            
+            // Recalcular totales si hay valores
+            const quantity = row.find(`input[name="additional_items[${index}][quantity]"]`).val();
+            const unitPrice = row.find(`input[name="additional_items[${index}][unit_price]"]`).val();
+            
+            if (quantity && unitPrice) {
+                calculateItemTotal(index, true);
+            }
+            
+            calculateTotal();
+            
+            console.log(`✅ Item adicional ${index} restaurado exitosamente`);
+            
+            // Mostrar mensaje de confirmación temporal
+            showTemporaryMessage('Item restaurado exitosamente.', 'success');
+            
+        } catch (error) {
+            console.error('❌ Error al restaurar item adicional:', error);
+            alert('Error al restaurar el item. Por favor, intente nuevamente.');
+        }
+    };
+
+    // Función para mostrar mensajes temporales profesionales
+    function showTemporaryMessage(message, type = 'info') {
+        // Remover mensaje anterior si existe
+        $('#temporary-message').remove();
+        
+        // Crear elemento de mensaje
+        const messageClass = {
+            'success': 'alert-success',
+            'warning': 'alert-warning',
+            'error': 'alert-danger',
+            'info': 'alert-info'
+        }[type] || 'alert-info';
+        
+        const messageElement = $(`
+            <div id="temporary-message" class="alert ${messageClass} alert-dismissible fade show" 
+                 style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <strong>${message}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `);
+        
+        // Agregar al DOM
+        $('body').append(messageElement);
+        
+        // Auto-remover después de 4 segundos
+        setTimeout(() => {
+            messageElement.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 4000);
+    }
 
     window.restoreAdditionalItem = function(index) {
         // Buscar la fila correspondiente
@@ -2256,7 +2460,179 @@ $(document).ready(function() {
     });
 });
 
+// Función para agregar nuevos items adicionales - VERSIÓN FUNCIONAL
+window.addNewAdditionalItem = function() {
+    console.log('Agregando nuevo item adicional...');
+    
+    // Encontrar el índice más alto de items adicionales existentes
+    let maxIndex = -1;
+    $('input[name*="additional_items"]').each(function() {
+        const name = $(this).attr('name');
+        const match = name.match(/additional_items\[(\d+)\]/);
+        if (match) {
+            const index = parseInt(match[1]);
+            if (index > maxIndex) {
+                maxIndex = index;
+            }
+        }
+    });
 
+    const newIndex = maxIndex + 1;
+    
+    // Calcular número de item correcto dinámicamente
+    let itemNumber = 1;
+    
+    // Contar items principales visibles
+    $('.item-row').each(function() {
+        if (!$(this).hasClass('deleted-item') && $(this).is(':visible')) {
+            itemNumber++;
+        }
+    });
+    
+    // Contar items adicionales visibles
+    $('.additional-item-row').each(function() {
+        if (!$(this).hasClass('deleted-additional-item') && $(this).is(':visible')) {
+            itemNumber++;
+        }
+    });
+
+    // Crear nueva fila
+    const newRow = `
+        <tr class="additional-item-row">
+            <td style="border: 1px solid #000; padding: 4px; text-align: center;">${itemNumber}</td>
+            <td style="border: 1px solid #000; padding: 4px;">
+                <input type="hidden" name="additional_items[${newIndex}][item_number]" value="${itemNumber}">
+                <textarea name="additional_items[${newIndex}][description]" 
+                          class="form-control form-control-sm border-0 item-description" 
+                          style="border: none; background: transparent; resize: vertical;" 
+                          placeholder="Descripción del producto o servicio"
+                          rows="3"></textarea>
+            </td>
+            <td style="border: 1px solid #000; padding: 4px;">
+                <input type="number" name="additional_items[${newIndex}][quantity]" 
+                       class="form-control form-control-sm border-0 additional-quantity" 
+                       data-index="${newIndex}"
+                       style="border: none; background: transparent; text-align: center;" 
+                       value="" 
+                       step="0.01" 
+                       min="0" 
+                       onchange="calculateItemTotal(${newIndex}, true)"
+                       oninput="calculateItemTotal(${newIndex}, true)">
+            </td>
+            <td style="border: 1px solid #000; padding: 4px;">
+                <input type="text" name="additional_items[${newIndex}][unit_price]" 
+                       class="form-control form-control-sm border-0 additional-price currency-input" 
+                       data-index="${newIndex}"
+                       style="border: none; background: transparent; text-align: right;" 
+                       value="" 
+                       placeholder="0"
+                       onchange="calculateItemTotal(${newIndex}, true)"
+                       oninput="calculateItemTotal(${newIndex}, true)">
+            </td>
+            <td style="border: 1px solid #000; padding: 4px; text-align: right;">
+                <span class="additional-total" data-index="${newIndex}">$0</span>
+                <input type="hidden" name="additional_items[${newIndex}][total]" 
+                       class="additional-total-input" 
+                       data-index="${newIndex}"
+                       value="0">
+            </td>
+            <td style="border: 1px solid #000; padding: 4px; text-align: center;">
+                <select name="additional_items[${newIndex}][tax_rate]" 
+                        class="form-control form-control-sm border-0 additional-tax-rate" 
+                        style="border: none; background: transparent;"
+                        onchange="calculateItemTotal(${newIndex}, true)">
+                    <option value="0">Sin Imp</option>
+                    <option value="4">4%</option>
+                    <option value="5">5%</option>
+                    <option value="8">8%</option>
+                    <option value="16">16%</option>
+                    <option value="19" selected>19%</option>
+                </select>
+            </td>
+            <td style="border: 1px solid #000; padding: 4px; text-align: center;">
+                <button type="button" 
+                        class="btn btn-outline-dark btn-sm"
+                        onclick="removeAdditionalItem(${newIndex})"
+                        title="Eliminar item adicional">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        </tr>`;
+
+    // Insertar la nueva fila antes del botón "Agregar Item"
+    $('#add-additional-item-btn').closest('tr').before(newRow);
+    
+    // Aplicar formato de moneda a los nuevos campos
+    applyMaskToNewFields();
+    
+    // Actualizar numeración de todos los items
+    updateAllItemNumbers();
+    
+    // Configurar eventos específicos para el nuevo item
+    const newQuantityInput = $(`input[data-index="${newIndex}"].additional-quantity`);
+    const newPriceInput = $(`input[data-index="${newIndex}"].additional-price`);
+    const newTaxSelect = $(`select[data-index="${newIndex}"].additional-tax-rate`);
+    
+    // Eventos de cálculo inmediato
+    newQuantityInput.on('input keyup change', function() {
+        calculateItemTotal(newIndex, true);
+    });
+    
+    newPriceInput.on('input keyup change blur', function() {
+        calculateItemTotal(newIndex, true);
+    });
+    
+    newTaxSelect.on('change', function() {
+        calculateItemTotal(newIndex, true);
+    });
+    
+    // Enfocar el campo de descripción
+    $(`textarea[name="additional_items[${newIndex}][description]"]`).focus();
+    
+    console.log(`Nuevo item adicional agregado con índice: ${newIndex}`);
+};
+
+// Función para actualizar numeración de todos los items
+function updateAllItemNumbers() {
+    let itemNumber = 1;
+    
+    // Actualizar items principales
+    $('.item-row').each(function() {
+        if (!$(this).hasClass('deleted-item') && $(this).is(':visible')) {
+            $(this).find('td:first-child').text(itemNumber);
+            // Actualizar campo oculto si existe
+            const hiddenInput = $(this).find('input[name*="[item_number]"]');
+            if (hiddenInput.length) {
+                hiddenInput.val(itemNumber);
+            }
+            itemNumber++;
+        }
+    });
+    
+    // Actualizar items adicionales
+    $('.additional-item-row').each(function() {
+        if (!$(this).hasClass('deleted-additional-item') && $(this).is(':visible')) {
+            $(this).find('td:first-child').text(itemNumber);
+            // Actualizar campo oculto
+            const hiddenInput = $(this).find('input[name*="[item_number]"]');
+            if (hiddenInput.length) {
+                hiddenInput.val(itemNumber);
+            } else {
+                // Si no existe el campo oculto, crearlo
+                const textarea = $(this).find('textarea[name*="[description]"]');
+                if (textarea.length) {
+                    const name = textarea.attr('name').replace('[description]', '[item_number]');
+                    textarea.parent().prepend(`<input type="hidden" name="${name}" value="${itemNumber}">`);
+                }
+            }
+            itemNumber++;
+        }
+    });
+    
+    console.log(`Numeración actualizada. Total de items: ${itemNumber - 1}`);
+}
+
+<!-- VERSIÓN CORREGIDA - SIN ERRORES DE SINTAXIS -->
 </script>
 @stop
 

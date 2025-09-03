@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use App\Services\AllowedSectionsService;
 
 class QuotationController extends Controller
 {
@@ -518,20 +519,9 @@ class QuotationController extends Controller
         // Mantener parámetros de filtro en la paginación
         $purchaseRequests->appends($request->query());
         
-        // Obtener datos para los filtros
-        $allSections = PurchaseRequest::where(function($q) {
-                           $q->where('type', 'purchase')
-                             ->orWhere(function($subQ) {
-                                 $subQ->where('type', 'services')
-                                      ->where('service_type', 'regular');
-                             });
-                       })
-                       ->whereIn('status', ['pending', 'En Cotización'])
-                       ->distinct()
-                       ->whereNotNull('section_area')
-                       ->pluck('section_area')
-                       ->sort()
-                       ->values();
+        // Para el filtro de secciones, mostrar todas las secciones permitidas
+        // No solo las que tienen datos en este contexto específico
+        $allSections = collect(AllowedSectionsService::getAllowedSections())->sort()->values();
         
         $allRequesters = PurchaseRequest::where(function($q) {
                              $q->where('type', 'purchase')

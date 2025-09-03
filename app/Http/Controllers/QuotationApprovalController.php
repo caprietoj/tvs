@@ -9,6 +9,7 @@ use App\Models\RequestHistory;
 use App\Notifications\QuotationSelected;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
+use App\Services\AllowedSectionsService;
 
 class QuotationApprovalController extends Controller
 {
@@ -56,12 +57,8 @@ class QuotationApprovalController extends Controller
         // Mantener parámetros de filtro en la paginación
         $requests->appends($request->query());
         
-        // Obtener todas las secciones para el filtro
-        $sections = PurchaseRequest::distinct()
-            ->whereNotNull('section_area')
-            ->pluck('section_area')
-            ->sort()
-            ->values();
+        // Mostrar todas las secciones permitidas en el filtro
+        $sections = collect(AllowedSectionsService::getAllowedSections())->sort()->values();
 
         return view('quotation-approvals.index', compact('requests', 'sections', 'sectionFilter', 'requestNumberFilter'));
     }

@@ -11,6 +11,7 @@ use App\Helpers\BudgetHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
+use App\Services\AllowedSectionsService;
 
 class ApprovalController extends Controller
 {
@@ -72,12 +73,12 @@ class ApprovalController extends Controller
         // Mantener parámetros de filtro en la paginación
         $requests->appends($request->query());
         
-        // Obtener todas las secciones para el filtro
-        $sections = PurchaseRequest::distinct()
+        // Obtener todas las secciones disponibles y filtrar solo las permitidas
+        $allSectionsData = PurchaseRequest::distinct()
             ->whereNotNull('section_area')
-            ->pluck('section_area')
-            ->sort()
-            ->values();
+            ->pluck('section_area');
+        
+        $sections = AllowedSectionsService::filterSections($allSectionsData);
 
         return view('approvals.index', compact('requests', 'sections', 'sectionFilter', 'typeFilter', 'requestNumberFilter'));
     }
