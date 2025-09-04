@@ -326,6 +326,7 @@ class PurchaseRequestController extends Controller
         }
 
         $requests = $query->with('user')
+            ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
             ->orderBy('created_at', 'desc')
             ->paginate(10);        // Mantener los parámetros de filtro en la paginación
         $requests->appends($request->query());
@@ -1711,6 +1712,7 @@ class PurchaseRequestController extends Controller
             }
 
             $requests = $query->with('user')
+                ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
 

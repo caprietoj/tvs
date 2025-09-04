@@ -13,7 +13,6 @@ class AllowedSectionsService
     {
         return [
             'Administracion',
-            'Bachillerato',
             'Direccion General',
             'Escuela Alta/DP',
             'Escuela Media',
@@ -81,7 +80,7 @@ class AllowedSectionsService
             'preescolar y primaria' => ['preescolar y primaria', 'prescolar y primaria', 'pre escolar', 'preescolar', 'primaria'],
             
             // Escuela Alta/DP y variaciones
-            'escuela alta/dp' => ['escuela alta', 'alta', 'dp', 'diploma', 'bachillerato'],
+            'escuela alta/dp' => ['escuela alta', 'alta', 'dp', 'diploma'],
             'escuela alta' => ['escuela alta/dp', 'alta', 'dp'],
             'alta' => ['escuela alta', 'escuela alta/dp'],
             

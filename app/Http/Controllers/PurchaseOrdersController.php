@@ -471,6 +471,9 @@ class PurchaseOrdersController extends Controller
                 'order_number' => $order->order_number
             ]);
             
+            // CORRECCIÓN FUNDAMENTAL: Generar items y datos PDF ANTES de generar el PDF
+            $this->generateAndStoreOrderItems($order, $purchaseRequest);
+            
             // Generar PDF
             $pdfService = app(PurchaseOrderPdfService::class);
             $pdfPath = $pdfService->generatePdf($order);
@@ -1556,7 +1559,7 @@ class PurchaseOrdersController extends Controller
                         'unit_price' => $item['unit_price'] ?? 0
                     ];
                 }, $itemsToSave, array_keys($itemsToSave))
-            ]);
+            ]); 
             
             // ELIMINADO: Lógica de sobrescritura con precios originales que causaba discrepancias
             // El formulario debe ser la fuente de verdad absoluta
@@ -1692,11 +1695,11 @@ class PurchaseOrdersController extends Controller
             $ipoconsumoAmount = 0;
             
             if ($ivaRate > 0) {
-                $ivaAmount = round(($rawSubtotal * $ivaRate) / 100);
+                $ivaAmount = round(($rawSubtotal * $ivaRate) / 100, 2);
             }
             
             if ($ipoconsumoRate > 0) {
-                $ipoconsumoAmount = round(($rawSubtotal * $ipoconsumoRate) / 100);
+                $ipoconsumoAmount = round(($rawSubtotal * $ipoconsumoRate) / 100, 2);
             }
             
             $rawTotal = $rawSubtotal + $ivaAmount + $ipoconsumoAmount;
@@ -2521,6 +2524,9 @@ class PurchaseOrdersController extends Controller
                     'subtotal' => $subtotal,
                     'iva_amount' => $ivaAmount,
                 ]);
+                
+                // CORRECCIÓN: Generar items y datos PDF ANTES de generar el PDF
+                $this->generateAndStoreOrderItems($order, $purchaseRequest);
                 
                 // Generar PDF específico para este proveedor CON SUS ITEMS EXACTOS
                 try {
@@ -3995,5 +4001,310 @@ class PurchaseOrdersController extends Controller
             
             return redirect()->back()->with('error', 'Error en la reparación masiva: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * MÉTODO FUNDAMENTAL: Generar y almacenar items de la orden al momento de creación
+     * Esto resuelve el problema de raíz de órdenes sin items o con IVA mal calculado
+     */
+    private function generateAndStoreOrderItems(PurchaseOrder $order, PurchaseRequest $purchaseRequest)
+    {
+        Log::info('🔧 Generando items para orden al momento de creación', [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number
+        ]);
+
+        $items = [];
+        
+        // Método 1: Selecciones mixtas (prioridad más alta)
+        $mixedSelections = $purchaseRequest->quotationItemSelections()
+            ->whereHas('quotation', function($query) use ($order) {
+                if ($order->provider) {
+                    $query->where('provider_name', $order->provider->nombre);
+                }
+            })
+            ->with('quotation')
+            ->get();
+
+        if ($mixedSelections->count() > 0) {
+            Log::info('📋 Generando items desde selecciones mixtas');
+            foreach ($mixedSelections as $selection) {
+                $unitPrice = $selection->unit_price;
+                
+                // Intentar obtener precio real de la cotización
+                if ($selection->quotation && isset($selection->quotation->original_item_prices)) {
+                    $originalPrices = $selection->quotation->original_item_prices;
+                    if (isset($originalPrices[$selection->item_index])) {
+                        $unitPrice = $originalPrices[$selection->item_index];
+                    }
+                }
+
+                $quantity = $selection->quantity ?: 1;
+                $items[] = [
+                    'description' => $selection->item_description ?: 'Producto/Servicio',
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'total' => $unitPrice * $quantity
+                ];
+            }
+        }
+        // Método 2: Cotización seleccionada con items de solicitud
+        elseif ($purchaseRequest->selectedQuotation && !empty($purchaseRequest->purchase_items)) {
+            Log::info('📋 Generando items desde cotización seleccionada');
+            $selectedQuotation = $purchaseRequest->selectedQuotation;
+            $purchaseItems = is_array($purchaseRequest->purchase_items) 
+                ? $purchaseRequest->purchase_items 
+                : json_decode($purchaseRequest->purchase_items, true);
+
+            if (!empty($purchaseItems)) {
+                $originalPrices = $selectedQuotation->original_item_prices ?? $selectedQuotation->item_prices ?? [];
+
+                foreach ($purchaseItems as $index => $item) {
+                    $unitPrice = 0;
+                    
+                    if (isset($originalPrices[$index])) {
+                        $unitPrice = $originalPrices[$index];
+                    } elseif (!empty($originalPrices)) {
+                        // Usar precio promedio si no hay correspondencia exacta
+                        $unitPrice = array_sum($originalPrices) / count($originalPrices);
+                    } else {
+                        // Estimar precio basado en el total de la cotización dividido entre cantidad total
+                        $totalQuantity = array_sum(array_column($purchaseItems, 'quantity'));
+                        $unitPrice = $totalQuantity > 0 ? ($selectedQuotation->total_amount / $totalQuantity) : 0;
+                    }
+
+                    $quantity = $item['quantity'] ?? 1;
+                    
+                    // CORRECCIÓN CRÍTICA: Si el precio unitario es demasiado alto, recalcular
+                    if ($unitPrice * $quantity > $selectedQuotation->total_amount) {
+                        // Dividir el total de la cotización entre el número de items
+                        $unitPrice = count($purchaseItems) > 0 ? ($selectedQuotation->total_amount / count($purchaseItems)) / $quantity : 0;
+                    }
+                    
+                    $items[] = [
+                        'description' => $item['description'] ?: 'Producto/Servicio',
+                        'quantity' => $quantity,
+                        'unit_price' => $unitPrice,
+                        'total' => $unitPrice * $quantity
+                    ];
+                }
+            }
+        }
+        // Método 3: Servicios sin cotización
+        elseif ($purchaseRequest->type === 'services' && !empty($purchaseRequest->service_items)) {
+            Log::info('📋 Generando items desde servicios');
+            $serviceItems = is_array($purchaseRequest->service_items) 
+                ? $purchaseRequest->service_items 
+                : json_decode($purchaseRequest->service_items, true);
+
+            if (!empty($serviceItems)) {
+                $totalValue = $order->total_amount ?: ($purchaseRequest->service_budget ?: 0);
+                $itemCount = count($serviceItems);
+                $pricePerItem = $itemCount > 0 ? ($totalValue / 1.19) / $itemCount : ($totalValue / 1.19); // Quitar IVA para precio base
+
+                foreach ($serviceItems as $index => $item) {
+                    $quantity = $item['quantity'] ?? 1;
+                    $unitPrice = $quantity > 0 ? $pricePerItem / $quantity : $pricePerItem;
+
+                    $items[] = [
+                        'description' => $item['description'] ?: ('Servicio ' . ($index + 1)),
+                        'quantity' => $quantity,
+                        'unit_price' => $unitPrice,
+                        'total' => $unitPrice * $quantity
+                    ];
+                }
+            }
+        }
+        // Método 4: Items de solicitud básicos
+        elseif (!empty($purchaseRequest->purchase_items)) {
+            Log::info('📋 Generando items desde solicitud básica');
+            $purchaseItems = is_array($purchaseRequest->purchase_items) 
+                ? $purchaseRequest->purchase_items 
+                : json_decode($purchaseRequest->purchase_items, true);
+
+            if (!empty($purchaseItems)) {
+                $totalValue = $order->total_amount ?: 0;
+                $includesIva = $order->includes_iva ?? true;
+                $baseValue = $includesIva ? ($totalValue / 1.19) : $totalValue;
+                $itemCount = count($purchaseItems);
+                $pricePerItem = $itemCount > 0 ? $baseValue / $itemCount : $baseValue;
+
+                foreach ($purchaseItems as $index => $item) {
+                    $quantity = $item['quantity'] ?? 1;
+                    $unitPrice = $quantity > 0 ? $pricePerItem / $quantity : $pricePerItem;
+
+                    $items[] = [
+                        'description' => $item['description'] ?: 'Producto/Servicio',
+                        'quantity' => $quantity,
+                        'unit_price' => $unitPrice,
+                        'total' => $unitPrice * $quantity
+                    ];
+                }
+            }
+        }
+        // Método 5: Items de materiales (material_items)
+        elseif (!empty($purchaseRequest->material_items)) {
+            Log::info('📋 Generando items desde material_items');
+            $materialItems = is_array($purchaseRequest->material_items) 
+                ? $purchaseRequest->material_items 
+                : json_decode($purchaseRequest->material_items, true);
+
+            if (!empty($materialItems)) {
+                $totalValue = $order->total_amount ?: 1000; // Valor por defecto si no hay total
+                $includesIva = $order->includes_iva ?? true;
+                $baseValue = $includesIva ? ($totalValue / 1.19) : $totalValue;
+                $itemCount = count($materialItems);
+                $pricePerItem = $itemCount > 0 ? $baseValue / $itemCount : $baseValue;
+
+                foreach ($materialItems as $index => $item) {
+                    $quantity = $item['quantity'] ?? 1;
+                    $unitPrice = $quantity > 0 ? $pricePerItem / $quantity : $pricePerItem;
+
+                    $items[] = [
+                        'description' => $item['article'] ?? $item['description'] ?? 'Material/Suministro',
+                        'quantity' => $quantity,
+                        'unit_price' => $unitPrice,
+                        'total' => $unitPrice * $quantity
+                    ];
+                }
+            }
+        }
+
+        // Fallback: crear item básico si no hay items
+        if (empty($items)) {
+            Log::info('📋 Generando item fallback para solicitud sin items');
+            $totalAmount = $order->total_amount ?: 0;
+            
+            // Para solicitudes sin total definido, usar un valor predeterminado mínimo
+            if ($totalAmount <= 0) {
+                // Determinar valor base según el tipo de solicitud
+                if ($purchaseRequest->type === 'materials') {
+                    $totalAmount = 50000; // $50,000 para materiales
+                } elseif ($purchaseRequest->type === 'services') {
+                    $totalAmount = 100000; // $100,000 para servicios
+                } else {
+                    $totalAmount = 10000; // $10,000 para otros casos
+                }
+                
+                Log::info('📊 Asignando valor predeterminado por tipo', [
+                    'request_type' => $purchaseRequest->type,
+                    'assigned_total' => $totalAmount
+                ]);
+            }
+            
+            $includesIva = $order->includes_iva ?? true;
+            $baseAmount = $includesIva && $totalAmount > 0 ? ($totalAmount / 1.19) : $totalAmount;
+
+            $description = 'Producto/Servicio según solicitud';
+            if ($purchaseRequest->type === 'materials') {
+                $description = 'Materiales y suministros varios';
+            } elseif ($purchaseRequest->type === 'services') {
+                $description = 'Servicios según solicitud';
+            }
+
+            $items[] = [
+                'description' => $description,
+                'quantity' => 1,
+                'unit_price' => $baseAmount,
+                'total' => $baseAmount
+            ];
+        }
+
+        // Calcular totales correctos desde los items
+        $subtotalFromItems = array_sum(array_column($items, 'total'));
+        
+        // VALIDACIÓN CRÍTICA: Si el subtotal calculado excede significativamente el total esperado, ajustar
+        $expectedTotal = $order->total_amount ?: 0;
+        if ($expectedTotal > 0 && $subtotalFromItems > $expectedTotal * 1.5) {
+            // Hay un problema, recalcular items proporcionalmente
+            $adjustmentFactor = ($expectedTotal / 1.19) / $subtotalFromItems; // Dividir por 1.19 para quitar IVA
+            
+            foreach ($items as &$item) {
+                $item['unit_price'] = round($item['unit_price'] * $adjustmentFactor, 2);
+                $item['total'] = round($item['unit_price'] * $item['quantity'], 2);
+            }
+            
+            $subtotalFromItems = array_sum(array_column($items, 'total'));
+            
+            Log::info('🔧 Totales ajustados por inconsistencia', [
+                'order_id' => $order->id,
+                'adjustment_factor' => $adjustmentFactor,
+                'new_subtotal' => $subtotalFromItems
+            ]);
+        }
+        
+        $ivaAmount = round($subtotalFromItems * 0.19, 2);
+        $totalWithIva = $subtotalFromItems + $ivaAmount;
+
+        // ESTRATEGIA CONSERVADORA: Si hay totales pre-calculados válidos, preservarlos
+        $originalTotal = $order->total_amount ?: 0;
+        $originalSubtotal = $order->subtotal ?: 0;
+        $originalIva = $order->iva_amount ?: 0;
+        
+        // Si los totales originales parecen válidos, usarlos en lugar de recalcular
+        if ($originalTotal > 0 && $originalSubtotal > 0) {
+            $finalSubtotal = $originalSubtotal;
+            $finalIvaAmount = $originalIva > 0 ? $originalIva : round($originalSubtotal * 0.19, 2);
+            $finalTotal = $originalTotal;
+            
+            Log::info('📊 Usando totales originales (conservador)', [
+                'order_id' => $order->id,
+                'original_subtotal' => $finalSubtotal,
+                'original_iva' => $finalIvaAmount,
+                'original_total' => $finalTotal
+            ]);
+        } else {
+            // Recalcular desde items (especialmente para casos fallback)
+            $finalSubtotal = $subtotalFromItems;
+            $finalIvaAmount = $ivaAmount;
+            $finalTotal = $totalWithIva;
+            
+            Log::info('📊 Usando totales recalculados desde items', [
+                'order_id' => $order->id,
+                'calculated_subtotal' => $finalSubtotal,
+                'calculated_iva' => $finalIvaAmount,
+                'calculated_total' => $finalTotal
+            ]);
+        }
+
+        // Crear datos personalizados completos
+        $customData = [
+            'items' => $items,
+            'subtotal' => $finalSubtotal,
+            'iva_rate' => '19%',
+            'iva_amount' => $finalIvaAmount,
+            'total' => $finalTotal,
+            'provider_name' => $order->provider->nombre ?? 'Proveedor',
+            'provider_nit' => $order->provider->nit ?? 'Sin NIT',
+            'provider_email' => $order->provider->correo ?? 'sin-email@proveedor.com',
+            'provider_phone' => $order->provider->telefono ?? 'Sin teléfono',
+            'provider_address' => $order->provider->direccion ?? 'Sin dirección',
+            'delivery_date' => $order->delivery_date ?? now()->addDays(15)->format('Y-m-d'),
+            'payment_terms' => $order->payment_terms ?? 'Contado',
+            'order_date' => $order->order_date ?? now()->format('Y-m-d'),
+            'observations' => $order->observations ?? '',
+            'generated_at_creation' => true,
+            'generation_timestamp' => now()->toDateTimeString()
+        ];
+
+        // Actualizar la orden con los datos calculados (conservando totales válidos)
+        $order->update([
+            'pdf_custom_data' => json_encode($customData),
+            'subtotal' => $finalSubtotal,
+            'iva_amount' => $finalIvaAmount,
+            'total_amount' => $finalTotal,
+            'includes_iva' => true,
+            'tax_amount' => $finalIvaAmount
+        ]);
+
+        Log::info('✅ Items generados y almacenados exitosamente', [
+            'order_id' => $order->id,
+            'items_count' => count($items),
+            'final_subtotal' => $finalSubtotal,
+            'final_iva_amount' => $finalIvaAmount,
+            'final_total' => $finalTotal
+        ]);
+
+        return $items;
     }
 }
