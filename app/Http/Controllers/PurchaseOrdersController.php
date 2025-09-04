@@ -1526,66 +1526,40 @@ class PurchaseOrdersController extends Controller
                 }
             }
             
-            // Los items que llegan del formulario
+            // CORRECCIÓN CRÍTICA: USAR SOLO LOS DATOS DEL FORMULARIO COMO FUENTE DE VERDAD
+            // Los items que llegan del formulario - ESTOS SON LOS ÚNICOS QUE DEBEN GUARDARSE
             $itemsToSave = $request->items ?? [];
             
-            // Cargar cotización seleccionada para tener acceso a los precios originales
-            $purchaseOrder->purchaseRequest->load(['selectedQuotation']);
-            $selectedQuotation = $purchaseOrder->purchaseRequest->selectedQuotation;
+            // NUEVA CORRECCIÓN: Filtrar items vacíos o sin datos válidos
+            $itemsToSave = array_filter($itemsToSave, function($item) {
+                // Solo mantener items que tengan descripción Y (cantidad > 0 O precio > 0)
+                $hasDescription = !empty($item['description']) && trim($item['description']) !== '';
+                $hasQuantity = isset($item['quantity']) && floatval($item['quantity']) > 0;
+                $hasPrice = isset($item['unit_price']) && floatval($item['unit_price']) > 0;
+                
+                return $hasDescription && ($hasQuantity || $hasPrice);
+            });
             
-            // DIAGNÓSTICO EXTENSO: Analizar qué precios están disponibles
-            Log::critical('🔍 ANÁLISIS DE PRECIOS PARA ORDEN #' . $purchaseOrder->order_number, [
+            // Reindexar el array para evitar problemas con índices
+            $itemsToSave = array_values($itemsToSave);
+            
+            Log::critical('🔍 ANÁLISIS DE DATOS DEL FORMULARIO FILTRADOS', [
+                'order' => $purchaseOrder->order_number,
                 'provider' => $purchaseOrder->provider->nombre,
-                'has_selectedQuotation' => ($selectedQuotation ? 'SI' : 'NO'),
-                'has_original_item_prices' => ($selectedQuotation && isset($selectedQuotation->original_item_prices) ? 'SI' : 'NO'),
-                'original_prices' => ($selectedQuotation && isset($selectedQuotation->original_item_prices) ? $selectedQuotation->original_item_prices : 'NO DISPONIBLE'),
-                'first_items' => array_slice($itemsToSave, 0, 3)
+                'items_received_from_form' => count($itemsToSave),
+                'items_after_filtering' => count($itemsToSave),
+                'valid_items' => array_map(function($item, $index) {
+                    return [
+                        'index' => $index,
+                        'description' => substr($item['description'] ?? 'N/A', 0, 50),
+                        'quantity' => $item['quantity'] ?? 0,
+                        'unit_price' => $item['unit_price'] ?? 0
+                    ];
+                }, $itemsToSave, array_keys($itemsToSave))
             ]);
             
-            // CORRECCIÓN CRÍTICA: FORZAR USO DE PRECIOS ORIGINALES DE LA COTIZACIÓN PARA EVITAR BUG DE $4.949
-            if ($selectedQuotation && isset($selectedQuotation->original_item_prices)) {
-                $originalPrices = $selectedQuotation->original_item_prices;
-                
-                Log::critical('🔒 UPDATEPDF - RESTAURANDO SISTEMA ORIGINAL', [
-                    'order' => $purchaseOrder->order_number,
-                    'original_prices_count' => count($originalPrices),
-                    'items_count' => count($itemsToSave),
-                    'original_prices' => $originalPrices
-                ]);
-                
-                // Para cada item, usar SIEMPRE el precio original cuando esté disponible
-                foreach ($itemsToSave as $index => &$item) {
-                    if (isset($originalPrices[$index])) {
-                        $oldPrice = $item['unit_price'];
-                        // Convertir explícitamente a número para evitar errores
-                        $item['unit_price'] = floatval($originalPrices[$index]);
-                        // Asegurarnos de que la cantidad también sea numérica
-                        $item['quantity'] = floatval($item['quantity']);
-                        // Asegurar que price y quantity sean números
-                        $unitPrice = floatval($item['unit_price']);
-                        $quantity = floatval($item['quantity']);
-                        
-                        // Recalcular el total con redondeo
-                        $item['total'] = round($unitPrice * $quantity);
-                        
-                        // Actualizar los valores para asegurar que son numéricos
-                        $item['unit_price'] = $unitPrice;
-                        $item['quantity'] = $quantity;
-                        
-                        Log::critical('✅ UPDATEPDF - Precio original aplicado', [
-                            'item' => $item['description'],
-                            'old_price' => $oldPrice,
-                            'original_price' => $item['unit_price'],
-                            'quantity' => $item['quantity'],
-                            'total' => $item['total']
-                        ]);
-                    } else {
-                        Log::warning('⚠️ No se encontró precio original para el ítem #' . $index, [
-                            'description' => $item['description'] ?? 'Sin descripción'
-                        ]);
-                    }
-                }
-            }
+            // ELIMINADO: Lógica de sobrescritura con precios originales que causaba discrepancias
+            // El formulario debe ser la fuente de verdad absoluta
             
             if ($hasMixedSelection) {
                 // Para órdenes mixtas: verificar que solo tengamos items del proveedor
@@ -1661,43 +1635,36 @@ class PurchaseOrdersController extends Controller
             
             // Validar y corregir precios unitarios en los items
             foreach ($itemsToSave as $index => &$item) {
+                // NUEVA LÓGICA: Usar exactamente los valores que vienen del formulario
                 $unitPrice = floatval($item['unit_price'] ?? 0);
                 $quantity = floatval($item['quantity'] ?? 1);
-                $taxRate = floatval($item['tax_rate'] ?? 0); // Agregar tax_rate
+                $taxRate = floatval($item['tax_rate'] ?? 0);
                 
-                // Detectar precios unitarios anómalos (muy altos, probablemente erróneos)
-                if ($unitPrice > 10000000) { // Más de 10 millones es sospechoso
-                    Log::warning('Precio unitario anómalo detectado', [
-                        'order' => $purchaseOrder->order_number,
-                        'item_index' => $index,
-                        'description' => $item['description'] ?? 'N/A',
-                        'anomalous_price' => $unitPrice,
-                        'quantity' => $quantity
-                    ]);
-                    
-                    // Si hay un total válido, calcular el precio unitario correcto
-                    if (isset($item['total']) && floatval($item['total']) > 0 && $quantity > 0) {
-                        $correctedPrice = floatval($item['total']) / $quantity;
-                        Log::info('Corrigiendo precio unitario desde total', [
-                            'original_price' => $unitPrice,
-                            'corrected_price' => $correctedPrice,
-                            'total' => $item['total'],
-                            'quantity' => $quantity
-                        ]);
-                        $item['unit_price'] = $correctedPrice;
-                        $unitPrice = $correctedPrice;
-                    } else {
-                        // Establecer precio por defecto razonable
-                        $item['unit_price'] = 0;
-                        $unitPrice = 0;
-                        Log::warning('No se pudo corregir precio unitario, estableciendo en 0');
-                    }
-                }
+                Log::info('📊 PROCESANDO ITEM DEL FORMULARIO', [
+                    'order' => $purchaseOrder->order_number,
+                    'item_index' => $index,
+                    'description' => $item['description'] ?? 'N/A',
+                    'unit_price_from_form' => $unitPrice,
+                    'quantity_from_form' => $quantity,
+                    'tax_rate' => $taxRate
+                ]);
                 
-                // Recalcular el total del item
+                // ELIMINADO: Lógica de detección de precios anómalos que causaba problemas
+                // El formulario debe ser la fuente de verdad
+                
+                // Recalcular el total del item usando EXACTAMENTE los valores del formulario
+                $item['unit_price'] = $unitPrice;
+                $item['quantity'] = $quantity;
+                $item['tax_rate'] = $taxRate;
                 $item['total'] = round($quantity * $unitPrice);
-                $item['tax_rate'] = $taxRate; // Asegurar que tax_rate se guarde
                 $calculatedSubtotal += $item['total'];
+                
+                Log::info('✅ ITEM PROCESADO CORRECTAMENTE', [
+                    'item_index' => $index,
+                    'final_unit_price' => $item['unit_price'],
+                    'final_quantity' => $item['quantity'],
+                    'final_total' => $item['total']
+                ]);
                 
                 Log::debug('Item procesado', [
                     'index' => $index,
@@ -1775,13 +1742,41 @@ class PurchaseOrdersController extends Controller
                 'total' => $rawTotal
             ]);
             
-            // Procesar additional_items para incluir tax_rate
+            // Procesar additional_items y filtrar los vacíos
             $additionalItemsToSave = $request->additional_items ?? [];
+            
+            // NUEVA CORRECCIÓN: Filtrar items adicionales vacíos o sin datos válidos
+            $additionalItemsToSave = array_filter($additionalItemsToSave, function($item) {
+                // Solo mantener items adicionales que tengan descripción Y (cantidad > 0 O precio > 0)
+                $hasDescription = !empty($item['description']) && trim($item['description']) !== '';
+                $hasQuantity = isset($item['quantity']) && floatval($item['quantity']) > 0;
+                $hasPrice = isset($item['unit_price']) && floatval($item['unit_price']) > 0;
+                
+                return $hasDescription && ($hasQuantity || $hasPrice);
+            });
+            
+            // Reindexar el array para evitar problemas con índices
+            $additionalItemsToSave = array_values($additionalItemsToSave);
+            
             foreach ($additionalItemsToSave as $index => &$additionalItem) {
                 if (isset($additionalItem['tax_rate'])) {
                     $additionalItem['tax_rate'] = floatval($additionalItem['tax_rate']);
                 }
             }
+            
+            Log::info('Items adicionales procesados y filtrados', [
+                'order' => $purchaseOrder->order_number,
+                'additional_items_received' => count($request->additional_items ?? []),
+                'additional_items_after_filtering' => count($additionalItemsToSave),
+                'valid_additional_items' => array_map(function($item, $index) {
+                    return [
+                        'index' => $index,
+                        'description' => substr($item['description'] ?? 'N/A', 0, 50),
+                        'quantity' => $item['quantity'] ?? 0,
+                        'unit_price' => $item['unit_price'] ?? 0
+                    ];
+                }, $additionalItemsToSave, array_keys($additionalItemsToSave))
+            ]);
             
             // Preparar nuevos datos personalizados con cálculos corregidos
             $customData = array_merge($currentCustomData, [
@@ -1809,7 +1804,20 @@ class PurchaseOrdersController extends Controller
                 'edited_by' => auth()->user()->id,
                 'edited_at' => now()->toISOString(),
                 'calculation_source' => 'items_based', // Indicar que los cálculos se basan en items
-                'items_count' => count($itemsToSave)
+                'items_count' => count($itemsToSave),
+                'additional_items_count' => count($additionalItemsToSave)
+            ]);
+            
+            Log::critical('📋 DATOS FINALES QUE SE GUARDARÁN', [
+                'order' => $purchaseOrder->order_number,
+                'items_count' => count($itemsToSave),
+                'additional_items_count' => count($additionalItemsToSave),
+                'subtotal' => $rawSubtotal,
+                'iva_amount' => $ivaAmount,
+                'total' => $rawTotal,
+                'items_preview' => array_slice($itemsToSave, 0, 3),
+                'additional_items_preview' => array_slice($additionalItemsToSave, 0, 3),
+                'calculation_source' => 'items_based'
             ]);
             
             Log::info('Datos personalizados preparados con cálculos corregidos', [
