@@ -93,11 +93,85 @@ class PurchaseOrderPdfService
         $hasMixedItems = $providerSelections !== null || 
                         QuotationItemSelection::whereHas('quotation', function($query) use ($order) {
                             $query->where('provider_name', $order->provider->nombre ?? '');
-                        })->exists();
+                        })->exists() || 
+                        ($order->additional_items && count($order->additional_items) > 0);
 
         if ($hasMixedItems) {
-            // Usar selecciones pasadas como parámetro o buscarlas
-            $data['quotationItemSelections'] = $providerSelections ?: $this->getQuotationItemSelections($order);
+            // Usar selecciones pasadas como parámetro o buscarlas usando la relación
+            if ($providerSelections && $providerSelections->count() > 0) {
+                $data['quotationItemSelections'] = $providerSelections;
+                Log::info('Usando selecciones pasadas como parámetro', [
+                    'order_id' => $order->id,
+                    'selections_count' => $providerSelections->count()
+                ]);
+            } else {
+                // Cargar la relación y obtener las selecciones
+                $order->load(['provider', 'purchaseRequest.quotationItemSelections.quotation']);
+                $selections = $this->getQuotationItemSelections($order);
+                
+                // Si no hay selecciones de BD pero hay additional_items, usar esos
+                if ($selections->count() === 0 && $order->additional_items && count($order->additional_items) > 0) {
+                    // Convertir additional_items a formato compatible con selecciones
+                    $additionalItems = collect($order->additional_items)->map(function($item, $index) {
+                        return (object) [
+                            'id' => 'additional_' . $index,
+                            'item_description' => $item['description'] ?? 'N/A',
+                            'quantity' => $item['quantity'] ?? 1,
+                            'unit_price' => $item['unit_price'] ?? 0,
+                            'total_price' => $item['total_price'] ?? 0,
+                            'unit' => $item['unit'] ?? 'Unidad',
+                            'observations' => $item['observations'] ?? ''
+                        ];
+                    });
+                    $data['quotationItemSelections'] = $additionalItems;
+                    Log::info('Usando additional_items como selecciones', [
+                        'order_id' => $order->id,
+                        'items_count' => $additionalItems->count()
+                    ]);
+                } else {
+                    $data['quotationItemSelections'] = $selections;
+                    Log::info('Obteniendo selecciones desde base de datos', [
+                        'order_id' => $order->id,
+                        'selections_count' => $selections->count()
+                    ]);
+                }
+            }
+        } else {
+            // 🔧 PARA ÓRDENES NO MIXTAS: Cargar items desde pdf_custom_data
+            Log::info('Procesando orden NO MIXTA - buscando items en pdf_custom_data', [
+                'order_id' => $order->id,
+                'has_custom_data' => !empty($customData),
+                'custom_data_is_array' => is_array($customData)
+            ]);
+            
+            if (!empty($customData) && is_array($customData)) {
+                // Convertir customData items a formato de selecciones para compatibilidad
+                $customItems = collect($customData)->map(function($item, $index) {
+                    return (object) [
+                        'id' => 'custom_' . $index,
+                        'item_description' => $item['description'] ?? 'N/A',
+                        'quantity' => $item['quantity'] ?? 1,
+                        'unit_price' => $item['unit_price'] ?? 0,
+                        'total_price' => $item['total'] ?? ($item['quantity'] * $item['unit_price']),
+                        'unit' => $item['unit'] ?? 'Unidad',
+                        'observations' => $item['observations'] ?? ''
+                    ];
+                });
+                
+                $data['quotationItemSelections'] = $customItems;
+                Log::info('✅ Items cargados desde pdf_custom_data para orden no mixta', [
+                    'order_id' => $order->id,
+                    'items_count' => $customItems->count(),
+                    'sample_item' => $customItems->first()
+                ]);
+            } else {
+                Log::warning('⚠️ Orden no mixta sin pdf_custom_data válido', [
+                    'order_id' => $order->id,
+                    'custom_data' => $customData
+                ]);
+                // Asignar colección vacía para evitar errores en la vista
+                $data['quotationItemSelections'] = collect();
+            }
         }
 
         // Generar PDF usando plantilla unificada
@@ -197,11 +271,49 @@ class PurchaseOrderPdfService
         $hasMixedItems = $providerSelections !== null || 
                         QuotationItemSelection::whereHas('quotation', function($query) use ($order) {
                             $query->where('provider_name', $order->provider->nombre ?? '');
-                        })->exists();
+                        })->exists() || 
+                        ($order->additional_items && count($order->additional_items) > 0);
 
         if ($hasMixedItems) {
-            // Usar selecciones pasadas como parámetro o buscarlas
-            $data['quotationItemSelections'] = $providerSelections ?: $this->getQuotationItemSelections($order);
+            // Usar selecciones pasadas como parámetro o buscarlas usando la relación
+            if ($providerSelections && $providerSelections->count() > 0) {
+                $data['quotationItemSelections'] = $providerSelections;
+                Log::info('Usando selecciones pasadas como parámetro (createPdf)', [
+                    'order_id' => $order->id,
+                    'selections_count' => $providerSelections->count()
+                ]);
+            } else {
+                // Cargar la relación y obtener las selecciones
+                $order->load(['provider', 'purchaseRequest.quotationItemSelections.quotation']);
+                $selections = $this->getQuotationItemSelections($order);
+                
+                // Si no hay selecciones de BD pero hay additional_items, usar esos
+                if ($selections->count() === 0 && $order->additional_items && count($order->additional_items) > 0) {
+                    // Convertir additional_items a formato compatible con selecciones
+                    $additionalItems = collect($order->additional_items)->map(function($item, $index) {
+                        return (object) [
+                            'id' => 'additional_' . $index,
+                            'item_description' => $item['description'] ?? 'N/A',
+                            'quantity' => $item['quantity'] ?? 1,
+                            'unit_price' => $item['unit_price'] ?? 0,
+                            'total_price' => $item['total_price'] ?? 0,
+                            'unit' => $item['unit'] ?? 'Unidad',
+                            'observations' => $item['observations'] ?? ''
+                        ];
+                    });
+                    $data['quotationItemSelections'] = $additionalItems;
+                    Log::info('Usando additional_items como selecciones (createPdf)', [
+                        'order_id' => $order->id,
+                        'items_count' => $additionalItems->count()
+                    ]);
+                } else {
+                    $data['quotationItemSelections'] = $selections;
+                    Log::info('Obteniendo selecciones desde base de datos (createPdf)', [
+                        'order_id' => $order->id,
+                        'selections_count' => $selections->count()
+                    ]);
+                }
+            }
         }
 
         // Generar y retornar PDF sin guardar
@@ -238,7 +350,18 @@ class PurchaseOrderPdfService
             'order_id' => $order->id,
             'purchase_request_id' => $order->purchaseRequest->id,
             'provider_name' => $order->provider ? $order->provider->nombre : 'N/A',
-            'selections_count' => $allSelections->count()
+            'selections_count' => $allSelections->count(),
+            'selections_debug' => $allSelections->map(function($sel) {
+                return [
+                    'id' => $sel->id,
+                    'item_description' => $sel->item_description,
+                    'quantity' => $sel->quantity,
+                    'unit_price' => $sel->unit_price,
+                    'total_price' => $sel->total_price,
+                    'quotation_id' => $sel->quotation_id,
+                    'quotation_provider' => $sel->quotation ? $sel->quotation->provider_name : 'N/A'
+                ];
+            })
         ]);
 
         return $allSelections;

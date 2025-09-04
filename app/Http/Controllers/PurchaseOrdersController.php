@@ -1208,6 +1208,9 @@ class PurchaseOrdersController extends Controller
         }
         
         try {
+            // Obtener información de la solicitud antes de eliminar
+            $purchaseRequest = $purchaseOrder->purchaseRequest;
+            
             // Registrar en historial antes de eliminar
             RequestHistory::create([
                 'purchase_request_id' => $purchaseOrder->purchaseRequest->id,
@@ -1220,6 +1223,31 @@ class PurchaseOrdersController extends Controller
             
             // Eliminar la orden de compra
             $purchaseOrder->delete();
+            
+            // Verificar si quedan órdenes activas para esta solicitud
+            $remainingOrders = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->count();
+            
+            if ($remainingOrders === 0) {
+                // Si no quedan órdenes activas, restaurar la solicitud al estado apropiado
+                // para que vuelva a aparecer en "Solicitudes Aprobadas Pendientes"
+                
+                // No cambiar el estado si es una solicitud con selecciones mixtas
+                // ya que estas deben mantenerse en su estado actual
+                if (!$purchaseRequest->quotationItemSelections()->exists()) {
+                    // Para solicitudes tradicionales, mantener el estado aprobado
+                    // La lógica del índice ya maneja correctamente las solicitudes sin órdenes
+                    Log::info('Solicitud sin órdenes activas restaurada para aparecer en pendientes', [
+                        'purchase_request_id' => $purchaseRequest->id,
+                        'request_number' => $purchaseRequest->request_number
+                    ]);
+                } else {
+                    Log::info('Solicitud mixta sin órdenes activas, manteniendo estado actual', [
+                        'purchase_request_id' => $purchaseRequest->id,
+                        'request_number' => $purchaseRequest->request_number,
+                        'selections_count' => $purchaseRequest->quotationItemSelections()->count()
+                    ]);
+                }
+            }
             
             $successMessage = "La orden de compra {$orderNumber} ha sido eliminada correctamente.";
             
@@ -3267,6 +3295,60 @@ class PurchaseOrdersController extends Controller
             // Crear la orden de compra
             $orderNumber = $this->generateOrderNumber();
             
+            // 🔧 PREPARAR ITEMS PARA LA ORDEN (igual que en ApprovalController)
+            $orderItems = [];
+            $purchaseItems = is_array($purchaseRequest->purchase_items) 
+                ? $purchaseRequest->purchase_items 
+                : json_decode($purchaseRequest->purchase_items, true);
+                
+            $itemPrices = $quotation->original_item_prices ?? $quotation->item_prices ?? [];
+            
+            Log::info('Datos para crear orderItems en PurchaseOrdersController', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'quotation_id' => $quotation->id,
+                'purchase_items_count' => count($purchaseItems ?: []),
+                'item_prices_count' => count($itemPrices ?: []),
+                'item_prices' => $itemPrices,
+                'total_amount' => $quotation->total_amount
+            ]);
+            
+            // Crear items incluso si no hay precios específicos
+            if ($purchaseItems && count($purchaseItems) > 0) {
+                foreach ($purchaseItems as $index => $item) {
+                    // Si no hay precio específico, calcular desde el total de la cotización
+                    $unitPrice = 0;
+                    if (isset($itemPrices[$index])) {
+                        $unitPrice = $itemPrices[$index];
+                    } elseif (count($purchaseItems) === 1) {
+                        // Si es un solo ítem, usar el total de la cotización dividido por la cantidad
+                        $quantity = $item['quantity'] ?? 1;
+                        $unitPrice = $quantity > 0 ? ($quotation->total_amount / $quantity) : 0;
+                    }
+                    
+                    $quantity = $item['quantity'] ?? 1;
+                    
+                    $orderItems[] = [
+                        'description' => $item['description'],
+                        'quantity' => $quantity,
+                        'unit_price' => $unitPrice,
+                        'total' => $quantity * $unitPrice,
+                        'unit' => $item['unit'] ?? 'Unidad'
+                    ];
+                }
+                
+                Log::info('OrderItems creados en PurchaseOrdersController', [
+                    'purchase_request_id' => $purchaseRequest->id,
+                    'items_count' => count($orderItems),
+                    'order_items' => $orderItems
+                ]);
+            } else {
+                Log::warning('No se pudieron crear orderItems en PurchaseOrdersController', [
+                    'purchase_request_id' => $purchaseRequest->id,
+                    'has_purchase_items' => !empty($purchaseItems),
+                    'purchase_items_count' => count($purchaseItems ?: [])
+                ]);
+            }
+            
             $purchaseOrder = PurchaseOrder::create([
                 'purchase_request_id' => $purchaseRequest->id,
                 'provider_id' => $request->provider_id,
@@ -3282,7 +3364,8 @@ class PurchaseOrdersController extends Controller
                 'observations' => $request->observations,
                 'created_by' => auth()->id(),
                 'status' => 'pending',
-                'file_path' => 'pending_generation'
+                'file_path' => 'pending_generation',
+                'pdf_custom_data' => json_encode($orderItems) // 🔧 GUARDAR ITEMS
             ]);
 
             // Generar PDF

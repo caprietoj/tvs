@@ -122,6 +122,17 @@ class PurchaseOrder extends Model
     }
 
     /**
+     * Obtener las selecciones de items de cotización para esta orden (para órdenes mixtas)
+     */
+    public function quotationItemSelections()
+    {
+        return $this->hasMany(QuotationItemSelection::class, 'purchase_request_id', 'purchase_request_id')
+            ->whereHas('quotation', function($query) {
+                $query->where('provider_name', $this->provider->nombre ?? '');
+            });
+    }
+
+    /**
      * Comprobar si la orden está pendiente.
      */
     public function isPending()

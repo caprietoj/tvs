@@ -579,6 +579,11 @@ Route::middleware('auth')->group(function () {
             ->name('diagnostics.routes');
         Route::get('diagnostics/fix-routes', [App\Http\Controllers\DiagnosticController::class, 'fixRoutes'])
             ->name('diagnostics.fix-routes');
+        
+        // Diagnóstico de formularios grandes para producción
+        Route::get('diagnostics/forms', function () {
+            return view('admin.diagnose-forms');
+        })->name('diagnostics.forms');
     });
 });
 

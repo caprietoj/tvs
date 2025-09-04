@@ -668,6 +668,16 @@ class ApprovalController extends Controller
                 'delivery_date' => now()->addDays(15),
                 'file_path' => 'pending_generation',
                 'observations' => $this->generateObservationsForSharedPurchase($purchaseRequest, $quotation->provider_name),
+                'additional_items' => $providerSelections->map(function($selection) {
+                    return [
+                        'description' => $selection->item_description,
+                        'quantity' => $selection->quantity,
+                        'unit_price' => $selection->unit_price,
+                        'total_price' => $selection->total_price,
+                        'unit' => $selection->unit ?? 'Unidad',
+                        'observations' => $selection->observations ?? ''
+                    ];
+                })->toArray(),
                 'created_by' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
                 'status' => 'pending'
             ]);
@@ -754,9 +764,28 @@ class ApprovalController extends Controller
             
         $itemPrices = $quotation->original_item_prices ?? $quotation->item_prices ?? [];
         
-        if ($purchaseItems && $itemPrices) {
+        \Log::info('Datos para crear orderItems', [
+            'purchase_request_id' => $purchaseRequest->id,
+            'quotation_id' => $quotation->id,
+            'purchase_items_count' => count($purchaseItems ?: []),
+            'item_prices_count' => count($itemPrices ?: []),
+            'item_prices' => $itemPrices,
+            'total_amount' => $totalAmount
+        ]);
+        
+        // 🔧 CORRECCIÓN: Crear items incluso si no hay precios específicos
+        if ($purchaseItems && count($purchaseItems) > 0) {
             foreach ($purchaseItems as $index => $item) {
-                $unitPrice = isset($itemPrices[$index]) ? $itemPrices[$index] : 0;
+                // Si no hay precio específico, calcular desde el total de la cotización
+                $unitPrice = 0;
+                if (isset($itemPrices[$index])) {
+                    $unitPrice = $itemPrices[$index];
+                } elseif (count($purchaseItems) === 1) {
+                    // Si es un solo ítem, usar el total de la cotización dividido por la cantidad
+                    $quantity = $item['quantity'] ?? 1;
+                    $unitPrice = $quantity > 0 ? ($totalAmount / $quantity) : 0;
+                }
+                
                 $quantity = $item['quantity'] ?? 1;
                 
                 $orderItems[] = [
@@ -767,6 +796,18 @@ class ApprovalController extends Controller
                     'unit' => $item['unit'] ?? 'Unidad'
                 ];
             }
+            
+            \Log::info('OrderItems creados correctamente', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'items_count' => count($orderItems),
+                'order_items' => $orderItems
+            ]);
+        } else {
+            \Log::warning('No se pudieron crear orderItems', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'has_purchase_items' => !empty($purchaseItems),
+                'purchase_items_count' => count($purchaseItems ?: [])
+            ]);
         }
         
         // Crear la orden de compra

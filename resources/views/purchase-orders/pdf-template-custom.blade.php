@@ -255,12 +255,48 @@
                 'has_items' => isset($customData['items']),
                 'items_empty' => isset($customData['items']) ? empty($customData['items']) : 'no_items_key',
                 'items_count' => isset($customData['items']) && is_array($customData['items']) ? count($customData['items']) : 'not_array',
-                'customData_keys' => isset($customData) && is_array($customData) ? array_keys($customData) : 'not_available'
+                'customData_keys' => isset($customData) && is_array($customData) ? array_keys($customData) : 'not_available',
+                'has_quotationItemSelections' => isset($quotationItemSelections)
             ]);
             
-            // CONDICIÓN PRIORITARIA: Si hay customData, usar SIEMPRE esos datos (incluso si items está vacío)
-            if (isset($customData) && is_array($customData)) {
-                Log::info('🎯 VISTA PDF: Usando customData (prioritario)', [
+            // NUEVA LÓGICA: Priorizar quotationItemSelections para órdenes mixtas
+            if (isset($quotationItemSelections) && $quotationItemSelections->count() > 0) {
+                Log::info('🎯 VISTA PDF: Usando quotationItemSelections (orden mixta)', [
+                    'order_id' => $order->id,
+                    'selections_count' => $quotationItemSelections->count()
+                ]);
+                
+                // Para órdenes mixtas, usar las selecciones pasadas desde el servicio
+                foreach ($quotationItemSelections as $selection) {
+                    $unitPrice = 0;
+                    
+                    // Intentar obtener el precio de diferentes fuentes
+                    if (isset($selection->unit_price)) {
+                        $unitPrice = $selection->unit_price;
+                    } elseif ($selection->quotation && isset($selection->quotation->original_item_prices[$selection->item_index])) {
+                        $unitPrice = $selection->quotation->original_item_prices[$selection->item_index];
+                    } elseif ($selection->quotation && isset($selection->quotation->item_prices[$selection->item_index])) {
+                        $unitPrice = $selection->quotation->item_prices[$selection->item_index];
+                    }
+                    
+                    $itemsToShow[] = [
+                        'description' => $selection->item_description ?? 'N/A',
+                        'quantity' => $selection->quantity ?? 1,
+                        'unit_price' => $unitPrice,
+                        'total' => isset($selection->total_price) ? $selection->total_price : (($selection->quantity ?? 1) * $unitPrice),
+                        'unit' => $selection->unit ?? 'Unidad',
+                        'observations' => $selection->observations ?? ''
+                    ];
+                }
+                
+                Log::info('🎯 VISTA PDF: Items de quotationItemSelections procesados', [
+                    'order_id' => $order->id,
+                    'items_count' => count($itemsToShow)
+                ]);
+                
+            // SEGUNDA PRIORIDAD: Si hay customData con items válidos
+            } elseif (isset($customData) && is_array($customData)) {
+                Log::info('🎯 VISTA PDF: Usando customData (fallback)', [
                     'order_id' => $order->id,
                     'has_items' => isset($customData['items']),
                     'items_count' => isset($customData['items']) && is_array($customData['items']) ? count($customData['items']) : 0
@@ -332,54 +368,11 @@
                 ]);
                 
             } else {
-                // FALLBACK: Solo si NO hay customData, usar lógica original (simplificada)
-                Log::warning('⚠️ VISTA PDF: No hay customData, usando fallback', [
+                // FALLBACK: Solo si NO hay customData ni quotationItemSelections
+                Log::warning('⚠️ VISTA PDF: Fallback - sin customData ni quotationItemSelections', [
                     'order_id' => $order->id
                 ]);
-                
-                // Detectar si es orden mixta
-                $isMixedOrder = false;
-                $isSharedPurchase = false;
-                $sharedSections = [];
-                $providerSpecificInfo = null;
-                
-                // Detectar orden mixta por selecciones de cotización
-                if ($order->purchaseRequest && $order->purchaseRequest->quotationItemSelections()->exists()) {
-                    $isMixedOrder = true;
-                    $allSelections = $order->purchaseRequest->quotationItemSelections;
-                    $providerSelections = $allSelections->filter(function($sel) use ($order) {
-                        return $sel->quotation && $sel->quotation->provider_name === $order->provider->nombre;
-                    });
-                    
-                    if ($providerSelections->count() > 0) {
-                        $providerSpecificInfo = [
-                            'total_providers' => $allSelections->pluck('quotation.provider_name')->unique()->count(),
-                            'this_provider_items' => $providerSelections->count(),
-                            'total_items' => $allSelections->count()
-                        ];
-                    }
-                }
-                
-                if (isset($quotationItemSelections) && $quotationItemSelections->count() > 0) {
-                    // Para órdenes mixtas, usar solo las selecciones del proveedor específico
-                    foreach ($quotationItemSelections as $selection) {
-                        $unitPrice = 0;
-                        if ($selection->quotation && isset($selection->quotation->original_item_prices[$selection->item_index])) {
-                            $unitPrice = $selection->quotation->original_item_prices[$selection->item_index];
-                        } elseif ($selection->quotation && isset($selection->quotation->item_prices[$selection->item_index])) {
-                            $unitPrice = $selection->quotation->item_prices[$selection->item_index];
-                        }
-                        
-                        $itemsToShow[] = [
-                            'description' => $selection->item_description ?? 'N/A',
-                            'quantity' => $selection->quantity ?? 1,
-                            'unit_price' => $unitPrice,
-                            'total' => ($selection->quantity ?? 1) * $unitPrice,
-                            'unit' => $selection->unit ?? 'Unidad',
-                            'observations' => $selection->observations ?? ''
-                        ];
-                    }
-                }
+                $itemsToShow = [];
             }
             
             // Obtener el presupuesto correcto

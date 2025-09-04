@@ -394,11 +394,14 @@
 
 @section('js')
 <script>
-    $(function() {
-        // Variable para contador de filas
-        let purchaseItemCounter = 1;
+@section('js')
+<script>
+    $(document).ready(function() {
+        console.log('=== FORMULARIO DE COMPRA INICIALIZADO ===');
+        console.log('Form action:', $('#purchaseForm').attr('action'));
+        console.log('CSRF token present:', $('input[name="_token"]').length > 0);
         
-        // Función para agregar nuevo artículo de compra
+        let purchaseItemCounter = 1;        // Función para agregar nuevo artículo de compra
         $('#addPurchaseItem').click(function() {
             purchaseItemCounter++;
             const newIndex = $('#purchaseItemsBody tr').length;
@@ -474,9 +477,30 @@
         
         // Variables para manejar el formulario
         let formIsValidated = false;
+        let formIsSubmitting = false;
+        
+        // Prevenir envíos múltiples
+        $('#purchaseForm').on('submit', function(e) {
+            if (formIsSubmitting) {
+                console.log('❌ Form is already submitting, preventing duplicate submission');
+                e.preventDefault();
+                return false;
+            }
+            
+            console.log('🚀 Form submission initiated');
+            formIsSubmitting = true;
+            
+            // Deshabilitar botón de envío
+            $('button[type="submit"]').prop('disabled', true).text('Guardando...');
+        });
         
         // Validación del formulario
-        $('#purchaseForm').submit(function(e) {            
+        $('#purchaseForm').submit(function(e) {
+            console.log('=== FORMULARIO ENVIADO ===');
+            console.log('Event target:', e.target);
+            console.log('Form action:', $(this).attr('action'));
+            console.log('Form method:', $(this).attr('method'));
+            
             let hasPurchaseItems = false;
             
             // Verificar si hay items de compra con descripción
@@ -487,28 +511,73 @@
                 }
             });
             
+            console.log('Has purchase items:', hasPurchaseItems);
+            
             if (!hasPurchaseItems) {
                 alert('Debe ingresar al menos un artículo de compra para la solicitud.');
+                console.log('❌ Validation failed: no purchase items');
+                formIsSubmitting = false;
+                $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Solicitud');
                 e.preventDefault();
                 return false;
             }
             
             // Validar justificación (ahora siempre requerida)
-            if (!$('#purchase_justification').val().trim()) {
+            const justification = $('#purchase_justification').val().trim();
+            console.log('Justification:', justification);
+            
+            if (!justification) {
                 alert('Debe ingresar una justificación para la compra.');
                 $('#purchase_justification').focus();
+                console.log('❌ Validation failed: no justification');
+                formIsSubmitting = false;
+                $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Solicitud');
                 e.preventDefault();
                 return false;
             }
 
             // Validar sección/área
-            if (!$('#section_area').val()) {
+            const sectionArea = $('#section_area').val();
+            console.log('Section area:', sectionArea);
+            
+            if (!sectionArea) {
                 alert('Debe seleccionar una sección y/o área.');
                 $('#section_area').focus();
+                console.log('❌ Validation failed: no section area');
+                formIsSubmitting = false;
+                $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Solicitud');
                 e.preventDefault();
                 return false;
             }
 
+            console.log('✅ All validations passed, submitting form...');
+            
+            // DIAGNÓSTICO ESPECIAL PARA FORMULARIOS GRANDES
+            const formData = new FormData(this);
+            const itemCount = $('input[name*="[description]"]').length;
+            const totalInputs = $('input, select, textarea').length;
+            
+            console.log('🔍 DIAGNÓSTICO DE ENVÍO:');
+            console.log('- Cantidad de ítems:', itemCount);
+            console.log('- Total de inputs:', totalInputs);
+            console.log('- Tamaño estimado del formulario:', new Blob([new URLSearchParams(formData).toString()]).size + ' bytes');
+            
+            // Si tiene más de 20 ítems, mostrar advertencia pero permitir continuar
+            if (itemCount > 20) {
+                console.log('⚠️ FORMULARIO GRANDE DETECTADO - ' + itemCount + ' ítems');
+                
+                // Dar opción al usuario de continuar
+                if (!confirm('Se detectó un formulario con ' + itemCount + ' ítems. Esto puede tomar tiempo en procesar. ¿Desea continuar?')) {
+                    console.log('❌ Usuario canceló el envío del formulario grande');
+                    formIsSubmitting = false;
+                    $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Solicitud');
+                    e.preventDefault();
+                    return false;
+                }
+            }
+            
+            console.log('📤 Enviando formulario al servidor...');
+            
             // Validar configuración de compra compartida se maneja más abajo en el nuevo código
             
             // Si todas las validaciones pasaron, permitir el envío
@@ -666,6 +735,8 @@
 
         // Actualizar validación del formulario
         $('#purchaseForm').submit(function(e) {
+            console.log('=== SEGUNDO MANEJADOR DE SUBMIT ===');
+            
             // Antes de validar, asegurar que los campos estén visibles y habilitados si tienen datos
             const hasThirdSectionData = $('#thirdSharedSection').val() || 
                                        parseInt($('#thirdSharedPercentage').val()) > 0;
@@ -695,6 +766,9 @@
                 if (!sharedSection) {
                     alert('Por favor seleccione la segunda sección para compartir esta compra.');
                     $('#sharedSection').focus();
+                    console.log('❌ Shared purchase validation failed: no shared section');
+                    formIsSubmitting = false;
+                    $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Solicitud');
                     e.preventDefault();
                     return false;
                 }
@@ -705,6 +779,9 @@
                     if (!thirdSection) {
                         alert('Por favor seleccione la tercera sección o remueva la opción de tercera sección.');
                         $('#thirdSharedSection').focus();
+                        console.log('❌ Third section validation failed');
+                        formIsSubmitting = false;
+                        $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Solicitud');
                         e.preventDefault();
                         return false;
                     }
@@ -718,11 +795,15 @@
                 
                 if (total !== 100) {
                     alert(`Los porcentajes deben sumar exactamente 100%. Actualmente suman ${total}%.`);
+                    console.log('❌ Percentage validation failed:', total);
+                    formIsSubmitting = false;
+                    $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Solicitud');
                     e.preventDefault();
                     return false;
                 }
             }
             
+            console.log('✅ All shared purchase validations passed');
             return true;
         });
 

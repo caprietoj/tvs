@@ -432,24 +432,49 @@ class PurchaseRequestController extends Controller
     */
     public function store(Request $request)
     {
-    // Validar tipo de solicitud
-    $validatedType = $request->validate([
-    'type' => 'required|in:purchase,materials,services',
-    ]);
+        // Log de entrada DETALLADO
+        \Log::info('=== INICIO STORE GENERAL ===', [
+            'user_id' => Auth::id(),
+            'user_email' => Auth::user() ? Auth::user()->email : 'no_auth',
+            'request_type' => $request->input('type'),
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'total_parameters' => count($request->all()),
+            'has_purchase_items' => $request->has('purchase_items'),
+            'purchase_items_count' => $request->has('purchase_items') ? count($request->input('purchase_items', [])) : 0,
+            'method' => $request->method(),
+            'url' => $request->fullUrl()
+        ]);
 
-    if ($validatedType['type'] === 'purchase') {
-        return $this->storePurchaseRequest($request);
-    } elseif ($validatedType['type'] === 'services') {
-        return $this->storeServicesRequest($request);
-    } elseif ($validatedType['type'] === 'materials') {
-        // Verificar si es una solicitud de fotocopias o de materiales
-        // Si hay copy_items pero no hay material_items, es una solicitud de fotocopias
-        if (isset($request->copy_items) && !isset($request->material_items)) {
-            return $this->storeCopiesRequest($request);
+        // Log todos los parámetros si son menos de 50 (para evitar spam)
+        if (count($request->all()) < 50) {
+            \Log::info('Parámetros completos del request:', $request->all());
         } else {
-            return $this->storeMaterialsRequest($request);
+            \Log::info('Request grande detectado - parámetros: ' . count($request->all()));
         }
-    }
+
+        // Validar tipo de solicitud
+        $validatedType = $request->validate([
+            'type' => 'required|in:purchase,materials,services',
+        ]);
+
+        if ($validatedType['type'] === 'purchase') {
+            \Log::info('Procesando solicitud tipo purchase');
+            return $this->storePurchaseRequest($request);
+        } elseif ($validatedType['type'] === 'services') {
+            \Log::info('Procesando solicitud tipo services');
+            return $this->storeServicesRequest($request);
+        } elseif ($validatedType['type'] === 'materials') {
+            // Verificar si es una solicitud de fotocopias o de materiales
+            // Si hay copy_items pero no hay material_items, es una solicitud de fotocopias
+            if (isset($request->copy_items) && !isset($request->material_items)) {
+                \Log::info('Procesando solicitud tipo copies');
+                return $this->storeCopiesRequest($request);
+            } else {
+                \Log::info('Procesando solicitud tipo materials');
+                return $this->storeMaterialsRequest($request);
+            }
+        }
     }
 
     /**
@@ -457,17 +482,52 @@ class PurchaseRequestController extends Controller
     */
     private function storePurchaseRequest(Request $request)
     {
-        // Verificar que se están enviando items de compra
-        $hasPurchaseItems = $request->has('purchase_items') && is_array($request->purchase_items) && 
-                           count(array_filter($request->purchase_items, function($item) {
-                               return !empty($item['description']);
-                           })) > 0;
-        
-        if (!$hasPurchaseItems) {
-            return redirect()->route('purchase-requests.create-purchase')
-                ->with('error', 'Debe agregar al menos un artículo de compra. Para servicios, utilice el formulario específico de servicios.')
-                ->withInput();
-        }
+        try {
+            // Log específico para diagnóstico de max_input_vars EN PRODUCCIÓN
+            Log::info('=== DIAGNÓSTICO PURCHASE REQUEST PRODUCCIÓN ===', [
+                'timestamp' => now()->toDateTimeString(),
+                'user_id' => Auth::id(),
+                'total_parameters' => count($request->all()),
+                'max_input_vars' => ini_get('max_input_vars'),
+                'post_max_size' => ini_get('post_max_size'),
+                'memory_limit' => ini_get('memory_limit'),
+                'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown',
+                'php_version' => phpversion(),
+                'request_size_estimate' => strlen(serialize($request->all())) . ' bytes'
+            ]);
+            
+            // Verificar si se están recibiendo todos los items
+            $purchaseItems = $request->input('purchase_items', []);
+            Log::info('ITEMS RECIBIDOS EN PRODUCCIÓN', [
+                'items_count' => count($purchaseItems),
+                'has_purchase_items_key' => $request->has('purchase_items'),
+                'is_array' => is_array($purchaseItems),
+                'first_item' => count($purchaseItems) > 0 ? $purchaseItems[0] ?? 'null' : 'no_items',
+                'last_item' => count($purchaseItems) > 0 ? end($purchaseItems) : 'no_items',
+                'item_20' => $purchaseItems[19] ?? 'no_existe',
+                'item_24' => $purchaseItems[23] ?? 'no_existe'
+            ]);
+            
+            // Log de otros campos importantes
+            Log::info('OTROS CAMPOS DEL FORMULARIO', [
+                'requester' => $request->input('requester'),
+                'section_area' => $request->input('section_area'),
+                'justification_length' => strlen($request->input('purchase_justification', '')),
+                'has_token' => $request->has('_token'),
+                'is_shared' => $request->input('is_shared')
+            ]);
+            
+            // Verificar que se están enviando items de compra
+            $hasPurchaseItems = $request->has('purchase_items') && is_array($request->purchase_items) && 
+                               count(array_filter($request->purchase_items, function($item) {
+                                   return !empty($item['description']);
+                               })) > 0;
+            
+            if (!$hasPurchaseItems) {
+                return redirect()->route('purchase-requests.create-purchase')
+                    ->with('error', 'Debe agregar al menos un artículo de compra. Para servicios, utilice el formulario específico de servicios.')
+                    ->withInput();
+            }
         
         // Definir reglas de validación para compras únicamente
         $rules = [
@@ -515,6 +575,31 @@ class PurchaseRequestController extends Controller
                 ->withInput();
         }
 
+        // Verificar que el usuario esté autenticado
+        if (!Auth::check() || !Auth::id()) {
+            \Log::error('Usuario no autenticado al intentar crear solicitud de compra', [
+                'auth_check' => Auth::check(),
+                'auth_id' => Auth::id(),
+                'request_ip' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+            
+            return redirect()->route('login')
+                ->with('error', 'Su sesión ha expirado. Por favor, inicie sesión nuevamente.');
+        }
+
+        // Log de datos antes de crear
+        \Log::info('Creando solicitud de compra', [
+            'user_id' => Auth::id(),
+            'user_email' => Auth::user()->email,
+            'request_data' => [
+                'type' => 'purchase',
+                'requester' => $request->requester,
+                'section_area' => $request->section_area,
+                'items_count' => is_array($request->purchase_items) ? count($request->purchase_items) : 0
+            ]
+        ]);
+
         // Crear la solicitud de compra
         $purchaseRequest = PurchaseRequest::create([
             'type' => 'purchase',
@@ -534,12 +619,42 @@ class PurchaseRequestController extends Controller
             'third_shared_percentage' => $request->is_shared === 'yes' ? (int)$request->third_shared_percentage : 0,
         ]);
 
-        // Enviar emails diferenciados
-        $this->sendDifferentiatedEmails($purchaseRequest);
+        \Log::info('Solicitud de compra creada exitosamente', [
+            'purchase_request_id' => $purchaseRequest->id,
+            'request_number' => $purchaseRequest->request_number,
+            'user_id' => Auth::id()
+        ]);
+
+        try {
+            // Enviar emails diferenciados
+            $this->sendDifferentiatedEmails($purchaseRequest);
+        } catch (\Exception $e) {
+            \Log::warning('Error al enviar emails para solicitud de compra', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'error' => $e->getMessage()
+            ]);
+            // No fallar la creación por problemas de email
+        }
 
         return redirect()->route('purchase-requests.index')
             ->with('success', 'Solicitud de compra creada exitosamente');
-    }    /**
+
+        } catch (\Exception $e) {
+            \Log::error('Error al crear solicitud de compra', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'user_id' => Auth::id(),
+                'request_data' => $request->except(['_token'])
+            ]);
+
+            return redirect()->route('purchase-requests.create-purchase')
+                ->with('error', 'Error al crear la solicitud de compra. Por favor, inténtelo nuevamente.')
+                ->withInput();
+        }
+    }
+
+    /**
      * Store a services request
      */
     private function storeServicesRequest(Request $request)
