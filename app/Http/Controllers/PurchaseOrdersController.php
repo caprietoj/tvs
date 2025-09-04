@@ -60,7 +60,9 @@ class PurchaseOrdersController extends Controller
             $ordersQuery->where('status', $statusFilter);
         }
         
-        $orders = $ordersQuery->orderBy('created_at', 'desc')->get();
+        $orders = $ordersQuery->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+                            ->orderBy('created_at', 'desc')
+                            ->get();
             
         // Obtener las solicitudes aprobadas pendientes de generar órdenes de compra
         $approvedRequests = PurchaseRequest::with(['selectedQuotation', 'user', 'approver', 'quotationItemSelections', 'purchaseOrders'])

@@ -471,7 +471,7 @@
             "info": true,
             "autoWidth": false,
             "responsive": true,
-            "order": [[ 6, "desc" ]], // Ordenar por fecha de creación descendente
+            "order": [], // Sin orden inicial para respetar el orden del servidor (pending primero)
             "language": {
                 "url": "https://cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
             }

@@ -166,7 +166,28 @@ class BudgetHelper
      */
     public static function getBudgetValidationRule()
     {
-        return 'in:' . implode(',', self::getBudgetOptions());
+        // Obtener todas las opciones de presupuesto de la jerarquía
+        $allOptions = self::getAllBudgetOptions();
+        return 'in:' . implode(',', $allOptions);
+    }
+
+    /**
+     * Get all budget options from hierarchy (flat list)
+     */
+    public static function getAllBudgetOptions()
+    {
+        $hierarchy = self::getBudgetHierarchy();
+        $allOptions = [];
+        
+        foreach ($hierarchy as $section => $budgets) {
+            foreach ($budgets as $budget) {
+                if (!in_array($budget, $allOptions)) {
+                    $allOptions[] = $budget;
+                }
+            }
+        }
+        
+        return $allOptions;
     }
 
     /**
