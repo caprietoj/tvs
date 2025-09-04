@@ -60,10 +60,7 @@ class PurchaseOrdersController extends Controller
             $ordersQuery->where('status', $statusFilter);
         }
         
-        $orders = $ordersQuery->orderBy('created_at', 'desc')->paginate(10);
-        
-        // Mantener parámetros de filtro en la paginación
-        $orders->appends($request->query());
+        $orders = $ordersQuery->orderBy('created_at', 'desc')->get();
             
         // Obtener las solicitudes aprobadas pendientes de generar órdenes de compra
         $approvedRequests = PurchaseRequest::with(['selectedQuotation', 'user', 'approver', 'quotationItemSelections', 'purchaseOrders'])
@@ -525,6 +522,12 @@ class PurchaseOrdersController extends Controller
                 ->with('error', 'No tienes permisos para editar órdenes de compra.');
         }
 
+        // Restricción específica para usuario compras@tvs.edu.co
+        if (auth()->id() === 11) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'No tienes permisos para editar órdenes de compra.');
+        }
+
         // Se pueden editar órdenes pendientes o aprobadas (solo admin)
         if (!in_array($purchaseOrder->status, ['pending', 'approved'])) {
             return redirect()->route('purchase-orders.show', $purchaseOrder->id)
@@ -541,6 +544,12 @@ class PurchaseOrdersController extends Controller
     {
         // Solo administradores y personal de compras pueden actualizar órdenes de compra
         if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'No tienes permisos para editar órdenes de compra.');
+        }
+
+        // Restricción específica para usuario compras@tvs.edu.co
+        if (auth()->id() === 11) {
             return redirect()->route('purchase-orders.index')
                 ->with('error', 'No tienes permisos para editar órdenes de compra.');
         }
@@ -1163,6 +1172,21 @@ class PurchaseOrdersController extends Controller
                 ->with('error', $errorMessage);
         }
 
+        // Restricción específica para usuario compras@tvs.edu.co
+        if (auth()->id() === 11) {
+            $errorMessage = 'No tienes permisos para eliminar órdenes de compra.';
+            
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 403);
+            }
+            
+            return redirect()->route('purchase-orders.index')
+                ->with('error', $errorMessage);
+        }
+
         // Se pueden eliminar órdenes pendientes o aprobadas (solo admin)
         if (!in_array($purchaseOrder->status, ['pending', 'approved'])) {
             $errorMessage = 'No se puede eliminar una orden que ya ha sido procesada o enviada.';
@@ -1258,6 +1282,11 @@ class PurchaseOrdersController extends Controller
     {
         // Verificar que el usuario sea administrador o personal de compras
         if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
+            abort(403, 'No tienes permisos para editar PDFs de órdenes de compra.');
+        }
+
+        // Restricción específica para usuario compras@tvs.edu.co
+        if (auth()->id() === 11) {
             abort(403, 'No tienes permisos para editar PDFs de órdenes de compra.');
         }
 
@@ -1831,6 +1860,12 @@ class PurchaseOrdersController extends Controller
     {
         // Verificar que el usuario sea administrador o personal de compras
         if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
+            return redirect()->route('purchase-orders.index')
+                ->with('error', 'No tienes permisos para regenerar órdenes de compra.');
+        }
+
+        // Restricción específica para usuario compras@tvs.edu.co
+        if (auth()->id() === 11) {
             return redirect()->route('purchase-orders.index')
                 ->with('error', 'No tienes permisos para regenerar órdenes de compra.');
         }
@@ -2765,6 +2800,11 @@ class PurchaseOrdersController extends Controller
             abort(403, 'No tienes permisos para crear órdenes alternativas.');
         }
 
+        // Restricción específica para usuario compras@tvs.edu.co
+        if (auth()->id() === 11) {
+            abort(403, 'No tienes permisos para crear órdenes alternativas.');
+        }
+
         try {
             DB::beginTransaction();
 
@@ -2778,7 +2818,7 @@ class PurchaseOrdersController extends Controller
             ]);
 
             // Verificar que la cotización existe y pertenece a la misma solicitud
-            $quotation = \App\Models\Quotation::with(['items', 'purchaseRequest'])
+            $quotation = \App\Models\Quotation::with(['purchaseRequest'])
                 ->where('id', $quotationId)
                 ->where('purchase_request_id', $purchaseOrder->purchase_request_id)
                 ->first();
@@ -2838,14 +2878,32 @@ class PurchaseOrdersController extends Controller
             ]);
 
             // Crear selecciones de items basadas en la cotización
-            foreach ($quotation->items as $item) {
+            $quotationItems = $quotation->additional_items ?? [];
+            
+            if (!empty($quotationItems) && is_array($quotationItems)) {
+                foreach ($quotationItems as $index => $item) {
+                    \App\Models\QuotationItemSelection::create([
+                        'purchase_request_id' => $purchaseOrder->purchase_request_id,
+                        'quotation_id' => $quotationId,
+                        'item_index' => $index,
+                        'item_description' => $item['description'] ?? 'Item sin descripción',
+                        'quantity' => $item['quantity'] ?? 1,
+                        'unit_price' => $item['price'] ?? $item['unit_price'] ?? 0,
+                        'total_price' => ($item['quantity'] ?? 1) * ($item['price'] ?? $item['unit_price'] ?? 0),
+                        'selected_by' => auth()->id(),
+                        'selected_at' => now(),
+                    ]);
+                }
+            } else {
+                // Si no hay items específicos en additional_items, crear uno genérico
                 \App\Models\QuotationItemSelection::create([
                     'purchase_request_id' => $purchaseOrder->purchase_request_id,
                     'quotation_id' => $quotationId,
-                    'item_description' => $item->description,
-                    'quantity' => $item->quantity,
-                    'unit_price' => $item->unit_price,
-                    'total_price' => $item->total_price,
+                    'item_index' => 0, // Índice 0 para el primer (y único) item
+                    'item_description' => 'Producto/Servicio según cotización',
+                    'quantity' => 1,
+                    'unit_price' => $quotation->total_amount,
+                    'total_price' => $quotation->total_amount,
                     'selected_by' => auth()->id(),
                     'selected_at' => now(),
                 ]);

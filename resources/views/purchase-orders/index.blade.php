@@ -142,9 +142,10 @@
                                 <select class="form-control form-control-sm column-filter" data-column="4">
                                     <option value="">Todos los estados</option>
                                     <option value="Pendiente">Pendiente</option>
-                                    <option value="Aprobada">Aprobada</option>
-                                    <option value="Entregada">Entregada</option>
-                                    <option value="Cancelada">Cancelada</option>
+                                    <option value="Aprobado">Aprobado</option>
+                                    <option value="Enviado a Contabilidad">Enviado a Contabilidad</option>
+                                    <option value="Pagado">Pagado</option>
+                                    <option value="Cancelado">Cancelado</option>
                                 </select>
                             </th>
                             <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar fecha..." data-column="5"></th>
@@ -200,12 +201,12 @@
                                 <a href="{{ route('purchase-orders.show', $order->id) }}" class="btn btn-sm btn-info">
                                     <i class="fas fa-eye"></i> Ver
                                 </a>
-                                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras'))
+                                @if((auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')) && auth()->id() !== 11)
                                 <a href="{{ route('purchase-orders.edit-pdf', $order->id) }}" class="btn btn-sm btn-warning" title="Editar PDF personalizado">
                                     <i class="fas fa-file-pdf"></i> Editar PDF
                                 </a>
                                 @endif
-                                @if(($order->isPending() || ($order->status == 'approved' && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))) && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))
+                                @if(($order->isPending() || ($order->status == 'approved' && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))) && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')) && auth()->id() !== 11)
                                 <a href="{{ route('purchase-orders.edit', $order->id) }}" class="btn btn-sm btn-primary">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
@@ -232,8 +233,8 @@
                                 </button>
                                 @endif
                                 
-                                {{-- Botón de regenerar orden completa solo para administradores y compras --}}
-                                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras'))
+                                {{-- Botón de regenerar orden completa solo para administradores y compras (excepto compras@tvs.edu.co) --}}
+                                @if((auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')) && auth()->id() !== 11)
                                 <form action="{{ route('purchase-orders.regenerate-pdf', $order->id) }}" method="POST" class="d-inline regenerate-pdf-form" data-order-number="{{ $order->order_number }}">
                                     @csrf
                                     <button type="button" class="btn btn-sm btn-secondary regenerate-pdf-btn" title="Regenerar orden completa desde la solicitud original">
@@ -251,20 +252,7 @@
                     </tbody>
                 </table>
             </div>
-            
-            <!-- Paginación mejorada -->
-            @if($orders->hasPages())
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div class="pagination-info">
-                    <small class="text-muted">
-                        Mostrando {{ $orders->firstItem() }} a {{ $orders->lastItem() }} de {{ $orders->total() }} órdenes
-                    </small>
-                </div>
-                <div class="pagination-wrapper">
-                    {{ $orders->appends(request()->query())->links('pagination::bootstrap-4') }}
-                </div>
             </div>
-            @endif
         </div>
         <!-- /.card-body -->
     </div>
@@ -347,89 +335,6 @@
     }
     
     /* Estilos para paginación profesional */
-    .pagination-wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    .pagination-wrapper .pagination {
-        margin: 0;
-        border-radius: 0.375rem;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-    
-    .pagination-wrapper .page-link {
-        border: 1px solid #dee2e6;
-        color: #495057;
-        padding: 0.5rem 0.75rem;
-        margin-left: -1px;
-        line-height: 1.25;
-        text-decoration: none;
-        background-color: #fff;
-        border-radius: 0;
-        transition: all 0.15s ease-in-out;
-    }
-    
-    .pagination-wrapper .page-item:first-child .page-link {
-        margin-left: 0;
-        border-top-left-radius: 0.375rem;
-        border-bottom-left-radius: 0.375rem;
-    }
-    
-    .pagination-wrapper .page-item:last-child .page-link {
-        border-top-right-radius: 0.375rem;
-        border-bottom-right-radius: 0.375rem;
-    }
-    
-    .pagination-wrapper .page-link:hover {
-        z-index: 2;
-        color: #364E76;
-        background-color: #e9ecef;
-        border-color: #dee2e6;
-    }
-    
-    .pagination-wrapper .page-item.active .page-link {
-        z-index: 3;
-        color: #fff;
-        background-color: #364E76;
-        border-color: #364E76;
-    }
-    
-    .pagination-wrapper .page-item.disabled .page-link {
-        color: #6c757d;
-        pointer-events: none;
-        background-color: #fff;
-        border-color: #dee2e6;
-    }
-    
-    .pagination-info {
-        color: #6c757d;
-        font-size: 0.875rem;
-    }
-    
-    /* Responsive para móviles */
-    @media (max-width: 768px) {
-        .d-flex.justify-content-between {
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .pagination-info {
-            order: 2;
-        }
-        
-        .pagination-wrapper {
-            order: 1;
-        }
-        
-        .pagination-wrapper .page-link {
-            padding: 0.375rem 0.5rem;
-            font-size: 0.875rem;
-        }
-    }
-    
     /* Mejorar la apariencia general de la tabla */
     .table-responsive {
         border-radius: 0.375rem;
@@ -557,13 +462,16 @@
     $(document).ready(function() {
         // Inicializar DataTable para la tabla principal
         var ordersTable = $('#ordersTable').DataTable({
-            "paging": false,
-            "lengthChange": false,
+            "paging": true,
+            "lengthChange": true,
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+            "pageLength": 25,
             "searching": true,
             "ordering": true,
-            "info": false,
+            "info": true,
             "autoWidth": false,
             "responsive": true,
+            "order": [[ 6, "desc" ]], // Ordenar por fecha de creación descendente
             "language": {
                 "url": "https://cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
             }
@@ -574,10 +482,30 @@
             var columnIndex = $(this).data('column');
             var value = this.value;
             
-            ordersTable
-                .column(columnIndex)
-                .search(value)
-                .draw();
+            // Filtro especial para la columna de monto (columna 3)
+            if (columnIndex == 3 && value) {
+                // Limpiar formato de números: eliminar $ y comas
+                var cleanValue = value.replace(/[$,]/g, '');
+                if (!isNaN(cleanValue) && cleanValue !== '') {
+                    // Buscar por el número sin formato
+                    ordersTable
+                        .column(columnIndex)
+                        .search(cleanValue, true, false) // regex=true, smart=false
+                        .draw();
+                } else {
+                    // Si no es un número, buscar como texto normal
+                    ordersTable
+                        .column(columnIndex)
+                        .search(value)
+                        .draw();
+                }
+            } else {
+                // Filtro normal para otras columnas
+                ordersTable
+                    .column(columnIndex)
+                    .search(value)
+                    .draw();
+            }
         });
 
         $('#pendingRequestsTable').DataTable({

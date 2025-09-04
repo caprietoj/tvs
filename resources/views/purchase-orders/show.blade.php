@@ -57,7 +57,7 @@
                             <a href="{{ route('purchase-orders.view', $purchaseOrder->id) }}" class="btn btn-sm btn-outline-info" target="_blank">
                                 <i class="fas fa-eye"></i> Ver PDF
                             </a>
-                            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras'))
+                            @if((auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')) && auth()->id() !== 11)
                                 <a href="{{ route('purchase-orders.edit-pdf', $purchaseOrder->id) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-file-pdf"></i> Editar PDF
                                 </a>
@@ -70,7 +70,7 @@
                                     </button>
                                 </form>
                             @endif
-                            @if(($purchaseOrder->isPending() || ($purchaseOrder->status == 'approved' && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))) && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))
+                            @if(($purchaseOrder->isPending() || ($purchaseOrder->status == 'approved' && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))) && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')) && auth()->id() !== 11)
                                 <a href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}" class="btn btn-sm btn-secondary">
                                     <i class="fas fa-edit"></i> Editar Orden
                                 </a>
@@ -249,9 +249,11 @@
                             <h5>Acciones</h5>
                             <div class="btn-group">
                                 @if($purchaseOrder->isPending())
-                                    <a href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}" class="btn btn-primary">
-                                        <i class="fas fa-edit"></i> Editar
-                                    </a>
+                                    @if((auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')) && auth()->id() !== 11)
+                                        <a href="{{ route('purchase-orders.edit', $purchaseOrder->id) }}" class="btn btn-primary">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                    @endif
                                     <button type="button" class="btn btn-success" data-toggle="modal" data-target="#sendToAccountingModal">
                                         @if($purchaseOrder->purchaseRequest->isCopiesRequest() || $purchaseOrder->purchaseRequest->isMaterialsRequest())
                                             <i class="fas fa-check"></i> Autorizar Orden

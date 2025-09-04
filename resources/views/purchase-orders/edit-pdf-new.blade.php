@@ -1987,35 +1987,79 @@ $(document).ready(function() {
         // Cerrar el modal
         window.closeAlternativeOrderModal();
         
-        // Mostrar indicador de carga (opcional)
-        // showLoading();
+        // Mostrar indicador de carga
+        const loadingHtml = `
+            <div class="alert alert-info">
+                <i class="fas fa-spinner fa-spin mr-2"></i>
+                Creando orden alternativa para ${providerName}...
+            </div>
+        `;
+        $('.card-body').prepend(loadingHtml);
         
-        // Crear formulario para enviar solicitud
-        const form = $('<form>', {
+        // Usar AJAX en lugar de form.submit()
+        $.ajax({
+            url: '{{ route("purchase-orders.create-alternative-order", $order->id) }}',
             method: 'POST',
-            action: '{{ route("purchase-orders.create-alternative-order", $order->id) }}'
+            data: {
+                _token: '{{ csrf_token() }}',
+                quotation_id: quotationId,
+                provider_name: providerName
+            },
+            success: function(response) {
+                $('.alert-info').remove(); // Remover indicador de carga
+                
+                if (response.success) {
+                    // Mostrar mensaje de éxito
+                    const successHtml = `
+                        <div class="alert alert-success alert-dismissible fade show">
+                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                            <i class="fas fa-check-circle mr-2"></i>
+                            ${response.message}
+                            <br>
+                            <a href="${response.redirect_url}" class="btn btn-success btn-sm mt-2">
+                                <i class="fas fa-eye mr-1"></i> Ver Orden ${response.new_order_number}
+                            </a>
+                        </div>
+                    `;
+                    $('.card-body').prepend(successHtml);
+                    
+                    // Auto-scroll al mensaje
+                    $('html, body').animate({
+                        scrollTop: $('.alert-success').offset().top - 100
+                    }, 500);
+                    
+                } else {
+                    // Mostrar mensaje de error
+                    const errorHtml = `
+                        <div class="alert alert-danger alert-dismissible fade show">
+                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            ${response.message || 'Error desconocido al crear la orden alternativa.'}
+                        </div>
+                    `;
+                    $('.card-body').prepend(errorHtml);
+                }
+            },
+            error: function(xhr, status, error) {
+                $('.alert-info').remove(); // Remover indicador de carga
+                
+                let errorMessage = 'Error de conexión al crear la orden alternativa.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                const errorHtml = `
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        ${errorMessage}
+                    </div>
+                `;
+                $('.card-body').prepend(errorHtml);
+                
+                console.error('Error al crear orden alternativa:', error);
+            }
         });
-        
-        form.append($('<input>', {
-            type: 'hidden',
-            name: '_token',
-            value: '{{ csrf_token() }}'
-        }));
-        
-        form.append($('<input>', {
-            type: 'hidden',
-            name: 'quotation_id',
-            value: quotationId
-        }));
-        
-        form.append($('<input>', {
-            type: 'hidden',
-            name: 'provider_name',
-            value: providerName
-        }));
-        
-        $('body').append(form);
-        form.submit();
     };
 
     // Cerrar modal al hacer clic en el overlay

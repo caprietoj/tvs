@@ -76,6 +76,23 @@ class Quotation extends Model
     }
     
     /**
+     * Accessor para items - devuelve los additional_items del JSON
+     * Esto mantiene compatibilidad con el código que espera $quotation->items
+     */
+    public function getItemsAttribute()
+    {
+        return $this->additional_items ?? [];
+    }
+    
+    /**
+     * Mutator para items - guarda en additional_items
+     */
+    public function setItemsAttribute($value)
+    {
+        $this->attributes['additional_items'] = json_encode($value);
+    }
+    
+    /**
      * Obtener los datos del proveedor basándose en el nombre
      */
     public function getProviderData()
