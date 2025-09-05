@@ -1,44 +1,220 @@
+/* ===== ESTILOS PERSONALIZADOS PARA MENÚ MEJORADO ===== */
+
+/* Sidebar principal con gradiente mejorado */
 .main-sidebar {
     background: linear-gradient(180deg, #364E76 0%, #293c5c 100%);
-    box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
 }
 
-.nav-sidebar .nav-item > .nav-link {
-    padding: 0.8rem 1rem;
-    margin: 0.2rem 0.8rem;
-    border-radius: 8px;
-    transition: all 0.3s ease;
+/* Reset y base para navegación */
+.main-sidebar .nav-sidebar {
+    padding-top: 8px;
 }
 
-.nav-sidebar .nav-item > .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+/* ===== MENÚ PRINCIPAL ===== */
+
+/* Estilo base para elementos del menú principal */
+.nav-sidebar > .nav-item > .nav-link {
+    font-weight: 600;
+    padding: 14px 18px;
+    margin: 4px 12px;
+    border-radius: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Iconos del menú principal */
+.nav-sidebar > .nav-item > .nav-link .nav-icon {
+    margin-right: 12px;
+    font-size: 1.1em;
+    width: 20px;
+    text-align: center;
+}
+
+/* Efectos hover mejorados para menú principal */
+.nav-sidebar > .nav-item > .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
     transform: translateX(5px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    color: #ffffff;
 }
 
-.nav-sidebar .nav-item > .nav-link.active {
-    background-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+/* Estados activos del menú principal */
+.nav-sidebar .nav-item.menu-open > .nav-link {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: inset 4px 0 0 #28a745;
 }
 
-.nav-sidebar .nav-icon {
-    transition: transform 0.2s ease;
+.nav-sidebar .nav-link.active {
+    background: linear-gradient(135deg, #28a745, #20c997) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
 }
 
-.nav-sidebar .nav-link:hover .nav-icon {
-    transform: scale(1.1);
+/* ===== INDICADORES DE COLOR POR SECCIÓN ===== */
+
+/* Agregamos indicators de color únicos para cada sección */
+.nav-sidebar > .nav-item:nth-child(3) > .nav-link::before { /* Inicio */
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #28a745, #20c997);
 }
 
-.nav-sidebar .menu-open > .nav-link .nav-icon {
-    transform: rotate(90deg);
+.nav-sidebar > .nav-item:nth-child(4) > .nav-link::before { /* Solicitudes */
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #007bff, #0056b3);
 }
 
-.sidebar-mini.sidebar-collapse .main-sidebar:hover {
-    box-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
+.nav-sidebar > .nav-item:nth-child(5) > .nav-link::before { /* Académica */
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #fd7e14, #e55a00);
 }
+
+.nav-sidebar > .nav-item:nth-child(6) > .nav-link::before { /* Almacén */
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #6f42c1, #5a2d91);
+}
+
+.nav-sidebar > .nav-item:nth-child(7) > .nav-link::before { /* Encuestas */
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #17a2b8, #138496);
+}
+
+.nav-sidebar > .nav-item:nth-child(8) > .nav-link::before { /* Administración */
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #6c757d, #545b62);
+}
+
+.nav-sidebar > .nav-item:nth-child(9) > .nav-link::before { /* Informes */
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #343a40, #23272b);
+}
+
+.nav-sidebar > .nav-item:nth-child(10) > .nav-link::before { /* Configuración */
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #495057, #32373c);
+}
+
+/* ===== SUBMENÚS ===== */
+
+/* Primer nivel de submenú */
+.nav-treeview .nav-item .nav-link {
+    padding: 12px 18px 12px 50px;
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    margin: 2px 12px 2px 20px;
+    position: relative;
+}
+
+.nav-treeview .nav-item .nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    padding-left: 55px;
+    transform: scale(1.02);
+}
+
+/* Segundo nivel de submenú */
+.nav-treeview .nav-treeview .nav-item .nav-link {
+    padding: 10px 18px 10px 65px;
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(0, 0, 0, 0.1);
+    margin-left: 30px;
+}
+
+.nav-treeview .nav-treeview .nav-item .nav-link:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    padding-left: 70px;
+}
+
+/* Tercer nivel de submenú */
+.nav-treeview .nav-treeview .nav-treeview .nav-item .nav-link {
+    padding: 8px 18px 8px 80px;
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(0, 0, 0, 0.15);
+    margin-left: 40px;
+}
+
+.nav-treeview .nav-treeview .nav-treeview .nav-item .nav-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.85);
+    padding-left: 85px;
+}
+
+/* ===== ICONOS EN SUBMENÚS ===== */
+
+.nav-treeview .nav-item .nav-link i,
+.nav-treeview .nav-item .nav-link .nav-icon {
+    margin-right: 10px;
+    width: 18px;
+    text-align: center;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+/* ===== ESTADOS ACTIVOS PARA SUBMENÚS ===== */
+
+.nav-treeview .nav-item .nav-link.active {
+    background: linear-gradient(90deg, rgba(40, 167, 69, 0.3), rgba(32, 201, 151, 0.2)) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    border-left: 3px solid #28a745;
+}
+
+/* ===== BRAND LINK ===== */
 
 .brand-link {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    padding: 1rem !important;
+    padding: 1.2rem !important;
+    transition: all 0.3s ease;
 }
 
 .brand-image {
@@ -47,18 +223,160 @@
 }
 
 .brand-link:hover .brand-image {
-    transform: scale(1.05);
+    transform: scale(1.05) rotate(5deg);
 }
 
 [class*='sidebar-dark'] .brand-link {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
 }
+
+/* ===== USER PANEL ===== */
 
 [class*='sidebar-dark'] .user-panel {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 15px;
 }
 
 .sidebar nav p {
     font-size: 0.95rem;
     font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ===== ANIMACIONES MEJORADAS ===== */
+
+@keyframes slideInFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.nav-treeview .nav-item {
+    animation: slideInFromLeft 0.3s ease-out;
+}
+
+/* ===== INDICADORES PARA MENÚS CON SUBMENÚS ===== */
+
+.nav-sidebar .nav-item.has-treeview > .nav-link::after {
+    transition: transform 0.3s ease;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.nav-sidebar .nav-item.menu-open.has-treeview > .nav-link::after {
+    transform: rotate(90deg);
+    color: #ffffff;
+}
+
+/* ===== SCROLLBAR PERSONALIZADO ===== */
+
+.main-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.main-sidebar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+.main-sidebar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+    border-radius: 3px;
+}
+
+.main-sidebar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.3));
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+@media (max-width: 767px) {
+    .nav-sidebar > .nav-item > .nav-link {
+        margin: 2px 8px;
+        padding: 12px 15px;
+        font-size: 0.9em;
+    }
+    
+    .nav-treeview .nav-item .nav-link {
+        padding: 10px 15px 10px 40px;
+        font-size: 0.85em;
+    }
+}
+
+/* ===== SIDEBAR COLAPSADO ===== */
+
+.sidebar-mini.sidebar-collapse .main-sidebar:hover {
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Tooltips para sidebar colapsado */
+.sidebar-mini .main-sidebar.sidebar-collapse .nav-sidebar > .nav-item > .nav-link:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 70px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 1000;
+    font-size: 0.85em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== SEPARADORES VISUALES ===== */
+
+.nav-sidebar > .nav-item:not(:last-child) {
+    position: relative;
+}
+
+.nav-sidebar > .nav-item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 20px;
+    right: 20px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== MEJORAS DE ACCESIBILIDAD ===== */
+
+.nav-sidebar .nav-item .nav-link:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ===== LOADING STATES ===== */
+
+.nav-link.loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.nav-link.loading::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    transform: translateY(-50%);
+}
+
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
 }

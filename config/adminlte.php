@@ -310,299 +310,364 @@ return [
             'topnav_right' => true,
         ],
 
-        // Menú reorganizado y renombrado
+        // === MENÚ PRINCIPAL ===
         [
-            'text' => 'Dashboard',
-            'url'  => '/home',  // Cambiado de '/dashboard' a '/home'
-            'icon' => 'fas fa-fw fa-tachometer-alt',
+            'text' => 'Inicio',
+            'url'  => '/home',
+            'icon' => 'fas fa-home',
             'can'  => 'view.dashboard',
         ],
+
+        // === MÓDULO DE SOLICITUDES ===
         [
-            'text' => 'Help-Desk Sistemas',
-            'url'  => 'tickets',
-            'icon' => 'fas fa-ticket-alt',
-            'can'  => 'ticket.view',
-            'active' => ['tickets', 'tickets/create', 'tickets/*/edit', 'regex:@^tickets/[0-9]+$@'], // Using regex to match specific patterns
-            'classes' => 'menu-item'
-        ],
-        [
-            'text' => 'Help-Desk RRHH',
-            'icon' => 'fas fa-users',
-            'classes' => 'menu-item',
-            'active' => ['documents*', 'document-requests*', 'loan-requests*'], // Actualizar para incluir las rutas de préstamos
+            'text' => '📝 Mis Solicitudes',
+            'icon' => 'fas fa-clipboard-list',
             'submenu' => [
                 [
-                    'text' => 'Nuevo Item',
-                    'url'  => 'documents',
-                    'icon' => 'fas fa-folder',
-                    'active' => ['documents*'], // Activará este item para todas las rutas que empiecen con documents
-                    'classes' => 'submenu-item',
-                    'can'  => 'documents-new',
+                    'text' => '🎫 Help-Desk Sistemas',
+                    'url'  => 'tickets',
+                    'icon' => 'fas fa-laptop-code',
+                    'can'  => 'ticket.view',
+                    'active' => ['tickets*'],
                 ],
                 [
-                    'text' => 'Solicitudes',
-                    'url'  => 'document-requests',
-                    'icon' => 'fas fa-paper-plane',
-                    'active' => ['document-requests*'], // Activará este item para todas las rutas que empiecen con document-requests
-                    'classes' => 'submenu-item'
+                    'text' => '👥 Help-Desk RRHH',
+                    'icon' => 'fas fa-users',
+                    'active' => ['documents*', 'document-requests*', 'loan-requests*'],
+                    'submenu' => [
+                        [
+                            'text' => 'Nueva Solicitud',
+                            'url'  => 'documents',
+                            'icon' => 'fas fa-plus-circle',
+                            'active' => ['documents*'],
+                            'can'  => 'documents-new',
+                        ],
+                        [
+                            'text' => 'Mis Solicitudes',
+                            'url'  => 'document-requests',
+                            'icon' => 'fas fa-list',
+                            'active' => ['document-requests*'],
+                        ],
+                        [
+                            'text' => 'Solicitar Préstamo',
+                            'url'  => 'loan-requests',
+                            'icon' => 'fas fa-hand-holding-usd',
+                            'active' => ['loan-requests*'],
+                        ],
+                    ],
                 ],
                 [
-                    'text' => 'Solicitud de Préstamo',
-                    'url'  => 'loan-requests',
-                    'icon' => 'fas fa-money-check-alt',
-                    'active' => ['loan-requests*'],
-                    'classes' => 'submenu-item'
+                    'text' => '🛒 Solicitudes de Compra',
+                    'url'  => 'purchase-requests',
+                    'icon' => 'fas fa-shopping-cart',
+                    'can' => 'solicitudes_compra',
+                    'active' => ['purchase-requests*', 'purchase-form-type*'],
+                ],
+                [
+                    'text' => '💻 Préstamo de Equipos',
+                    'url'  => 'equipment/request',
+                    'icon' => 'fas fa-laptop',
+                    'can'  => 'equipment.reserva',
+                    'active' => ['equipment/request*', 'equipment/loans*'],
                 ],
             ],
         ],
+
+        // === MÓDULO DE GESTIÓN ACADÉMICA ===
         [
-            'text' => 'Evaluaciones de Desempeño',
-            'url'  => 'performance-evaluations',
-            'icon' => 'fas fa-user-check',
-            'active' => ['performance-evaluations*'],
-            'classes' => 'menu-item'
-        ],
-        [
-            'text' => 'Encuestas Institucionales',
-            'icon' => 'fas fa-poll',
-            'classes' => 'menu-item',
-            // 'can'  => 'admin',  // Temporalmente desactivado para debug
-            'active' => ['surveys*', 'encuestas*'],
+            'text' => '🎓 Gestión Académica',
+            'icon' => 'fas fa-graduation-cap',
+            'can'  => 'view.salidas',
             'submenu' => [
                 [
-                    'text' => 'Cliente Interno',
+                    'text' => '🚌 Salidas Pedagógicas',
+                    'icon' => 'fas fa-bus',
+                    'active' => ['salidas*'],
+                    'submenu' => [
+                        [
+                            'text' => 'Nueva Salida',
+                            'url'  => 'salidas/create',
+                            'icon' => 'fas fa-plus',
+                        ],
+                        [
+                            'text' => 'Mis Salidas',
+                            'url'  => 'salidas',
+                            'icon' => 'fas fa-list',
+                        ],
+                    ],
+                ],
+                [
+                    'text' => '📅 Eventos Institucionales',
+                    'icon' => 'fas fa-calendar-alt',
+                    'active' => ['events*'],
+                    'submenu' => [
+                        [
+                            'text' => 'Nuevo Evento',
+                            'url'  => 'events/create',
+                            'icon' => 'fas fa-plus',
+                            'can' => 'view.events',
+                        ],
+                        [
+                            'text' => 'Lista de Eventos',
+                            'url'  => 'events',
+                            'icon' => 'fas fa-list',
+                            'can' => 'view.events',
+                        ],
+                        [
+                            'text' => 'Calendario',
+                            'url'  => 'events/calendar',
+                            'icon' => 'fas fa-calendar',
+                            'can' => 'view.calendar',
+                        ],
+                    ],
+                ],
+                [
+                    'text' => '🏢 Reserva de Espacios',
+                    'icon' => 'fas fa-building',
+                    'can'  => 'view.space-reservations',
+                    'active' => ['space-reservations*', 'spaces*', 'school-cycles*', 'holidays*', 'space-blocks*'],
+                    'submenu' => [
+                        [
+                            'text' => 'Nueva Reserva',
+                            'url'  => 'space-reservations/create',
+                            'icon' => 'fas fa-plus-circle',
+                        ],
+                        [
+                            'text' => 'Mis Reservas',
+                            'url'  => 'space-reservations',
+                            'icon' => 'fas fa-bookmark',
+                        ],
+                        [
+                            'text' => 'Calendario',
+                            'url'  => 'space-reservations/calendar',
+                            'icon' => 'fas fa-calendar',
+                        ],
+                    ],
+                ],
+                [
+                    'text' => '⭐ Evaluación Desempeño',
+                    'url'  => 'performance-evaluations',
+                    'icon' => 'fas fa-user-check',
+                    'active' => ['performance-evaluations*'],
+                ],
+            ],
+        ],
+
+        // === MÓDULO DE ALMACÉN Y COMPRAS ===
+        [
+            'text' => '📦 Almacén y Compras',
+            'icon' => 'fas fa-warehouse',
+            'can' => 'almacen',
+            'active' => ['proveedores*', 'evaluaciones*', 'quotations*', 'quotation-approvals*', 'approvals*', 'purchase-orders*', 'inventory*', 'copies-requests*'],
+            'submenu' => [
+                [
+                    'text' => '🏪 Proveedores',
+                    'url'  => 'proveedores',
+                    'icon' => 'fas fa-store',
+                    'can' => 'listado-proveedores',
+                    'active' => ['proveedores*']
+                ],
+                [
+                    'text' => '💰 Cotizaciones',
+                    'url'  => 'quotations',
+                    'icon' => 'fas fa-file-invoice-dollar',
+                    'can' => 'cotizaciones',
+                    'active' => ['quotations*'],
+                ],
+                [
+                    'text' => '✅ Aprobaciones',
+                    'icon' => 'fas fa-check-circle',
+                    'active' => ['quotation-approvals*', 'approvals*'],
+                    'submenu' => [
+                        [
+                            'text' => 'Preaprobaciones',
+                            'url'  => 'quotation-approvals',
+                            'icon' => 'fas fa-clock',
+                            'can' => 'preaprobaciones',
+                        ],
+                        [
+                            'text' => 'Aprobaciones Finales',
+                            'url'  => 'approvals',
+                            'icon' => 'fas fa-thumbs-up',
+                            'can' => 'aprobaciones',
+                        ],
+                    ],
+                ],
+                [
+                    'text' => '📋 Órdenes de Compra',
+                    'url'  => 'purchase-orders',
+                    'icon' => 'fas fa-file-invoice',
+                    'can' => 'ordenes_compra',
+                    'active' => ['purchase-orders*']
+                ],
+                [
+                    'text' => '📦 Inventario',
+                    'url'  => 'inventory',
+                    'icon' => 'fas fa-boxes',
+                    'can'  => 'inventario.view',
+                    'active' => ['inventory*'],
+                ],
+                [
+                    'text' => '📄 Fotocopias',
+                    'url'  => 'copies-requests',
+                    'icon' => 'fas fa-copy',
+                    'can' => 'fotocopias_list',
+                    'active' => ['copies-requests*']
+                ],
+            ],
+        ],
+
+        // === MÓDULO DE ENCUESTAS ===
+        [
+            'text' => '📊 Encuestas',
+            'icon' => 'fas fa-poll',
+            'active' => ['surveys*'],
+            'submenu' => [
+                [
+                    'text' => '👔 Cliente Interno',
                     'icon' => 'fas fa-user-tie',
-                    'classes' => 'submenu-item',
                     'submenu' => [
                         [
                             'text' => 'Almacén',
                             'url'  => 'surveys/internal-client/warehouse',
                             'icon' => 'fas fa-warehouse',
-                            'active' => ['surveys/internal-client/warehouse*'],
                         ],
                         [
                             'text' => 'Enfermería',
                             'url'  => 'surveys/internal-client/enfermeria',
                             'icon' => 'fas fa-user-nurse',
-                            'active' => ['surveys/internal-client/enfermeria*'],
                         ],
                         [
                             'text' => 'Sistemas',
                             'url'  => 'surveys/internal-client/systems',
                             'icon' => 'fas fa-desktop',
-                            'active' => ['surveys/internal-client/systems*'],
                         ],
                     ],
                 ],
                 [
-                    'text' => 'Servicios Complementarios',
+                    'text' => '🤝 Servicios Complementarios',
+                    'url'  => 'surveys/complementary-services/transport',
                     'icon' => 'fas fa-handshake',
-                    'classes' => 'submenu-item',
-                    'submenu' => [
-                        [
-                            'text' => 'Cafetería y Transporte',
-                            'url'  => 'surveys/complementary-services/transport',
-                            'icon' => 'fas fa-bus',
-                            'active' => ['surveys/complementary-services/transport*'],
-                        ],
-                    ],
+                    'active' => ['surveys/complementary-services*'],
                 ],
                 [
-                    'text' => 'Padres de Familia y/o Estudiantes',
+                    'text' => '👨‍👩‍👧‍👦 Padres y Estudiantes',
+                    'url'  => 'surveys/parent-student',
                     'icon' => 'fas fa-users',
-                    'classes' => 'submenu-item',
-                    'submenu' => [
-                        [
-                            'text' => 'Cafetería y Transporte',
-                            'url'  => 'surveys/parent-student',
-                            'icon' => 'fas fa-utensils',
-                            'active' => ['surveys/parent-student*'],
-                        ],
-                    ],
+                    'active' => ['surveys/parent-student*'],
                 ],
             ],
         ],
-        [
-            'text' => 'Reserva de Equipos',
-            'icon' => 'fas fa-laptop',
-            'classes' => 'menu-item',
-            'active' => ['equipment', 'equipment/inventory', 'equipment/create', 'equipment/*/edit', 'equipment/request', 'equipment/loans'], // More specific pattern excluding dashboard routes
-            'submenu' => [
-                [
-                    'text' => 'Inventario Inicial',
-                    'url'  => 'equipment/inventory',
-                    'icon' => 'fas fa-clipboard-list',
-                    'can'  => 'equipment.manage',
-                    'active' => ['equipment/inventory'], // Añadido
-                ],
-                [
-                    'text' => 'Gestionar Inventario',
-                    'url'  => 'equipment',
-                    'icon' => 'fas fa-boxes',
-                    'can'  => 'equipment.inventory',
-                    'active' => ['equipment'], // Añadido
-                ],
-                [
-                    'text' => 'Solicitar Préstamo',
-                    'url'  => 'equipment/request',
-                    'icon' => 'fas fa-hand-holding',
-                    'can'  => 'equipment.reserva',
-                    'active' => ['equipment/request'], // Añadido
-                ],
-                [
-                    'text' => 'Ver Préstamos',
-                    'url'  => 'equipment/loans',
-                    'icon' => 'fas fa-list',
-                    'can'  => 'view.reservas',
-                    'active' => ['equipment/loans'], // Añadido
-                ],
-            ],
-        ],
-        // [
-        //     'text' => 'Solicitudes de Mantenimiento',
-        //     'url'  => 'maintenance',
-        //     'icon' => 'fas fa-tools',
-        //     'can'  => 'view.maintenance',
-        //     'active' => ['maintenance', 'maintenance/create', 'maintenance/*/edit', 'regex:@^maintenance/[0-9]+$@'], // Exclude dashboard routes
-        //     'classes' => 'menu-item'
-        // ],
 
+        // === MÓDULO ADMINISTRATIVO ===
         [
-            'text' => 'Proceso Administrativo',  // Changed from 'Gestión Administrativa' to 'Proceso Administrativo'
+            'text' => '🏢 Administración',
             'icon' => 'fas fa-building',
-            'classes' => 'menu-item parent',
             'submenu' => [
                 [
-                    'text' => 'KPI´S',  // Changed from 'KPI´S Administrativos' to 'KPI´S'
+                    'text' => '📈 KPIs e Indicadores',
                     'icon' => 'fas fa-chart-line',
                     'can'  => 'view.kpis',
-                    'classes' => 'submenu-item',
                     'submenu' => [
                         [
-                            'text'    => 'Enfermería',
-                            'icon'    => 'fas fa-heartbeat',
+                            'text' => '❤️ Enfermería',
+                            'icon' => 'fas fa-heartbeat',
                             'submenu' => [
                                 [
                                     'text' => 'Crear KPI',
                                     'url'  => 'enfermeria/kpis/create',
-                                    'icon' => 'fas fa-plus-square',
+                                    'icon' => 'fas fa-plus',
                                     'can' => 'kpis.enfermeria.create',
-
                                 ],
                                 [
-                                    'text' => 'Ver KPI',
+                                    'text' => 'Ver KPIs',
                                     'url'  => 'enfermeria/kpis',
                                     'icon' => 'fas fa-chart-bar',
                                     'can' => 'kpis.enfermeria.index',
                                 ],
                                 [
-                                    'text' => 'Crear Indicador',
-                                    'url'  => 'enfermeria/umbral/create',
-                                    'icon' => 'fas fa-sliders-h',
-                                    'can' => 'umbral.enfermeria.create',
-                                ],
-                                [
                                     'text' => 'Indicadores',
                                     'url'  => 'enfermeria/umbral/show',
-                                    'icon' => 'fas fa-list-alt',
+                                    'icon' => 'fas fa-sliders-h',
                                     'can' => 'umbral.enfermeria.show',
                                 ],
                             ],
                         ],
                         [
-                            'text'    => 'Compras',
-                            'icon'    => 'fas fa-shopping-cart',
+                            'text' => '🛒 Compras',
+                            'icon' => 'fas fa-shopping-cart',
                             'submenu' => [
                                 [
                                     'text' => 'Crear KPI',
                                     'url'  => 'compras/kpis/create',
-                                    'icon' => 'fas fa-plus-square',
+                                    'icon' => 'fas fa-plus',
                                     'can' => 'kpis.compras.create',
                                 ],
                                 [
-                                    'text' => 'Ver KPI',
+                                    'text' => 'Ver KPIs',
                                     'url'  => 'compras/kpis',
                                     'icon' => 'fas fa-chart-bar',
                                     'can' => 'kpis.compras.index',
                                 ],
                                 [
-                                    'text' => 'Crear Indicador',
-                                    'url'  => 'compras/umbral/create',
-                                    'icon' => 'fas fa-sliders-h',
-                                    'can' => 'umbral.compras.create',
-                                ],
-                                [
                                     'text' => 'Indicadores',
                                     'url'  => 'compras/umbral/show',
-                                    'icon' => 'fas fa-list-alt',
+                                    'icon' => 'fas fa-sliders-h',
                                     'can' => 'umbral.compras.show',
                                 ],
                             ],
                         ],
                         [
-                            'text'    => 'Recursos Humanos',
-                            'icon'    => 'fas fa-users',
+                            'text' => '👥 Recursos Humanos',
+                            'icon' => 'fas fa-users',
                             'submenu' => [
                                 [
                                     'text' => 'Crear KPI',
                                     'url'  => 'rrhh/kpis/create',
-                                    'icon' => 'fas fa-plus-square',
+                                    'icon' => 'fas fa-plus',
                                     'can' => 'kpis.recursoshumanos.create',
                                 ],
                                 [
-                                    'text' => 'Ver KPI',
+                                    'text' => 'Ver KPIs',
                                     'url'  => 'rrhh/kpis',
                                     'icon' => 'fas fa-chart-bar',
                                     'can' => 'kpis.recursoshumanos.index',
                                 ],
                                 [
-                                    'text' => 'Crear Indicador',
-                                    'url'  => 'rrhh/umbral/create',
-                                    'icon' => 'fas fa-sliders-h',
-                                    'can' => 'umbral.recursoshumanos.create',
-                                ],
-                                [
                                     'text' => 'Indicadores',
                                     'url'  => 'rrhh/umbral/show',
-                                    'icon' => 'fas fa-list-alt',
+                                    'icon' => 'fas fa-sliders-h',
                                     'can' => 'umbral.recursoshumanos.show',
                                 ],
                             ],
                         ],
                         [
-                            'text'    => 'Sistemas',
-                            'icon'    => 'fas fa-laptop-code',
+                            'text' => '💻 Sistemas',
+                            'icon' => 'fas fa-laptop-code',
                             'submenu' => [
                                 [
                                     'text' => 'Crear KPI',
                                     'url'  => 'sistemas/kpis/create',
-                                    'icon' => 'fas fa-plus-square',
+                                    'icon' => 'fas fa-plus',
                                     'can' => 'kpis.sistemas.create',
                                 ],
                                 [
-                                    'text' => 'Ver KPI',
+                                    'text' => 'Ver KPIs',
                                     'url'  => 'sistemas/kpis',
                                     'icon' => 'fas fa-chart-bar',
                                     'can' => 'kpis.sistemas.index',
                                 ],
                                 [
-                                    'text' => 'Crear Indicador',
-                                    'url'  => 'sistemas/umbral/create',
-                                    'icon' => 'fas fa-sliders-h',
-                                    'can' => 'umbral.sistemas.create',
-                                ],
-                                [
                                     'text' => 'Indicadores',
                                     'url'  => 'sistemas/umbral/index',
-                                    'icon' => 'fas fa-list-alt',
+                                    'icon' => 'fas fa-sliders-h',
                                     'can' => 'umbral.sistemas.index',
                                 ],
                             ],
-
                         ],
                         [
-                            'text'    => 'Contabilidad',
-                            'icon'    => 'fas fa-calculator',
+                            'text' => '🧮 Contabilidad',
+                            'icon' => 'fas fa-calculator',
                             'can'     => 'view.budget',
                             'submenu' => [
                                 [
@@ -620,349 +685,218 @@ return [
                                 [
                                     'text' => 'Recaudo de Cartera',
                                     'url'  => 'contabilidad/cartera',
-                                    'icon' => 'fas fa-money-bill',
+                                    'icon' => 'fas fa-coins',
                                 ],
                             ],
                         ],
                     ],
                 ],
-
                 [
-                    'text' => 'Consolidado Previsitas',
-                    'url'  => 'previsitas',
-                    'icon' => 'fas fa-list',
-                    'can'  => 'previsitas.view',
-                    'active' => ['previsitas', 'previsitas/*'],
-                ],
-
-                [
-                    'text' => 'Gestión Documental',
+                    'text' => '🗂️ Gestión Documental',
                     'icon' => 'fas fa-file-pdf',
-                    'classes' => 'submenu-item',
                     'can'  => 'documents-general-access',
                     'submenu' => [
                         [
-                            'text' => 'Gestión Documental - Enfermería',
+                            'text' => '❤️ Enfermería',
                             'url'  => 'enfermeria/documents',
                             'icon' => 'fas fa-heartbeat',
-                            'active' => ['enfermeria/documents', 'enfermeria/documents/*'],
                             'can' => 'documents-enfermeria',
                         ],
                         [
-                            'text' => 'Gestión Documental - Compras',
+                            'text' => '🛒 Compras',
                             'url'  => 'compras/documents',
                             'icon' => 'fas fa-shopping-cart',
-                            'active' => ['compras/documents', 'compras/documents/*'],
                             'can' => 'documents-compras',
                         ],
                         [
-                            'text' => 'Gestión Documental - RRHH',
+                            'text' => '👥 RRHH',
                             'url'  => 'rrhh/documents',
                             'icon' => 'fas fa-users',
-                            'active' => ['rrhh/documents', 'rrhh/documents/*'],
                             'can' => 'documents-rrhh',
                         ],
                         [
-                            'text' => 'Gestión Documental - Sistemas',
+                            'text' => '💻 Sistemas',
                             'url'  => 'sistemas/documents',
                             'icon' => 'fas fa-laptop-code',
-                            'active' => ['sistemas/documents', 'sistemas/documents/*'],
                             'can' => 'documents-sistemas',
                         ],
                         [
-                            'text' => 'Gestión Documental - Contabilidad',
+                            'text' => '🧮 Contabilidad',
                             'url'  => 'contabilidad/documents',
                             'icon' => 'fas fa-calculator',
-                            'active' => ['contabilidad/documents', 'contabilidad/documents/*'],
                             'can' => 'documents-contabilidad',
                         ],
                         [
-                            'text' => 'Institucional',
+                            'text' => '🏢 Institucional',
                             'url'  => 'institucional/documents',
                             'icon' => 'fas fa-building',
-                            'active' => ['institucional/documents', 'institucional/documents/*'],
                             'can' => 'institucional-access',
                         ],
                     ],
                 ],
-            ],
-        ],
-        // Mantener el resto de los items existentes
-        [
-            'text' => 'Almacén',
-            'icon' => 'fas fa-warehouse',
-            'can' => 'almacen',
-            'submenu' => [
                 [
-                    'text' => 'Listado de Proveedores',
-                    'url'  => 'proveedores',
-                    'icon' => 'fas fa-list',
-                    'can' => 'listado-proveedores',
-                    'active' => ['proveedores', 'proveedores/*','proveedores/*/'] // Activa para todas las rutas de proveedores
+                    'text' => '🗺️ Previsitas',
+                    'url'  => 'previsitas',
+                    'icon' => 'fas fa-map-marker-alt',
+                    'can'  => 'previsitas.view',
+                    'active' => ['previsitas*'],
                 ],
                 [
-                    'text' => 'Evaluación Proveedores',
-                    'url'  => 'evaluaciones',
-                    'icon' => 'fas fa-star',
-                    'can' => 'evaluacion-proveedores',
-                    'active' => ['evaluaciones*'] // Activa para todas las rutas de evaluaciones
-                ],
-                [
-                    'text' => 'Solicitudes de Compra',
-                    'url'  => 'purchase-requests',
-                    'icon' => 'fas fa-shopping-cart',
-                    'can' => 'solicitudes_compra',
-                    'active' => ['purchase-requests', 'purchase-requests/purchase-form-type/purchase','purchase-form-type/purchase','purchase-form-type/materials','purchase-requests/create','purchase-requests/create/purchase','purchase-requests/create/materials','purchase-requests/*'], // Activa para todas las rutas de solicitudes de compra
-                ],
-                [
-                    'text' => 'Cotizaciones',
-                    'url'  => 'quotations',
-                    'icon' => 'fas fa-file-invoice-dollar',
-                    'can' => 'cotizaciones',
-                    'active' => ['quotations*','purchase-requests/*/quotations/create'], // Activa para todas las rutas de cotizaciones
-                ],
-                [
-                    'text' => 'Preaprobaciones',
-                    'url'  => 'quotation-approvals',
-                    'icon' => 'fas fa-check-circle',
-                    'can' => 'preaprobaciones',
-                    'active' => ['quotation-approvals*'] // Activa para todas las rutas de preaprobaciones
-                ],
-                [
-                    'text' => 'Aprobaciones',
-                    'url'  => 'approvals',
-                    'icon' => 'fas fa-thumbs-up',
-                    'can' => 'aprobaciones',
-                    'active' => ['approvals*'] // Activa para todas las rutas de aprobaciones
-                ],
-                [
-                    'text' => 'Órdenes de Compra',
-                    'url'  => 'purchase-orders',
-                    'icon' => 'fas fa-file-invoice',
-                    'can' => 'ordenes_compra',
-                    'active' => ['purchase-orders*'] // Activa para todas las rutas de órdenes de compra
-                ],
-                [
-                    'text' => 'Inventario',
-                    'url'  => 'inventory',
-                    'icon' => 'fas fa-boxes',
-                    'can'  => 'inventario.view',
-                    'active' => ['inventory*'],
-                ],
-                [
-                    'text' => 'Listado de Fotocopias',
-                    'url'  => 'copies-requests',
-                    'icon' => 'fas fa-copy',
-                    'can' => 'fotocopias_list',
-                    'active' => ['copies-requests*']
-                ],
-            ],
-        ],
-        [
-            'text' => 'Salidas y Eventos',
-            'icon' => 'fas fa-bus',
-            'active' => ['salidas*', 'events', 'events/create', 'events/*/edit', 'events/calendar','events/*/novelties','events/*/novelties/create'], // Updated to include all routes related to events
-            'can'  => 'view.salidas',
-            'submenu' => [
-                [
-                    'text' => 'Nueva Salida',
-                    'url'  => 'salidas/create',
-                    'icon' => 'fas fa-plus',
-                ],
-                [
-                    'text' => 'Gestionar Salidas',
-                    'url'  => 'salidas',
-                    'icon' => 'fas fa-list',
-                ],
-                [
-                    'text' => 'Eventos',
-                    'url'  => 'events',
-                    'icon' => 'fas fa-calendar-plus',
-                    'can' => 'view.events',
-                    'active' => ['events', 'events/create', 'events/*/edit', 'events/*'], // Add this line to keep it active when creating/editing
-                ],
-                [
-                    'text' => 'Calendario de Eventos',
-                    'url'  => 'events/calendar',
-                    'active' => ['events/calendar'],
-                    'icon' => 'fas fa-calendar',
-                    'can' => 'view.calendar',
+                    'text' => '💰 Presupuesto',
+                    'url'  => 'presupuesto',
+                    'icon' => 'fas fa-calculator',
+                    'can'  => 'admin',
+                    'active' => ['presupuesto*'],
                 ],
             ],
         ],
 
+        // === MÓDULO DE INFORMES ===
         [
-            'text'    => 'Informes',
-            'icon'    => 'fas fa-chart-bar',
-            'can'     => 'view.reports',
+            'text' => '📊 Informes y Reportes',
+            'icon' => 'fas fa-chart-bar',
+            'can'  => 'view.reports',
             'submenu' => [
                 [
-                    'text' => 'Informe Help-Desk',
+                    'text' => '🎫 Help-Desk',
                     'url'  => 'tickets/dashboard',
-                    'active' => ['tickets/dashboard', 'tickets/dashboard/*'], // Only activate for dashboard routes
                     'icon' => 'fas fa-ticket-alt',
+                    'active' => ['tickets/dashboard*'],
                 ],
                 [
-                    'text' => 'Informe Mantenimiento',
+                    'text' => '🔧 Mantenimiento',
                     'url'  => 'maintenance/dashboard',
-                    'active' => ['maintenance/dashboard', 'maintenance/dashboard/*'], // Only dashboard routes
                     'icon' => 'fas fa-tools',
+                    'active' => ['maintenance/dashboard*'],
                 ],
                 [
-                    'text' => 'Informe Biométrico',
+                    'text' => '⏰ Biométrico',
                     'url'  => 'attendance/dashboard/actual',
-                    'active' => ['attendance/dashboard*'], // More specific to dashboard routes only
                     'icon' => 'fas fa-clock',
+                    'active' => ['attendance/dashboard*'],
                 ],
                 [
-                    'text' => 'Biométrico Semanal',
+                    'text' => '📅 Biométrico Semanal',
                     'url'  => 'weekly-biometric/dashboard',
-                    'active' => ['weekly-biometric/dashboard*'], // More specific to dashboard routes only
                     'icon' => 'fas fa-chart-pie',
+                    'active' => ['weekly-biometric/dashboard*'],
                 ],
                 [
-                    'text' => 'Informe Ausentismos',
+                    'text' => '😷 Ausentismos',
                     'url'  => 'ausentismos/dashboard',
-                    'active' => ['ausentismos/dashboard*'], // More specific to dashboard routes only
-                    'icon' => 'fas fa-chart-bar',
+                    'icon' => 'fas fa-user-slash',
+                    'active' => ['ausentismos/dashboard*'],
                 ],
                 [
-                    'text' => 'Informe de Eventos',
+                    'text' => '📅 Eventos',
                     'url'  => 'events/dashboard',
-                    'active' => ['events/dashboard'], // More specific pattern
                     'icon' => 'fas fa-calendar-check',
+                    'active' => ['events/dashboard*'],
                 ],
                 [
-                    'text' => 'Informe de KPIs',
+                    'text' => '📈 KPIs',
                     'url'  => 'admin/kpis/report',
+                    'icon' => 'fas fa-chart-line',
                     'active' => ['admin/kpis*'],
-                    'icon' => 'fa fa-chart-line',
                 ],
                 [
-                    'text' => 'Informe Préstamo de Equipos',
+                    'text' => '💻 Equipos',
                     'url'  => 'equipment/dashboard',
-                    'active' => ['equipment/dashboard', 'equipment/dashboard/*'], // Only dashboard routes
                     'icon' => 'fas fa-laptop',
+                    'active' => ['equipment/dashboard*'],
                 ],
                 [
-                    'text' => 'Informe Fotocopias',
+                    'text' => '📄 Fotocopias',
                     'url'  => 'photocopies/dashboard',
-                    'active' => ['photocopies/dashboard', 'photocopies/dashboard/*'],
                     'icon' => 'fas fa-print',
+                    'active' => ['photocopies/dashboard*'],
                 ],
             ],
-
-        ],
-         [
-             'text' => 'Presupuesto',
-             'url'  => 'presupuesto',
-             'icon' => 'fas fa-calculator',
-             'can'  => 'admin',
-             'active' => ['presupuesto'],
-         ],
-        [
-            'text' => 'Perfil',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-user',
-        ],
-        [
-            'text' => 'Usuarios',
-            'url'  => 'admin/users',
-            'icon' => 'fas fa-users',
-            'can' => 'view.users',
-            'active' => ['admin/users', 'admin/users/*', 'admin/users/create'], // Added active pattern for user creation
-        ],
-        [
-            'text' => 'Cambiar de Usuario',
-            'url'  => 'admin/users',
-            'icon' => 'fas fa-user-secret',
-            'can'  => 'inpersonate', // Change from 'impersonate' to 'inpersonate' to match the permission in RolesAndPermissionsSeeder
-            'active' => ['impersonate/*'],
-        ],
-        [
-            'text' => 'Roles y Permisos',
-            'url'  => 'admin/roles',
-            'icon' => 'fas fa-user-shield',
-            'can' => 'view.roles',
-            'active' => ['admin/roles', 'admin/roles/*', 'admin/roles/create'], // Added active pattern for role creation
         ],
 
-         [
-            'text' => 'Subida de Información',
-            'icon' => 'fas fa-upload',
-            'can' => 'view.upload',
-            'active' => ['attendance/upload', 'weekly-biometric', 'ausentismos/upload'],
-            'submenu' => [
-                [
-                    'text' => 'Subir Informe Biometrico',
-                    'url'  => 'attendance/upload',
-                    'active' => ['attendance/upload*'], // More specific to upload routes only
-                    'icon' => 'fas fa-upload',
-                ],
-                [
-                    'text' => 'Subir Informe Biometrico Semanal',
-                    'url'  => 'weekly-biometric',
-                    'active' => ['weekly-biometric', 'weekly-biometric/upload*'], // More specific excluding dashboard routes
-                    'icon' => 'fas fa-calendar-week',
-                ],
-                 [
-                    'text' => 'Subir Informe Ausentismos',
-                    'url'  => 'ausentismos/upload',
-                    'active' => ['ausentismos/upload*'], // More specific to upload routes only
-                    'icon' => 'fas fa-upload',
-                ],
-            ],
-         ],
+        // === MÓDULO DE CONFIGURACIÓN ===
         [
-            'text' => 'Avisos Importantes',
-            'icon' => 'fas fa-bullhorn',
-            'can' => 'view.announcements',
+            'text' => '⚙️ Configuración',
+            'icon' => 'fas fa-cogs',
             'submenu' => [
                 [
-                    'text' => 'Crear Aviso',
-                    'url'  => 'announcements/create',
-                    'icon' => 'fas fa-plus',
+                    'text' => '👤 Mi Perfil',
+                    'url' => 'admin/settings',
+                    'icon' => 'fas fa-user',
                 ],
                 [
-                    'text' => 'Gestionar Avisos',
-                    'url'  => 'announcements',
-                    'icon' => 'fas fa-list',
-                ],
-            ],
-        ],
-        [
-            'text' => 'Reserva de Espacios',
-            'icon' => 'fas fa-calendar-alt',
-            'can'  => 'view.space-reservations',
-            'submenu' => [
-                [
-                    'text' => 'Calendario de Reservas',
-                    'url'  => 'space-reservations/calendar',
-                    'icon' => 'fas fa-calendar',
-                    'active' => ['space-reservations/calendar*'],
+                    'text' => '👥 Usuarios',
+                    'url'  => 'admin/users',
+                    'icon' => 'fas fa-users',
+                    'can' => 'view.users',
+                    'active' => ['admin/users*'],
                 ],
                 [
-                    'text' => 'Mis Reservas',
-                    'url'  => 'space-reservations',
-                    'icon' => 'fas fa-bookmark',
-                    'active' => ['space-reservations', 'space-reservations/*/edit'],
+                    'text' => '🔄 Cambiar Usuario',
+                    'url'  => 'admin/users',
+                    'icon' => 'fas fa-user-secret',
+                    'can'  => 'inpersonate',
+                    'active' => ['impersonate/*'],
                 ],
                 [
-                    'text' => 'Nueva Reserva',
-                    'url'  => 'space-reservations/create',
-                    'icon' => 'fas fa-plus-circle',
-                    'active' => ['space-reservations/create'],
+                    'text' => '🛡️ Roles y Permisos',
+                    'url'  => 'admin/roles',
+                    'icon' => 'fas fa-user-shield',
+                    'can' => 'view.roles',
+                    'active' => ['admin/roles*'],
                 ],
                 [
-                    'text' => 'Administración',
-                    'icon' => 'fas fa-cog',
+                    'text' => '📤 Subir Información',
+                    'icon' => 'fas fa-upload',
+                    'can' => 'view.upload',
+                    'submenu' => [
+                        [
+                            'text' => 'Biométrico Diario',
+                            'url'  => 'attendance/upload',
+                            'icon' => 'fas fa-clock',
+                            'active' => ['attendance/upload*'],
+                        ],
+                        [
+                            'text' => 'Biométrico Semanal',
+                            'url'  => 'weekly-biometric',
+                            'icon' => 'fas fa-calendar-week',
+                            'active' => ['weekly-biometric*'],
+                        ],
+                        [
+                            'text' => 'Ausentismos',
+                            'url'  => 'ausentismos/upload',
+                            'icon' => 'fas fa-user-slash',
+                            'active' => ['ausentismos/upload*'],
+                        ],
+                    ],
+                ],
+                [
+                    'text' => '📢 Avisos',
+                    'icon' => 'fas fa-bullhorn',
+                    'can' => 'view.announcements',
+                    'submenu' => [
+                        [
+                            'text' => 'Crear Aviso',
+                            'url'  => 'announcements/create',
+                            'icon' => 'fas fa-plus',
+                        ],
+                        [
+                            'text' => 'Gestionar Avisos',
+                            'url'  => 'announcements',
+                            'icon' => 'fas fa-list',
+                        ],
+                    ],
+                ],
+                [
+                    'text' => '🏢 Espacios (Admin)',
+                    'icon' => 'fas fa-building',
                     'can'  => 'admin.spaces',
                     'submenu' => [
                         [
-                            'text' => 'Espacios',
+                            'text' => 'Gestionar Espacios',
                             'url'  => 'spaces',
                             'icon' => 'fas fa-building',
-                            'active' => ['spaces', 'spaces/create', 'spaces/*/edit'],
+                            'active' => ['spaces*'],
                         ],
                         [
                             'text' => 'Ciclos Escolares',
@@ -977,7 +911,7 @@ return [
                             'active' => ['holidays*'],
                         ],
                         [
-                            'text' => 'Bloqueos de Espacios',
+                            'text' => 'Bloqueos',
                             'url'  => 'space-blocks',
                             'icon' => 'fas fa-ban',
                             'active' => ['space-blocks*'],
@@ -990,25 +924,40 @@ return [
                         ],
                     ],
                 ],
-            ],
-        ],
-        [
-            'text' => 'Configuración',
-            'icon' => 'fas fa-cogs',
-            'can'  => 'manage.configuration',
-            'submenu' => [
                 [
-                    'text' => 'Notificaciones',
+                    'text' => '💻 Equipos (Admin)',
+                    'icon' => 'fas fa-laptop',
+                    'can'  => 'equipment.manage',
+                    'submenu' => [
+                        [
+                            'text' => 'Inventario Inicial',
+                            'url'  => 'equipment/inventory',
+                            'icon' => 'fas fa-clipboard-list',
+                            'active' => ['equipment/inventory*'],
+                        ],
+                        [
+                            'text' => 'Gestionar Equipos',
+                            'url'  => 'equipment',
+                            'icon' => 'fas fa-boxes',
+                            'active' => ['equipment*'],
+                        ],
+                    ],
+                ],
+                [
+                    'text' => '🔧 Configuración General',
                     'url'  => 'admin/configuration',
-                    'icon' => 'fas fa-envelope',
+                    'icon' => 'fas fa-sliders-h',
+                    'can'  => 'manage.configuration',
                 ],
             ],
         ],
+
+        // === AYUDA ===
         [
-            'text' => 'Ayuda',
+            'text' => '❓ Ayuda',
             'url'  => 'help-videos',
             'icon' => 'fas fa-question-circle',
-            'active' => ['help-videos*'], // Activa para todas las rutas de videos de ayuda
+            'active' => ['help-videos*'],
         ],
     ],
 
@@ -1226,5 +1175,10 @@ return [
     // Add custom CSS files
     'css' => [
         'css/custom-sidebar.css',
+    ],
+
+    // Add custom JS files
+    'js' => [
+        'js/menu-enhancements.js',
     ],
 ];
