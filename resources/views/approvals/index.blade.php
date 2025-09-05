@@ -175,7 +175,7 @@
 @section('css')
 <!-- DataTables CSS -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/3.4.0/css/fixedHeader.bootstrap4.min.css">
 
 <style>
     .card {
@@ -261,64 +261,63 @@
 <!-- DataTables JS -->
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/fixedheader/3.4.0/js/dataTables.fixedHeader.min.js"></script>
 
 <script>
     $(document).ready(function() {
         $('[data-toggle="tooltip"]').tooltip();
         
-        // Inicializar DataTables con filtros de columna
-        var table = $('#approvalsTable').DataTable({
-            "language": {
-                "lengthMenu": "Mostrar _MENU_ registros por página",
-                "zeroRecords": "No se encontraron registros",
-                "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                "infoEmpty": "Mostrando 0 a 0 de 0 registros",
-                "infoFiltered": "(filtrado de _MAX_ registros totales)",
-                "search": "Buscar:",
-                "paginate": {
-                    "first": "Primero",
-                    "last": "Último",
-                    "next": "Siguiente",
-                    "previous": "Anterior"
+        // Ocultar temporalmente la fila de filtros para evitar problemas con DataTables
+        $('#approvalsTable thead tr:nth-child(2)').hide();
+        
+        // Verificar estructura de tabla antes de inicializar DataTables
+        console.log('Número de columnas en thead:', $('#approvalsTable thead tr:first th').length);
+        console.log('Número de columnas en tbody tr:first:', $('#approvalsTable tbody tr:first td').length);
+        
+        // Inicializar DataTables con configuración simplificada
+        try {
+            var table = $('#approvalsTable').DataTable({
+                "destroy": true, // Permitir reinicialización
+                "language": {
+                    "lengthMenu": "Mostrar _MENU_ registros por página",
+                    "zeroRecords": "No se encontraron registros",
+                    "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                    "infoFiltered": "(filtrado de _MAX_ registros totales)",
+                    "search": "Buscar:",
+                    "paginate": {
+                        "first": "Primero",
+                        "last": "Último",
+                        "next": "Siguiente",
+                        "previous": "Anterior"
+                    },
+                    "emptyTable": "No hay datos disponibles en la tabla"
                 },
-                "emptyTable": "No hay datos disponibles en la tabla"
-            },
-            "pageLength": 25,
-            "responsive": false, // Desactivar responsive para mantener todas las columnas visibles
-            "autoWidth": false,
-            "scrollX": true, // Permitir scroll horizontal si es necesario
-            "order": [[3, 'desc']], // Ordenar por fecha por defecto
-            "columnDefs": [
-                { "orderable": false, "targets": 8 }, // Desactivar ordenamiento en columna de acciones
-                { "width": "10%", "targets": 0 }, // No. Solicitud
-                { "width": "15%", "targets": 1 }, // Solicitante
-                { "width": "10%", "targets": 2 }, // Área/Sección
-                { "width": "10%", "targets": 3 }, // Fecha
-                { "width": "8%", "targets": 4 },  // Tipo
-                { "width": "12%", "targets": 5 }, // Pre-aprobada por
-                { "width": "15%", "targets": 6 }, // Cotización
-                { "width": "10%", "targets": 7 }, // Monto
-                { "width": "10%", "targets": 8 }  // Acciones
-            ],
-            "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
-            "initComplete": function () {
-                // Configurar filtros por columna
-                this.api().columns().every(function (index) {
-                    if (index === 8) return; // Saltar columna de acciones
-                    
-                    var column = this;
-                    var input = $('thead tr:eq(1) th:eq(' + index + ') input, thead tr:eq(1) th:eq(' + index + ') select');
-                    
-                    input.on('keyup change clear', function () {
-                        if (column.search() !== this.value) {
-                            column.search(this.value).draw();
-                        }
-                    });
-                });
-            }
-        });
+                "pageLength": 25,
+                "scrollX": true,
+                "order": [[3, 'desc']], // Ordenar por fecha por defecto
+                "columnDefs": [
+                    { "orderable": false, "targets": 8 } // Desactivar ordenamiento en columna de acciones
+                ],
+                            "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip'
+            });
+
+        } catch (error) {
+            console.error('Error al inicializar DataTables:', error);
+            // Fallback: ocultar la segunda fila del thead si hay error
+            $('#approvalsTable thead tr:nth-child(2)').hide();
+            alert('Error al cargar los filtros de la tabla. La tabla funcionará sin filtros avanzados.');
+        }
+
+        // Ocultar los filtros antiguos del formulario ya que ahora usamos DataTables
+        $('.form-inline').hide();
+
+        } catch (error) {
+            console.error('Error al inicializar DataTables:', error);
+            // Fallback: ocultar la segunda fila del thead si hay error
+            $('#approvalsTable thead tr:nth-child(2)').hide();
+            alert('Error al cargar los filtros de la tabla. La tabla funcionará sin filtros avanzados.');
+        }
 
         // Función para resaltar texto de búsqueda
         $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
