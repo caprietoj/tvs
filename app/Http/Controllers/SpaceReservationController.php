@@ -107,7 +107,15 @@ class SpaceReservationController extends Controller
             $validated['start_time'],
             $validated['end_time']
         )) {
-            return redirect()->back()->withInput()->with('error', 'Ya existe una reserva para este espacio en el horario seleccionado.');
+            // Obtener detalles del conflicto para mostrar un mensaje más específico
+            $conflictDetails = SpaceReservation::getConflictDetails(
+                $validated['space_id'],
+                $validated['date'],
+                $validated['start_time'],
+                $validated['end_time']
+            );
+            
+            return redirect()->back()->withInput()->with('error', $conflictDetails);
         }
         
         // Añadir el usuario que crea la reserva y establecer el estado como pendiente
@@ -638,6 +646,7 @@ class SpaceReservationController extends Controller
         
         // Obtener el día del ciclo
         $cycleDay = null;
+        $cycleDayBlocks = [];
         
         if ($activeCycle) {
             $cycleDayObj = CycleDay::where('school_cycle_id', $activeCycle->id)
@@ -646,6 +655,24 @@ class SpaceReservationController extends Controller
             
             if ($cycleDayObj) {
                 $cycleDay = $cycleDayObj->cycle_day;
+                
+                // Obtener bloqueos de día de ciclo
+                $cycleDayBlocksQuery = SpaceBlock::where('space_id', $spaceId)
+                    ->where('school_cycle_id', $activeCycle->id)
+                    ->where('cycle_day', $cycleDay)
+                    ->where('is_weekday_block', false)
+                    ->get();
+                
+                foreach ($cycleDayBlocksQuery as $block) {
+                    $cycleDayBlocks[] = [
+                        'id' => $block->id,
+                        'start' => substr($block->start_time, 0, 5),
+                        'end' => substr($block->end_time, 0, 5),
+                        'reason' => $block->reason ?: 'Bloqueo de día de ciclo',
+                        'type' => 'cycle_day',
+                        'cycle_day' => $cycleDay
+                    ];
+                }
             }
         }
         
@@ -657,6 +684,7 @@ class SpaceReservationController extends Controller
             'cycle_day' => $cycleDay,
             'reservations' => $reservations,
             'weekly_blocks' => $weeklyBlocks,
+            'cycle_day_blocks' => $cycleDayBlocks,
             'day_of_week' => ucfirst($dayOfWeek)  // Día de la semana en español
         ]);
     }

@@ -259,7 +259,8 @@
                                         </div>
                                         <div class="time-schedule-legend mt-2">
                                             <span class="legend-item"><span class="legend-color bg-success"></span> Disponible</span>
-                                            <span class="legend-item"><span class="legend-color bg-danger"></span> Bloqueado</span>
+                                            <span class="legend-item"><span class="legend-color bg-danger"></span> Bloqueo semanal</span>
+                                            <span class="legend-item"><span class="legend-color" style="background-color: #fd7e14;"></span> Bloqueo día de ciclo</span>
                                             <span class="legend-item"><span class="legend-color bg-warning"></span> Reservado</span>
                                             <span class="legend-item"><span class="legend-color bg-info"></span> Su selección</span>
                                         </div>
@@ -490,6 +491,18 @@
         border: 1px solid #bd2130;
     }
     
+    .time-block.cycle-blocked {
+        background-color: #fd7e14;
+        border: 1px solid #e8590c;
+        background-image: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 3px,
+            rgba(255,255,255,0.2) 3px,
+            rgba(255,255,255,0.2) 6px
+        );
+    }
+    
     .time-block.selected {
         background-color: #17a2b8;
         border: 1px solid #138496;
@@ -670,6 +683,36 @@
                             html: `<p><strong>Motivo:</strong> ${block.reason}</p>
                                    <p><strong>Estado:</strong> ${block.has_exception ? 'Excepción Aplicada' : 'Bloqueado'}</p>`,
                             icon: 'info'
+                        });
+                    });
+                    
+                    timeGrid.appendChild(blockEl);
+                });
+            }
+            
+            // Agregar bloques de bloqueo de día de ciclo
+            if (data.cycle_day_blocks && data.cycle_day_blocks.length > 0) {
+                data.cycle_day_blocks.forEach(block => {
+                    const startMinutes = timeToMinutes(block.start);
+                    const endMinutes = timeToMinutes(block.end);
+                    const duration = endMinutes - startMinutes;
+                    const startPercentage = (startMinutes / (11 * 60)) * 100;
+                    const heightPercentage = (duration / (11 * 60)) * 100;
+                    
+                    const blockEl = document.createElement('div');
+                    blockEl.className = 'time-block cycle-blocked';
+                    blockEl.style.top = `${startPercentage}%`;
+                    blockEl.style.height = `${heightPercentage}%`;
+                    blockEl.title = `${block.start} - ${block.end}: ${block.reason} (Día de ciclo ${block.cycle_day})`;
+                    blockEl.innerHTML = `${block.start} - ${block.end}: ${block.reason.substring(0, 15)}${block.reason.length > 15 ? '...' : ''}`;
+                    
+                    blockEl.addEventListener('click', function() {
+                        Swal.fire({
+                            title: `Bloqueo de Día de Ciclo: ${block.start} - ${block.end}`,
+                            html: `<p><strong>Motivo:</strong> ${block.reason}</p>
+                                   <p><strong>Día de ciclo:</strong> ${block.cycle_day}</p>
+                                   <p><strong>Tipo:</strong> Bloqueo por día de ciclo escolar</p>`,
+                            icon: 'warning'
                         });
                     });
                     

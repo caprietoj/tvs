@@ -2,6 +2,8 @@
 
 @section('title', 'Órdenes de Compra')
 
+@section('plugins.Datatables', true)
+
 @section('content_header')
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <div class="row mb-2">
@@ -133,11 +135,11 @@
                             <th>Creado</th>
                             <th>Acciones</th>
                         </tr>
-                        <tr>
-                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar número..." data-column="0"></th>
-                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar solicitud..." data-column="1"></th>
-                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar proveedor..." data-column="2"></th>
-                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar monto..." data-column="3"></th>
+                        <tr class="filters-row">
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar número..." data-column="0" autocomplete="off"></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar solicitud..." data-column="1" autocomplete="off"></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar proveedor..." data-column="2" autocomplete="off"></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar monto..." data-column="3" autocomplete="off"></th>
                             <th>
                                 <select class="form-control form-control-sm column-filter" data-column="4">
                                     <option value="">Todos los estados</option>
@@ -148,9 +150,13 @@
                                     <option value="Cancelado">Cancelado</option>
                                 </select>
                             </th>
-                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar fecha..." data-column="5"></th>
-                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar creado..." data-column="6"></th>
-                            <th></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar fecha..." data-column="5" autocomplete="off"></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" placeholder="Filtrar creado..." data-column="6" autocomplete="off"></th>
+                            <th>
+                                <button type="button" class="btn btn-sm btn-outline-secondary clear-filters" title="Limpiar filtros">
+                                    <i class="fas fa-eraser"></i>
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -323,99 +329,76 @@
 @stop
 
 @section('css')
+@section('css')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <style>
-    /* Estilo para órdenes marcadas como vistas */
+    /* Asegurar que DataTables se cargue correctamente */
+    .dataTables_wrapper {
+        overflow-x: auto;
+    }
+    
+    /* Mejorar el diseño de filtros */
+    .filters-row {
+        background-color: #f8f9fa !important;
+    }
+    
+    .column-filter {
+        margin: 2px 0;
+        font-size: 12px;
+        height: 30px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+    
+    .column-filter:focus {
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        outline: none !important;
+    }
+    
+    .filters-row th {
+        padding: 5px !important;
+        background-color: #f8f9fa !important;
+        border-top: 1px solid #dee2e6 !important;
+        vertical-align: middle !important;
+    }
+    
+    .clear-filters {
+        width: 100%;
+        height: 30px;
+        padding: 2px 6px;
+        font-size: 11px;
+        border: 1px solid #6c757d;
+        background-color: #fff;
+        color: #6c757d;
+    }
+    
+    .clear-filters:hover {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+        color: white !important;
+    }
+    
+    /* Forzar visibilidad de filtros */
+    .filters-row {
+        display: table-row !important;
+        visibility: visible !important;
+    }
+    
+    .filters-row th {
+        display: table-cell !important;
+        visibility: visible !important;
+    }
+    
+    /* Estilos para órdenes vistas */
     .order-viewed {
-        background-color: #d4edda !important; /* Verde suave */
-    }
-    
-    .order-viewed td {
-        background-color: transparent !important;
-    }
-    
-    /* Estilos para paginación profesional */
-    /* Mejorar la apariencia general de la tabla */
-    .table-responsive {
-        border-radius: 0.375rem;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-    
-    #ordersTable thead th {
         background-color: #f8f9fa;
-        border-bottom: 2px solid #dee2e6;
-        font-weight: 600;
-        color: #495057;
+        opacity: 0.8;
     }
     
-    /* Estilos para el botón de regenerar PDF */
-    .btn-warning.regenerate-pdf {
-        background-color: #ffc107;
-        border-color: #ffc107;
-        color: #212529;
-    }
-    
-    .btn-warning.regenerate-pdf:hover {
-        background-color: #e0a800;
-        border-color: #d39e00;
-        color: #212529;
-    }
-    
-    .btn-warning.regenerate-pdf:disabled {
-        background-color: #ffc107;
-        border-color: #ffc107;
-        opacity: 0.6;
-        color: #212529;
-    }
-    
-    /* Mejorar espaciado en los botones de acciones */
-    .btn-sm {
-        margin: 1px;
-        font-size: 0.875rem;
-        line-height: 1.5;
-        border-radius: 0.2rem;
-    }
-    
-    /* Responsive para botones en móviles */
-    @media (max-width: 768px) {
-        .btn-sm {
-            display: block;
-            width: 100%;
-            margin: 2px 0;
-        }
-        
-        .d-inline {
-            display: block !important;
-        }
-    }
-    
-    /* Estilos específicos para modales de regeneración */
-    #confirmRegeneratePdfModal .modal-header {
-        border-bottom: 2px solid #ffc107;
-    }
-    
-    #confirmRegeneratePdfModal .modal-content {
-        border-radius: 0.5rem;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    }
-    
-    #confirmRegeneratePdfModal .alert-info {
-        background-color: #f8f9fa;
-        border-color: #dee2e6;
-        border-left: 4px solid #17a2b8;
-    }
-    
-    #processingModal .modal-content {
-        border-radius: 0.5rem;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    }
-    
-    #processingModal .spinner-border {
-        border-width: 0.25rem;
-    }
-    
-    /* Animación para el icono de PDF */
-    #confirmRegeneratePdfModal .fa-file-pdf {
+    .pulse-animation {
         animation: pulse 2s infinite;
     }
     
@@ -441,85 +424,183 @@
         transition: all 0.2s ease-in-out;
     }
     
-    /* Estilos para los filtros */
-    .column-filter {
-        margin: 2px 0;
-        font-size: 12px;
-        height: 30px;
+    /* Debug - Asegurar que los elementos sean visibles */
+    #ordersTable, .column-filter, .filters-row {
+        display: block !important;
+        visibility: visible !important;
     }
     
-    thead tr:nth-child(2) th {
-        padding: 5px !important;
-        background-color: #f8f9fa;
-        border-top: 1px solid #dee2e6;
+    #ordersTable thead {
+        display: table-header-group !important;
+    }
+    
+    #ordersTable thead tr {
+        display: table-row !important;
+    }
+    
+    #ordersTable thead th {
+        display: table-cell !important;
     }
 </style>
+@stop
 @stop
 
 @section('js')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
+    // Variable global para la tabla
+    var ordersTable;
+    
     $(document).ready(function() {
-        // Inicializar DataTable para la tabla principal
-        var ordersTable = $('#ordersTable').DataTable({
-            "paging": true,
-            "lengthChange": true,
-            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
-            "pageLength": 25,
-            "searching": true,
-            "ordering": true,
-            "info": true,
-            "autoWidth": false,
-            "responsive": true,
-            "order": [], // Sin orden inicial para respetar el orden del servidor (pending primero)
-            "language": {
-                "url": "https://cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
-            }
-        });
+        console.log('Documento listo. Inicializando filtros...');
+        
+        // Verificar que DataTables esté disponible
+        if (typeof $.fn.DataTable === 'undefined') {
+            console.error('DataTables no está cargado. Usando filtros básicos...');
+            setupBasicFilters();
+            return;
+        }
 
-        // Filtros en tiempo real para cada columna
-        $('.column-filter').on('keyup change', function() {
-            var columnIndex = $(this).data('column');
-            var value = this.value;
-            
-            // Filtro especial para la columna de monto (columna 3)
-            if (columnIndex == 3 && value) {
-                // Limpiar formato de números: eliminar $ y comas
-                var cleanValue = value.replace(/[$,]/g, '');
-                if (!isNaN(cleanValue) && cleanValue !== '') {
-                    // Buscar por el número sin formato
-                    ordersTable
-                        .column(columnIndex)
-                        .search(cleanValue, true, false) // regex=true, smart=false
-                        .draw();
-                } else {
-                    // Si no es un número, buscar como texto normal
-                    ordersTable
-                        .column(columnIndex)
-                        .search(value)
-                        .draw();
+        try {
+            // Inicializar DataTable para la tabla principal
+            ordersTable = $('#ordersTable').DataTable({
+                "paging": true,
+                "lengthChange": true,
+                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+                "pageLength": 25,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                "order": [], // Sin orden inicial para respetar el orden del servidor
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.19/i18n/Spanish.json"
+                },
+                "initComplete": function () {
+                    console.log('DataTable inicializada correctamente');
+                    setupColumnFilters();
+                },
+                "error": function (xhr, error, code) {
+                    console.error('Error en DataTable:', error, code);
+                    setupBasicFilters();
                 }
-            } else {
-                // Filtro normal para otras columnas
-                ordersTable
-                    .column(columnIndex)
-                    .search(value)
-                    .draw();
-            }
-        });
+            });
 
-        $('#pendingRequestsTable').DataTable({
-            "paging": false,
-            "lengthChange": false,
-            "searching": true,
-            "ordering": true,
-            "info": false,
-            "autoWidth": false,
-            "responsive": true,
-            "language": {
-                "url": "https://cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+            // Inicializar DataTable para solicitudes pendientes si existe
+            if ($('#pendingRequestsTable').length > 0) {
+                $('#pendingRequestsTable').DataTable({
+                    "paging": false,
+                    "lengthChange": false,
+                    "searching": true,
+                    "ordering": true,
+                    "info": false,
+                    "autoWidth": false,
+                    "responsive": true,
+                    "language": {
+                        "url": "//cdn.datatables.net/plug-ins/1.10.19/i18n/Spanish.json"
+                    }
+                });
             }
-        });
+            
+        } catch (error) {
+            console.error('Error inicializando DataTable:', error);
+            setupBasicFilters();
+        }
+
+        // Función para configurar los filtros de columna con DataTables
+        function setupColumnFilters() {
+            console.log('Configurando filtros de DataTable...');
+            
+            // Limpiar eventos previos para evitar duplicación
+            $('.column-filter').off('keyup change');
+            $('.clear-filters').off('click');
+            
+            // Configurar filtros en tiempo real para cada columna
+            $('.column-filter').on('keyup change', function() {
+                var columnIndex = $(this).data('column');
+                var value = this.value;
+                
+                console.log('Filtro DataTable aplicado en columna:', columnIndex, 'Valor:', value);
+                
+                try {
+                    if (ordersTable && ordersTable.column) {
+                        // Filtro especial para la columna de monto (columna 3)
+                        if (columnIndex == 3 && value) {
+                            // Limpiar formato de números: eliminar $ y comas
+                            var cleanValue = value.replace(/[$,.\s]/g, '');
+                            if (!isNaN(cleanValue) && cleanValue !== '') {
+                                // Buscar por el número sin formato
+                                ordersTable
+                                    .column(columnIndex)
+                                    .search(cleanValue, true, false)
+                                    .draw();
+                            } else {
+                                // Si no es un número, buscar como texto normal
+                                ordersTable
+                                    .column(columnIndex)
+                                    .search(value, false, true)
+                                    .draw();
+                            }
+                        } else {
+                            // Filtro normal para otras columnas
+                            ordersTable
+                                .column(columnIndex)
+                                .search(value, false, true)
+                                .draw();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error en filtro de columna:', error);
+                }
+            });
+            
+            // Botón para limpiar todos los filtros
+            $('.clear-filters').on('click', function() {
+                console.log('Limpiando filtros de DataTable');
+                
+                $('.column-filter').val('');
+                
+                if (ordersTable && ordersTable.search) {
+                    ordersTable.search('').columns().search('').draw();
+                }
+                
+                toastr.info('Filtros limpiados');
+            });
+        }
+        
+        // Función de fallback para filtros básicos sin DataTables
+        function setupBasicFilters() {
+            console.log('Configurando filtros básicos...');
+            
+            $('.column-filter').off('keyup change');
+            $('.clear-filters').off('click');
+            
+            $('.column-filter').on('keyup change', function() {
+                var columnIndex = $(this).data('column');
+                var value = this.value.toLowerCase();
+                
+                console.log('Filtro básico aplicado en columna:', columnIndex, 'Valor:', value);
+                
+                $('#ordersTable tbody tr').each(function() {
+                    var row = $(this);
+                    var cellText = row.find('td').eq(columnIndex).text().toLowerCase();
+                    
+                    if (value === '' || cellText.includes(value)) {
+                        row.show();
+                    } else {
+                        row.hide();
+                    }
+                });
+            });
+            
+            $('.clear-filters').on('click', function() {
+                console.log('Limpiando filtros básicos');
+                $('.column-filter').val('');
+                $('#ordersTable tbody tr').show();
+                toastr.info('Filtros limpiados');
+            });
+        }
 
         // Mostrar mensajes de éxito o error
         @if(session('success'))

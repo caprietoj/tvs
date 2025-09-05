@@ -247,4 +247,135 @@ class SpaceReservation extends Model
         
         return [true, ''];
     }
+
+    /**
+     * Obtiene detalles específicos del conflicto para mostrar un mensaje más útil al usuario
+     * 
+     * @param int $spaceId ID del espacio
+     * @param string $date Fecha de la reserva
+     * @param string $startTime Hora de inicio
+     * @param string $endTime Hora de fin
+     * @return string Mensaje descriptivo del conflicto
+     */
+    public static function getConflictDetails(int $spaceId, string $date, string $startTime, string $endTime): string
+    {
+        // Verificar conflictos con otras reservas primero
+        $conflictingReservations = self::where('space_id', $spaceId)
+            ->where('date', $date)
+            ->where('status', '!=', 'cancelled')
+            ->where('status', '!=', 'rejected')
+            ->where(function ($q) use ($startTime, $endTime) {
+                $q->where(function ($query) use ($startTime, $endTime) {
+                    $query->where('start_time', '<', $endTime)
+                          ->where('end_time', '>', $startTime);
+                });
+            })->get();
+
+        if ($conflictingReservations->count() > 0) {
+            $reservation = $conflictingReservations->first();
+            return "Ya existe una reserva para este espacio el {$reservation->formatted_date} de {$reservation->formatted_start_time} a {$reservation->formatted_end_time}.";
+        }
+
+        // Si no hay reservas conflictivas, verificar bloqueos
+        $dateObj = Carbon::parse($date);
+        $dayOfWeek = strtolower($dateObj->format('l'));
+        
+        $activeCycle = SchoolCycle::where('active', true)->first();
+        if (!$activeCycle) {
+            return 'No hay un ciclo escolar activo.';
+        }
+
+        // Verificar bloqueos semanales
+        $weekdayBlocks = SpaceBlock::where('space_id', $spaceId)
+            ->where('is_weekday_block', true)
+            ->where($dayOfWeek, true)
+            ->where(function($query) use ($startTime, $endTime) {
+                $query->where(function($q) use ($startTime, $endTime) {
+                    $q->where('start_time', '<', $endTime)
+                      ->where('end_time', '>', $startTime);
+                });
+            })->get();
+
+        foreach ($weekdayBlocks as $block) {
+            // Verificar si hay excepción para esta fecha
+            $hasException = SpaceBlockException::where('space_block_id', $block->id)
+                ->where('exception_date', $date)
+                ->exists();
+            
+            if (!$hasException) {
+                return "El espacio está bloqueado los " . ucfirst($dayOfWeek) . "s de {$block->start_time} a {$block->end_time} para: {$block->reason}. Tu horario solicitado ({$startTime} - {$endTime}) se solapa con este bloqueo.";
+            }
+        }
+
+        // Verificar bloqueos de día de ciclo
+        $cycleDay = CycleDay::getCycleDayForDate($date, $activeCycle->id);
+        if ($cycleDay) {
+            $cycleDayBlocks = SpaceBlock::where('space_id', $spaceId)
+                ->where('school_cycle_id', $activeCycle->id)
+                ->where('cycle_day', $cycleDay->cycle_day)
+                ->where(function($query) use ($startTime, $endTime) {
+                    $query->where(function($q) use ($startTime, $endTime) {
+                        $q->where('start_time', '<', $endTime)
+                          ->where('end_time', '>', $startTime);
+                    });
+                })->get();
+
+            foreach ($cycleDayBlocks as $block) {
+                // Generar sugerencias de horarios alternativos
+                $suggestions = self::getSuggestedTimes($spaceId, $date, $startTime, $endTime);
+                $suggestionText = '';
+                if (!empty($suggestions)) {
+                    $suggestionText = " Horarios disponibles: " . implode(', ', $suggestions);
+                }
+                
+                return "El espacio está bloqueado en el día de ciclo {$cycleDay->cycle_day} de {$block->start_time} a {$block->end_time} para: {$block->reason}. Tu horario solicitado ({$startTime} - {$endTime}) se solapa con este bloqueo.{$suggestionText}";
+            }
+        }
+
+        return 'Ya existe una reserva para este espacio en el horario seleccionado.';
+    }
+
+    /**
+     * Genera sugerencias de horarios alternativos disponibles
+     * 
+     * @param int $spaceId ID del espacio
+     * @param string $date Fecha de la reserva
+     * @param string $requestedStart Hora de inicio solicitada
+     * @param string $requestedEnd Hora de fin solicitada
+     * @return array Array de horarios sugeridos
+     */
+    private static function getSuggestedTimes(int $spaceId, string $date, string $requestedStart, string $requestedEnd): array
+    {
+        $suggestions = [];
+        $duration = (strtotime($requestedEnd) - strtotime($requestedStart)) / 3600; // Duración en horas
+        
+        // Generar posibles horarios (de 7:00 a 17:00, cada 30 minutos)
+        $startHour = 7;
+        $endHour = 17;
+        $interval = 30; // minutos
+        
+        for ($hour = $startHour; $hour < $endHour; $hour++) {
+            for ($minute = 0; $minute < 60; $minute += $interval) {
+                $testStart = sprintf('%02d:%02d', $hour, $minute);
+                $testEnd = date('H:i', strtotime($testStart) + ($duration * 3600));
+                
+                // No sugerir si el horario de fin excede las 17:00
+                if (strtotime($testEnd) > strtotime('17:00')) {
+                    continue;
+                }
+                
+                // Verificar si este horario está disponible
+                if (!self::hasTimeConflict($spaceId, $date, $testStart, $testEnd)) {
+                    $suggestions[] = "{$testStart}-{$testEnd}";
+                    
+                    // Limitar a 3 sugerencias para no sobrecargar el mensaje
+                    if (count($suggestions) >= 3) {
+                        break 2;
+                    }
+                }
+            }
+        }
+        
+        return $suggestions;
+    }
 }
