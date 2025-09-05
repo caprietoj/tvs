@@ -1048,7 +1048,7 @@ return [
 
     'plugins' => [
         'Datatables' => [
-            'active' => true,
+            'active' => false,
             'files' => [
                 [
                     'type' => 'js',
@@ -1068,7 +1068,7 @@ return [
             ],
         ],
         'Select2' => [
-            'active' => true,  // Change from false to true
+            'active' => true,  // Reactivar Select2
             'files' => [
                 [
                     'type' => 'js',
@@ -1123,7 +1123,7 @@ return [
             ],
         ],
         'Summernote' => [
-            'active' => true,
+            'active' => false,
             'files' => [
                 [
                     'type' => 'js',

@@ -3325,9 +3325,9 @@ class PurchaseOrdersController extends Controller
                     if (isset($itemPrices[$index])) {
                         $unitPrice = $itemPrices[$index];
                     } elseif (count($purchaseItems) === 1) {
-                        // Si es un solo ítem, usar el total de la cotización dividido por la cantidad
+                        // Si es un solo ítem, usar el SUBTOTAL dividido por la cantidad para evitar doble IVA
                         $quantity = $item['quantity'] ?? 1;
-                        $unitPrice = $quantity > 0 ? ($quotation->total_amount / $quantity) : 0;
+                        $unitPrice = $quantity > 0 ? ($quotation->subtotal / $quantity) : 0;
                     }
                     
                     $quantity = $item['quantity'] ?? 1;

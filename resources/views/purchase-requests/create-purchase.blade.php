@@ -311,6 +311,54 @@
         </form>
     </div>
 </div>
+
+<!-- Modal de confirmación para formularios grandes -->
+<div class="modal fade" id="largeFormModal" tabindex="-1" role="dialog" aria-labelledby="largeFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="largeFormModalLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Formulario con muchos elementos
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+                </div>
+                <p class="text-center">
+                    Se detectó un formulario con <strong><span id="itemCountDisplay"></span> elementos</strong>.
+                </p>
+                <div class="alert alert-info">
+                    <div class="row">
+                        <div class="col-6">
+                            <small><strong>Elementos:</strong> <span id="itemCountDisplay2"></span></small>
+                        </div>
+                        <div class="col-6">
+                            <small><strong>Tiempo estimado:</strong> 5-10 segundos</small>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-center text-muted">
+                    <small>El procesamiento puede tomar unos momentos adicionales. ¿Desea continuar?</small>
+                </p>
+                <div class="progress mb-3" style="display: none;" id="processingProgress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelLargeForm">
+                    <i class="fas fa-times mr-1"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-warning" id="confirmLargeForm">
+                    <i class="fas fa-check mr-1"></i>
+                    Continuar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('css')
@@ -389,11 +437,52 @@
     .form-check-label:hover {
         background-color: #f8f9fa;
     }
+    
+    /* Estilos para el modal de formulario grande */
+    #largeFormModal .modal-header {
+        border-bottom: 2px solid #ffc107;
+    }
+    
+    #largeFormModal .modal-body {
+        padding: 2rem;
+    }
+    
+    #largeFormModal .fa-clock {
+        color: #ffc107;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    #largeFormModal .progress {
+        height: 8px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+    }
+    
+    #largeFormModal .progress-bar {
+        background: linear-gradient(45deg, #ffc107, #fd7e14);
+    }
+    
+    #largeFormModal .btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #212529;
+        font-weight: 600;
+    }
+    
+    #largeFormModal .btn-warning:hover {
+        background-color: #e0a800;
+        border-color: #d39e00;
+        color: #212529;
+    }
 </style>
 @stop
 
-@section('js')
-<script>
 @section('js')
 <script>
     $(document).ready(function() {
@@ -562,18 +651,21 @@
             console.log('- Total de inputs:', totalInputs);
             console.log('- Tamaño estimado del formulario:', new Blob([new URLSearchParams(formData).toString()]).size + ' bytes');
             
-            // Si tiene más de 20 ítems, mostrar advertencia pero permitir continuar
+            // Si tiene más de 20 ítems, mostrar modal de advertencia
             if (itemCount > 20) {
                 console.log('⚠️ FORMULARIO GRANDE DETECTADO - ' + itemCount + ' ítems');
                 
-                // Dar opción al usuario de continuar
-                if (!confirm('Se detectó un formulario con ' + itemCount + ' ítems. Esto puede tomar tiempo en procesar. ¿Desea continuar?')) {
-                    console.log('❌ Usuario canceló el envío del formulario grande');
-                    formIsSubmitting = false;
-                    $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Solicitud');
-                    e.preventDefault();
-                    return false;
-                }
+                // Mostrar modal en lugar de alert
+                $('#itemCountDisplay').text(itemCount);
+                $('#itemCountDisplay2').text(itemCount);
+                $('#largeFormModal').modal('show');
+                
+                // Prevenir envío hasta que el usuario confirme
+                console.log('❌ Mostrando modal de confirmación para formulario grande');
+                formIsSubmitting = false;
+                $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Solicitud');
+                e.preventDefault();
+                return false;
             }
             
             console.log('📤 Enviando formulario al servidor...');
@@ -830,6 +922,36 @@
         
         // Evitar focus automático en campos ocultos
         $(document).ready(function() {
+            // Event handlers para el modal de formulario grande
+            $('#confirmLargeForm').click(function() {
+                console.log('✅ Usuario confirmó el envío del formulario grande');
+                
+                // Cambiar el contenido del modal para mostrar progreso
+                $('#largeFormModal .modal-title').html('<i class="fas fa-spinner fa-spin mr-2"></i>Procesando solicitud...');
+                $('#largeFormModal .modal-body').html(`
+                    <div class="text-center">
+                        <div class="spinner-border text-warning mb-3" role="status">
+                            <span class="sr-only">Procesando...</span>
+                        </div>
+                        <p>Enviando solicitud al servidor...</p>
+                        <p class="text-muted"><small>Por favor no cierre esta ventana.</small></p>
+                    </div>
+                `);
+                $('#largeFormModal .modal-footer').hide();
+                
+                // Enviar el formulario después de un breve delay
+                setTimeout(function() {
+                    $('#purchaseForm')[0].submit();
+                }, 1000);
+            });
+            
+            $('#cancelLargeForm').click(function() {
+                console.log('❌ Usuario canceló el envío del formulario grande');
+                $('#largeFormModal').modal('hide');
+                formIsSubmitting = false;
+                $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Solicitud');
+            });
+            
             // Interceptar eventos de focus en campos disabled
             $(document).on('focus', 'input:disabled, select:disabled', function(e) {
                 e.preventDefault();

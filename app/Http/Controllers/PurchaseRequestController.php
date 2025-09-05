@@ -484,7 +484,7 @@ class PurchaseRequestController extends Controller
     {
         try {
             // Log específico para diagnóstico de max_input_vars EN PRODUCCIÓN
-            Log::info('=== DIAGNÓSTICO PURCHASE REQUEST PRODUCCIÓN ===', [
+            \Log::info('=== DIAGNÓSTICO PURCHASE REQUEST PRODUCCIÓN ===', [
                 'timestamp' => now()->toDateTimeString(),
                 'user_id' => Auth::id(),
                 'total_parameters' => count($request->all()),
@@ -498,7 +498,7 @@ class PurchaseRequestController extends Controller
             
             // Verificar si se están recibiendo todos los items
             $purchaseItems = $request->input('purchase_items', []);
-            Log::info('ITEMS RECIBIDOS EN PRODUCCIÓN', [
+            \Log::info('ITEMS RECIBIDOS EN PRODUCCIÓN', [
                 'items_count' => count($purchaseItems),
                 'has_purchase_items_key' => $request->has('purchase_items'),
                 'is_array' => is_array($purchaseItems),
@@ -509,7 +509,7 @@ class PurchaseRequestController extends Controller
             ]);
             
             // Log de otros campos importantes
-            Log::info('OTROS CAMPOS DEL FORMULARIO', [
+            \Log::info('OTROS CAMPOS DEL FORMULARIO', [
                 'requester' => $request->input('requester'),
                 'section_area' => $request->input('section_area'),
                 'justification_length' => strlen($request->input('purchase_justification', '')),

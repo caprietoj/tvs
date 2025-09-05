@@ -67,6 +67,11 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
+// Ruta de prueba para jQuery
+Route::get('/test-jquery', function () {
+    return view('test-jquery');
+})->middleware('auth');
+
 Route::get('/dashboard', function () {
     return redirect('/home');
 })->middleware(['auth', 'verified'])->name('dashboard');

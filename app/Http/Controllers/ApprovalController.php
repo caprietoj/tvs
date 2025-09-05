@@ -654,6 +654,47 @@ class ApprovalController extends Controller
             $subtotal = round($totalAmount / 1.19, 2); // Calcular subtotal sin IVA
             $ivaAmount = round($totalAmount - $subtotal, 2); // Calcular IVA
             
+            // Preparar items para la orden mixta
+            $orderItems = $providerSelections->map(function($selection) {
+                return [
+                    'description' => $selection->item_description,
+                    'quantity' => $selection->quantity,
+                    'unit_price' => $selection->unit_price,
+                    'total' => $selection->total_price,
+                    'unit' => $selection->unit ?? 'Unidad'
+                ];
+            })->toArray();
+            
+            // 🔧 CREAR ESTRUCTURA COMPLETA DE PDF_CUSTOM_DATA para órdenes mixtas
+            $pdfCustomData = [
+                'provider_name' => $provider->nombre,
+                'provider_nit' => $provider->nit,
+                'provider_email' => $provider->email,
+                'provider_phone' => $provider->telefono,
+                'provider_address' => $provider->direccion,
+                'provider_city' => $provider->ciudad ?? 'Por definir',
+                'delivery_address' => $purchaseRequest->delivery_address ?? 'COLEGIO VICTORIA',
+                'payment_method' => $quotation->payment_terms ?? 'Contado',
+                'budget' => $purchaseRequest->budget ?? 'Presupuesto General',
+                'iva_rate' => $includesIva ? 19 : 0,
+                'iva_amount' => $ivaAmount,
+                'ipoconsumo_rate' => 0,
+                'ipoconsumo_amount' => 0,
+                'subtotal' => $subtotal,
+                'total' => $totalAmount,
+                'items' => $orderItems, // 🔧 IMPORTANTE: Guardar en estructura 'items'
+                'additional_items' => [],
+                'observations' => $this->generateObservationsForSharedPurchase($purchaseRequest, $quotation->provider_name),
+                'shared_budget_info' => null,
+                'individual_taxes_total' => 0,
+                'individual_taxes_breakdown' => ['4' => 0, '5' => 0, '8' => 0, '16' => 0, '19' => 0],
+                'edited_by' => Auth::id() ?? 1,
+                'edited_at' => now()->toISOString(),
+                'calculation_source' => 'items_based',
+                'items_count' => count($orderItems),
+                'additional_items_count' => 0
+            ];
+            
             // Crear orden de compra individual para este proveedor
             $purchaseOrder = \App\Models\PurchaseOrder::create([
                 'purchase_request_id' => $purchaseRequest->id,
@@ -667,17 +708,8 @@ class ApprovalController extends Controller
                 'payment_terms' => $quotation->payment_terms ?? 'Contado',
                 'delivery_date' => now()->addDays(15),
                 'file_path' => 'pending_generation',
+                'pdf_custom_data' => json_encode($pdfCustomData), // 🔧 GUARDAR ESTRUCTURA COMPLETA
                 'observations' => $this->generateObservationsForSharedPurchase($purchaseRequest, $quotation->provider_name),
-                'additional_items' => $providerSelections->map(function($selection) {
-                    return [
-                        'description' => $selection->item_description,
-                        'quantity' => $selection->quantity,
-                        'unit_price' => $selection->unit_price,
-                        'total_price' => $selection->total_price,
-                        'unit' => $selection->unit ?? 'Unidad',
-                        'observations' => $selection->observations ?? ''
-                    ];
-                })->toArray(),
                 'created_by' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
                 'status' => 'pending'
             ]);
@@ -776,14 +808,15 @@ class ApprovalController extends Controller
         // 🔧 CORRECCIÓN: Crear items incluso si no hay precios específicos
         if ($purchaseItems && count($purchaseItems) > 0) {
             foreach ($purchaseItems as $index => $item) {
-                // Si no hay precio específico, calcular desde el total de la cotización
+                // Si no hay precio específico, calcular desde el subtotal de la cotización (sin IVA)
                 $unitPrice = 0;
                 if (isset($itemPrices[$index])) {
+                    // Si hay precio específico, usar ese
                     $unitPrice = $itemPrices[$index];
                 } elseif (count($purchaseItems) === 1) {
-                    // Si es un solo ítem, usar el total de la cotización dividido por la cantidad
+                    // Si es un solo ítem, usar el SUBTOTAL dividido por la cantidad para evitar doble IVA
                     $quantity = $item['quantity'] ?? 1;
-                    $unitPrice = $quantity > 0 ? ($totalAmount / $quantity) : 0;
+                    $unitPrice = $quantity > 0 ? ($subtotal / $quantity) : 0;
                 }
                 
                 $quantity = $item['quantity'] ?? 1;
@@ -810,6 +843,36 @@ class ApprovalController extends Controller
             ]);
         }
         
+        // 🔧 CREAR ESTRUCTURA COMPLETA DE PDF_CUSTOM_DATA (igual que en PurchaseOrdersController)
+        $pdfCustomData = [
+            'provider_name' => $provider->nombre,
+            'provider_nit' => $provider->nit,
+            'provider_email' => $provider->email,
+            'provider_phone' => $provider->telefono,
+            'provider_address' => $provider->direccion,
+            'provider_city' => $provider->ciudad ?? 'Por definir',
+            'delivery_address' => $purchaseRequest->delivery_address ?? 'COLEGIO VICTORIA',
+            'payment_method' => $paymentTerms,
+            'budget' => $purchaseRequest->budget ?? 'Presupuesto General',
+            'iva_rate' => $includesIva ? 19 : 0,
+            'iva_amount' => $ivaAmount,
+            'ipoconsumo_rate' => 0,
+            'ipoconsumo_amount' => 0,
+            'subtotal' => $subtotal,
+            'total' => $totalAmount,
+            'items' => $orderItems, // 🔧 IMPORTANTE: Guardar en estructura 'items'
+            'additional_items' => [],
+            'observations' => $this->generateObservationsForSharedPurchase($purchaseRequest),
+            'shared_budget_info' => null,
+            'individual_taxes_total' => 0,
+            'individual_taxes_breakdown' => ['4' => 0, '5' => 0, '8' => 0, '16' => 0, '19' => 0],
+            'edited_by' => Auth::id() ?? 1,
+            'edited_at' => now()->toISOString(),
+            'calculation_source' => 'items_based',
+            'items_count' => count($orderItems),
+            'additional_items_count' => 0
+        ];
+
         // Crear la orden de compra
         $purchaseOrder = \App\Models\PurchaseOrder::create([
             'purchase_request_id' => $purchaseRequest->id,
@@ -823,7 +886,7 @@ class ApprovalController extends Controller
             'payment_terms' => $paymentTerms,
             'delivery_date' => now()->addDays(15),
             'file_path' => 'pending_generation',
-            'pdf_custom_data' => json_encode($orderItems), // ✅ Guardar items correctos
+            'pdf_custom_data' => json_encode($pdfCustomData), // 🔧 GUARDAR ESTRUCTURA COMPLETA
             'observations' => $this->generateObservationsForSharedPurchase($purchaseRequest),
             'created_by' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
             'status' => 'pending'
@@ -870,6 +933,45 @@ class ApprovalController extends Controller
             $ivaAmount = round($totalAmount * 0.19, 2); // Calcular 19% de IVA
             $totalAmount = $subtotal + $ivaAmount; // Total final con IVA
             
+            // Preparar items para la orden de servicio sin cotización
+            $orderItems = [[
+                'description' => $purchaseRequest->service_description ?? 'Servicio sin cotización',
+                'quantity' => 1,
+                'unit_price' => $subtotal,
+                'total' => $subtotal,
+                'unit' => 'Servicio'
+            ]];
+            
+            // 🔧 CREAR ESTRUCTURA COMPLETA DE PDF_CUSTOM_DATA para servicios sin cotización
+            $pdfCustomData = [
+                'provider_name' => $provider->nombre,
+                'provider_nit' => $provider->nit,
+                'provider_email' => $provider->email,
+                'provider_phone' => $provider->telefono,
+                'provider_address' => $provider->direccion,
+                'provider_city' => $provider->ciudad ?? 'Por definir',
+                'delivery_address' => $purchaseRequest->delivery_address ?? 'COLEGIO VICTORIA',
+                'payment_method' => 'Contado',
+                'budget' => $purchaseRequest->budget ?? 'Presupuesto General',
+                'iva_rate' => $includesIva ? 19 : 0,
+                'iva_amount' => $ivaAmount,
+                'ipoconsumo_rate' => 0,
+                'ipoconsumo_amount' => 0,
+                'subtotal' => $subtotal,
+                'total' => $totalAmount,
+                'items' => $orderItems, // 🔧 IMPORTANTE: Guardar en estructura 'items'
+                'additional_items' => [],
+                'observations' => 'Orden de servicio sin cotización - ' . $purchaseRequest->no_quotation_reason,
+                'shared_budget_info' => null,
+                'individual_taxes_total' => 0,
+                'individual_taxes_breakdown' => ['4' => 0, '5' => 0, '8' => 0, '16' => 0, '19' => 0],
+                'edited_by' => Auth::id() ?? 1,
+                'edited_at' => now()->toISOString(),
+                'calculation_source' => 'items_based',
+                'items_count' => count($orderItems),
+                'additional_items_count' => 0
+            ];
+            
             // Crear la orden de compra
             $purchaseOrder = \App\Models\PurchaseOrder::create([
                 'purchase_request_id' => $purchaseRequest->id,
@@ -883,6 +985,7 @@ class ApprovalController extends Controller
                 'payment_terms' => 'Contado',
                 'delivery_date' => now()->addDays(30), // 30 días para servicios
                 'file_path' => 'pending_generation',
+                'pdf_custom_data' => json_encode($pdfCustomData), // 🔧 GUARDAR ESTRUCTURA COMPLETA
                 'observations' => 'Orden de servicio sin cotización - ' . $purchaseRequest->no_quotation_reason,
                 'created_by' => Auth::id(),
                 'status' => 'pending'
