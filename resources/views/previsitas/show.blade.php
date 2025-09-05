@@ -181,8 +181,12 @@
                                 <div class="mb-2">
                                     @if($archivo->esImagen())
                                         <i class="fas fa-image fa-2x text-success"></i>
-                                    @else
+                                    @elseif($archivo->esWord())
+                                        <i class="fas fa-file-word fa-2x text-primary"></i>
+                                    @elseif($archivo->esPdf())
                                         <i class="fas fa-file-pdf fa-2x text-danger"></i>
+                                    @else
+                                        <i class="fas fa-file fa-2x text-secondary"></i>
                                     @endif
                                 </div>
                                 <h6 class="card-title">{{ $archivo->nombre_original }}</h6>

@@ -46,6 +46,22 @@ class PrevisitaArchivo extends Model
     }
 
     /**
+     * Verificar si el archivo es un documento Word
+     */
+    public function esWord()
+    {
+        return $this->tipo_archivo === 'word';
+    }
+
+    /**
+     * Verificar si es un documento (Word, PDF, etc.)
+     */
+    public function esDocumento()
+    {
+        return in_array($this->tipo_archivo, ['pdf', 'word', 'document']);
+    }
+
+    /**
      * Obtener el tamaño formateado
      */
     public function getTamañoFormateadoAttribute()

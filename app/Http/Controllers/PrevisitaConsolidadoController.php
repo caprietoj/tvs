@@ -139,7 +139,7 @@ class PrevisitaConsolidadoController extends Controller
             'aprobacion_sitio' => 'required|boolean',
             'observaciones_recomendaciones' => 'nullable|string',
             'archivos_novedades' => 'nullable|array|max:100', // Máximo 100 archivos
-            'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp|max:10240' // 10MB máximo por archivo
+            'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp,doc,docx|max:10240' // 10MB máximo por archivo, incluye Word
         ], [
             'lugar.required' => 'El lugar es obligatorio.',
             'fecha_visita.required' => 'La fecha de visita es obligatoria.',
@@ -150,7 +150,7 @@ class PrevisitaConsolidadoController extends Controller
             'aprobacion_sitio.required' => 'La aprobación del sitio es obligatoria.',
             'archivos_novedades.max' => 'No se pueden subir más de 100 archivos.',
             'archivos_novedades.*.file' => 'Cada archivo debe ser un archivo válido.',
-            'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP y WEBP.',
+            'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP, WEBP, DOC y DOCX.',
             'archivos_novedades.*.max' => 'Cada archivo no debe superar los 10MB.'
         ]);
 
@@ -184,9 +184,9 @@ class PrevisitaConsolidadoController extends Controller
                 // Almacenar archivo
                 $path = $file->storeAs('previsitas/archivos', $filename, 'public');
                 
-                // Determinar tipo de archivo
+                // Determinar tipo de archivo basado en MIME type
                 $mimeType = $file->getMimeType();
-                $tipoArchivo = str_starts_with($mimeType, 'image/') ? 'image' : 'pdf';
+                $tipoArchivo = $this->determinarTipoArchivo($mimeType);
                 
                 // Crear registro en la base de datos
                 PrevisitaArchivo::create([
@@ -236,7 +236,7 @@ class PrevisitaConsolidadoController extends Controller
             'aprobacion_sitio' => 'required|boolean',
             'observaciones_recomendaciones' => 'nullable|string',
             'archivos_novedades' => 'nullable|array|max:100', // Máximo 100 archivos
-            'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp|max:10240' // 10MB máximo por archivo
+            'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp,doc,docx|max:10240' // 10MB máximo por archivo, incluye Word
         ], [
             'lugar.required' => 'El lugar es obligatorio.',
             'fecha_visita.required' => 'La fecha de visita es obligatoria.',
@@ -247,7 +247,7 @@ class PrevisitaConsolidadoController extends Controller
             'aprobacion_sitio.required' => 'La aprobación del sitio es obligatoria.',
             'archivos_novedades.max' => 'No se pueden subir más de 100 archivos.',
             'archivos_novedades.*.file' => 'Cada archivo debe ser un archivo válido.',
-            'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP y WEBP.',
+            'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP, WEBP, DOC y DOCX.',
             'archivos_novedades.*.max' => 'Cada archivo no debe superar los 10MB.'
         ]);
 
@@ -279,9 +279,9 @@ class PrevisitaConsolidadoController extends Controller
                 // Almacenar archivo
                 $path = $file->storeAs('previsitas/archivos', $filename, 'public');
                 
-                // Determinar tipo de archivo
+                // Determinar tipo de archivo basado en MIME type
                 $mimeType = $file->getMimeType();
-                $tipoArchivo = str_starts_with($mimeType, 'image/') ? 'image' : 'pdf';
+                $tipoArchivo = $this->determinarTipoArchivo($mimeType);
                 
                 // Crear registro en la base de datos
                 PrevisitaArchivo::create([
@@ -437,5 +437,28 @@ class PrevisitaConsolidadoController extends Controller
             ->pluck('responsable');
 
         return response()->json($responsables);
+    }
+
+    /**
+     * Determinar tipo de archivo basado en el MIME type
+     */
+    private function determinarTipoArchivo($mimeType)
+    {
+        if (str_starts_with($mimeType, 'image/')) {
+            return 'image';
+        } elseif ($mimeType === 'application/pdf') {
+            return 'pdf';
+        } elseif (in_array($mimeType, [
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ])) {
+            return 'word';
+        } else {
+            // Fallback: determinar por extensión del MIME type
+            if (str_contains($mimeType, 'word') || str_contains($mimeType, 'document')) {
+                return 'word';
+            }
+            return 'document'; // Tipo genérico para otros documentos
+        }
     }
 }

@@ -210,7 +210,7 @@
                                     <div class="form-group">
                                         <label for="archivos_novedades" class="form-label">
                                             <i class="fas fa-cloud-upload-alt mr-1"></i>
-                                            Archivos (PDF e Imágenes)
+                                            Archivos (PDF, Imágenes y Documentos Word)
                                         </label>
                                         
                                         <div class="file-upload-area" id="file-upload-area">
@@ -218,7 +218,7 @@
                                                 <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
                                                 <h5>Arrastra archivos aquí o haz clic para seleccionar</h5>
                                                 <p class="text-muted">
-                                                    Formatos permitidos: PDF, JPG, PNG, GIF, BMP, WEBP<br>
+                                                    Formatos permitidos: PDF, JPG, PNG, GIF, BMP, WEBP, DOC, DOCX<br>
                                                     Tamaño máximo: 10MB por archivo<br>
                                                     Máximo 100 archivos por previsita
                                                 </p>
@@ -226,7 +226,7 @@
                                                        class="file-input @error('archivos_novedades') is-invalid @enderror" 
                                                        id="archivos_novedades" 
                                                        name="archivos_novedades[]"
-                                                       accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.webp"
+                                                       accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.doc,.docx"
                                                        multiple
                                                        style="display: none;">
                                                 <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('archivos_novedades').click()">
