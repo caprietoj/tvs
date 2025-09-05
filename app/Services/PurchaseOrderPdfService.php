@@ -89,6 +89,22 @@ class PurchaseOrderPdfService
             }
         }
 
+        // 🔧 LÓGICA MEJORADA: Verificar si hay datos editados más recientes en pdf_custom_data
+        $hasRecentCustomData = false;
+        if (!empty($customData) && is_array($customData) && isset($customData['edited_at'])) {
+            $editedAt = \Carbon\Carbon::parse($customData['edited_at']);
+            $orderUpdatedAt = $order->updated_at;
+            $hasRecentCustomData = $editedAt->gt($orderUpdatedAt) && isset($customData['items']) && !empty($customData['items']);
+            
+            Log::info('Verificando datos editados recientes', [
+                'order_id' => $order->id,
+                'has_recent_custom_data' => $hasRecentCustomData,
+                'edited_at' => $customData['edited_at'],
+                'order_updated_at' => $orderUpdatedAt->toISOString(),
+                'custom_items_count' => isset($customData['items']) ? count($customData['items']) : 0
+            ]);
+        }
+
         // Detectar si es orden mixta o si se pasaron selecciones
         $hasMixedItems = $providerSelections !== null || 
                         QuotationItemSelection::whereHas('quotation', function($query) use ($order) {
@@ -96,7 +112,30 @@ class PurchaseOrderPdfService
                         })->exists() || 
                         ($order->additional_items && count($order->additional_items) > 0);
 
-        if ($hasMixedItems) {
+        // 🔧 PRIORIDAD 1: Si hay datos personalizados más recientes (el usuario editó la orden)
+        if ($hasRecentCustomData) {
+            Log::info('🎯 Usando datos editados recientes de pdf_custom_data', [
+                'order_id' => $order->id,
+                'items_count' => count($customData['items'])
+            ]);
+            
+            // Convertir customData items a formato de selecciones para compatibilidad
+            $customItems = collect($customData['items'])->map(function($item, $index) {
+                return (object) [
+                    'id' => 'custom_edited_' . $index,
+                    'item_description' => $item['description'] ?? 'N/A',
+                    'quantity' => $item['quantity'] ?? 1,
+                    'unit_price' => $item['unit_price'] ?? 0,
+                    'total_price' => $item['total'] ?? ($item['quantity'] * $item['unit_price']),
+                    'unit' => $item['unit'] ?? 'Unidad',
+                    'observations' => $item['observations'] ?? ''
+                ];
+            });
+            
+            $data['quotationItemSelections'] = $customItems;
+            
+        // 🔧 PRIORIDAD 2: Orden mixta con selecciones originales
+        } elseif ($hasMixedItems) {
             // Usar selecciones pasadas como parámetro o buscarlas usando la relación
             if ($providerSelections && $providerSelections->count() > 0) {
                 $data['quotationItemSelections'] = $providerSelections;
@@ -144,9 +183,9 @@ class PurchaseOrderPdfService
                 'custom_data_is_array' => is_array($customData)
             ]);
             
-            if (!empty($customData) && is_array($customData)) {
+            if (!empty($customData) && is_array($customData) && isset($customData['items'])) {
                 // Convertir customData items a formato de selecciones para compatibilidad
-                $customItems = collect($customData)->map(function($item, $index) {
+                $customItems = collect($customData['items'])->map(function($item, $index) {
                     return (object) [
                         'id' => 'custom_' . $index,
                         'item_description' => $item['description'] ?? 'N/A',
