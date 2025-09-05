@@ -121,9 +121,15 @@ class PurchaseOrderPdfService
             
             // Convertir customData items a formato de selecciones para compatibilidad
             $customItems = collect($customData['items'])->map(function($item, $index) {
+                // 🔧 MEJORAR MANEJO DE DESCRIPCIONES VACÍAS
+                $description = trim($item['description'] ?? '');
+                if (empty($description)) {
+                    $description = 'Descripción pendiente de editar';
+                }
+                
                 return (object) [
                     'id' => 'custom_edited_' . $index,
-                    'item_description' => $item['description'] ?? 'N/A',
+                    'item_description' => $description,
                     'quantity' => $item['quantity'] ?? 1,
                     'unit_price' => $item['unit_price'] ?? 0,
                     'total_price' => $item['total'] ?? ($item['quantity'] * $item['unit_price']),

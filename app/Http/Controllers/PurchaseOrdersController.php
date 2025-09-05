@@ -1563,14 +1563,19 @@ class PurchaseOrdersController extends Controller
             // Los items que llegan del formulario - ESTOS SON LOS ÚNICOS QUE DEBEN GUARDARSE
             $itemsToSave = $request->items ?? [];
             
-            // NUEVA CORRECCIÓN: Filtrar items vacíos o sin datos válidos
+            // 🔧 CORRECCIÓN: Filtro menos restrictivo para permitir edición de descripciones vacías
             $itemsToSave = array_filter($itemsToSave, function($item) {
-                // Solo mantener items que tengan descripción Y (cantidad > 0 O precio > 0)
+                // Mantener items que tengan al menos UNA de estas condiciones:
+                // 1. Descripción no vacía
+                // 2. Cantidad > 0
+                // 3. Precio > 0
                 $hasDescription = !empty($item['description']) && trim($item['description']) !== '';
                 $hasQuantity = isset($item['quantity']) && floatval($item['quantity']) > 0;
                 $hasPrice = isset($item['unit_price']) && floatval($item['unit_price']) > 0;
                 
-                return $hasDescription && ($hasQuantity || $hasPrice);
+                // 🔧 CAMBIO CRÍTICO: Permitir items con descripción vacía si tienen cantidad o precio
+                // Esto permite que los usuarios editen las descripciones después
+                return $hasDescription || $hasQuantity || $hasPrice;
             });
             
             // Reindexar el array para evitar problemas con índices
@@ -3349,6 +3354,37 @@ class PurchaseOrdersController extends Controller
                 ]);
             }
             
+            // 🔧 CREAR ESTRUCTURA COMPLETA DE PDF_CUSTOM_DATA
+            $provider = \App\Models\Provider::find($request->provider_id);
+            $pdfCustomData = [
+                'provider_name' => $provider->nombre,
+                'provider_nit' => $provider->nit,
+                'provider_email' => $provider->email,
+                'provider_phone' => $provider->telefono,
+                'provider_address' => $provider->direccion,
+                'provider_city' => $provider->ciudad,
+                'delivery_address' => $purchaseRequest->delivery_address ?? 'COLEGIO VICTORIA',
+                'payment_method' => $request->payment_terms,
+                'budget' => $purchaseRequest->budget ?? 'Presupuesto General',
+                'iva_rate' => $quotation->includes_iva ? 19 : 0,
+                'iva_amount' => $quotation->iva_amount ?? 0,
+                'ipoconsumo_rate' => 0,
+                'ipoconsumo_amount' => 0,
+                'subtotal' => $quotation->subtotal,
+                'total' => $quotation->total_amount,
+                'items' => $orderItems, // 🔧 IMPORTANTE: Guardar en estructura 'items'
+                'additional_items' => [],
+                'observations' => $request->observations,
+                'shared_budget_info' => null,
+                'individual_taxes_total' => 0,
+                'individual_taxes_breakdown' => ['4' => 0, '5' => 0, '8' => 0, '16' => 0, '19' => 0],
+                'edited_by' => auth()->id(),
+                'edited_at' => now()->toISOString(),
+                'calculation_source' => 'items_based',
+                'items_count' => count($orderItems),
+                'additional_items_count' => 0
+            ];
+            
             $purchaseOrder = PurchaseOrder::create([
                 'purchase_request_id' => $purchaseRequest->id,
                 'provider_id' => $request->provider_id,
@@ -3365,7 +3401,7 @@ class PurchaseOrdersController extends Controller
                 'created_by' => auth()->id(),
                 'status' => 'pending',
                 'file_path' => 'pending_generation',
-                'pdf_custom_data' => json_encode($orderItems) // 🔧 GUARDAR ITEMS
+                'pdf_custom_data' => json_encode($pdfCustomData) // 🔧 GUARDAR ESTRUCTURA COMPLETA
             ]);
 
             // Generar PDF

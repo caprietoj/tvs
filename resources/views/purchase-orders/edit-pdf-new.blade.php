@@ -533,7 +533,7 @@
                                         <textarea name="items[{{ $loop->index }}][description]" 
                                                 class="form-control form-control-sm border-0" 
                                                 style="width: 100%; border: none; background: transparent; resize: vertical; min-height: 40px; font-size: 12px;"
-                                                rows="3">{{ $customData['items'][$loop->index]['description'] ?? $item->item_description ?? '' }}</textarea>
+                                                rows="3">{{ !empty($customData['items'][$loop->index]['description']) ? $customData['items'][$loop->index]['description'] : ($item->item_description ?? '') }}</textarea>
                                     </td>
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">
                                         <input type="number" name="items[{{ $loop->index }}][quantity]" 
@@ -665,10 +665,10 @@
                                 <tr class="item-row">
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
                                     <td style="border: 1px solid #000; padding: 4px;">
-                                        <div style="width: 100%; min-height: 40px; font-size: 12px; padding: 4px; background-color: #f8f9fa;">
-                                            {{ $item['description'] ?? '' }}
-                                        </div>
-                                        <input type="hidden" name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}">
+                                        <textarea name="items[{{ $index }}][description]" 
+                                                class="form-control form-control-sm border-0" 
+                                                style="width: 100%; border: none; background: transparent; resize: vertical; min-height: 40px; font-size: 12px;"
+                                                rows="3">{{ $item['description'] ?? '' }}</textarea>
                                     </td>
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">
                                         <input type="number" name="items[{{ $index }}][quantity]" 
@@ -708,10 +708,10 @@
                                 <tr class="item-row">
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
                                     <td style="border: 1px solid #000; padding: 4px;">
-                                        <div style="width: 100%; min-height: 40px; font-size: 12px; padding: 4px; background-color: #f8f9fa;">
-                                            {{ $item['description'] ?? '' }}
-                                        </div>
-                                        <input type="hidden" name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}">
+                                        <textarea name="items[{{ $index }}][description]" 
+                                                class="form-control form-control-sm border-0" 
+                                                style="width: 100%; border: none; background: transparent; resize: vertical; min-height: 40px; font-size: 12px;"
+                                                rows="3">{{ $item['description'] ?? '' }}</textarea>
                                     </td>
                                     <td style="text-align: center; border: 1px solid #000; padding: 4px;">
                                         <input type="number" name="items[{{ $index }}][quantity]" 
@@ -756,10 +756,10 @@
                             <tr>
                                 <td style="text-align: center; border: 1px solid #000; padding: 4px;">{{ $itemNumber++ }}</td>
                                 <td style="border: 1px solid #000; padding: 4px;">
-                                    <div style="width: 100%; min-height: 40px; font-size: 12px; padding: 4px; background-color: #f8f9fa; color: #6c757d;">
-                                        Sin descripción disponible
-                                    </div>
-                                    <input type="hidden" name="items[0][description]" value="Sin descripción disponible">
+                                    <textarea name="items[0][description]" 
+                                            class="form-control form-control-sm border-0" 
+                                            style="width: 100%; border: none; background: transparent; resize: vertical; min-height: 40px; font-size: 12px;"
+                                            rows="3" placeholder="Ingrese la descripción del item"></textarea>
                                 </td>
                                 <td style="text-align: center; border: 1px solid #000; padding: 4px;">
                                     <input type="number" name="items[0][quantity]" 
