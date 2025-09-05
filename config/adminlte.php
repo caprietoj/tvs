@@ -365,10 +365,23 @@ return [
                 ],
                 [
                     'text' => '💻 Préstamo de Equipos',
-                    'url'  => 'equipment/request',
                     'icon' => 'fas fa-laptop',
                     'can'  => 'equipment.reserva',
                     'active' => ['equipment/request*', 'equipment/loans*'],
+                    'submenu' => [
+                        [
+                            'text' => 'Solicitar Préstamo',
+                            'url'  => 'equipment/request',
+                            'icon' => 'fas fa-plus',
+                            'active' => ['equipment/request*'],
+                        ],
+                        [
+                            'text' => 'Ver Préstamos',
+                            'url'  => 'equipment/loans',
+                            'icon' => 'fas fa-list',
+                            'active' => ['equipment/loans*'],
+                        ],
+                    ],
                 ],
             ],
         ],
