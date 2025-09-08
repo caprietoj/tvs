@@ -434,6 +434,39 @@ Route::middleware('auth')->group(function () {
         Route::get('/process-auto-returns', [EquipmentController::class, 'processAutoReturns'])
             ->name('equipment.process-auto-returns')
             ->withoutMiddleware(['auth']);
+
+        // Rutas para bloqueos de equipos
+        Route::prefix('blocks')->name('equipment.blocks.')->group(function () {
+            Route::get('/', [App\Http\Controllers\EquipmentBlockController::class, 'index'])
+                ->name('index')
+                ->middleware('can:equipment.blocks.manage');
+            Route::get('/create', [App\Http\Controllers\EquipmentBlockController::class, 'create'])
+                ->name('create')
+                ->middleware('can:equipment.blocks.manage');
+            Route::post('/', [App\Http\Controllers\EquipmentBlockController::class, 'store'])
+                ->name('store')
+                ->middleware('can:equipment.blocks.manage');
+            Route::post('/weekly', [App\Http\Controllers\EquipmentBlockController::class, 'storeWeekly'])
+                ->name('store-weekly')
+                ->middleware('can:equipment.blocks.manage');
+            Route::get('/{equipmentBlock}', [App\Http\Controllers\EquipmentBlockController::class, 'show'])
+                ->name('show')
+                ->middleware('can:equipment.blocks.manage');
+            Route::get('/{equipmentBlock}/edit', [App\Http\Controllers\EquipmentBlockController::class, 'edit'])
+                ->name('edit')
+                ->middleware('can:equipment.blocks.manage');
+            Route::put('/{equipmentBlock}', [App\Http\Controllers\EquipmentBlockController::class, 'update'])
+                ->name('update')
+                ->middleware('can:equipment.blocks.manage');
+            Route::delete('/{equipmentBlock}', [App\Http\Controllers\EquipmentBlockController::class, 'destroy'])
+                ->name('destroy')
+                ->middleware('can:equipment.blocks.manage');
+            Route::get('/blocked-units/check', [App\Http\Controllers\EquipmentBlockController::class, 'getBlockedUnits'])
+                ->name('blocked-units');
+            Route::get('/cycle-days/get', [App\Http\Controllers\EquipmentBlockController::class, 'getCycleDays'])
+                ->name('cycle-days')
+                ->middleware('can:equipment.blocks.manage');
+        });
     });
 
     // Rutas para el módulo de Inventario

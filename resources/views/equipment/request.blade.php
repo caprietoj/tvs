@@ -433,6 +433,7 @@
                     </div>
                     <div class="timeline-legend mb-2 d-flex align-items-center">
                         <div class="mr-3"><span class="timeline-legend-item bg-danger"></span> Horas reservadas</div>
+                        <div class="mr-3"><span class="timeline-legend-item" style="background-color: #fd7e14;"></span> Horas bloqueadas</div>
                         <div class="mr-3"><span class="timeline-legend-item bg-success"></span> Su selección</div>
                         <div><span class="timeline-legend-item bg-warning"></span> Conflicto de horario</div>
                     </div>
@@ -1124,10 +1125,33 @@ document.addEventListener('DOMContentLoaded', function() {
         background-color: rgba(255, 193, 7, 0.5);
     }
     
+    /* Estilos para bloqueos en la leyenda */
+    .timeline-legend-item[style*="background-color: #fd7e14"] {
+        background-color: rgba(253, 126, 20, 0.5) !important;
+    }
+    
     /* Estilos mejorados para los slots del timeline */
     .timeline-slot {
         border: 1px solid rgba(220, 53, 69, 0.9);
         transition: all 0.3s;
+    }
+    
+    /* Estilos específicos para slots bloqueados */
+    .timeline-slot.timeline-blocked {
+        background-color: rgba(253, 126, 20, 0.7) !important;
+        border-color: #fd7e14 !important;
+        z-index: 1;
+        color: white;
+        font-weight: bold;
+    }
+
+    /* Estilos específicos para slots ocupados */
+    .timeline-slot.timeline-occupied {
+        background-color: rgba(220, 53, 69, 0.9) !important;
+        border-color: #dc3545 !important;
+        z-index: 2;
+        color: white;
+        font-weight: bold;
     }
     
     .timeline-slot:hover {

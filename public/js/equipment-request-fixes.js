@@ -190,13 +190,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Actualizar el timeline si es necesario
-            if (data.occupied_slots && elements.timelineSlots) {
-                updateTimelineSlots(data.occupied_slots);
+            if ((data.occupied_slots || data.blocked_slots) && elements.timelineSlots) {
+                updateTimelineSlots(data.occupied_slots || [], data.blocked_slots || []);
             }
             
-            function updateTimelineSlots(occupiedSlots) {
-                if (!occupiedSlots || occupiedSlots.length === 0 || !elements.timelineContainer || !elements.timelineSlots) {
+            function updateTimelineSlots(occupiedSlots, blockedSlots) {
+                if ((!occupiedSlots || occupiedSlots.length === 0) && (!blockedSlots || blockedSlots.length === 0)) {
                     if (elements.timelineContainer) elements.timelineContainer.classList.add('d-none');
+                    return;
+                }
+                
+                if (!elements.timelineContainer || !elements.timelineSlots) {
                     return;
                 }
                 
@@ -214,27 +218,61 @@ document.addEventListener('DOMContentLoaded', function() {
                     return (minutes / 600) * 100;
                 }
                 
-                // Crear slots en el timeline
-                occupiedSlots.forEach((slot, index) => {
-                    const startMinutes = timeToMinutes(slot.start);
-                    const endMinutes = timeToMinutes(slot.end);
-                    const leftPos = minutesToPercent(startMinutes);
-                    const width = minutesToPercent(endMinutes - startMinutes);
-                    
-                    const slotElement = document.createElement('div');
-                    slotElement.className = 'timeline-slot';
-                    slotElement.style.left = `${leftPos}%`;
-                    slotElement.style.width = `${width}%`;
-                    slotElement.dataset.start = slot.start;
-                    slotElement.dataset.end = slot.end;
-                    slotElement.dataset.units = slot.units_taken;
-                    slotElement.innerHTML = `${slot.units_taken} u.`;
-                    
-                    // Tooltip con información
-                    slotElement.title = `${slot.start} - ${slot.end} (${slot.units_taken} unidades)`;
-                    
-                    elements.timelineSlots.appendChild(slotElement);
-                });
+                // Crear slots bloqueados primero (aparecen debajo)
+                if (blockedSlots && blockedSlots.length > 0) {
+                    blockedSlots.forEach((slot, index) => {
+                        const startMinutes = timeToMinutes(slot.start);
+                        const endMinutes = timeToMinutes(slot.end);
+                        const leftPos = minutesToPercent(startMinutes);
+                        const width = minutesToPercent(endMinutes - startMinutes);
+                        
+                        const slotElement = document.createElement('div');
+                        slotElement.className = 'timeline-slot timeline-blocked';
+                        slotElement.style.left = `${leftPos}%`;
+                        slotElement.style.width = `${width}%`;
+                        slotElement.style.backgroundColor = '#fd7e14'; // Color naranja para bloqueos
+                        slotElement.style.borderColor = '#fd7e14';
+                        slotElement.dataset.start = slot.start;
+                        slotElement.dataset.end = slot.end;
+                        slotElement.dataset.units = slot.units_blocked;
+                        slotElement.dataset.type = 'blocked';
+                        slotElement.innerHTML = `${slot.units_blocked} bloq.`;
+                        
+                        // Tooltip con información
+                        slotElement.title = `BLOQUEADO: ${slot.start} - ${slot.end} (${slot.units_blocked} unidades - ${slot.reason})`;
+                        
+                        elements.timelineSlots.appendChild(slotElement);
+                    });
+                }
+                
+                // Crear slots ocupados encima
+                if (occupiedSlots && occupiedSlots.length > 0) {
+                    occupiedSlots.forEach((slot, index) => {
+                        const startMinutes = timeToMinutes(slot.start);
+                        const endMinutes = timeToMinutes(slot.end);
+                        const leftPos = minutesToPercent(startMinutes);
+                        const width = minutesToPercent(endMinutes - startMinutes);
+                        
+                        const slotElement = document.createElement('div');
+                        slotElement.className = 'timeline-slot timeline-occupied';
+                        slotElement.style.left = `${leftPos}%`;
+                        slotElement.style.width = `${width}%`;
+                        slotElement.style.backgroundColor = '#dc3545'; // Color rojo para ocupados
+                        slotElement.style.borderColor = '#dc3545';
+                        slotElement.style.position = 'relative';
+                        slotElement.style.zIndex = '2'; // Encima de los bloqueos
+                        slotElement.dataset.start = slot.start;
+                        slotElement.dataset.end = slot.end;
+                        slotElement.dataset.units = slot.units_taken;
+                        slotElement.dataset.type = 'occupied';
+                        slotElement.innerHTML = `${slot.units_taken} u.`;
+                        
+                        // Tooltip con información
+                        slotElement.title = `RESERVADO: ${slot.start} - ${slot.end} (${slot.units_taken} unidades)`;
+                        
+                        elements.timelineSlots.appendChild(slotElement);
+                    });
+                }
                 
                 // Actualizar la selección si es necesario
                 if (elements.timelineSelection) {

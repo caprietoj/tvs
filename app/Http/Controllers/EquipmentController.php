@@ -285,8 +285,16 @@ class EquipmentController extends Controller
                 $validated['end_time']
             );
             
-            // La disponibilidad real para este horario es el total de unidades menos las ocupadas en este horario específico
-            $availableForTimeSlot = $equipment->total_units - $maxOccupiedUnits;
+            // Obtener unidades bloqueadas para este horario específico
+            $blockedUnits = \App\Models\EquipmentBlock::getTotalBlockedUnits(
+                $validated['equipment_id'],
+                $validated['loan_date'],
+                $validated['start_time'],
+                $validated['end_time']
+            );
+            
+            // La disponibilidad real para este horario es el total de unidades menos las ocupadas y bloqueadas
+            $availableForTimeSlot = $equipment->total_units - $maxOccupiedUnits - $blockedUnits;
             
             // Registro adicional para depuración
             Log::info('Cálculo de disponibilidad en requestLoan', [
@@ -294,6 +302,7 @@ class EquipmentController extends Controller
                 'equipment_type' => $equipment->type,
                 'total_units' => $equipment->total_units,
                 'max_occupied_units' => $maxOccupiedUnits,
+                'blocked_units' => $blockedUnits,
                 'available_for_time_slot' => $availableForTimeSlot,
                 'requested_units' => $validated['units_requested']
             ]);
@@ -305,16 +314,28 @@ class EquipmentController extends Controller
                     'available_for_time_slot' => $availableForTimeSlot,
                     'total_units' => $equipment->total_units,
                     'max_occupied_units' => $maxOccupiedUnits,
+                    'blocked_units' => $blockedUnits,
                     'loan_date' => $validated['loan_date'],
                     'start_time' => $validated['start_time'],
                     'end_time' => $validated['end_time']
                 ]);
                 
+                $errorMessage = 'No hay suficientes equipos disponibles para el horario seleccionado. ';
+                $errorMessage .= 'Disponibles: ' . $availableForTimeSlot . ' de ' . $equipment->total_units . ' unidades. ';
+                
+                if ($blockedUnits > 0) {
+                    $errorMessage .= 'Hay ' . $blockedUnits . ' unidades bloqueadas para este horario. ';
+                }
+                
+                if ($maxOccupiedUnits > 0) {
+                    $errorMessage .= 'Hay ' . $maxOccupiedUnits . ' unidades reservadas por otros usuarios. ';
+                }
+                
+                $errorMessage .= 'Pruebe con otro horario o solicite menos unidades.';
+                
                 return back()
                     ->withInput()
-                    ->with('error', 'No hay suficientes equipos disponibles para el horario seleccionado. 
-                        Disponibles: ' . $availableForTimeSlot . ' de ' . $equipment->total_units . ' unidades. 
-                        Pruebe con otro horario o solicite menos unidades.');
+                    ->with('error', $errorMessage);
             }
             
             // Crear el préstamo con devolución automática programada
@@ -623,13 +644,25 @@ class EquipmentController extends Controller
             // Calcular unidades ocupadas en el horario específico
             $occupiedUnits = collect($conflictingLoans)->sum('units_requested');
             
+            // Obtener unidades bloqueadas para este horario específico
+            $blockedUnits = \App\Models\EquipmentBlock::getTotalBlockedUnits(
+                $validated['equipment_id'],
+                $validated['loan_date'],
+                $requestStart,
+                $requestEnd
+            );
+            
             // Calcular disponibilidad real para el horario específico
-            // El total disponible es el total de unidades menos las ocupadas en este horario
-            $availableUnits = max(0, $equipment->total_units - $occupiedUnits);
+            // El total disponible es el total de unidades menos las ocupadas y bloqueadas
+            $availableUnits = max(0, $equipment->total_units - $occupiedUnits - $blockedUnits);
         } else {
             // Si no se proporcionaron horarios específicos, buscar el horario con menos disponibilidad
             $occupiedUnitsByHour = $this->calculateMaxOccupiedUnits($loans, $equipment->total_units);
-            $availableUnits = $equipment->total_units - $occupiedUnitsByHour;
+            
+            // Para horarios no específicos, obtener el máximo de unidades bloqueadas en toda la fecha
+            $blockedUnits = $this->getMaxBlockedUnitsForDate($validated['equipment_id'], $validated['loan_date']);
+            
+            $availableUnits = max(0, $equipment->total_units - $occupiedUnitsByHour - $blockedUnits);
             $occupiedUnits = $occupiedUnitsByHour;
         }
 
@@ -640,6 +673,7 @@ class EquipmentController extends Controller
             'total_units' => $equipment->total_units,
             'available_units' => $availableUnits,
             'occupied_units' => isset($occupiedUnits) ? $occupiedUnits : 0,
+            'blocked_units' => isset($blockedUnits) ? $blockedUnits : 0,
             'has_specific_time' => $request->has('start_time') && $request->has('end_time'),
             'time_range' => $request->has('start_time') ? $validated['start_time'] . ' - ' . $validated['end_time'] : 'No especificado',
             'conflicting_loans_count' => count($conflictingLoans ?? [])
@@ -650,6 +684,7 @@ class EquipmentController extends Controller
             'available_units' => $availableUnits,
             'initial_units' => $equipment->available_units,
             'occupied_units' => isset($occupiedUnits) ? $occupiedUnits : 0,
+            'blocked_units' => isset($blockedUnits) ? $blockedUnits : 0,
             'occupied_slots' => $loans->map(function($loan) {
                 return [
                     'start' => Carbon::parse($loan->start_time)->format('H:i'),
@@ -657,6 +692,7 @@ class EquipmentController extends Controller
                     'units_taken' => $loan->units_requested
                 ];
             }),
+            'blocked_slots' => $this->getBlockedSlotsForDate($validated['equipment_id'], $validated['loan_date']),
             'has_availability_by_hour' => true
         ]);
     }
@@ -1343,6 +1379,39 @@ class EquipmentController extends Controller
         // Encontrar el valor máximo de unidades ocupadas en cualquier minuto
         return !empty($occupiedByMinute) ? max($occupiedByMinute) : 0;
     }
+
+    /**
+     * Obtiene el máximo de unidades bloqueadas para una fecha específica
+     * considerando todos los posibles horarios de bloqueo en esa fecha
+     */
+    private function getMaxBlockedUnitsForDate($equipmentId, $date)
+    {
+        // Generar horarios comunes de trabajo (de 7:00 a 18:00 cada 30 minutos)
+        $maxBlocked = 0;
+        
+        for ($hour = 7; $hour <= 17; $hour++) {
+            for ($minute = 0; $minute < 60; $minute += 30) {
+                $startTime = sprintf('%02d:%02d', $hour, $minute);
+                $endTime = sprintf('%02d:%02d', $hour, $minute + 30);
+                
+                // Si llegamos a las 18:00, ajustar el tiempo final
+                if ($hour == 17 && $minute == 30) {
+                    $endTime = '18:00';
+                }
+                
+                $blockedUnits = \App\Models\EquipmentBlock::getTotalBlockedUnits(
+                    $equipmentId,
+                    $date,
+                    $startTime,
+                    $endTime
+                );
+                
+                $maxBlocked = max($maxBlocked, $blockedUnits);
+            }
+        }
+        
+        return $maxBlocked;
+    }
     
     /**
      * Convierte una hora en formato HH:MM a minutos totales desde medianoche
@@ -1354,5 +1423,65 @@ class EquipmentController extends Controller
     {
         list($hours, $minutes) = explode(':', $time);
         return (int)$hours * 60 + (int)$minutes;
+    }
+
+    /**
+     * Obtiene los slots bloqueados para una fecha específica
+     * 
+     * @param int $equipmentId ID del equipo
+     * @param string $date Fecha en formato Y-m-d
+     * @return array Array de slots bloqueados
+     */
+    private function getBlockedSlotsForDate($equipmentId, $date)
+    {
+        $dateObj = Carbon::parse($date);
+        $dayOfWeek = strtolower($dateObj->format('l'));
+        
+        // Obtener el ciclo escolar activo
+        $activeCycle = \App\Models\SchoolCycle::where('active', true)->first();
+        if (!$activeCycle) {
+            return [];
+        }
+
+        $blockedSlots = [];
+
+        // 1. Obtener bloqueos semanales
+        $weeklyBlocks = \App\Models\EquipmentBlock::where('equipment_id', $equipmentId)
+            ->where('school_cycle_id', $activeCycle->id)
+            ->where('is_weekday_block', true)
+            ->where($dayOfWeek, true)
+            ->get();
+
+        foreach ($weeklyBlocks as $block) {
+            $blockedSlots[] = [
+                'start' => Carbon::parse($block->start_time)->format('H:i'),
+                'end' => Carbon::parse($block->end_time)->format('H:i'),
+                'units_blocked' => $block->blocked_units,
+                'reason' => $block->reason ?? 'Bloqueo semanal',
+                'type' => 'weekly'
+            ];
+        }
+
+        // 2. Obtener bloqueos por día de ciclo
+        $cycleDay = \App\Models\CycleDay::getCycleDayForDate($date, $activeCycle->id);
+        if ($cycleDay) {
+            $cycleDayBlocks = \App\Models\EquipmentBlock::where('equipment_id', $equipmentId)
+                ->where('school_cycle_id', $activeCycle->id)
+                ->where('cycle_day', $cycleDay->cycle_day)
+                ->where('is_weekday_block', false)
+                ->get();
+
+            foreach ($cycleDayBlocks as $block) {
+                $blockedSlots[] = [
+                    'start' => Carbon::parse($block->start_time)->format('H:i'),
+                    'end' => Carbon::parse($block->end_time)->format('H:i'),
+                    'units_blocked' => $block->blocked_units,
+                    'reason' => $block->reason ?? 'Bloqueo día de ciclo ' . $cycleDay->cycle_day,
+                    'type' => 'cycle_day'
+                ];
+            }
+        }
+
+        return $blockedSlots;
     }
 }

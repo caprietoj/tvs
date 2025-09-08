@@ -367,7 +367,7 @@ return [
                     'text' => '💻 Préstamo de Equipos',
                     'icon' => 'fas fa-laptop',
                     'can'  => 'equipment.reserva',
-                    'active' => ['equipment/request*', 'equipment/loans*'],
+                    'active' => ['equipment/request*', 'equipment/loans*', 'equipment/blocks*'],
                     'submenu' => [
                         [
                             'text' => 'Solicitar Préstamo',
@@ -380,6 +380,13 @@ return [
                             'url'  => 'equipment/loans',
                             'icon' => 'fas fa-list',
                             'active' => ['equipment/loans*'],
+                        ],
+                        [
+                            'text' => 'Gestionar Bloqueos',
+                            'url'  => 'equipment/blocks',
+                            'icon' => 'fas fa-lock',
+                            'can'  => 'equipment.blocks.manage',
+                            'active' => ['equipment/blocks*'],
                         ],
                     ],
                 ],
