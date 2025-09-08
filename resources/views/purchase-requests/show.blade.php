@@ -55,9 +55,14 @@
                     $existingOrder = \App\Models\PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->first();
                 @endphp
                 @if(!$existingOrder)
-                    <a href="{{ url('http://127.0.0.1:8000/purchase-orders') }}" class="btn btn-primary btn-sm mr-2" target="_blank">
-                        <i class="fas fa-file-invoice"></i> Crear Orden de Compra
-                    </a>
+                    @if((auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))
+                        <a href="{{ route('purchase-orders.show-create-no-quotation-purchase', $purchaseRequest->id) }}" class="btn btn-primary btn-sm mr-2">
+                            <i class="fas fa-file-invoice"></i> Crear Orden de Compra
+                        </a>
+                        <small class="text-muted d-block mt-1">Creación manual sin cotización disponible para administradores y personal de compras</small>
+                    @else
+                        <span class="text-muted small">Solo administradores y personal de compras pueden crear órdenes sin cotización</span>
+                    @endif
                 @else
                     <a href="{{ route('purchase-orders.show', $existingOrder->id) }}" class="btn btn-info btn-sm mr-2">
                         <i class="fas fa-eye"></i> Ver Orden de Compra

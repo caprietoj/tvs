@@ -105,6 +105,61 @@
     </div>
     @endif
 
+    <!-- Solicitudes aprobadas sin cotización para creación manual -->
+    @if(count($noQuotationRequests) > 0 && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')))
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h3 class="card-title">Solicitudes Aprobadas Sin Cotización - Creación Manual</h3>
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Información:</strong> Las siguientes solicitudes fueron aprobadas sin cotización y requieren creación manual de la orden de compra.
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="noQuotationRequestsTable">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Solicitante</th>
+                            <th>Departamento</th>
+                            <th>Descripción</th>
+                            <th>Fecha Aprobación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($noQuotationRequests as $request)
+                        <tr>
+                            <td>{{ $request->request_number }}</td>
+                            <td>{{ $request->requester }}</td>
+                            <td>{{ $request->section_area }}</td>
+                            <td class="text-truncate" style="max-width: 200px;" title="{{ $request->concept }}">
+                                {{ Str::limit($request->concept, 50) }}
+                            </td>
+                            <td>{{ $request->approval_date ? $request->approval_date->format('d/m/Y') : 'N/A' }}</td>
+                            <td>
+                                <a href="{{ route('purchase-orders.show-create-no-quotation-purchase', $request->id) }}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-file-invoice"></i> Crear Orden Manual
+                                </a>
+                                <a href="{{ route('purchase-requests.show', $request->id) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i> Ver Solicitud
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Órdenes de Compra Existentes -->
     <div class="card">
         <div class="card-header">

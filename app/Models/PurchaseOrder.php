@@ -46,6 +46,7 @@ class PurchaseOrder extends Model
         'is_viewed',
         'viewed_by',
         'viewed_at',
+        'manual_creation',
     ];
 
     /**
@@ -61,6 +62,7 @@ class PurchaseOrder extends Model
         'cancelled_at' => 'datetime',
         'approved_at' => 'datetime',
         'includes_iva' => 'boolean',
+        'manual_creation' => 'boolean',
         'additional_items' => 'array',
         'pdf_custom_data' => 'array',
     ];

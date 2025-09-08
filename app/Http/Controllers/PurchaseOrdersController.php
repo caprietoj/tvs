@@ -157,6 +157,17 @@ class PurchaseOrdersController extends Controller
                 }
             })
             ->sortByDesc('approval_date');
+
+        // Obtener solicitudes aprobadas SIN cotización para creación manual
+        $noQuotationRequests = PurchaseRequest::with(['user', 'approver', 'purchaseOrders'])
+            ->whereIn('status', ['approved', 'in_process'])
+            ->where('type', 'purchase') // Solo compras
+            ->where('selected_quotation_id', null) // Sin cotización seleccionada
+            ->whereDoesntHave('quotationItemSelections') // Sin selecciones mixtas
+            ->whereDoesntHave('quotations') // Sin cotizaciones registradas
+            ->whereDoesntHave('purchaseOrders') // Sin órdenes de compra existentes
+            ->orderBy('approval_date', 'desc')
+            ->get();
         
         // Obtener todas las secciones para el filtro
         $sections = PurchaseRequest::whereHas('purchaseOrders')
@@ -166,7 +177,7 @@ class PurchaseOrdersController extends Controller
             ->sort()
             ->values();
             
-        return view('purchase-orders.index', compact('orders', 'approvedRequests', 'sections', 'requestNumberFilter', 'sectionFilter', 'statusFilter'));
+        return view('purchase-orders.index', compact('orders', 'approvedRequests', 'noQuotationRequests', 'sections', 'requestNumberFilter', 'sectionFilter', 'statusFilter'));
     }
 
     /**
@@ -2340,6 +2351,22 @@ class PurchaseOrdersController extends Controller
             ));
             
         } else {
+            // Verificar si es una solicitud de compra/productos que puede ser autorizada sin cotización
+            $isPurchaseRequest = $purchaseRequest->type === 'purchase';
+            $hasManualCreationPermission = auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras');
+            
+            if ($isPurchaseRequest && $hasManualCreationPermission) {
+                // Mostrar interfaz para creación manual de orden sin cotización
+                Log::info('Mostrando interfaz de productos sin cotización', [
+                    'purchase_request_id' => $purchaseRequest->id,
+                    'user_has_permission' => $hasManualCreationPermission
+                ]);
+
+                return view('purchase-orders.no-quotation-purchase', compact(
+                    'purchaseRequest'
+                ));
+            }
+            
             // Verificar si es una solicitud "huérfana" (tuvo órdenes pero se eliminaron)
             $hadPreviousOrders = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)
                 ->withTrashed()
@@ -3547,6 +3574,238 @@ class PurchaseOrdersController extends Controller
             ]);
 
             return redirect()->back()->with('error', 'Error al crear la orden de compra: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mostrar formulario para crear una orden de compra sin cotización
+     */
+    public function showCreateNoQuotationPurchase(PurchaseRequest $purchaseRequest)
+    {
+        // Validar permisos
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
+            abort(403, 'No tienes permisos para crear órdenes de compra sin cotización.');
+        }
+
+        // Verificar que la solicitud esté aprobada
+        if (!in_array($purchaseRequest->status, ['approved', 'in_process'])) {
+            return redirect()->back()->with('error', 'Solo se pueden crear órdenes de compra para solicitudes aprobadas.');
+        }
+
+        // Verificar si ya existe una orden para esta solicitud
+        $existingOrder = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->exists();
+        if ($existingOrder) {
+            return redirect()->back()->with('error', 'Ya existe una orden de compra para esta solicitud.');
+        }
+
+        // Obtener todos los proveedores ordenados alfabéticamente
+        $providers = Proveedor::orderBy('nombre')->get();
+
+        // Configuración de impuestos
+        $taxes = [
+            ['id' => 'iva', 'name' => 'IVA', 'rate' => 19],
+            ['id' => 'tax', 'name' => 'Impuesto Adicional', 'rate' => 0], // Configurable
+        ];
+
+        return view('purchase-orders.no-quotation-purchase', compact('purchaseRequest', 'providers', 'taxes'));
+    }
+
+    /**
+     * Crear una orden de compra para productos sin cotización (autorizada manualmente)
+     */
+    public function createNoQuotationPurchase(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        // Validar permisos
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('compras')) {
+            abort(403, 'No tienes permisos para crear órdenes de compra sin cotización.');
+        }
+
+        $request->validate([
+            'provider_name' => 'required|string|max:255',
+            'provider_nit' => 'required|string|max:50',
+            'provider_address' => 'nullable|string|max:255',
+            'provider_phone' => 'nullable|string|max:50',
+            'provider_email' => 'nullable|email|max:255',
+            'subtotal_amount' => 'required|numeric|min:0.01',
+            'includes_iva' => 'nullable|boolean',
+            'includes_tax' => 'nullable|boolean',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'iva_amount' => 'nullable|numeric|min:0',
+            'tax_amount' => 'nullable|numeric|min:0',
+            'total_amount' => 'required|numeric|min:0.01',
+            'payment_terms' => 'required|string',
+            'delivery_date' => 'required|date',
+            'observations' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.description' => 'required|string|max:255',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.total' => 'required|numeric|min:0',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Verificar que la solicitud esté aprobada
+            if (!in_array($purchaseRequest->status, ['approved', 'in_process'])) {
+                return redirect()->back()->with('error', 'Solo se pueden crear órdenes de compra para solicitudes aprobadas.');
+            }
+
+            // Verificar si ya existe una orden para esta solicitud
+            $existingOrder = PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)->exists();
+            if ($existingOrder) {
+                return redirect()->back()->with('error', 'Ya existe una orden de compra para esta solicitud.');
+            }
+
+            // Buscar o crear el proveedor
+            $provider = Proveedor::where('nombre', $request->provider_name)->first();
+            if (!$provider) {
+                $provider = Proveedor::create([
+                    'nombre' => $request->provider_name,
+                    'nit' => $request->provider_nit,
+                    'direccion' => $request->provider_address ?? 'Por definir',
+                    'telefono' => $request->provider_phone ?? 'Sin teléfono',
+                    'email' => $request->provider_email ?? 'sin-email@proveedor.com',
+                    'persona_contacto' => 'Por asignar',
+                    'ciudad' => 'Por definir',
+                    'servicio_producto' => 'Productos/Materiales'
+                ]);
+            }
+
+            // Calcular valores basándose en los impuestos seleccionados
+            $subtotal = $request->subtotal_amount;
+            $includesIva = $request->boolean('includes_iva', false);
+            $includesTax = $request->boolean('includes_tax', false);
+            
+            // Calcular IVA
+            $ivaAmount = 0;
+            if ($includesIva) {
+                $ivaAmount = round($subtotal * 0.19, 2);
+            }
+            
+            // Calcular impuesto adicional
+            $taxAmount = 0;
+            if ($includesTax && $request->tax_rate > 0) {
+                $taxAmount = round($subtotal * ($request->tax_rate / 100), 2);
+            }
+            
+            // Total final
+            $totalAmount = $subtotal + $ivaAmount + $taxAmount;
+
+            // Validar que la suma de items coincida con el subtotal
+            $itemsTotal = collect($request->items)->sum('total');
+            if (abs($itemsTotal - $subtotal) > 0.02) { // Permitir pequeñas diferencias por redondeo
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'La suma de los items (' . number_format($itemsTotal, 2) . ') no coincide con el subtotal especificado (' . number_format($subtotal, 2) . ').');
+            }
+
+            // Generar número de orden
+            $orderNumber = $this->generateOrderNumber();
+
+            Log::info('Creando orden de compra sin cotización para productos', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'provider_name' => $request->provider_name,
+                'provider_id' => $provider->id,
+                'subtotal' => $subtotal,
+                'iva_amount' => $ivaAmount,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'items_count' => count($request->items)
+            ]);
+
+            // Crear la orden de compra
+            $purchaseOrder = PurchaseOrder::create([
+                'order_number' => $orderNumber,
+                'purchase_request_id' => $purchaseRequest->id,
+                'provider_id' => $provider->id,
+                'subtotal' => $subtotal,
+                'iva_amount' => $ivaAmount,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'payment_terms' => $request->payment_terms,
+                'delivery_date' => $request->delivery_date,
+                'observations' => $request->observations ?? 'Orden autorizada sin cotización - Creación manual',
+                'status' => 'pending',
+                'includes_iva' => $includesIva,
+                'file_path' => 'pending_generation',
+                'additional_items' => [],
+                'manual_creation' => true, // Marcar como creación manual
+                'created_by' => auth()->id(),
+            ]);
+
+            // Preparar items para almacenar en pdf_custom_data
+            $customItems = [];
+            foreach ($request->items as $index => $item) {
+                $customItems[] = [
+                    'description' => $item['description'],
+                    'quantity' => floatval($item['quantity']),
+                    'unit_price' => floatval($item['unit_price']),
+                    'total' => floatval($item['total'])
+                ];
+            }
+
+            // Almacenar datos personalizados para el PDF
+            $customData = [
+                'order_number' => $orderNumber,
+                'provider_name' => $provider->nombre,
+                'provider_nit' => $provider->nit,
+                'provider_address' => $provider->direccion,
+                'provider_phone' => $provider->telefono,
+                'provider_email' => $provider->email,
+                'subtotal' => $subtotal,
+                'iva_amount' => $ivaAmount,
+                'total_amount' => $totalAmount,
+                'payment_terms' => $request->payment_terms,
+                'delivery_date' => $request->delivery_date,
+                'observations' => $request->observations ?? 'Orden autorizada sin cotización - Creación manual',
+                'items' => $customItems,
+                'includes_iva' => $includesIva,
+                'manual_creation' => true,
+                'creation_date' => now()->toDateTimeString(),
+                'created_by' => auth()->user()->name ?? 'Usuario'
+            ];
+
+            $purchaseOrder->update(['pdf_custom_data' => json_encode($customData)]);
+
+            // Cambiar estado de la solicitud
+            $purchaseRequest->update(['status' => 'in_process']);
+
+            // Generar PDF para la orden
+            $pdfService = app(\App\Services\PurchaseOrderPdfService::class);
+            $pdfPath = $pdfService->generatePdf($purchaseOrder);
+            $purchaseOrder->update(['file_path' => $pdfPath]);
+
+            // Registrar en historial
+            \App\Models\RequestHistory::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'user_id' => auth()->id(),
+                'action' => 'Orden de compra creada manualmente',
+                'notes' => "Orden #{$orderNumber} creada sin cotización para {$provider->nombre}. Total: $" . number_format($totalAmount, 2, ',', '.')
+            ]);
+
+            DB::commit();
+
+            Log::info('Orden de compra sin cotización creada exitosamente', [
+                'order_id' => $purchaseOrder->id,
+                'order_number' => $orderNumber,
+                'total_amount' => $totalAmount
+            ]);
+
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('success', "Orden de compra #{$orderNumber} creada exitosamente para {$provider->nombre}");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error al crear orden de compra sin cotización para productos', [
+                'purchase_request_id' => $purchaseRequest->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error al crear la orden de compra: ' . $e->getMessage());
         }
     }
 

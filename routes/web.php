@@ -740,6 +740,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('purchase-orders.create-from-quotation');
     Route::post('purchase-requests/{purchaseRequest}/orders/create-no-quotation', [PurchaseOrdersController::class, 'createNoQuotation'])
         ->name('purchase-orders.create-no-quotation');
+    Route::get('purchase-requests/{purchaseRequest}/orders/create-no-quotation-purchase', [PurchaseOrdersController::class, 'showCreateNoQuotationPurchase'])
+        ->name('purchase-orders.show-create-no-quotation-purchase');
+    Route::post('purchase-requests/{purchaseRequest}/orders/create-no-quotation-purchase', [PurchaseOrdersController::class, 'createNoQuotationPurchase'])
+        ->name('purchase-orders.create-no-quotation-purchase');
     
     Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrdersController::class, 'show'])
         ->name('purchase-orders.show');
