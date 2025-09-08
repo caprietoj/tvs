@@ -471,6 +471,16 @@
                                 @endif
                             </div>
                         </div>
+                        
+                        {{-- Mensaje informativo sobre edición de cotizaciones --}}
+                        @if($purchaseRequest->purchaseOrders()->whereNull('deleted_at')->exists() && 
+                            in_array($purchaseRequest->status, ['approved', 'in_process']))
+                            <div class="alert alert-info mx-3 mt-3 mb-0">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <strong>Información:</strong> Esta solicitud ya tiene órdenes de compra generadas. 
+                                Las cotizaciones se pueden editar y los cambios se aplicarán automáticamente a las órdenes de compra correspondientes.
+                            </div>
+                        @endif
                         <div class="card-body p-0">
                             @if($purchaseRequest->quotations->count() > 0)
                                 <div class="table-responsive">
@@ -496,9 +506,28 @@
                                                         @endif
                                                     </td>
                                                     <td>
-                                                        <a href="{{ route('quotations.download', $quotation) }}" class="btn btn-sm btn-info">
+                                                        <a href="{{ route('quotations.download', $quotation) }}" class="btn btn-sm btn-info" title="Descargar">
                                                             <i class="fas fa-download"></i>
                                                         </a>
+                                                        
+                                                        {{-- Botón de editar: usando política de autorización --}}
+                                                        @can('update', $quotation)
+                                                            @php
+                                                                $hasActiveOrders = $purchaseRequest->purchaseOrders()->whereNull('deleted_at')->exists();
+                                                                $tooltipText = $hasActiveOrders 
+                                                                    ? 'Editar cotización (los cambios se aplicarán automáticamente a las órdenes de compra)'
+                                                                    : 'Editar cotización';
+                                                            @endphp
+                                                            <a href="{{ route('quotations.edit', $quotation) }}" 
+                                                               class="btn btn-sm btn-secondary" 
+                                                               title="{{ $tooltipText }}"
+                                                               data-toggle="tooltip" data-placement="top">
+                                                                <i class="fas fa-edit"></i>
+                                                                @if($hasActiveOrders)
+                                                                    <i class="fas fa-sync-alt text-warning ml-1" style="font-size: 10px;"></i>
+                                                                @endif
+                                                            </a>
+                                                        @endcan
                                                         
                                                         @if($purchaseRequest->status == 'En Cotización' && $purchaseRequest->hasRequiredQuotations() && !$quotation->is_selected)
                                                             <a href="{{ route('quotations.select', $quotation) }}" class="btn btn-sm btn-warning">
@@ -511,7 +540,7 @@
                                                                 onsubmit="return confirm('¿Está seguro de que desea eliminar esta cotización?')">
                                                                 @csrf
                                                                 @method('DELETE')
-                                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                                <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
                                                             </form>

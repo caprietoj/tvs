@@ -122,6 +122,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'holidays.create',
             'holidays.edit',
             'holidays.delete',
+            'equipment.blocks.manage',
+            'purchase-orders.no-quotation',
             'solicitudes_compra',
             'fotocopias_list',
             // Permisos para evaluaciones de desempeño
@@ -301,6 +303,8 @@ class RolesAndPermissionsSeeder extends Seeder
              Permission::firstOrCreate(['name' => 'listado-proveedores']),
              Permission::firstOrCreate(['name' => 'evaluacion-proveedores']),
              Permission::firstOrCreate(['name' => 'fotocopias_list']),
+             Permission::firstOrCreate(['name' => 'equipment.blocks.manage']),
+             Permission::firstOrCreate(['name' => 'purchase-orders.no-quotation']),
              // Agregar permisos de reserva de espacios consistentes con profesor
              Permission::firstOrCreate(['name' => 'view.space-reservations']),
              Permission::firstOrCreate(['name' => 'create.space-reservations']),
@@ -311,6 +315,8 @@ class RolesAndPermissionsSeeder extends Seeder
              // Permisos para evaluaciones de desempeño
              Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
              Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
+             //compras sin cotizacion
+             Permission::firstOrCreate(['name' => 'purchase-orders.no-quotation']),
          ]);
 
           // Crear el rol "rrhh"
@@ -444,6 +450,7 @@ class RolesAndPermissionsSeeder extends Seeder
             Permission::firstOrCreate(['name' => 'create-loan-requests']),
             Permission::firstOrCreate(['name' => 'solicitudes_compra']),
             Permission::firstOrCreate(['name' => 'almacen']),
+            Permission::firstOrCreate(['name' => 'equipment.blocks.manage']),
             // Agregar permisos de reserva de espacios consistentes con profesor
             Permission::firstOrCreate(['name' => 'view.space-reservations']),
             Permission::firstOrCreate(['name' => 'create.space-reservations']),

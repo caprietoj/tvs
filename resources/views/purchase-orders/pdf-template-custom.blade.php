@@ -497,24 +497,166 @@
             $calculatedIva = 0;
             $calculatedIndividualTaxes = 0;
             
+            // Detectar el tipo de IVA desde la cotización seleccionada
+            $ivaType = null;
+            $ivaLabel = 'IVA';
+            if ($order->purchaseRequest && $order->purchaseRequest->selectedQuotation) {
+                $selectedQuotation = $order->purchaseRequest->selectedQuotation;
+                // Prioridad 1: Usar flags habilitados
+                if ($selectedQuotation->iva_19_enabled && $selectedQuotation->iva_19_amount > 0) {
+                    $ivaType = '19%';
+                    $ivaLabel = 'IVA (19%)';
+                } elseif ($selectedQuotation->iva_5_enabled && $selectedQuotation->iva_5_amount > 0) {
+                    $ivaType = '5%';
+                    $ivaLabel = 'IVA (5%)';
+                } else {
+                    // Prioridad 2: Detectar tipo basado en montos y porcentajes
+                    if ($selectedQuotation->iva_19_amount > 0) {
+                        // Calcular si corresponde al 19%
+                        $total = floatval($selectedQuotation->total_amount);
+                        $ivaAmount = floatval($selectedQuotation->iva_19_amount);
+                        if ($total > 0 && $ivaAmount > 0) {
+                            $subtotalCalculated = $total - $ivaAmount;
+                            $percentage = round(($ivaAmount / $subtotalCalculated) * 100);
+                            if ($percentage == 19) {
+                                $ivaType = '19%';
+                                $ivaLabel = 'IVA (19%)';
+                            } elseif ($percentage == 5) {
+                                $ivaType = '5%';
+                                $ivaLabel = 'IVA (5%)';
+                            } else {
+                                $ivaType = $percentage . '%';
+                                $ivaLabel = 'IVA (' . $percentage . '%)';
+                            }
+                        }
+                    } elseif ($selectedQuotation->iva_5_amount > 0) {
+                        $ivaType = '5%';
+                        $ivaLabel = 'IVA (5%)';
+                    }
+                }
+            }
+            
+            // Si no se puede determinar desde la cotización, usar customData
+            if (!$ivaType && isset($customData['iva_rate'])) {
+                $rate = str_replace('%', '', $customData['iva_rate']);
+                if (is_numeric($rate)) {
+                    $ivaType = $rate . '%';
+                    $ivaLabel = 'IVA (' . $rate . '%)';
+                }
+            }
+            
+            // Debug temporal - agregar logs para diagnóstico
+            Log::info('🔍 DEBUG PDF - Detección de IVA', [
+                'order_id' => $order->id,
+                'ivaType' => $ivaType,
+                'ivaLabel' => $ivaLabel,
+                'has_selected_quotation' => $order->purchaseRequest && $order->purchaseRequest->selectedQuotation,
+                'quotation_id' => $order->purchaseRequest && $order->purchaseRequest->selectedQuotation ? $order->purchaseRequest->selectedQuotation->id : null,
+                'iva_19_enabled' => $order->purchaseRequest && $order->purchaseRequest->selectedQuotation ? $order->purchaseRequest->selectedQuotation->iva_19_enabled : null,
+                'iva_19_amount' => $order->purchaseRequest && $order->purchaseRequest->selectedQuotation ? $order->purchaseRequest->selectedQuotation->iva_19_amount : null,
+            ]);
+            
             // Si hay customData con cálculos ya realizados, usarlos DIRECTAMENTE
             if (isset($customData) && is_array($customData)) {
-                // Usar subtotal de customData si está disponible
-                if (isset($customData['subtotal']) && is_numeric($customData['subtotal'])) {
+                // Usar subtotal de customData si está disponible y es coherente
+                if (isset($customData['subtotal']) && is_numeric($customData['subtotal']) && $customData !== null) {
                     $calculatedSubtotal = floatval($customData['subtotal']);
-                    Log::info('🎯 VISTA PDF: Usando subtotal de customData', [
+                    Log::info('🎯 VISTA PDF: Usando subtotal de customData (coherente)', [
                         'subtotal' => $calculatedSubtotal,
                         'order_id' => $order->id
                     ]);
+                } else {
+                    // Si no hay subtotal en customData, obtenerlo de la cotización seleccionada
+                    if ($order->purchaseRequest && $order->purchaseRequest->selectedQuotation) {
+                        $selectedQuotation = $order->purchaseRequest->selectedQuotation;
+                        if ($selectedQuotation->subtotal_amount > 0) {
+                            $calculatedSubtotal = floatval($selectedQuotation->subtotal_amount);
+                            Log::info('🎯 VISTA PDF: Usando subtotal de cotización seleccionada', [
+                                'subtotal' => $calculatedSubtotal,
+                                'order_id' => $order->id
+                            ]);
+                        } else {
+                            // Fallback: calcular subtotal desde total - IVA
+                            if ($selectedQuotation->total_amount > 0 && ($selectedQuotation->iva_19_amount > 0 || $selectedQuotation->iva_5_amount > 0)) {
+                                $totalIva = floatval($selectedQuotation->iva_19_amount) + floatval($selectedQuotation->iva_5_amount);
+                                $calculatedSubtotal = floatval($selectedQuotation->total_amount) - $totalIva;
+                                Log::info('🎯 VISTA PDF: Calculando subtotal desde total-IVA', [
+                                    'subtotal' => $calculatedSubtotal,
+                                    'total' => $selectedQuotation->total_amount,
+                                    'iva_total' => $totalIva,
+                                    'order_id' => $order->id
+                                ]);
+                            }
+                        }
+                    }
                 }
                 
-                // Usar IVA de customData si está disponible
+                // Usar IVA de customData si está disponible y es coherente
                 if (isset($customData['iva_amount']) && is_numeric($customData['iva_amount'])) {
-                    $calculatedIva = floatval($customData['iva_amount']);
-                    Log::info('🎯 VISTA PDF: Usando IVA de customData', [
-                        'iva_amount' => $calculatedIva,
-                        'order_id' => $order->id
+                    $customIva = floatval($customData['iva_amount']);
+                    $customSubtotal = floatval($customData['subtotal'] ?? 0);
+                    $customTotal = floatval($customData['total'] ?? 0);
+                    
+                    // Validar coherencia: subtotal + iva debería ser aproximadamente igual al total
+                    $expectedTotal = $customSubtotal + $customIva;
+                    $totalDifference = abs($customTotal - $expectedTotal);
+                    
+                    Log::info('🔍 DEBUG PDF - Validando coherencia de customData', [
+                        'custom_iva' => $customIva,
+                        'custom_subtotal' => $customSubtotal,
+                        'custom_total' => $customTotal,
+                        'expected_total' => $expectedTotal,
+                        'total_difference' => $totalDifference,
+                        'is_coherent' => $totalDifference <= 1 // Tolerancia de $1
                     ]);
+                    
+                    // Solo usar customData si es coherente
+                    if ($totalDifference <= 1) {
+                        $calculatedIva = $customIva;
+                        Log::info('🎯 VISTA PDF: Usando IVA de customData (coherente)', [
+                            'iva_amount' => $calculatedIva,
+                            'order_id' => $order->id
+                        ]);
+                    } else {
+                        Log::warning('⚠️ VISTA PDF: customData incoherente, usando cotización', [
+                            'custom_total' => $customTotal,
+                            'expected_total' => $expectedTotal,
+                            'difference' => $totalDifference,
+                            'order_id' => $order->id
+                        ]);
+                        // Forzar usar datos de cotización
+                        $customData = null;
+                    }
+                } else {
+                    // Si no hay IVA en customData, obtenerlo de la cotización seleccionada
+                    if ($order->purchaseRequest && $order->purchaseRequest->selectedQuotation) {
+                        $selectedQuotation = $order->purchaseRequest->selectedQuotation;
+                        Log::info('🔍 DEBUG PDF - Buscando IVA en cotización', [
+                            'quotation_id' => $selectedQuotation->id,
+                            'iva_19_enabled' => $selectedQuotation->iva_19_enabled,
+                            'iva_19_amount' => $selectedQuotation->iva_19_amount,
+                            'iva_5_enabled' => $selectedQuotation->iva_5_enabled,
+                            'iva_5_amount' => $selectedQuotation->iva_5_amount,
+                        ]);
+                        
+                        if ($selectedQuotation->iva_19_enabled && $selectedQuotation->iva_19_amount > 0) {
+                            $calculatedIva = floatval($selectedQuotation->iva_19_amount);
+                        } elseif ($selectedQuotation->iva_5_enabled && $selectedQuotation->iva_5_amount > 0) {
+                            $calculatedIva = floatval($selectedQuotation->iva_5_amount);
+                        } elseif ($selectedQuotation->iva_19_amount > 0) {
+                            // Aunque no esté habilitado, si hay monto, usarlo
+                            $calculatedIva = floatval($selectedQuotation->iva_19_amount);
+                        } elseif ($selectedQuotation->iva_5_amount > 0) {
+                            $calculatedIva = floatval($selectedQuotation->iva_5_amount);
+                        }
+                        
+                        Log::info('🎯 VISTA PDF: IVA calculado desde cotización', [
+                            'iva_amount' => $calculatedIva,
+                            'iva_19_enabled' => $selectedQuotation->iva_19_enabled,
+                            'iva_5_enabled' => $selectedQuotation->iva_5_enabled,
+                            'order_id' => $order->id
+                        ]);
+                    }
                 }
                 
                 // Usar impuestos individuales de customData si están disponibles
@@ -686,7 +828,7 @@
             <tr>
                 <td class="label">FECHA:</td>
                 <td class="value">{{ isset($approvalDate) ? \Carbon\Carbon::parse($approvalDate)->format('d/m/Y') : $order->created_at->format('d/m/Y') }}</td>
-                <td class="label bold">IVA (19%)</td>
+                <td class="label bold">{{ $ivaLabel }}</td>
                 <td class="value bold right">${{ number_format($calculatedIva, 0, ',', '.') }}</td>
             </tr>
             @if($showTaxColumn && $calculatedIndividualTaxes > 0)

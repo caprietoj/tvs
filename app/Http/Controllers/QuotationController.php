@@ -382,6 +382,248 @@ class QuotationController extends Controller
         return redirect()->route('purchase-requests.show', $purchaseRequest->id)
             ->with('success', 'Cotización agregada exitosamente.');
     }
+
+    /**
+     * Mostrar el formulario de edición para una cotización
+     */
+    public function edit(Quotation $quotation)
+    {
+        $this->authorize('update', $quotation);
+
+        $purchaseRequest = $quotation->purchaseRequest;
+        
+        // Obtener la lista de proveedores para el selector
+        $proveedores = \App\Models\Proveedor::orderBy('nombre')->get();
+        
+        return view('purchases.quotations.edit', compact('quotation', 'purchaseRequest', 'proveedores'));
+    }
+
+    /**
+     * Actualizar una cotización existente
+     */
+    public function update(Request $request, Quotation $quotation)
+    {
+        $this->authorize('update', $quotation);
+
+        $purchaseRequest = $quotation->purchaseRequest;
+
+        // Validar la entrada (mismas reglas que en store)
+        $validator = Validator::make($request->all(), [
+            'provider_name' => 'required|string|max:255',
+            'subtotal' => 'required|numeric|min:0',
+            'total_amount' => 'required|numeric|min:0',
+            'includes_iva' => 'nullable|boolean',
+            'iva_amount' => 'nullable|numeric|min:0',
+            'includes_iva_19' => 'nullable|boolean',
+            'iva_19_amount' => 'nullable|numeric|min:0',
+            'includes_iva_5' => 'nullable|boolean',
+            'iva_5_amount' => 'nullable|numeric|min:0',
+            'includes_ipoconsumo_8' => 'nullable|boolean',
+            'ipoconsumo_8_amount' => 'nullable|numeric|min:0',
+            'includes_ipoconsumo_4' => 'nullable|boolean',
+            'ipoconsumo_4_amount' => 'nullable|numeric|min:0',
+            'tax_application_mode' => 'nullable|string|in:global,per_item',
+            'quotation_file' => 'nullable|file|mimes:pdf|max:5120', // Opcional en actualización
+            'item_prices' => 'nullable|array',
+            'item_prices.*' => 'nullable|numeric|min:0',
+            'item_totals' => 'nullable|array',
+            'item_totals.*' => 'nullable|numeric|min:0',
+            'item_iva_19' => 'nullable|array',
+            'item_iva_5' => 'nullable|array',
+            'item_ipoconsumo_8' => 'nullable|array',
+            'item_ipoconsumo_4' => 'nullable|array',
+            'general_service_price' => 'nullable|numeric|min:0',
+            'additional_items' => 'nullable|array',
+            'additional_items.*.description' => 'required_with:additional_items|string|max:255',
+            'additional_items.*.quantity' => 'required_with:additional_items|numeric|min:0',
+            'additional_items.*.unit' => 'nullable|string|max:50',
+            'additional_items.*.price' => 'required_with:additional_items|numeric|min:0',
+            'additional_items.*.includes_iva_19' => 'nullable|boolean',
+            'additional_items.*.includes_iva_5' => 'nullable|boolean',
+            'additional_items.*.includes_ipoconsumo_8' => 'nullable|boolean',
+            'additional_items.*.includes_ipoconsumo_4' => 'nullable|boolean',
+            'delivery_time' => 'nullable|string|max:255',
+            'payment_method' => 'nullable|string|max:255',
+            'validity' => 'nullable|string|max:255',
+            'warranty' => 'nullable|string|max:255',
+        ]);
+        
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            // Procesar precios de items originales de la solicitud
+            $originalItemPrices = [];
+            $originalItemTotals = [];
+            $originalItemTaxes = [];
+            
+            // Obtener los items de la solicitud para validación
+            $requestItems = [];
+            if ($purchaseRequest->type === 'purchase' && $purchaseRequest->purchase_items) {
+                $requestItems = is_array($purchaseRequest->purchase_items) 
+                    ? $purchaseRequest->purchase_items 
+                    : json_decode($purchaseRequest->purchase_items, true);
+            } elseif ($purchaseRequest->type === 'services' && $purchaseRequest->service_type === 'regular' && $purchaseRequest->service_items) {
+                $requestItems = is_array($purchaseRequest->service_items) 
+                    ? $purchaseRequest->service_items 
+                    : json_decode($purchaseRequest->service_items, true);
+            }
+            
+            // Procesar precios unitarios y totales de items originales
+            if ($request->has('item_prices') && is_array($request->item_prices)) {
+                foreach ($request->item_prices as $index => $price) {
+                    if (!empty($price) && is_numeric($price) && isset($requestItems[$index])) {
+                        $quantity = $requestItems[$index]['quantity'] ?? 1;
+                        $unitPrice = floatval($price);
+                        $itemTotal = $quantity * $unitPrice;
+                        
+                        $originalItemPrices[$index] = $unitPrice;
+                        $originalItemTotals[$index] = $itemTotal;
+                    }
+                }
+            }
+            
+            // Procesar servicios generales
+            if ($request->has('general_service_price') && !empty($request->general_service_price)) {
+                $generalPrice = floatval($request->general_service_price);
+                $originalItemPrices['general'] = $generalPrice;
+                $originalItemTotals['general'] = $generalPrice;
+            }
+
+            // Procesar items adicionales
+            $additionalItems = [];
+            if ($request->has('additional_items') && is_array($request->additional_items)) {
+                foreach ($request->additional_items as $item) {
+                    if (!empty($item['description']) && !empty($item['price'])) {
+                        $quantity = floatval($item['quantity'] ?? 1);
+                        $unitPrice = floatval($item['price']);
+                        $total = $quantity * $unitPrice;
+                        
+                        $itemData = [
+                            'description' => $item['description'],
+                            'quantity' => $quantity,
+                            'unit' => $item['unit'] ?? '',
+                            'price' => $unitPrice,
+                            'total' => $total,
+                        ];
+                        
+                        // Procesar impuestos para items adicionales
+                        $itemData['includes_iva_19'] = isset($item['includes_iva_19']) && $item['includes_iva_19'];
+                        $itemData['includes_iva_5'] = isset($item['includes_iva_5']) && $item['includes_iva_5'];
+                        $itemData['includes_ipoconsumo_8'] = isset($item['includes_ipoconsumo_8']) && $item['includes_ipoconsumo_8'];
+                        $itemData['includes_ipoconsumo_4'] = isset($item['includes_ipoconsumo_4']) && $item['includes_ipoconsumo_4'];
+                        
+                        // Calcular impuestos para este item
+                        $itemData['iva_19_amount'] = $itemData['includes_iva_19'] ? $total * 0.19 : 0;
+                        $itemData['iva_5_amount'] = $itemData['includes_iva_5'] ? $total * 0.05 : 0;
+                        $itemData['ipoconsumo_8_amount'] = $itemData['includes_ipoconsumo_8'] ? $total * 0.08 : 0;
+                        $itemData['ipoconsumo_4_amount'] = $itemData['includes_ipoconsumo_4'] ? $total * 0.04 : 0;
+                        
+                        $additionalItems[] = $itemData;
+                    }
+                }
+            }
+
+            // Procesar impuestos globales
+            $includesIva = $request->has('includes_iva') && $request->includes_iva;
+            $ivaAmount = $includesIva ? floatval($request->iva_amount ?? 0) : 0;
+            
+            $includesIva19 = $request->has('includes_iva_19') && $request->includes_iva_19;
+            $iva19Amount = $includesIva19 ? floatval($request->iva_19_amount ?? 0) : 0;
+            
+            $includesIva5 = $request->has('includes_iva_5') && $request->includes_iva_5;
+            $iva5Amount = $includesIva5 ? floatval($request->iva_5_amount ?? 0) : 0;
+            
+            $includesIpoconsumo8 = $request->has('includes_ipoconsumo_8') && $request->includes_ipoconsumo_8;
+            $ipoconsumo8Amount = $includesIpoconsumo8 ? floatval($request->ipoconsumo_8_amount ?? 0) : 0;
+            
+            $includesIpoconsumo4 = $request->has('includes_ipoconsumo_4') && $request->includes_ipoconsumo_4;
+            $ipoconsumo4Amount = $includesIpoconsumo4 ? floatval($request->ipoconsumo_4_amount ?? 0) : 0;
+            
+            $taxMode = $request->tax_application_mode ?? 'global';
+
+            // Manejar el archivo de cotización
+            $filePath = $quotation->file_path; // Mantener el archivo anterior por defecto
+            if ($request->hasFile('quotation_file')) {
+                // Eliminar el archivo anterior
+                if ($quotation->file_path) {
+                    Storage::delete($quotation->file_path);
+                }
+                
+                // Subir el nuevo archivo
+                $file = $request->file('quotation_file');
+                $filename = 'quotation_' . $purchaseRequest->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $filePath = $file->storeAs('quotations', $filename);
+            }
+
+            // Actualizar la cotización
+            $quotation->update([
+                'provider_name' => $request->provider_name,
+                'subtotal' => $request->subtotal,
+                'total_amount' => $request->total_amount,
+                'file_path' => $filePath,
+                'includes_iva' => $includesIva,
+                'iva_amount' => $ivaAmount,
+                'includes_iva_19' => $includesIva19,
+                'iva_19_amount' => $iva19Amount,
+                'includes_iva_5' => $includesIva5,
+                'iva_5_amount' => $iva5Amount,
+                'includes_ipoconsumo_8' => $includesIpoconsumo8,
+                'ipoconsumo_8_amount' => $ipoconsumo8Amount,
+                'includes_ipoconsumo_4' => $includesIpoconsumo4,
+                'ipoconsumo_4_amount' => $ipoconsumo4Amount,
+                'tax_application_mode' => $taxMode,
+                'additional_items' => $additionalItems,
+                'original_item_prices' => $originalItemPrices,
+                'original_item_totals' => $originalItemTotals,
+                'original_item_taxes' => $originalItemTaxes,
+                'delivery_time' => $request->delivery_time,
+                'payment_method' => $request->payment_method,
+                'validity' => $request->validity,
+                'warranty' => $request->warranty,
+            ]);
+            
+            // Registrar en historial
+            RequestHistory::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'user_id' => Auth::id(),
+                'action' => 'Cotización actualizada',
+                'notes' => 'Proveedor: ' . $request->provider_name . ' - Monto: ' . $request->total_amount,
+            ]);
+            
+            \DB::commit();
+            
+            \Log::info('Cotización actualizada exitosamente', [
+                'quotation_id' => $quotation->id,
+                'purchase_request_id' => $purchaseRequest->id,
+                'provider_name' => $request->provider_name,
+                'total_amount' => $request->total_amount
+            ]);
+            
+            // Verificar si la solicitud está autorizada y tiene órdenes de compra activas
+            $this->updateRelatedPurchaseOrders($quotation, $purchaseRequest);
+            
+            \DB::commit();
+            
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Error al actualizar cotización: ' . $e->getMessage(), [
+                'quotation_id' => $quotation->id,
+                'purchase_request_id' => $purchaseRequest->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->with('error', 'Error al actualizar la cotización: ' . $e->getMessage());
+        }
+        
+        return redirect()->route('purchase-requests.show', $purchaseRequest->id)
+            ->with('success', 'Cotización actualizada exitosamente.');
+    }
     
     public function destroy(Quotation $quotation)
     {
@@ -1020,6 +1262,251 @@ class QuotationController extends Controller
             ]);
             
             return redirect()->back()->with('error', 'Error al anular la solicitud: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Actualizar las órdenes de compra relacionadas cuando se actualiza una cotización
+     * de una solicitud autorizada (aprobada)
+     */
+    private function updateRelatedPurchaseOrders(Quotation $quotation, PurchaseRequest $purchaseRequest)
+    {
+        try {
+            // Verificar si la solicitud está en estado autorizado/aprobado
+            if (!in_array($purchaseRequest->status, ['approved', 'in_process'])) {
+                \Log::info('Solicitud no está en estado autorizado, no se actualizarán órdenes de compra', [
+                    'purchase_request_id' => $purchaseRequest->id,
+                    'status' => $purchaseRequest->status
+                ]);
+                return;
+            }
+            
+            // Verificar si esta cotización es la seleccionada para la solicitud
+            $isSelectedQuotation = $purchaseRequest->selected_quotation_id == $quotation->id;
+            
+            if (!$isSelectedQuotation) {
+                \Log::info('Cotización actualizada no es la seleccionada, no se actualizarán órdenes de compra', [
+                    'quotation_id' => $quotation->id,
+                    'selected_quotation_id' => $purchaseRequest->selected_quotation_id
+                ]);
+                return;
+            }
+            
+            // Buscar órdenes de compra activas relacionadas con esta cotización
+            $relatedOrders = \App\Models\PurchaseOrder::where('purchase_request_id', $purchaseRequest->id)
+                ->whereNull('deleted_at')
+                ->where(function($query) use ($quotation) {
+                    // Para órdenes con cotización directa
+                    $query->where('selected_quotation_id', $quotation->id)
+                          // O para órdenes que usan el mismo proveedor
+                          ->orWhereHas('provider', function($providerQuery) use ($quotation) {
+                              $providerQuery->where('nombre', $quotation->provider_name);
+                          });
+                })
+                ->get();
+                
+            if ($relatedOrders->isEmpty()) {
+                \Log::info('No se encontraron órdenes de compra activas para actualizar', [
+                    'quotation_id' => $quotation->id,
+                    'purchase_request_id' => $purchaseRequest->id
+                ]);
+                return;
+            }
+            
+            \Log::info('Actualizando órdenes de compra relacionadas con cotización', [
+                'quotation_id' => $quotation->id,
+                'orders_count' => $relatedOrders->count(),
+                'orders_ids' => $relatedOrders->pluck('id')->toArray()
+            ]);
+            
+            foreach ($relatedOrders as $order) {
+                $this->updateSinglePurchaseOrder($order, $quotation, $purchaseRequest);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al actualizar órdenes de compra relacionadas', [
+                'quotation_id' => $quotation->id,
+                'purchase_request_id' => $purchaseRequest->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // No lanzar el error para que no falle la actualización de la cotización
+            // Solo registrar el error
+        }
+    }
+    
+    /**
+     * Actualizar una orden de compra específica con los nuevos datos de la cotización
+     */
+    private function updateSinglePurchaseOrder(\App\Models\PurchaseOrder $order, Quotation $quotation, PurchaseRequest $purchaseRequest)
+    {
+        try {
+            \Log::info('Actualizando orden de compra individual', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'quotation_id' => $quotation->id
+            ]);
+            
+            // Calcular nuevos totales basados en la cotización actualizada
+            $subtotal = $quotation->subtotal;
+            $totalAmount = $quotation->total_amount;
+            
+            // Calcular impuestos
+            $ivaAmount = 0;
+            $taxAmount = 0;
+            
+            if ($quotation->includes_iva_19) {
+                $ivaAmount += $quotation->iva_19_amount ?? ($subtotal * 0.19);
+            }
+            if ($quotation->includes_iva_5) {
+                $ivaAmount += $quotation->iva_5_amount ?? ($subtotal * 0.05);
+            }
+            if ($quotation->includes_ipoconsumo_8) {
+                $taxAmount += $quotation->ipoconsumo_8_amount ?? ($subtotal * 0.08);
+            }
+            if ($quotation->includes_ipoconsumo_4) {
+                $taxAmount += $quotation->ipoconsumo_4_amount ?? ($subtotal * 0.04);
+            }
+            
+            // Preparar items actualizados
+            $updatedItems = $this->prepareUpdatedOrderItems($quotation, $purchaseRequest);
+            
+            // Actualizar la orden de compra
+            $order->update([
+                'subtotal' => $subtotal,
+                'iva_amount' => $ivaAmount,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'includes_iva' => $quotation->includes_iva_19 || $quotation->includes_iva_5,
+                'items' => $updatedItems, // Actualizar items si la orden los almacena
+                'additional_items' => $quotation->additional_items ?? [],
+                'updated_at' => now()
+            ]);
+            
+            // Registrar la actualización automática en el historial
+            \App\Models\RequestHistory::create([
+                'purchase_request_id' => $purchaseRequest->id,
+                'user_id' => \Auth::id(),
+                'action' => 'Orden de compra actualizada automáticamente',
+                'notes' => "La orden #{$order->order_number} fue actualizada automáticamente debido a cambios en la cotización de {$quotation->provider_name}. Nuevo total: $" . number_format($totalAmount, 2)
+            ]);
+            
+            \Log::info('Orden de compra actualizada exitosamente', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'new_total' => $totalAmount,
+                'quotation_id' => $quotation->id
+            ]);
+            
+            // Notificar a compras sobre la actualización automática
+            $this->notifyPurchaseOrderUpdate($order, $quotation, $purchaseRequest);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al actualizar orden de compra específica', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'quotation_id' => $quotation->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+    
+    /**
+     * Preparar items actualizados para la orden de compra
+     */
+    private function prepareUpdatedOrderItems(Quotation $quotation, PurchaseRequest $purchaseRequest)
+    {
+        $items = [];
+        
+        try {
+            // Obtener items originales de la solicitud
+            $requestItems = [];
+            if ($purchaseRequest->type === 'purchase' && $purchaseRequest->purchase_items) {
+                $requestItems = is_array($purchaseRequest->purchase_items) 
+                    ? $purchaseRequest->purchase_items 
+                    : json_decode($purchaseRequest->purchase_items, true);
+            } elseif ($purchaseRequest->type === 'services' && $purchaseRequest->service_items) {
+                $requestItems = is_array($purchaseRequest->service_items) 
+                    ? $purchaseRequest->service_items 
+                    : json_decode($purchaseRequest->service_items, true);
+            }
+            
+            // Usar precios actualizados de la cotización
+            if ($quotation->original_item_prices && is_array($quotation->original_item_prices)) {
+                foreach ($requestItems as $index => $item) {
+                    if (isset($quotation->original_item_prices[$index])) {
+                        $unitPrice = $quotation->original_item_prices[$index];
+                        $quantity = $item['quantity'] ?? 1;
+                        $total = $unitPrice * $quantity;
+                        
+                        $items[] = [
+                            'description' => $item['description'] ?? 'Item ' . ($index + 1),
+                            'quantity' => $quantity,
+                            'unit_price' => $unitPrice,
+                            'total' => $total
+                        ];
+                    }
+                }
+            }
+            
+            // Agregar precio de servicio general si existe
+            if (isset($quotation->original_item_prices['general'])) {
+                $generalPrice = $quotation->original_item_prices['general'];
+                $items[] = [
+                    'description' => 'Servicio General',
+                    'quantity' => 1,
+                    'unit_price' => $generalPrice,
+                    'total' => $generalPrice
+                ];
+            }
+            
+            // Agregar items adicionales de la cotización
+            if ($quotation->additional_items && is_array($quotation->additional_items)) {
+                foreach ($quotation->additional_items as $additionalItem) {
+                    $items[] = [
+                        'description' => $additionalItem['description'] ?? 'Item adicional',
+                        'quantity' => $additionalItem['quantity'] ?? 1,
+                        'unit_price' => $additionalItem['price'] ?? 0,
+                        'total' => $additionalItem['total'] ?? ($additionalItem['quantity'] * $additionalItem['price'])
+                    ];
+                }
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al preparar items actualizados', [
+                'quotation_id' => $quotation->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        return $items;
+    }
+    
+    /**
+     * Notificar sobre la actualización automática de la orden de compra
+     */
+    private function notifyPurchaseOrderUpdate(\App\Models\PurchaseOrder $order, Quotation $quotation, PurchaseRequest $purchaseRequest)
+    {
+        try {
+            // Obtener usuarios de compras
+            $comprasUsers = \App\Models\User::role(['admin', 'compras'])->get();
+            
+            foreach ($comprasUsers as $user) {
+                \App\Notifications\PurchaseOrderAutoUpdated::dispatch($user, $order, $quotation, $purchaseRequest);
+            }
+            
+            \Log::info('Notificaciones de actualización automática enviadas', [
+                'order_id' => $order->id,
+                'recipients_count' => $comprasUsers->count()
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar notificaciones de actualización automática', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }

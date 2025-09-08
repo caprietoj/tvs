@@ -3383,6 +3383,32 @@ class PurchaseOrdersController extends Controller
             
             // 🔧 CREAR ESTRUCTURA COMPLETA DE PDF_CUSTOM_DATA
             $provider = \App\Models\Provider::find($request->provider_id);
+            
+            // 🔧 CALCULAR IVA CORRECTO DESDE LA COTIZACIÓN
+            $ivaAmount = 0;
+            $ivaRate = 0;
+            if ($quotation->iva_19_enabled && $quotation->iva_19_amount > 0) {
+                $ivaAmount = floatval($quotation->iva_19_amount);
+                $ivaRate = 19;
+            } elseif ($quotation->iva_5_enabled && $quotation->iva_5_amount > 0) {
+                $ivaAmount = floatval($quotation->iva_5_amount);
+                $ivaRate = 5;
+            } elseif ($quotation->iva_19_amount > 0) {
+                // Fallback: si hay monto pero flag deshabilitado
+                $ivaAmount = floatval($quotation->iva_19_amount);
+                $ivaRate = 19;
+            } elseif ($quotation->iva_5_amount > 0) {
+                $ivaAmount = floatval($quotation->iva_5_amount);
+                $ivaRate = 5;
+            }
+            
+            // 🔧 OBTENER SUBTOTAL CORRECTO
+            $subtotalAmount = $quotation->subtotal_amount ?? $quotation->subtotal ?? 0;
+            if ($subtotalAmount <= 0 && $quotation->total_amount > 0 && $ivaAmount > 0) {
+                // Calcular subtotal desde total - IVA
+                $subtotalAmount = floatval($quotation->total_amount) - $ivaAmount;
+            }
+            
             $pdfCustomData = [
                 'provider_name' => $provider->nombre,
                 'provider_nit' => $provider->nit,
@@ -3393,11 +3419,11 @@ class PurchaseOrdersController extends Controller
                 'delivery_address' => $purchaseRequest->delivery_address ?? 'COLEGIO VICTORIA',
                 'payment_method' => $request->payment_terms,
                 'budget' => $purchaseRequest->budget ?? 'Presupuesto General',
-                'iva_rate' => $quotation->includes_iva ? 19 : 0,
-                'iva_amount' => $quotation->iva_amount ?? 0,
+                'iva_rate' => $ivaRate,
+                'iva_amount' => number_format($ivaAmount, 2, '.', ''),
                 'ipoconsumo_rate' => 0,
                 'ipoconsumo_amount' => 0,
-                'subtotal' => $quotation->subtotal,
+                'subtotal' => number_format($subtotalAmount, 2, '.', ''),
                 'total' => $quotation->total_amount,
                 'items' => $orderItems, // 🔧 IMPORTANTE: Guardar en estructura 'items'
                 'additional_items' => [],
@@ -3417,10 +3443,10 @@ class PurchaseOrdersController extends Controller
                 'provider_id' => $request->provider_id,
                 'order_number' => $orderNumber,
                 'total_amount' => $quotation->total_amount,
-                'subtotal' => $quotation->subtotal,
-                'includes_iva' => $quotation->includes_iva,
-                'iva_amount' => $quotation->iva_amount,
-                'tax_amount' => $quotation->tax_amount,
+                'subtotal' => $subtotalAmount,
+                'includes_iva' => $ivaAmount > 0,
+                'iva_amount' => $ivaAmount,
+                'tax_amount' => $quotation->tax_amount ?? 0,
                 'order_date' => now(),
                 'payment_terms' => $request->payment_terms,
                 'delivery_date' => $request->delivery_date,

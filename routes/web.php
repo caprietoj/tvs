@@ -690,6 +690,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('quotations.create');
     Route::post('purchase-requests/{purchaseRequest}/quotations', [QuotationController::class, 'store'])
         ->name('quotations.store');
+    Route::get('quotations/{quotation}/edit', [QuotationController::class, 'edit'])
+        ->name('quotations.edit');
+    Route::put('quotations/{quotation}', [QuotationController::class, 'update'])
+        ->name('quotations.update');
     Route::delete('quotations/{quotation}', [QuotationController::class, 'destroy'])
         ->name('quotations.destroy');
     Route::get('quotations/{quotation}/download', [QuotationController::class, 'download'])
