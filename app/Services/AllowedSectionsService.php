@@ -14,7 +14,7 @@ class AllowedSectionsService
         return [
             'Administracion',
             'Direccion General',
-            'Escuela Alta/DP',
+            'Escuela Alta / DP',
             'Escuela Media',
             'PAI',
             'PEP',

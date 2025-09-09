@@ -78,7 +78,11 @@ class ApprovalController extends Controller
             ->whereNotNull('section_area')
             ->pluck('section_area');
         
-        $sections = AllowedSectionsService::filterSections($allSectionsData);
+        // Combinar secciones de la BD con todas las secciones permitidas para asegurar que aparezcan todas las opciones
+        $allSectionsFromService = collect(AllowedSectionsService::getAllowedSections());
+        $combinedSections = $allSectionsData->merge($allSectionsFromService)->unique();
+        
+        $sections = AllowedSectionsService::filterSections($combinedSections);
 
         return view('approvals.index', compact('requests', 'sections', 'sectionFilter', 'typeFilter', 'requestNumberFilter'));
     }
@@ -193,11 +197,41 @@ class ApprovalController extends Controller
                 $isPreApprovedWithoutQuotation = ($purchaseRequest->quotations->count() === 0) && 
                                                ($purchaseRequest->preApprovedQuotation === null);
                 
-                if ($hasPreApprovedQuotation || $hasMixedSelection || $isPreApprovedWithoutQuotation) {
+                // NUEVA VALIDACIÓN: Verificar si tiene al menos una cotización disponible que pueda usarse
+                $hasAvailableQuotation = $purchaseRequest->quotations()->whereIn('status', ['pending', 'approved'])->count() > 0;
+                
+                // Log para debugging en producción
+                \Log::info("Validación de aprobación para solicitud {$purchaseRequest->id}", [
+                    'hasPreApprovedQuotation' => $hasPreApprovedQuotation,
+                    'hasMixedSelection' => $hasMixedSelection,
+                    'isPreApprovedWithoutQuotation' => $isPreApprovedWithoutQuotation,
+                    'hasAvailableQuotation' => $hasAvailableQuotation,
+                    'quotations_count' => $purchaseRequest->quotations->count(),
+                    'status' => $purchaseRequest->status
+                ]);
+                
+                if ($hasPreApprovedQuotation || $hasMixedSelection || $isPreApprovedWithoutQuotation || $hasAvailableQuotation) {
                     $validForApproval = true;
                 } else {
-                    return redirect()->back()
-                        ->with('error', 'La solicitud de compra no tiene una cotización pre-aprobada seleccionada ni una selección mixta completa.');
+                    // Verificar si el usuario tiene permisos de administrador para forzar aprobación
+                    $canForceApprove = auth()->user()->hasRole(['Admin']) || auth()->user()->hasPermission('force-approve');
+                    
+                    if ($canForceApprove && $request->has('force_approve')) {
+                        \Log::warning("Aprobación forzada por administrador para solicitud {$purchaseRequest->id}", [
+                            'admin_user' => auth()->user()->email,
+                            'reason' => 'Validación fallida pero aprobación forzada'
+                        ]);
+                        $validForApproval = true;
+                    } else {
+                        $errorMessage = 'La solicitud de compra no tiene una cotización pre-aprobada seleccionada ni una selección mixta completa.';
+                        
+                        // Si es admin, agregar opción de forzar
+                        if ($canForceApprove) {
+                            $errorMessage .= ' Como administrador, puedes forzar la aprobación agregando ?force_approve=1 a la URL.';
+                        }
+                        
+                        return redirect()->back()->with('error', $errorMessage);
+                    }
                 }
             }
         }
@@ -759,9 +793,33 @@ class ApprovalController extends Controller
         // Obtener datos de la cotización
         $quotation = $purchaseRequest->selectedQuotation ?? $purchaseRequest->preApprovedQuotation;
         
+        // NUEVA LÓGICA: Si no hay cotización pre-aprobada específica, usar la primera cotización válida
+        if (!$quotation) {
+            $quotation = $purchaseRequest->quotations()
+                ->whereIn('status', ['approved', 'pending'])
+                ->orderBy('total_amount', 'asc') // Usar la cotización de menor costo
+                ->first();
+            
+            if ($quotation) {
+                \Log::info('Usando cotización disponible por falta de pre-aprobación específica', [
+                    'purchase_request_id' => $purchaseRequest->id,
+                    'quotation_id' => $quotation->id,
+                    'provider' => $quotation->provider_name,
+                    'total' => $quotation->total_amount
+                ]);
+                
+                // Actualizar la solicitud con la cotización seleccionada automáticamente
+                $purchaseRequest->update([
+                    'selected_quotation_id' => $quotation->id,
+                    'pre_approved_quotation_id' => $quotation->id
+                ]);
+            }
+        }
+        
         if (!$quotation) {
             \Log::error('No se encontró cotización para crear orden de compra', [
-                'purchase_request_id' => $purchaseRequest->id
+                'purchase_request_id' => $purchaseRequest->id,
+                'available_quotations' => $purchaseRequest->quotations()->count()
             ]);
             return;
         }
@@ -1111,15 +1169,26 @@ class ApprovalController extends Controller
             ? $purchaseRequest->purchase_items 
             : json_decode($purchaseRequest->purchase_items, true);
             
+        // Si no hay items definidos, verificar si es una solicitud simple sin items detallados
         if (empty($purchaseItems)) {
-            return false;
+            // Para solicitudes simples sin items detallados, considerar válida si hay selecciones
+            $selectionsCount = $purchaseRequest->quotationItemSelections()->count();
+            return $selectionsCount > 0;
         }
         
         // Contar selecciones existentes
         $selectionsCount = $purchaseRequest->quotationItemSelections()->count();
         
         // Verificar que hay selección para cada item
-        return $selectionsCount === count($purchaseItems);
+        $isComplete = $selectionsCount === count($purchaseItems);
+        
+        \Log::info("Verificación selección mixta para solicitud {$purchaseRequest->id}", [
+            'items_count' => count($purchaseItems),
+            'selections_count' => $selectionsCount,
+            'is_complete' => $isComplete
+        ]);
+        
+        return $isComplete;
     }
 
     /**

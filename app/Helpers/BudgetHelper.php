@@ -32,6 +32,7 @@ class BudgetHelper
             'Exhibición PEP',
             'CAS / Intercas',
             'Biblioteca institucional',
+            'SST',
         ];
     }
 
@@ -145,6 +146,7 @@ class BudgetHelper
                 'Bienestar Institucional',
                 'Gastos de Contratación',
                 'Afiliaciones e Inscripciones',
+                'SST',
                 'Alimentación',
                 'Transporte',
                 'Honorarios',
