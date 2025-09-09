@@ -69,6 +69,10 @@ class QuotationController extends Controller
             'quotation_file' => 'required|file|mimes:pdf|max:5120',
             'item_prices' => 'nullable|array',
             'item_prices.*' => 'nullable|numeric|min:0',
+            'item_quantities' => 'nullable|array',
+            'item_quantities.*' => 'nullable|numeric|min:0',
+            'item_descriptions' => 'nullable|array',
+            'item_descriptions.*' => 'nullable|string|max:500',
             'item_totals' => 'nullable|array',
             'item_totals.*' => 'nullable|numeric|min:0',
             'item_iva_19' => 'nullable|array',
@@ -97,6 +101,8 @@ class QuotationController extends Controller
         $originalItemPrices = [];
         $originalItemTotals = [];
         $originalItemTaxes = [];
+        $originalItemQuantities = [];
+        $originalItemDescriptions = [];
         
         // Obtener los items de la solicitud para validación
         $requestItems = [];
@@ -110,11 +116,30 @@ class QuotationController extends Controller
                 : json_decode($purchaseRequest->service_items, true);
         }
         
+        // Procesar cantidades editables de items originales
+        if ($request->has('item_quantities') && is_array($request->item_quantities)) {
+            foreach ($request->item_quantities as $index => $quantity) {
+                if (!empty($quantity) && is_numeric($quantity) && isset($requestItems[$index])) {
+                    $originalItemQuantities[$index] = floatval($quantity);
+                }
+            }
+        }
+        
+        // Procesar descripciones editables de items originales
+        if ($request->has('item_descriptions') && is_array($request->item_descriptions)) {
+            foreach ($request->item_descriptions as $index => $description) {
+                if (!empty($description) && isset($requestItems[$index])) {
+                    $originalItemDescriptions[$index] = $description;
+                }
+            }
+        }
+        
         // Procesar precios unitarios y totales de items originales
         if ($request->has('item_prices') && is_array($request->item_prices)) {
             foreach ($request->item_prices as $index => $price) {
                 if (!empty($price) && is_numeric($price) && isset($requestItems[$index])) {
-                    $quantity = $requestItems[$index]['quantity'] ?? 1;
+                    // Usar cantidad editada si está disponible, sino usar la original
+                    $quantity = $originalItemQuantities[$index] ?? ($requestItems[$index]['quantity'] ?? 1);
                     $unitPrice = floatval($price);
                     $itemTotal = $quantity * $unitPrice;
                     
@@ -290,6 +315,8 @@ class QuotationController extends Controller
                 'original_item_prices' => $originalItemPrices,
                 'original_item_totals' => $originalItemTotals,
                 'original_item_taxes' => $originalItemTaxes,
+                'original_item_quantities' => $originalItemQuantities,
+                'original_item_descriptions' => $originalItemDescriptions,
                 'delivery_time' => $request->delivery_time,
                 'payment_method' => $request->payment_method,
                 'validity' => $request->validity,
@@ -426,6 +453,10 @@ class QuotationController extends Controller
             'quotation_file' => 'nullable|file|mimes:pdf|max:5120', // Opcional en actualización
             'item_prices' => 'nullable|array',
             'item_prices.*' => 'nullable|numeric|min:0',
+            'item_quantities' => 'nullable|array',
+            'item_quantities.*' => 'nullable|numeric|min:0',
+            'item_descriptions' => 'nullable|array',
+            'item_descriptions.*' => 'nullable|string|max:500',
             'item_totals' => 'nullable|array',
             'item_totals.*' => 'nullable|numeric|min:0',
             'item_iva_19' => 'nullable|array',
@@ -461,6 +492,8 @@ class QuotationController extends Controller
             $originalItemPrices = [];
             $originalItemTotals = [];
             $originalItemTaxes = [];
+            $originalItemQuantities = [];
+            $originalItemDescriptions = [];
             
             // Obtener los items de la solicitud para validación
             $requestItems = [];
@@ -474,11 +507,30 @@ class QuotationController extends Controller
                     : json_decode($purchaseRequest->service_items, true);
             }
             
+            // Procesar cantidades editables de items originales
+            if ($request->has('item_quantities') && is_array($request->item_quantities)) {
+                foreach ($request->item_quantities as $index => $quantity) {
+                    if (!empty($quantity) && is_numeric($quantity) && isset($requestItems[$index])) {
+                        $originalItemQuantities[$index] = floatval($quantity);
+                    }
+                }
+            }
+            
+            // Procesar descripciones editables de items originales
+            if ($request->has('item_descriptions') && is_array($request->item_descriptions)) {
+                foreach ($request->item_descriptions as $index => $description) {
+                    if (!empty($description) && isset($requestItems[$index])) {
+                        $originalItemDescriptions[$index] = $description;
+                    }
+                }
+            }
+            
             // Procesar precios unitarios y totales de items originales
             if ($request->has('item_prices') && is_array($request->item_prices)) {
                 foreach ($request->item_prices as $index => $price) {
                     if (!empty($price) && is_numeric($price) && isset($requestItems[$index])) {
-                        $quantity = $requestItems[$index]['quantity'] ?? 1;
+                        // Usar cantidad editada si está disponible, sino usar la original
+                        $quantity = $originalItemQuantities[$index] ?? ($requestItems[$index]['quantity'] ?? 1);
                         $unitPrice = floatval($price);
                         $itemTotal = $quantity * $unitPrice;
                         
@@ -583,6 +635,8 @@ class QuotationController extends Controller
                 'original_item_totals' => $originalItemTotals,
                 'original_item_taxes' => $originalItemTaxes,
                 'delivery_time' => $request->delivery_time,
+                'original_item_quantities' => $originalItemQuantities,
+                'original_item_descriptions' => $originalItemDescriptions,
                 'payment_method' => $request->payment_method,
                 'validity' => $request->validity,
                 'warranty' => $request->warranty,
@@ -1097,7 +1151,10 @@ class QuotationController extends Controller
             $purchaseRequest->update([
                 'status' => 'En pre-aprobación',
                 'preapproval_sent_at' => now(),
-                'preapproval_sent_by' => Auth::id()
+                'preapproval_sent_by' => Auth::id(),
+                'hecho_cumplido' => true,
+                'hecho_cumplido_at' => now(),
+                'hecho_cumplido_by' => Auth::id()
             ]);
             
             // Registrar en el historial

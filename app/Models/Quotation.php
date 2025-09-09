@@ -38,6 +38,8 @@ class Quotation extends Model
         'original_item_prices',
         'original_item_totals',
         'original_item_taxes',
+        'original_item_quantities',
+        'original_item_descriptions',
         // otros campos necesarios
     ];
 
@@ -46,6 +48,8 @@ class Quotation extends Model
         'original_item_prices' => 'array',
         'original_item_totals' => 'array',
         'original_item_taxes' => 'array',
+        'original_item_quantities' => 'array',
+        'original_item_descriptions' => 'array',
         'includes_iva' => 'boolean',
         'includes_iva_19' => 'boolean',
         'includes_iva_5' => 'boolean',

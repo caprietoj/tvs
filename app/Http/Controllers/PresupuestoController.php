@@ -4046,6 +4046,53 @@ class PresupuestoController extends Controller
     /**
      * Mostrar formulario para configurar presupuesto de secciones
      */
+    /**
+     * Inicializar presupuestos por defecto para las secciones
+     */
+    public function inicializarPresupuestosDefecto()
+    {
+        // Verificación de autorización
+        if (!auth()->user()->can('admin')) {
+            abort(403, 'No tiene permisos para realizar esta acción.');
+        }
+
+        $year = date('Y');
+        $presupuestosDefecto = [
+            'PREESCOLAR Y PRIMARIA' => 38000000,
+            'PEP' => 20000000,
+            'ESCUELA MEDIA' => 42500000,
+            'PAI' => 26500000,
+            'ALTA' => 93500000,
+            'CAS' => 9000000,
+            'CONSEJERÍA UNIVERSITARIA' => 8000000,
+            'DEPARTAMENTO DE APOYO' => 39000000,
+            'BIBLIOTECA' => 28000000,
+            'DEPORTES' => 10600000
+        ];
+
+        try {
+            foreach ($presupuestosDefecto as $seccion => $monto) {
+                PresupuestoSeccion::updateOrCreate(
+                    [
+                        'seccion' => $seccion,
+                        'year' => $year
+                    ],
+                    [
+                        'presupuesto_total' => $monto,
+                        'activo' => true
+                    ]
+                );
+            }
+
+            return redirect()->route('presupuesto.configurar-secciones')
+                           ->with('success', 'Presupuestos por defecto inicializados correctamente.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                           ->with('error', 'Error al inicializar presupuestos: ' . $e->getMessage());
+        }
+    }
+
     public function configurarSecciones()
     {
         // Verificación de autorización
@@ -4070,6 +4117,27 @@ class PresupuestoController extends Controller
         
         // Obtener presupuestos actuales
         $presupuestosActuales = PresupuestoSeccion::obtenerTodosPresupuestos($year);
+        
+        // Establecer presupuestos por defecto si no existen
+        $presupuestosDefecto = [
+            'PREESCOLAR Y PRIMARIA' => 38000000,
+            'PEP' => 20000000,
+            'ESCUELA MEDIA' => 42500000,
+            'PAI' => 26500000,
+            'ALTA' => 93500000,
+            'CAS' => 9000000,
+            'CONSEJERÍA UNIVERSITARIA' => 8000000,
+            'DEPARTAMENTO DE APOYO' => 39000000,
+            'BIBLIOTECA' => 28000000,
+            'DEPORTES' => 10600000
+        ];
+        
+        // Si no hay presupuestos configurados, usar los valores por defecto
+        foreach ($presupuestosDefecto as $seccion => $monto) {
+            if (!isset($presupuestosActuales[$seccion]) || $presupuestosActuales[$seccion] == 0) {
+                $presupuestosActuales[$seccion] = $monto;
+            }
+        }
         
         return view('presupuesto.configurar-secciones', compact('secciones', 'presupuestosActuales', 'year'));
     }

@@ -155,6 +155,7 @@
                                     <th data-sort="seccion">Sección</th>
                                     <th data-sort="rubro">Rubro</th>
                                     <th data-sort="cuenta">Cuenta</th>
+                                    <th data-sort="documento">Documento</th>
                                     <th data-sort="fecha">Fecha</th>
                                     <th data-sort="valor">Valor</th>
                                     <th data-sort="valor_moneda">Valor Moneda</th>
@@ -169,8 +170,23 @@
                                             <td>{{ $item->seccion }}</td>
                                             <td>{{ $item->rubro }}</td>
                                             <td>{{ $item->cuenta }}</td>
+                                            <td>{{ $item->documento ?? '-' }}</td>
                                             <td>{{ $item->fecha ? \Carbon\Carbon::parse($item->fecha)->format('d/m/Y') : '-' }}</td>
-                                            <td class="number-cell">{{ number_format($item->valor ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell valor-clickeable" 
+                                data-item-id="{{ $item->id }}"
+                                data-seccion="{{ $item->seccion }}"
+                                data-rubro="{{ $item->rubro }}"
+                                data-cuenta="{{ $item->cuenta }}"
+                                data-documento="{{ $item->documento ?? '-' }}"
+                                data-fecha="{{ $item->fecha ? \Carbon\Carbon::parse($item->fecha)->format('d/m/Y') : '-' }}"
+                                data-descripcion="{{ $item->descripcion ?? '-' }}"
+                                data-nombre-tercero="{{ $item->nombre_tercero ?? '-' }}"
+                                data-centro-costo="{{ $item->centro_costo ?? '-' }}"
+                                data-valor="{{ $item->valor ?? 0 }}"
+                                style="cursor: pointer; color: #007bff; text-decoration: underline;"
+                                title="Clic para ver detalles del gasto">
+                                {{ number_format($item->valor ?? 0, 0, ',', '.') }}
+                            </td>
                                             <td class="number-cell">{{ number_format($item->valor_moneda ?? 0, 0, ',', '.') }}</td>
                                             <td class="number-cell {{ (($item->valor ?? 0) - ($item->valor_moneda ?? 0)) < 0 ? 'negative' : 'positive' }}">
                                                 {{ number_format(($item->valor ?? 0) - ($item->valor_moneda ?? 0), 0, ',', '.') }}
@@ -184,7 +200,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="8" class="no-data">No hay datos de presupuesto disponibles</td>
+                                        <td colspan="9" class="no-data">No hay datos de presupuesto disponibles</td>
                                     </tr>
                                 @endif
                             </tbody>
@@ -202,6 +218,84 @@
                             Cargando...
                         </div>
                     </div>
+                    
+                    <!-- Modal personalizado para mostrar detalles del gasto -->
+                    <div id="detalleGastoModal" class="custom-modal" style="display: none;">
+                        <div class="custom-modal-overlay" onclick="cerrarModal()"></div>
+                        <div class="custom-modal-content">
+                            <div class="custom-modal-header">
+                                <h5 class="custom-modal-title">
+                                    <i class="fas fa-info-circle"></i> Detalle del Gasto
+                                </h5>
+                                <button type="button" class="custom-close-btn" onclick="cerrarModal()">
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                            <div class="custom-modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="info-card">
+                                            <h6 class="info-title"><i class="fas fa-building"></i> Información Básica</h6>
+                                            <div class="info-item">
+                                                <strong>Sección:</strong>
+                                                <span id="modal-seccion"></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Rubro:</strong>
+                                                <span id="modal-rubro"></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Cuenta:</strong>
+                                                <span id="modal-cuenta"></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Documento:</strong>
+                                                <span id="modal-documento"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info-card">
+                                            <h6 class="info-title"><i class="fas fa-calendar-alt"></i> Información Financiera</h6>
+                                            <div class="info-item">
+                                                <strong>Fecha:</strong>
+                                                <span id="modal-fecha"></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Valor:</strong>
+                                                <span id="modal-valor" class="text-success font-weight-bold"></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Centro de Costo:</strong>
+                                                <span id="modal-centro-costo"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="info-card">
+                                            <h6 class="info-title"><i class="fas fa-file-alt"></i> Descripción Detallada</h6>
+                                            <div class="info-item">
+                                                <strong>Descripción:</strong>
+                                                <p id="modal-descripcion" class="mt-2"></p>
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Tercero:</strong>
+                                                <span id="modal-nombre-tercero"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="custom-modal-footer">
+                                <button type="button" class="btn btn-secondary" onclick="cerrarModal()">
+                                    <i class="fas fa-times"></i> Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
                 @elseif($sheetKey == 'Secciones')
                     <!-- Hoja de Secciones con múltiples tablas -->
                     <div class="sections-container">
@@ -5953,6 +6047,168 @@
     font-family: Arial, sans-serif;
 }
 
+/* Estilos para valores clickeables */
+.valor-clickeable {
+    cursor: pointer !important;
+    color: #007bff !important;
+    text-decoration: underline !important;
+    transition: all 0.2s ease;
+}
+
+.valor-clickeable:hover {
+    background-color: #f8f9fa !important;
+    color: #0056b3 !important;
+    font-weight: bold !important;
+}
+
+/* Estilos para el modal de detalles */
+.info-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid #007bff;
+}
+
+.info-title {
+    color: #007bff;
+    margin-bottom: 15px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.info-item {
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+.info-item strong {
+    color: #495057;
+    display: inline-block;
+    min-width: 120px;
+}
+
+.info-item span {
+    color: #212529;
+}
+
+.info-item p {
+    margin-bottom: 0;
+    padding: 10px;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    color: #495057;
+}
+
+.modal-dialog.modal-lg {
+    max-width: 800px;
+}
+
+.modal-header.bg-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Estilos para modal personalizado */
+.custom-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+.custom-modal-content {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 10000;
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.custom-modal-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.custom-modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.custom-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.custom-close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.custom-modal-body {
+    padding: 20px;
+}
+
+.custom-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+    text-align: right;
+}
+
 /* Header de página */
 .main-container .page-header {
     margin-bottom: 30px;
@@ -7462,6 +7718,20 @@ tr.editing {
 // Datos del servidor
 const serverData = @json(isset($presupuestoItems) ? $presupuestoItems->values() : []);
 
+// Función global para cerrar el modal
+function cerrarModal() {
+    const modal = document.getElementById('detalleGastoModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto'; // Restaurar scroll del body
+}
+
+// Función global para abrir el modal
+function abrirModal() {
+    const modal = document.getElementById('detalleGastoModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Variables globales
     let currentSheet = 'BUDGET';
@@ -7471,6 +7741,54 @@ document.addEventListener('DOMContentLoaded', function() {
     let allItems = [];
     let filteredItems = [];
     let isLoading = false;
+    
+    // Función para mostrar modal de detalles del gasto
+    function mostrarDetalleGasto(element) {
+        // Extraer datos del elemento
+        const datos = {
+            seccion: element.getAttribute('data-seccion'),
+            rubro: element.getAttribute('data-rubro'),
+            cuenta: element.getAttribute('data-cuenta'),
+            documento: element.getAttribute('data-documento'),
+            fecha: element.getAttribute('data-fecha'),
+            descripcion: element.getAttribute('data-descripcion'),
+            nombreTercero: element.getAttribute('data-nombre-tercero'),
+            centroCosto: element.getAttribute('data-centro-costo'),
+            valor: element.getAttribute('data-valor')
+        };
+        
+        // Llenar el modal con los datos
+        document.getElementById('modal-seccion').textContent = datos.seccion || '-';
+        document.getElementById('modal-rubro').textContent = datos.rubro || '-';
+        document.getElementById('modal-cuenta').textContent = datos.cuenta || '-';
+        document.getElementById('modal-documento').textContent = datos.documento || '-';
+        document.getElementById('modal-fecha').textContent = datos.fecha || '-';
+        document.getElementById('modal-valor').textContent = '$' + new Intl.NumberFormat('es-CO').format(datos.valor || 0);
+        document.getElementById('modal-centro-costo').textContent = datos.centroCosto || '-';
+        document.getElementById('modal-descripcion').textContent = datos.descripcion || 'Sin descripción disponible';
+        document.getElementById('modal-nombre-tercero').textContent = datos.nombreTercero || '-';
+        
+        // Mostrar el modal personalizado
+        abrirModal();
+    }
+    
+    // Event listener para valores clickeables
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('valor-clickeable')) {
+            e.preventDefault();
+            mostrarDetalleGasto(e.target);
+        }
+    });
+    
+    // Event listeners para el modal personalizado
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('detalleGastoModal');
+            if (modal.style.display === 'flex') {
+                cerrarModal();
+            }
+        }
+    });
     
     // Elementos del DOM
     const hamburgerBtn = document.getElementById('hamburgerBtn');

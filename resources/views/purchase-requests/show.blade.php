@@ -519,12 +519,11 @@
                                                                     : 'Editar cotización';
                                                             @endphp
                                                             <a href="{{ route('quotations.edit', $quotation) }}" 
-                                                               class="btn btn-sm btn-secondary" 
-                                                               title="{{ $tooltipText }}"
-                                                               data-toggle="tooltip" data-placement="top">
+                                                               class="btn btn-sm btn-secondary quotation-edit-btn" 
+                                                               title="{{ $tooltipText }}">
                                                                 <i class="fas fa-edit"></i>
                                                                 @if($hasActiveOrders)
-                                                                    <i class="fas fa-sync-alt text-warning ml-1" style="font-size: 10px;"></i>
+                                                                    <i class="fas fa-paperclip text-warning ml-1" style="font-size: 10px;" title="Vinculado a orden de compra"></i>
                                                                 @endif
                                                             </a>
                                                         @endcan
@@ -1555,6 +1554,55 @@
             margin-bottom: 0.5rem;
         }
     }
+    
+    /* Corregir parpadeo de iconos */
+    .fas.fa-link,
+    .fas.fa-sync-alt,
+    .fas.fa-sync {
+        animation: none !important;
+        -webkit-animation: none !important;
+        -moz-animation: none !important;
+        -o-animation: none !important;
+        transition: none !important;
+        -webkit-transition: none !important;
+        -moz-transition: none !important;
+        -o-transition: none !important;
+    }
+    
+    /* Estabilizar iconos en botones */
+    .btn .fas {
+        display: inline-block !important;
+        position: static !important;
+        transform: none !important;
+        -webkit-transform: none !important;
+    }
+    
+    /* Prevenir parpadeo en botones de editar cotizaciones */
+    .quotation-edit-btn {
+        position: relative !important;
+        display: inline-block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+    }
+    
+    .quotation-edit-btn.processing {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+    
+    /* Estabilizar tooltip */
+    .tooltip {
+        pointer-events: none !important;
+        z-index: 1070 !important;
+    }
+    
+    /* Prevenir cambios de layout que causen parpadeo */
+    .btn-sm {
+        min-width: 38px;
+        min-height: 31px;
+    }
 </style>
 @stop
 
@@ -1563,15 +1611,56 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(function() {
-        // Tooltips
-        $('[data-toggle="tooltip"]').tooltip();
+        // Inicializar tooltips de manera segura - evitar duplicados
+        $('[data-toggle="tooltip"]').tooltip('dispose'); // Limpiar tooltips existentes
+        $('[data-toggle="tooltip"]').tooltip({
+            trigger: 'hover',
+            delay: { show: 300, hide: 100 }
+        });
         
-        // Animación de entrada para las cards
+        // Tooltips personalizados para botones de editar cotizaciones
+        $('.quotation-edit-btn').tooltip({
+            trigger: 'hover',
+            delay: { show: 500, hide: 100 },
+            placement: 'top'
+        });
+        
+        // Animación de entrada para las cards - optimizada
         $('.card').each(function(index) {
             $(this).css({
-                'animation-delay': (index * 0.1) + 's',
-                'animation': 'fadeInUp 0.5s ease forwards'
+                'animation-delay': (index * 0.05) + 's',
+                'animation': 'fadeInUp 0.3s ease forwards'
             });
+        });
+        
+        // Prevenir doble clic en botones importantes
+        $('.quotation-edit-btn').on('click', function() {
+            var $btn = $(this);
+            if ($btn.hasClass('processing')) {
+                return false;
+            }
+            $btn.addClass('processing');
+            setTimeout(function() {
+                $btn.removeClass('processing');
+            }, 2000);
+        });
+        
+        // Fix adicional para prevenir parpadeo - estabilizar DOM
+        $('.quotation-edit-btn').each(function() {
+            $(this).css({
+                'visibility': 'visible',
+                'display': 'inline-block',
+                'opacity': '1'
+            });
+        });
+        
+        // Prevenir reflow/repaint innecesarios
+        $(document).on('DOMNodeInserted DOMNodeRemoved', function(e) {
+            if ($(e.target).hasClass('quotation-edit-btn') || $(e.target).find('.quotation-edit-btn').length) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
         });
         
         // Código JavaScript para gráfico removido - ya no se necesita

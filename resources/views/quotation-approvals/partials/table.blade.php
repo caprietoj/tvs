@@ -8,6 +8,7 @@
                 <th>Fecha</th>
                 <th>Estado</th>
                 <th>Cotizaciones</th>
+                <th>Hecho Cumplido</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -36,6 +37,17 @@
                         </span>
                     </td>
                     <td>
+                        <div class="text-center">
+                            @if($request->hecho_cumplido)
+                                <span class="text-success" title="Hecho cumplido el {{ $request->hecho_cumplido_at ? $request->hecho_cumplido_at->format('d/m/Y H:i') : '' }} por {{ $request->hechoComplidoMarker ? $request->hechoComplidoMarker->name : '' }}">
+                                    <i class="fas fa-times fa-lg"></i>
+                                </span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </div>
+                    </td>
+                    <td>
                         <div class="btn-group">
                             <a href="{{ route('quotation-approvals.show', $request->id) }}" class="btn btn-sm btn-primary">
                                 <i class="fas fa-eye"></i> Ver Detalles
@@ -48,7 +60,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center py-4">
+                    <td colspan="8" class="text-center py-4">
                         <i class="fas fa-info-circle text-info fa-lg mr-2"></i>
                         No hay solicitudes pendientes de preaprobación.
                     </td>

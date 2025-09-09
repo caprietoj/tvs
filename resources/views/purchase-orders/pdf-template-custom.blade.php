@@ -495,43 +495,53 @@
             // CORRECCIÓN: Usar PRIORITARIAMENTE los cálculos guardados en customData
             $calculatedSubtotal = 0;
             $calculatedIva = 0;
+            $calculatedIpoconsumo = 0; // Agregar variable para impuesto al consumo
             $calculatedIndividualTaxes = 0;
             
-            // Detectar el tipo de IVA desde la cotización seleccionada
+            // Detectar el tipo de IVA e impuestos al consumo desde la cotización seleccionada
             $ivaType = null;
             $ivaLabel = 'IVA';
+            $ipoconsumoType = null;
+            $ipoconsumoLabel = null;
+            
             if ($order->purchaseRequest && $order->purchaseRequest->selectedQuotation) {
                 $selectedQuotation = $order->purchaseRequest->selectedQuotation;
-                // Prioridad 1: Usar flags habilitados
-                if ($selectedQuotation->iva_19_enabled && $selectedQuotation->iva_19_amount > 0) {
+                
+                // CORREGIDO: Detectar IVA específico (19% o 5%)
+                if ($selectedQuotation->includes_iva_19 && $selectedQuotation->iva_19_amount > 0) {
                     $ivaType = '19%';
                     $ivaLabel = 'IVA (19%)';
-                } elseif ($selectedQuotation->iva_5_enabled && $selectedQuotation->iva_5_amount > 0) {
+                } elseif ($selectedQuotation->includes_iva_5 && $selectedQuotation->iva_5_amount > 0) {
                     $ivaType = '5%';
                     $ivaLabel = 'IVA (5%)';
-                } else {
-                    // Prioridad 2: Detectar tipo basado en montos y porcentajes
-                    if ($selectedQuotation->iva_19_amount > 0) {
-                        // Calcular si corresponde al 19%
+                }
+                
+                // CORREGIDO: Detectar Impuesto al Consumo
+                if ($selectedQuotation->includes_ipoconsumo_8 && $selectedQuotation->ipoconsumo_8_amount > 0) {
+                    $ipoconsumoType = '8%';
+                    $ipoconsumoLabel = 'IMPUESTO AL CONSUMO (8%)';
+                } elseif ($selectedQuotation->includes_ipoconsumo_4 && $selectedQuotation->ipoconsumo_4_amount > 0) {
+                    $ipoconsumoType = '4%';
+                    $ipoconsumoLabel = 'IMPUESTO AL CONSUMO (4%)';
+                }
+                
+                // Fallback: Si solo hay IVA general sin especificar, analizarlo
+                if (!$ivaType && $selectedQuotation->includes_iva && $selectedQuotation->iva_amount > 0) {
+                    // Solo considerar como IVA si no hay impuestos al consumo detectados
+                    if (!$ipoconsumoType) {
                         $total = floatval($selectedQuotation->total_amount);
-                        $ivaAmount = floatval($selectedQuotation->iva_19_amount);
+                        $ivaAmount = floatval($selectedQuotation->iva_amount);
                         if ($total > 0 && $ivaAmount > 0) {
                             $subtotalCalculated = $total - $ivaAmount;
                             $percentage = round(($ivaAmount / $subtotalCalculated) * 100);
-                            if ($percentage == 19) {
+                            if ($percentage >= 18 && $percentage <= 20) {
                                 $ivaType = '19%';
                                 $ivaLabel = 'IVA (19%)';
-                            } elseif ($percentage == 5) {
+                            } elseif ($percentage >= 4 && $percentage <= 6) {
                                 $ivaType = '5%';
                                 $ivaLabel = 'IVA (5%)';
-                            } else {
-                                $ivaType = $percentage . '%';
-                                $ivaLabel = 'IVA (' . $percentage . '%)';
                             }
                         }
-                    } elseif ($selectedQuotation->iva_5_amount > 0) {
-                        $ivaType = '5%';
-                        $ivaLabel = 'IVA (5%)';
                     }
                 }
             }
@@ -539,22 +549,41 @@
             // Si no se puede determinar desde la cotización, usar customData
             if (!$ivaType && isset($customData['iva_rate'])) {
                 $rate = str_replace('%', '', $customData['iva_rate']);
-                if (is_numeric($rate)) {
+                if (is_numeric($rate) && $rate > 0) {
                     $ivaType = $rate . '%';
                     $ivaLabel = 'IVA (' . $rate . '%)';
                 }
             }
             
+            // Detectar impuesto al consumo desde customData si no se detectó desde cotización
+            if (!$ipoconsumoType && isset($customData['ipoconsumo_rate'])) {
+                $rate = str_replace('%', '', $customData['ipoconsumo_rate']);
+                if (is_numeric($rate) && $rate > 0) {
+                    $ipoconsumoType = $rate . '%';
+                    $ipoconsumoLabel = 'IMPUESTO AL CONSUMO (' . $rate . '%)';
+                }
+            }
+            
             // Debug temporal - agregar logs para diagnóstico
-            Log::info('🔍 DEBUG PDF - Detección de IVA', [
+            Log::info('🔍 DEBUG PDF - Detección de impuestos', [
                 'order_id' => $order->id,
                 'ivaType' => $ivaType,
                 'ivaLabel' => $ivaLabel,
+                'ipoconsumoType' => $ipoconsumoType,
+                'ipoconsumoLabel' => $ipoconsumoLabel,
                 'has_selected_quotation' => $order->purchaseRequest && $order->purchaseRequest->selectedQuotation,
                 'quotation_id' => $order->purchaseRequest && $order->purchaseRequest->selectedQuotation ? $order->purchaseRequest->selectedQuotation->id : null,
-                'iva_19_enabled' => $order->purchaseRequest && $order->purchaseRequest->selectedQuotation ? $order->purchaseRequest->selectedQuotation->iva_19_enabled : null,
-                'iva_19_amount' => $order->purchaseRequest && $order->purchaseRequest->selectedQuotation ? $order->purchaseRequest->selectedQuotation->iva_19_amount : null,
+                'includes_ipoconsumo_8' => $order->purchaseRequest && $order->purchaseRequest->selectedQuotation ? $order->purchaseRequest->selectedQuotation->includes_ipoconsumo_8 : null,
+                'ipoconsumo_8_amount' => $order->purchaseRequest && $order->purchaseRequest->selectedQuotation ? $order->purchaseRequest->selectedQuotation->ipoconsumo_8_amount : null,
             ]);
+            
+            // Establecer etiquetas por defecto si no se detectaron impuestos
+            if (!$ivaType) {
+                $ivaLabel = 'IVA (0%)';
+            }
+            if (!$ipoconsumoType) {
+                $ipoconsumoLabel = null; // No mostrar línea de impuesto al consumo si no hay
+            }
             
             // Si hay customData con cálculos ya realizados, usarlos DIRECTAMENTE
             if (isset($customData) && is_array($customData)) {
@@ -594,15 +623,17 @@
                 // Usar IVA de customData si está disponible y es coherente
                 if (isset($customData['iva_amount']) && is_numeric($customData['iva_amount'])) {
                     $customIva = floatval($customData['iva_amount']);
+                    $customIpoconsumo = floatval($customData['ipoconsumo_amount'] ?? 0); // Agregar impuesto al consumo
                     $customSubtotal = floatval($customData['subtotal'] ?? 0);
                     $customTotal = floatval($customData['total'] ?? 0);
                     
-                    // Validar coherencia: subtotal + iva debería ser aproximadamente igual al total
-                    $expectedTotal = $customSubtotal + $customIva;
+                    // Validar coherencia: subtotal + iva + ipoconsumo debería ser aproximadamente igual al total
+                    $expectedTotal = $customSubtotal + $customIva + $customIpoconsumo;
                     $totalDifference = abs($customTotal - $expectedTotal);
                     
                     Log::info('🔍 DEBUG PDF - Validando coherencia de customData', [
                         'custom_iva' => $customIva,
+                        'custom_ipoconsumo' => $customIpoconsumo,
                         'custom_subtotal' => $customSubtotal,
                         'custom_total' => $customTotal,
                         'expected_total' => $expectedTotal,
@@ -613,8 +644,10 @@
                     // Solo usar customData si es coherente
                     if ($totalDifference <= 1) {
                         $calculatedIva = $customIva;
-                        Log::info('🎯 VISTA PDF: Usando IVA de customData (coherente)', [
+                        $calculatedIpoconsumo = $customIpoconsumo;
+                        Log::info('🎯 VISTA PDF: Usando datos de customData (coherente)', [
                             'iva_amount' => $calculatedIva,
+                            'ipoconsumo_amount' => $calculatedIpoconsumo,
                             'order_id' => $order->id
                         ]);
                     } else {
@@ -701,12 +734,13 @@
                 }
             }
             
-            $calculatedTotal = round($calculatedSubtotal + $calculatedIva + $calculatedIndividualTaxes);
+            $calculatedTotal = round($calculatedSubtotal + $calculatedIva + $calculatedIpoconsumo + $calculatedIndividualTaxes);
             
             Log::info('🎯 VISTA PDF: Totales finales calculados', [
                 'order_id' => $order->id,
                 'subtotal' => $calculatedSubtotal,
                 'iva' => $calculatedIva,
+                'ipoconsumo' => $calculatedIpoconsumo,
                 'individual_taxes' => $calculatedIndividualTaxes,
                 'total' => $calculatedTotal,
                 'source' => isset($customData['subtotal']) ? 'customData' : 'dynamic'
@@ -745,7 +779,7 @@
                         @endif
                     </td>
                     @endif
-                    <td class="right">${{ number_format(round(floatval($item['total'] ?? $item['total_price'] ?? (($item['quantity'] ?? 1) * floatval($item['unit_price'] ?? 0)))), 0, ',', '.') }}</td>
+                    <td class="right">${{ number_format(floatval($item['total'] ?? $item['total_price'] ?? (($item['quantity'] ?? 1) * floatval($item['unit_price'] ?? 0))), 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
             @else
@@ -841,15 +875,25 @@
             <tr>
                 <td class="label">SOLICITUD Nº:</td>
                 <td class="value">{{ $order->purchaseRequest->request_number ?? 'SC-0012' }}</td>
+                @if($ipoconsumoType && $ipoconsumoLabel)
+                <td class="label bold">{{ $ipoconsumoLabel }}</td>
+                <td class="value bold right">${{ number_format($calculatedIpoconsumo, 0, ',', '.') }}</td>
+                @else
                 <td class="label bold">Sin Imp. Consumo</td>
                 <td class="value bold right">$0</td>
+                @endif
             </tr>
             @else
             <tr>
                 <td class="label">PRESUPUESTO:</td>
                 <td class="value">{{ $budget ?? 'N/A' }}</td>
+                @if($ipoconsumoType && $ipoconsumoLabel)
+                <td class="label bold">{{ $ipoconsumoLabel }}</td>
+                <td class="value bold right">${{ number_format($calculatedIpoconsumo, 0, ',', '.') }}</td>
+                @else
                 <td class="label bold">Sin Imp. Consumo</td>
                 <td class="value bold right">$0</td>
+                @endif
             </tr>
             <tr>
                 <td class="label">SOLICITUD Nº:</td>

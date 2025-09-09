@@ -62,9 +62,15 @@ class PresupuestoSeccion extends Model
     {
         $year = $year ?? date('Y');
         
-        return self::where('year', $year)
-                  ->where('activo', true)
-                  ->pluck('presupuesto_total', 'seccion')
-                  ->toArray();
+        $presupuestos = self::where('year', $year)
+                          ->where('activo', true)
+                          ->get();
+        
+        $result = [];
+        foreach ($presupuestos as $presupuesto) {
+            $result[$presupuesto->seccion] = (int) $presupuesto->presupuesto_total;
+        }
+        
+        return $result;
     }
 }

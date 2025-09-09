@@ -48,6 +48,9 @@ class PurchaseRequest extends Model
         'delivery_marked_at',
         'delivery_marked_by',
         'delivery_notes',
+        'hecho_cumplido',
+        'hecho_cumplido_at',
+        'hecho_cumplido_by',
         'rejection_reason',
         'preapproval_sent_at',
         'preapproval_sent_by',
@@ -103,6 +106,7 @@ class PurchaseRequest extends Model
         'pre_approved_at' => 'datetime',
         'delivery_marked_at' => 'datetime',
         'preapproval_sent_at' => 'datetime',
+        'hecho_cumplido_at' => 'datetime',
         'purchase_items' => 'array',
         'service_items' => 'array',
         'copy_items' => 'array',
@@ -111,6 +115,7 @@ class PurchaseRequest extends Model
         'requires_binding' => 'boolean',
         'requires_lamination' => 'boolean',
         'requires_cutting' => 'boolean',
+        'hecho_cumplido' => 'boolean',
         'applied_taxes' => 'array',
         'is_shared' => 'boolean',
     ];
@@ -145,6 +150,14 @@ class PurchaseRequest extends Model
     public function deliveryMarker()
     {
         return $this->belongsTo(User::class, 'delivery_marked_by');
+    }
+
+    /**
+     * Obtener el usuario que marcó como hecho cumplido.
+     */
+    public function hechoComplidoMarker()
+    {
+        return $this->belongsTo(User::class, 'hecho_cumplido_by');
     }
 
     /**

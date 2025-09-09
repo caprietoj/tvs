@@ -142,6 +142,76 @@
                                         <small class="text-muted">(Editado en PDF)</small>
                                     @endif
                                 </dd>
+
+                                <!-- Desglose de Impuestos -->
+                                @php
+                                    // Verificar qué impuestos realmente debe mostrar basándose en la cotización
+                                    $shouldShowIva19 = false;
+                                    $shouldShowIva5 = false;
+                                    $shouldShowConsumo8 = false;
+                                    $shouldShowConsumo4 = false;
+                                    
+                                    if ($purchaseOrder->purchaseRequest && $purchaseOrder->purchaseRequest->selectedQuotation) {
+                                        // Verificar cotización primero (fuente de verdad)
+                                        $quotation = $purchaseOrder->purchaseRequest->selectedQuotation;
+                                        $shouldShowIva19 = $quotation->includes_iva_19 && $quotation->iva_19_amount > 0;
+                                        $shouldShowIva5 = $quotation->includes_iva_5 && $quotation->iva_5_amount > 0;
+                                        $shouldShowConsumo8 = $quotation->includes_ipoconsumo_8 && $quotation->ipoconsumo_8_amount > 0;
+                                        $shouldShowConsumo4 = $quotation->includes_ipoconsumo_4 && $quotation->ipoconsumo_4_amount > 0;
+                                        
+                                        // Solo mostrar custom data si es consistente con la cotización
+                                        if ($customData && isset($customData['iva_amount']) && $customData['iva_amount'] > 0) {
+                                            // Si custom data tiene IVA pero cotización no lo justifica, ignorar custom data
+                                            if (!$shouldShowIva19 && !$shouldShowIva5) {
+                                                // Custom data incorrecto - no mostrar IVA
+                                            } else {
+                                                // Custom data consistente - mantener flags
+                                            }
+                                        }
+                                    }
+                                @endphp
+                                
+                                @if($purchaseOrder->subtotal_amount || $shouldShowIva19 || $shouldShowIva5 || $shouldShowConsumo8 || $shouldShowConsumo4)
+                                <dt class="col-sm-5">Subtotal:</dt>
+                                <dd class="col-sm-7">${{ number_format($purchaseOrder->subtotal_amount ?? $purchaseOrder->subtotal, 2, ',', '.') }}</dd>
+                                
+                                @if($shouldShowIva19 && $purchaseOrder->tax_amount_19 > 0)
+                                <dt class="col-sm-5">IVA (19%):</dt>
+                                <dd class="col-sm-7">${{ number_format($purchaseOrder->tax_amount_19, 2, ',', '.') }}</dd>
+                                @endif
+                                
+                                @if($shouldShowConsumo8 && $purchaseOrder->tax_amount_8 > 0)
+                                <dt class="col-sm-5">Imp. Consumo (8%):</dt>
+                                <dd class="col-sm-7">${{ number_format($purchaseOrder->tax_amount_8, 2, ',', '.') }}</dd>
+                                @endif
+                                
+                                @if($shouldShowIva5 && $purchaseOrder->tax_amount_5 > 0)
+                                <dt class="col-sm-5">IVA (5%):</dt>
+                                <dd class="col-sm-7">${{ number_format($purchaseOrder->tax_amount_5, 2, ',', '.') }}</dd>
+                                @endif
+                                
+                                @if($shouldShowConsumo4 && $purchaseOrder->tax_amount_4 > 0)
+                                <dt class="col-sm-5">Imp. Consumo (4%):</dt>
+                                <dd class="col-sm-7">${{ number_format($purchaseOrder->tax_amount_4, 2, ',', '.') }}</dd>
+                                @endif
+                                
+                                @if($purchaseOrder->applied_taxes && count($purchaseOrder->applied_taxes) > 0)
+                                <dt class="col-sm-5">Impuestos Aplicados:</dt>
+                                <dd class="col-sm-7">
+                                    @foreach($purchaseOrder->applied_taxes as $tax)
+                                        @if($tax === 'iva_19')
+                                            <span class="badge badge-success">IVA 19%</span>
+                                        @elseif($tax === 'iva_5')
+                                            <span class="badge badge-info">IVA 5%</span>
+                                        @elseif($tax === 'consumo_8')
+                                            <span class="badge badge-warning">Consumo 8%</span>
+                                        @elseif($tax === 'consumo_4')
+                                            <span class="badge badge-secondary">Consumo 4%</span>
+                                        @endif
+                                    @endforeach
+                                </dd>
+                                @endif
+                                @endif
                                 
                                 <dt class="col-sm-5">Términos de Pago:</dt>
                                 <dd class="col-sm-7">

@@ -696,6 +696,23 @@ class ApprovalController extends Controller
             ];
             
             // Crear orden de compra individual para este proveedor
+            
+            // CORREGIDO: Usar impuestos específicos de la cotización, no asumir IVA 19%
+            $appliedTaxes = [];
+            if ($quotation->includes_iva_19 && $quotation->iva_19_amount > 0) {
+                $appliedTaxes[] = 'iva_19';
+            }
+            if ($quotation->includes_iva_5 && $quotation->iva_5_amount > 0) {
+                $appliedTaxes[] = 'iva_5';
+            }
+            if ($quotation->includes_ipoconsumo_8 && $quotation->ipoconsumo_8_amount > 0) {
+                $appliedTaxes[] = 'consumo_8';
+            }
+            if ($quotation->includes_ipoconsumo_4 && $quotation->ipoconsumo_4_amount > 0) {
+                $appliedTaxes[] = 'consumo_4';
+            }
+            $taxesCalculation = $this->calculateTaxesForPurchaseOrder($subtotal, $appliedTaxes);
+            
             $purchaseOrder = \App\Models\PurchaseOrder::create([
                 'purchase_request_id' => $purchaseRequest->id,
                 'provider_id' => $provider->id,
@@ -711,7 +728,13 @@ class ApprovalController extends Controller
                 'pdf_custom_data' => json_encode($pdfCustomData), // 🔧 GUARDAR ESTRUCTURA COMPLETA
                 'observations' => $this->generateObservationsForSharedPurchase($purchaseRequest, $quotation->provider_name),
                 'created_by' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
-                'status' => 'pending'
+                'status' => 'pending',
+                'subtotal_amount' => $subtotal,
+                'applied_taxes' => $appliedTaxes,
+                'tax_amount_19' => $taxesCalculation['tax_amount_19'],
+                'tax_amount_8' => $taxesCalculation['tax_amount_8'],
+                'tax_amount_5' => $taxesCalculation['tax_amount_5'],
+                'tax_amount_4' => $taxesCalculation['tax_amount_4']
             ]);
             
             // Generar el PDF para esta orden individual
@@ -774,8 +797,8 @@ class ApprovalController extends Controller
         $totalAmount = $quotation->total_amount;
         $paymentTerms = $quotation->payment_terms ?? 'Contado';
         
-        // Calcular IVA correctamente
-        $includesIva = $quotation->includes_iva_19 ?? true; // Verificar si incluye IVA
+        // CORREGIDO: Verificar específicamente si incluye IVA 19%, no asumir por defecto
+        $includesIva = $quotation->includes_iva_19 && $quotation->iva_19_amount > 0;
         
         if ($includesIva) {
             // Si el total ya incluye IVA, calcular subtotal e IVA
@@ -874,6 +897,27 @@ class ApprovalController extends Controller
         ];
 
         // Crear la orden de compra
+        
+        // CORREGIDO: No asumir IVA 19% por defecto
+        // Usar impuestos específicos de la cotización si existen
+        $firstQuotation = $purchaseRequest->quotations->first();
+        $appliedTaxes = [];
+        if ($firstQuotation) {
+            if ($firstQuotation->includes_iva_19 && $firstQuotation->iva_19_amount > 0) {
+                $appliedTaxes[] = 'iva_19';
+            }
+            if ($firstQuotation->includes_iva_5 && $firstQuotation->iva_5_amount > 0) {
+                $appliedTaxes[] = 'iva_5';
+            }
+            if ($firstQuotation->includes_ipoconsumo_8 && $firstQuotation->ipoconsumo_8_amount > 0) {
+                $appliedTaxes[] = 'consumo_8';
+            }
+            if ($firstQuotation->includes_ipoconsumo_4 && $firstQuotation->ipoconsumo_4_amount > 0) {
+                $appliedTaxes[] = 'consumo_4';
+            }
+        }
+        $taxesCalculation = $this->calculateTaxesForPurchaseOrder($subtotal, $appliedTaxes);
+        
         $purchaseOrder = \App\Models\PurchaseOrder::create([
             'purchase_request_id' => $purchaseRequest->id,
             'provider_id' => $provider->id,
@@ -889,7 +933,13 @@ class ApprovalController extends Controller
             'pdf_custom_data' => json_encode($pdfCustomData), // 🔧 GUARDAR ESTRUCTURA COMPLETA
             'observations' => $this->generateObservationsForSharedPurchase($purchaseRequest),
             'created_by' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
-            'status' => 'pending'
+            'status' => 'pending',
+            'subtotal_amount' => $subtotal,
+            'applied_taxes' => $appliedTaxes,
+            'tax_amount_19' => $taxesCalculation['tax_amount_19'],
+            'tax_amount_8' => $taxesCalculation['tax_amount_8'],
+            'tax_amount_5' => $taxesCalculation['tax_amount_5'],
+            'tax_amount_4' => $taxesCalculation['tax_amount_4']
         ]);
 
         \Log::info('Orden de compra creada exitosamente', [
@@ -973,6 +1023,15 @@ class ApprovalController extends Controller
             ];
             
             // Crear la orden de compra
+            
+            // CORREGIDO: Para servicios sin cotización, verificar si realmente requieren IVA
+            // basándose en la configuración específica de la solicitud
+            $appliedTaxes = [];
+            if ($includesIva) {
+                $appliedTaxes[] = 'iva_19';
+            }
+            $taxesCalculation = $this->calculateTaxesForPurchaseOrder($subtotal, $appliedTaxes);
+            
             $purchaseOrder = \App\Models\PurchaseOrder::create([
                 'purchase_request_id' => $purchaseRequest->id,
                 'provider_id' => $provider->id,
@@ -988,7 +1047,13 @@ class ApprovalController extends Controller
                 'pdf_custom_data' => json_encode($pdfCustomData), // 🔧 GUARDAR ESTRUCTURA COMPLETA
                 'observations' => 'Orden de servicio sin cotización - ' . $purchaseRequest->no_quotation_reason,
                 'created_by' => Auth::id(),
-                'status' => 'pending'
+                'status' => 'pending',
+                'subtotal_amount' => $subtotal,
+                'applied_taxes' => $appliedTaxes,
+                'tax_amount_19' => $taxesCalculation['tax_amount_19'],
+                'tax_amount_8' => $taxesCalculation['tax_amount_8'],
+                'tax_amount_5' => $taxesCalculation['tax_amount_5'],
+                'tax_amount_4' => $taxesCalculation['tax_amount_4']
             ]);
 
             // Generar el PDF inmediatamente
@@ -1162,5 +1227,39 @@ class ApprovalController extends Controller
             return redirect()->back()
                 ->with('error', 'Error al enviar el correo: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Calcula los impuestos desglosados para una orden de compra
+     */
+    private function calculateTaxesForPurchaseOrder($subtotal, $appliedTaxes)
+    {
+        $taxes = [
+            'tax_amount_19' => 0,
+            'tax_amount_8' => 0,
+            'tax_amount_5' => 0,
+            'tax_amount_4' => 0
+        ];
+
+        if (is_array($appliedTaxes)) {
+            foreach ($appliedTaxes as $tax) {
+                switch ($tax) {
+                    case 'iva_19':
+                        $taxes['tax_amount_19'] = $subtotal * 0.19;
+                        break;
+                    case 'iva_5':
+                        $taxes['tax_amount_5'] = $subtotal * 0.05;
+                        break;
+                    case 'consumo_8':
+                        $taxes['tax_amount_8'] = $subtotal * 0.08;
+                        break;
+                    case 'consumo_4':
+                        $taxes['tax_amount_4'] = $subtotal * 0.04;
+                        break;
+                }
+            }
+        }
+
+        return $taxes;
     }
 }

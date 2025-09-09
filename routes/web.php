@@ -227,6 +227,7 @@ Route::middleware('auth')->group(function () {
         // Rutas para configuración de presupuesto de secciones
         Route::get('/presupuesto/configurar-secciones', [PresupuestoController::class, 'configurarSecciones'])->name('presupuesto.configurar-secciones');
         Route::post('/presupuesto/guardar-presupuesto-secciones', [PresupuestoController::class, 'guardarPresupuestoSecciones'])->name('presupuesto.guardar-presupuesto-secciones');
+        Route::post('/presupuesto/inicializar-presupuestos-defecto', [PresupuestoController::class, 'inicializarPresupuestosDefecto'])->name('presupuesto.inicializar-presupuestos-defecto');
         Route::post('/presupuesto/update-total', [PresupuestoController::class, 'updateTotal'])->name('presupuesto.update-total');
         Route::post('/presupuesto/update-cell', [PresupuestoController::class, 'updateCell'])->name('presupuesto.update-cell');
         

@@ -23,6 +23,12 @@ class PurchaseOrder extends Model
         'subtotal',
         'includes_iva',
         'iva_amount',
+        'applied_taxes',
+        'subtotal_amount',
+        'tax_amount_19',
+        'tax_amount_8',
+        'tax_amount_5',
+        'tax_amount_4',
         'tax_amount',
         'order_date',
         'payment_terms',
@@ -64,6 +70,7 @@ class PurchaseOrder extends Model
         'includes_iva' => 'boolean',
         'manual_creation' => 'boolean',
         'additional_items' => 'array',
+        'applied_taxes' => 'array',
         'pdf_custom_data' => 'array',
     ];
 

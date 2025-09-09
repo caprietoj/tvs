@@ -761,13 +761,13 @@ return [
                     'can'  => 'previsitas.view',
                     'active' => ['previsitas*'],
                 ],
-                // [
-                //     'text' => '💰 Presupuesto',
-                //     'url'  => 'presupuesto',
-                //     'icon' => 'fas fa-calculator',
-                //     'can'  => 'admin',
-                //     'active' => ['presupuesto*'],
-                // ],
+                [
+                    'text' => '💰 Presupuesto',
+                    'url'  => 'presupuesto',
+                    'icon' => 'fas fa-calculator',
+                    'can'  => 'admin',
+                    'active' => ['presupuesto*'],
+                ],
             ],
         ],
 

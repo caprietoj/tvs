@@ -289,6 +289,8 @@
                             ? $purchaseRequest->purchase_items 
                             : json_decode($purchaseRequest->purchase_items, true);
                         $existingPrices = old('item_prices', $quotation->original_item_prices ?? []);
+                        $existingQuantities = old('item_quantities', $quotation->original_item_quantities ?? []);
+                        $existingDescriptions = old('item_descriptions', $quotation->original_item_descriptions ?? []);
                     @endphp
                     
                     <div class="table-responsive">
@@ -313,9 +315,23 @@
                                             <span class="badge badge-primary">{{ $item['item'] ?? '' }}</span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <strong>{{ $item['quantity'] ?? '' }}</strong>
+                                            <input type="number" 
+                                                name="item_quantities[{{ $index }}]" 
+                                                value="{{ $existingQuantities[$index] ?? $item['quantity'] ?? '' }}" 
+                                                min="0" 
+                                                step="0.01"
+                                                placeholder="{{ $item['quantity'] ?? 1 }}"
+                                                class="form-control form-control-sm text-center"
+                                                style="width: 80px;"
+                                                onchange="updateItemQuantity({{ $index }})">
                                         </td>
-                                        <td class="align-middle">{{ $item['description'] ?? '' }}</td>
+                                        <td class="align-middle">
+                                            <textarea name="item_descriptions[{{ $index }}]"
+                                                class="form-control form-control-sm"
+                                                rows="2"
+                                                placeholder="{{ $item['description'] ?? '' }}"
+                                                style="resize: vertical; min-height: 38px;">{{ $existingDescriptions[$index] ?? $item['description'] ?? '' }}</textarea>
+                                        </td>
                                         <td>
                                             <div class="input-group input-group-sm">
                                                 <div class="input-group-prepend">
@@ -327,7 +343,7 @@
                                                     value="{{ $existingPrices[$index] ?? '' }}" 
                                                     placeholder="0.00"
                                                     class="form-control"
-                                                    onchange="calculateItemTotal({{ $index }}, {{ $item['quantity'] ?? 1 }})">
+                                                    onchange="calculateItemTotalDynamic({{ $index }})">
                                             </div>
                                         </td>
                                         <td class="per-item-taxes" style="display: none;">
@@ -1037,6 +1053,19 @@
             
             // Actualizar totales cuando se marque/desmarque un impuesto
             updateTotals();
+        }
+        
+        // Nueva función para actualizar cantidad y recalcular total
+        function updateItemQuantity(index) {
+            calculateItemTotalDynamic(index);
+            updateTotals();
+        }
+        
+        // Nueva función que obtiene la cantidad dinámicamente
+        function calculateItemTotalDynamic(index) {
+            const quantityInput = $(`input[name="item_quantities[${index}]"]`);
+            const quantity = parseFloat(quantityInput.val()) || 1;
+            calculateItemTotal(index, quantity);
         }
         
         function calculateItemTotal(index, quantity) {

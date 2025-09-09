@@ -456,19 +456,30 @@ class PurchaseOrderPdfService
             $totalWithIva += $itemTotal;
         }
         
-        // Verificar si la cotización especifica si incluye IVA
-        $includesIva = $quotation->includes_iva ?? true;
+        // CORREGIDO: Verificar impuestos específicos de la cotización
+        $hasSpecificTaxes = ($quotation->includes_iva_19 && $quotation->iva_19_amount > 0) ||
+                           ($quotation->includes_iva_5 && $quotation->iva_5_amount > 0) ||
+                           ($quotation->includes_ipoconsumo_8 && $quotation->ipoconsumo_8_amount > 0) ||
+                           ($quotation->includes_ipoconsumo_4 && $quotation->ipoconsumo_4_amount > 0);
         
-        if ($includesIva) {
-            // Los precios ya incluyen IVA (19%)
-            $subtotal = round($totalWithIva / 1.19, 2);
-            $ivaAmount = round($totalWithIva - $subtotal, 2);
+        if ($hasSpecificTaxes) {
+            // Usar impuestos específicos de la cotización
+            $ivaAmount = 0;
+            if ($quotation->includes_iva_19 && $quotation->iva_19_amount > 0) {
+                $ivaAmount += $quotation->iva_19_amount;
+            }
+            if ($quotation->includes_iva_5 && $quotation->iva_5_amount > 0) {
+                $ivaAmount += $quotation->iva_5_amount;
+            }
+            // Agregar otros impuestos si fuera necesario
+            
+            $subtotal = $totalWithIva - $ivaAmount;
             $totalAmount = $totalWithIva;
         } else {
-            // Los precios no incluyen IVA
+            // Sin impuestos específicos - no calcular IVA automáticamente
             $subtotal = $totalWithIva;
-            $ivaAmount = round($totalWithIva * 0.19, 2);
-            $totalAmount = $subtotal + $ivaAmount;
+            $ivaAmount = 0;
+            $totalAmount = $totalWithIva;
         }
         
         // Asignar los valores calculados

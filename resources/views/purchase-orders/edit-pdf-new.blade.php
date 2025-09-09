@@ -1382,23 +1382,24 @@ $(document).ready(function() {
         // Convertir a string si no lo es
         str = str.toString();
         
+        // CORREGIDO: Para evitar problemas de precisión de punto flotante,
+        // siempre tratamos los valores como enteros cuando sea posible
+        
         // Si el número tiene formato colombiano (puntos como separadores de miles)
         // PERO no tiene comas para decimales, entonces solo quitar puntos
         if (str.includes('.') && !str.includes(',')) {
-            // Contar los puntos - si hay más de uno o el último punto no está en posición de decimal, son separadores de miles
+            // Contar los puntos - si hay más de uno, son separadores de miles
             const parts = str.split('.');
-            if (parts.length > 2 || (parts.length === 2 && parts[1].length !== 2)) {
-                // Son separadores de miles, quitar todos los puntos
+            if (parts.length > 2) {
+                // Múltiples puntos = separadores de miles, quitar todos
                 return str.replace(/\./g, '');
-            } else if (parts.length === 2 && parts[1].length <= 2) {
-                // Podría ser decimal - verificar si tiene más de 2 dígitos después del punto
-                // Si tiene exactamente 1-2 dígitos después del punto, conservarlo como decimal
-                // Si tiene más, probablemente son separadores de miles
-                if (parts[1].length <= 2) {
-                    // Es un decimal válido, convertir punto a lo que JavaScript entiende
+            } else if (parts.length === 2) {
+                // Un solo punto - verificar si es decimal o separador de miles
+                if (parts[1].length <= 2 && !isNaN(parts[1]) && parts[1] !== '00') {
+                    // Es un decimal válido y no es .00 (que podría ser formato de entero)
                     return str; // JavaScript entiende punto como decimal
                 } else {
-                    // Son separadores de miles
+                    // Es .00 o más de 2 dígitos = separador de miles o formato de entero
                     return str.replace(/\./g, '');
                 }
             }
