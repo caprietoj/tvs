@@ -939,9 +939,68 @@
                 `);
                 $('#largeFormModal .modal-footer').hide();
                 
-                // Enviar el formulario después de un breve delay
+                // SOLUCIÓN MEJORADA: Enviar usando AJAX para manejar mejor los formularios grandes
                 setTimeout(function() {
-                    $('#purchaseForm')[0].submit();
+                    const form = $('#purchaseForm')[0];
+                    const formData = new FormData(form);
+                    
+                    console.log('📤 Enviando formulario grande via AJAX...');
+                    console.log('- Total de campos FormData:', Array.from(formData.entries()).length);
+                    
+                    // Log de debugging para items
+                    let itemCount = 0;
+                    for (let [key, value] of formData.entries()) {
+                        if (key.includes('purchase_items')) {
+                            itemCount++;
+                        }
+                    }
+                    console.log('- Campos de purchase_items encontrados:', itemCount);
+                    
+                    $.ajax({
+                        url: $(form).attr('action'),
+                        method: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        timeout: 60000, // 60 segundos timeout
+                        success: function(response, status, xhr) {
+                            console.log('✅ Formulario enviado exitosamente');
+                            $('#largeFormModal').modal('hide');
+                            
+                            // Si la respuesta es una redirección HTML, navegar manualmente
+                            if (xhr.getResponseHeader('content-type')?.includes('text/html')) {
+                                window.location.href = '/purchase-requests';
+                            } else if (response.redirect) {
+                                window.location.href = response.redirect;
+                            } else {
+                                // Fallback - recargar la página con success message
+                                window.location.href = '/purchase-requests?success=Solicitud creada exitosamente';
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('❌ Error al enviar formulario:', error);
+                            console.error('Status:', status);
+                            console.error('Response:', xhr.responseText);
+                            
+                            $('#largeFormModal').modal('hide');
+                            
+                            // Mostrar error específico si está disponible
+                            let errorMessage = 'Error al crear la solicitud. Por favor, inténtelo nuevamente.';
+                            
+                            if (xhr.status === 422) {
+                                errorMessage = 'Hay errores en el formulario. Por favor, revise los datos ingresados.';
+                            } else if (xhr.status === 419) {
+                                errorMessage = 'Su sesión ha expirado. La página se recargará automáticamente.';
+                                setTimeout(() => window.location.reload(), 2000);
+                            }
+                            
+                            alert(errorMessage);
+                            
+                            // Restaurar el botón de envío
+                            formIsSubmitting = false;
+                            $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Solicitud');
+                        }
+                    });
                 }, 1000);
             });
             

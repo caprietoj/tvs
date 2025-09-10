@@ -570,6 +570,15 @@ class PurchaseRequestController extends Controller
         $validator = Validator::make($request->all(), $rules);
     
         if ($validator->fails()) {
+            // Verificar si es una petición AJAX para manejar la respuesta adecuadamente
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hay errores en el formulario',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            
             return redirect()->route('purchase-requests.create-purchase')
                 ->withErrors($validator)
                 ->withInput();
@@ -636,6 +645,16 @@ class PurchaseRequestController extends Controller
             // No fallar la creación por problemas de email
         }
 
+        // Verificar si es una petición AJAX para manejar la respuesta adecuadamente
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Solicitud de compra creada exitosamente',
+                'purchase_request_id' => $purchaseRequest->id,
+                'redirect' => route('purchase-requests.index')
+            ]);
+        }
+
         return redirect()->route('purchase-requests.index')
             ->with('success', 'Solicitud de compra creada exitosamente');
 
@@ -647,6 +666,15 @@ class PurchaseRequestController extends Controller
                 'user_id' => Auth::id(),
                 'request_data' => $request->except(['_token'])
             ]);
+
+            // Verificar si es una petición AJAX para manejar la respuesta adecuadamente
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al crear la solicitud de compra. Por favor, inténtelo nuevamente.',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
 
             return redirect()->route('purchase-requests.create-purchase')
                 ->with('error', 'Error al crear la solicitud de compra. Por favor, inténtelo nuevamente.')
