@@ -141,6 +141,11 @@ class PresupuestoProcessorService
                     'es_total' => false,
                 ];
                 
+                // Excluir centro de costo específico durante la importación
+                if ($item['centro_costo'] === '12010201') {
+                    continue;
+                }
+                
                 // Clasificar sección y rubro
                 $item['seccion'] = $this->determineSection($item['centro_costo']);
                 $item['rubro'] = $this->determineRubro($item['cuenta']);

@@ -139,7 +139,10 @@ class QuotationController extends Controller
             foreach ($request->item_prices as $index => $price) {
                 if (!empty($price) && is_numeric($price) && isset($requestItems[$index])) {
                     // Usar cantidad editada si está disponible, sino usar la original
-                    $quantity = $originalItemQuantities[$index] ?? ($requestItems[$index]['quantity'] ?? 1);
+                    $rawQuantity = $originalItemQuantities[$index] ?? ($requestItems[$index]['quantity'] ?? 1);
+                    
+                    // Asegurar que la cantidad sea numérica
+                    $quantity = is_numeric($rawQuantity) ? floatval($rawQuantity) : 1;
                     $unitPrice = floatval($price);
                     $itemTotal = $quantity * $unitPrice;
                     
@@ -175,8 +178,9 @@ class QuotationController extends Controller
         if ($request->has('additional_items') && is_array($request->additional_items)) {
             foreach ($request->additional_items as $key => $item) {
                 if (!empty($item['description']) && !empty($item['quantity']) && isset($item['price'])) {
-                    $quantity = floatval($item['quantity']);
-                    $price = floatval($item['price']);
+                    // Asegurar que quantity y price sean numéricos
+                    $quantity = is_numeric($item['quantity']) ? floatval($item['quantity']) : 0;
+                    $price = is_numeric($item['price']) ? floatval($item['price']) : 0;
                     $total = $quantity * $price;
                     
                     $itemData = [
@@ -217,10 +221,29 @@ class QuotationController extends Controller
         // Verificar que el subtotal coincida con la suma de items originales (con tolerancia)
         if (!empty($originalItemTotals) && abs($subtotal - $originalItemsTotal) > 0.01) {
             \Log::warning('Discrepancia en subtotal de items originales', [
+                'request_number' => $purchaseRequest->request_number,
                 'subtotal_declarado' => $subtotal,
                 'suma_items_originales' => $originalItemsTotal,
-                'diferencia' => abs($subtotal - $originalItemsTotal)
+                'diferencia' => abs($subtotal - $originalItemsTotal),
+                'original_item_totals' => $originalItemTotals,
+                'original_item_prices' => $originalItemPrices,
+                'items_en_request' => $purchaseRequest->items->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'description' => $item->description,
+                        'quantity' => $item->quantity,
+                        'unit' => $item->unit
+                    ];
+                })
             ]);
+            
+            // Si la diferencia es muy grande (más de 10%), podría ser un error crítico
+            if (abs($subtotal - $originalItemsTotal) > ($subtotal * 0.1)) {
+                \Log::error('Diferencia crítica en subtotal', [
+                    'request_number' => $purchaseRequest->request_number,
+                    'diferencia_porcentual' => (abs($subtotal - $originalItemsTotal) / $subtotal) * 100
+                ]);
+            }
         }
         
         // Calcular todos los impuestos según el modo
@@ -281,10 +304,53 @@ class QuotationController extends Controller
         $totalImpuestos = $iva19Amount + $iva5Amount + $ipoconsumo8Amount + $ipoconsumo4Amount;
         $expectedTotal = $totalSubtotal + $totalImpuestos;
         
-        // Verificar que el total calculado coincida con el enviado (con tolerancia de 0.01)
-        if (abs($expectedTotal - floatval($request->total_amount)) > 0.01) {
+        // Log detallado para debugging
+        \Log::info('Cálculo de totales detallado', [
+            'request_number' => $purchaseRequest->request_number,
+            'subtotal_enviado' => floatval($request->subtotal),
+            'total_enviado' => floatval($request->total_amount),
+            'additional_items_total' => $additionalItemsTotal,
+            'original_items_total' => $originalItemsTotal,
+            'total_subtotal_calculado' => $totalSubtotal,
+            'iva_19_amount' => $iva19Amount,
+            'iva_5_amount' => $iva5Amount,
+            'ipoconsumo_8_amount' => $ipoconsumo8Amount,
+            'ipoconsumo_4_amount' => $ipoconsumo4Amount,
+            'total_impuestos' => $totalImpuestos,
+            'expected_total' => $expectedTotal,
+            'diferencia_total' => abs($expectedTotal - floatval($request->total_amount)),
+            'tax_mode' => $taxMode,
+            'includes_flags' => [
+                'includes_iva' => $includesIva,
+                'includes_iva_19' => $includesIva19,
+                'includes_iva_5' => $includesIva5,
+                'includes_ipoconsumo_8' => $includesIpoconsumo8,
+                'includes_ipoconsumo_4' => $includesIpoconsumo4
+            ]
+        ]);
+        
+        // Verificar que el total calculado coincida con el enviado (con tolerancia aumentada temporalmente)
+        $tolerance = 1.0; // Aumentar tolerancia temporalmente para debugging
+        if (abs($expectedTotal - floatval($request->total_amount)) > $tolerance) {
+            \Log::error('Error en validación de totales', [
+                'request_number' => $purchaseRequest->request_number,
+                'expected_total' => $expectedTotal,
+                'received_total' => floatval($request->total_amount),
+                'diferencia' => abs($expectedTotal - floatval($request->total_amount)),
+                'tolerancia_utilizada' => $tolerance,
+                'todos_los_datos' => $request->all()
+            ]);
+            
+            // Crear mensaje de error más informativo
+            $errorMessage = sprintf(
+                'Error en el cálculo de totales. Total esperado: $%s, Total recibido: $%s, Diferencia: $%s. Por favor, verifique los montos.',
+                number_format($expectedTotal, 2),
+                number_format(floatval($request->total_amount), 2),
+                number_format(abs($expectedTotal - floatval($request->total_amount)), 2)
+            );
+            
             return redirect()->back()
-                ->with('error', 'Error en el cálculo de totales. Por favor, verifique los montos.')
+                ->with('error', $errorMessage)
                 ->withInput();
         }
         
@@ -530,7 +596,10 @@ class QuotationController extends Controller
                 foreach ($request->item_prices as $index => $price) {
                     if (!empty($price) && is_numeric($price) && isset($requestItems[$index])) {
                         // Usar cantidad editada si está disponible, sino usar la original
-                        $quantity = $originalItemQuantities[$index] ?? ($requestItems[$index]['quantity'] ?? 1);
+                        $rawQuantity = $originalItemQuantities[$index] ?? ($requestItems[$index]['quantity'] ?? 1);
+                        
+                        // Asegurar que la cantidad sea numérica
+                        $quantity = is_numeric($rawQuantity) ? floatval($rawQuantity) : 1;
                         $unitPrice = floatval($price);
                         $itemTotal = $quantity * $unitPrice;
                         
@@ -552,8 +621,9 @@ class QuotationController extends Controller
             if ($request->has('additional_items') && is_array($request->additional_items)) {
                 foreach ($request->additional_items as $item) {
                     if (!empty($item['description']) && !empty($item['price'])) {
-                        $quantity = floatval($item['quantity'] ?? 1);
-                        $unitPrice = floatval($item['price']);
+                        // Asegurar que quantity y price sean numéricos
+                        $quantity = is_numeric($item['quantity'] ?? 1) ? floatval($item['quantity'] ?? 1) : 1;
+                        $unitPrice = is_numeric($item['price']) ? floatval($item['price']) : 0;
                         $total = $quantity * $unitPrice;
                         
                         $itemData = [

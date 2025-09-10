@@ -32,8 +32,8 @@ class PresupuestoController extends Controller
         // Aplicar middleware de autenticación a todas las rutas
         $this->middleware('auth');
         
-        // Aplicar middleware de autorización para acceso a presupuesto
-        $this->middleware('can:presupuesto.access')->except([]);
+        // Aplicar middleware de autorización para rol admin
+        $this->middleware('can:admin')->except([]);
     }
 
     /**
@@ -43,12 +43,9 @@ class PresupuestoController extends Controller
      */
     public function index()
     {
-        // Obtener permisos específicos del usuario
-        $userSectionPermissions = $this->getUserSectionPermissions();
-        
-        // Si el usuario no tiene permisos para acceder al presupuesto, denegar acceso
-        if (!auth()->user()->can('presupuesto.access')) {
-            abort(403, 'No tiene permisos para acceder a esta sección.');
+        // Verificación adicional de autorización
+        if (!auth()->user()->can('admin')) {
+            abort(403, 'No tiene permisos para acceder a esta sección. Solo los administradores pueden ver el presupuesto.');
         }
         
         // Obtener todos los datos de ejecución presupuestal
@@ -539,11 +536,6 @@ class PresupuestoController extends Controller
      */
     public function export()
     {
-        // Solo administradores pueden exportar datos
-        if (!auth()->user()->can('admin')) {
-            abort(403, 'Solo los administradores pueden exportar datos.');
-        }
-        
         try {
             // Obtener todos los datos
             $budgetExecutions = BudgetExecution::all();
@@ -673,18 +665,8 @@ class PresupuestoController extends Controller
     public function spreadsheet()
     {
         // Verificación adicional de autorización
-        if (!auth()->user()->can('presupuesto.access')) {
-            abort(403, 'No tiene permisos para acceder a esta sección.');
-        }
-        
-        // Obtener permisos específicos del usuario
-        $userSectionPermissions = $this->getUserSectionPermissions();
-        $isAdmin = auth()->user()->can('admin');
-        
-        // Si el usuario no es admin y tiene permisos específicos de sección, 
-        // redirigir directamente a Secciones Generales
-        if (!$isAdmin && !empty($userSectionPermissions)) {
-            return $this->showSeccionesGenerales();
+        if (!auth()->user()->can('admin')) {
+            abort(403, 'No tiene permisos para acceder a esta sección. Solo los administradores pueden ver el presupuesto.');
         }
         
         // Definir las hojas de cálculo
@@ -800,11 +782,7 @@ class PresupuestoController extends Controller
         // Cargar datos guardados del spreadsheet
         $spreadsheetData = $this->loadSpreadsheetData();
         
-        // Obtener permisos de sección del usuario
-        $userSectionPermissions = $this->getUserSectionPermissions();
-        $isAdmin = auth()->user()->can('admin');
-        
-        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData', 'budgetDataByConcept', 'equiposDotacionData', 'aseoCafeteriaData', 'dotacionesData', 'agasajosData', 'tecnologiaData', 'gastosContratosData', 'afiliacionesSuscripcionesData', 'bachilleratoInternacionalData', 'deportesData', 'entrenamientosData', 'serviciosPublicosData', 'reparacionesMayoresData', 'reparacionMueblesData', 'mercadeoData', 'honorariosData', 'spreadsheetData', 'availableMonths', 'presupuestosTotalesSecciones', 'userSectionPermissions', 'isAdmin'));
+        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData', 'budgetDataByConcept', 'equiposDotacionData', 'aseoCafeteriaData', 'dotacionesData', 'agasajosData', 'tecnologiaData', 'gastosContratosData', 'afiliacionesSuscripcionesData', 'bachilleratoInternacionalData', 'deportesData', 'entrenamientosData', 'serviciosPublicosData', 'reparacionesMayoresData', 'reparacionMueblesData', 'mercadeoData', 'honorariosData', 'spreadsheetData', 'availableMonths', 'presupuestosTotalesSecciones'));
     }
 
     /**
@@ -1761,9 +1739,6 @@ class PresupuestoController extends Controller
                 $query->where('id', 0); // No results for unknown concepts
         }
 
-        $query->whereYear('fecha', 2025);
-
-
         return $query->sum('valor');
     }
 
@@ -2109,7 +2084,6 @@ class PresupuestoController extends Controller
             ],
             'ejecucion_mensual' => [
                 'aseo' => [
-                    'junio' => $this->getEjecucionAseoByMes(6),
                     'julio' => $this->getEjecucionAseoByMes(7),
                     'agosto' => $this->getEjecucionAseoByMes(8),
                     'septiembre' => $this->getEjecucionAseoByMes(9),
@@ -2120,7 +2094,6 @@ class PresupuestoController extends Controller
                     'febrero' => $this->getEjecucionAseoByMes(2)
                 ],
                 'cafeteria' => [
-                    'junio' => $this->getEjecucionCafeteriaByMes(6),
                     'julio' => $this->getEjecucionCafeteriaByMes(7),
                     'agosto' => $this->getEjecucionCafeteriaByMes(8),
                     'septiembre' => $this->getEjecucionCafeteriaByMes(9),
@@ -2131,7 +2104,6 @@ class PresupuestoController extends Controller
                     'febrero' => $this->getEjecucionCafeteriaByMes(2)
                 ],
                 'total' => [
-                    'junio' => $this->getEjecucionAseoCafeteriaByMes(6),
                     'julio' => $this->getEjecucionAseoCafeteriaByMes(7),
                     'agosto' => $this->getEjecucionAseoCafeteriaByMes(8),
                     'septiembre' => $this->getEjecucionAseoCafeteriaByMes(9),
@@ -2186,7 +2158,7 @@ class PresupuestoController extends Controller
 
     private function getEjecucionAseoCafeteriaByConcepto($concepto, $mes)
     {
-        $year = 2025; // Cambiar para usar datos 2025
+        $year = date('Y');
         
         return PresupuestoItem::whereYear('fecha', $year)
             ->whereMonth('fecha', $mes)
@@ -3612,9 +3584,9 @@ class PresupuestoController extends Controller
      */
     public function items(Request $request)
     {
-        // Solo administradores pueden acceder a la vista de items
+        // Verificación adicional de autorización
         if (!auth()->user()->can('admin')) {
-            abort(403, 'Solo los administradores pueden acceder a esta sección.');
+            abort(403, 'No tiene permisos para acceder a esta sección.');
         }
 
         // Filtros
@@ -4375,14 +4347,6 @@ class PresupuestoController extends Controller
 
     private function getServiciosPublicosData()
     {
-        // Obtener datos reales de ejecución por mes
-        $meses = ['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio'];
-        $mesesData = [];
-        
-        foreach ($meses as $mes) {
-            $mesesData[$mes] = $this->getServiciosPublicosEjecucion($mes);
-        }
-        
         return [
             'resumen' => [
                 'presupuesto_aprobado' => 501851415,
@@ -4402,7 +4366,20 @@ class PresupuestoController extends Controller
                 ['concepto' => 'Facturatech', 'ppto_aprobado' => 2163600, 'ejecutado' => 757800, 'ppto_ejecutar' => 1405800, 'porcentaje_restante' => 65],
                 ['concepto' => 'Credibanco', 'ppto_aprobado' => 674238, 'ejecutado' => 849295, 'ppto_ejecutar' => -175057, 'porcentaje_restante' => -26]
             ],
-            'meses' => $mesesData,
+            'meses' => [
+                'julio' => 36099673,
+                'agosto' => 43442241,
+                'septiembre' => 36621589,
+                'octubre' => 36360316,
+                'noviembre' => 29011532,
+                'diciembre' => 27079817,
+                'enero' => 36432700,
+                'febrero' => 37075702,
+                'marzo' => 0,
+                'abril' => 0,
+                'mayo' => 0,
+                'junio' => 0
+            ],
             'detalle_meses' => [
                 'julio' => [
                     'agua' => 143558,
@@ -4839,20 +4816,14 @@ class PresupuestoController extends Controller
                   ->orWhere('centro_costo', 'LIKE', '12%') // Escuela Media
                   ->orWhere('centro_costo', 'LIKE', '13%') // Alta
                   ->orWhere('centro_costo', 'LIKE', '07%') // PAI
-                  ->orWhere('centro_costo', 'LIKE', '08%') // PEP
-                  ->orWhere('centro_costo', 'LIKE', '02%') // Otro centro académico
-                  ->orWhere('centro_costo', 'LIKE', '15%'); // Centros adicionales
+                  ->orWhere('centro_costo', 'LIKE', '08%'); // PEP
             })
             ->where(function($q) {
                 $q->where('descripcion', 'LIKE', '%docente%')
                   ->orWhere('descripcion', 'LIKE', '%profesor%')
                   ->orWhere('descripcion', 'LIKE', '%maestro%')
                   ->orWhere('descripcion', 'LIKE', '%academia%')
-                  ->orWhere('descripcion', 'LIKE', '%educativo%')
-                  ->orWhere('descripcion', 'LIKE', '%sueldo%')
-                  ->orWhere('descripcion', 'LIKE', '%personal%')
-                  ->orWhere('descripcion', 'LIKE', '%salario%')
-                  ->orWhere('descripcion', 'LIKE', '%nomina%');
+                  ->orWhere('descripcion', 'LIKE', '%educativo%');
             });
 
         if ($mes) {
@@ -4860,7 +4831,6 @@ class PresupuestoController extends Controller
         }
         
         $query->whereYear('fecha', 2025);
-
 
         return $query->sum('valor');
     }
@@ -4896,9 +4866,6 @@ class PresupuestoController extends Controller
             $query->whereMonth('fecha', $this->getMonthNumber($mes));
         }
 
-        $query->whereYear('fecha', 2025);
-
-
         return $query->sum('valor');
     }
 
@@ -4923,9 +4890,6 @@ class PresupuestoController extends Controller
         if ($mes) {
             $query->whereMonth('fecha', $this->getMonthNumber($mes));
         }
-
-        $query->whereYear('fecha', 2025);
-
 
         return $query->sum('valor');
     }
@@ -4964,9 +4928,6 @@ class PresupuestoController extends Controller
             $query->whereMonth('fecha', $this->getMonthNumber($mes));
         }
 
-        $query->whereYear('fecha', 2025);
-
-
         return $query->sum('valor');
     }
 
@@ -4992,9 +4953,6 @@ class PresupuestoController extends Controller
         if ($mes) {
             $query->whereMonth('fecha', $this->getMonthNumber($mes));
         }
-
-        $query->whereYear('fecha', 2025);
-
 
         return $query->sum('valor');
     }
@@ -5032,9 +4990,6 @@ class PresupuestoController extends Controller
         if ($mes) {
             $query->whereMonth('fecha', $this->getMonthNumber($mes));
         }
-
-        $query->whereYear('fecha', 2025);
-
 
         return $query->sum('valor');
     }
@@ -5084,9 +5039,6 @@ class PresupuestoController extends Controller
             $query->whereMonth('fecha', $this->getMonthNumber($mes));
         }
 
-        $query->whereYear('fecha', 2025);
-
-
         return $query->sum('valor');
     }
 
@@ -5112,34 +5064,6 @@ class PresupuestoController extends Controller
         if ($mes) {
             $query->whereMonth('fecha', $this->getMonthNumber($mes));
         }
-
-        $query->whereYear('fecha', 2025);
-
-
-        return $query->sum('valor');
-    }
-
-    /**
-     * Obtener datos reales de ejecución para MEMBRESÍAS Y CONVENIOS
-     */
-    private function getMembresiasConveniosEjecucion($mes = null)
-    {
-        $query = PresupuestoItem::where('centro_costo', '!=', '12010201')
-            ->where(function($q) {
-                $q->where('descripcion', 'LIKE', '%membresia%')
-                  ->orWhere('descripcion', 'LIKE', '%bachillerato%')
-                  ->orWhere('descripcion', 'LIKE', '%internacional%')
-                  ->orWhere('descripcion', 'LIKE', '%accbi%')
-                  ->orWhere('descripcion', 'LIKE', '%papaz%')
-                  ->orWhere('descripcion', 'LIKE', '%convenio%')
-                  ->orWhere('descripcion', 'LIKE', '%afiliacion%');
-            });
-
-        if ($mes) {
-            $query->whereMonth('fecha', $this->getMonthNumber($mes));
-        }
-
-        $query->whereYear('fecha', 2025);
 
         return $query->sum('valor');
     }
@@ -5192,11 +5116,11 @@ class PresupuestoController extends Controller
         $totalAnualAdmin = $this->getSalariosAdministracionEjecucion();
         foreach ($meses as $mes) {
             $valorMes = $this->getSalariosAdministracionEjecucion($mes);
-            // Distribuir en los conceptos existentes de acuerdo a la vista
+            // Distribuir en los conceptos existentes
             if ($valorMes > 0) {
-                $budgetDataByConcept['salarios-administracion']['salarios-aux-transporte-admin-' . $mes] = $valorMes * 0.8;
-                $budgetDataByConcept['salarios-administracion']['capacitacion-administracion-' . $mes] = $valorMes * 0.1;
-                $budgetDataByConcept['salarios-administracion']['aprendices-sena-' . $mes] = $valorMes * 0.1;
+                $budgetDataByConcept['salarios-administracion']['salario-aux-transporte-' . $mes] = $valorMes * 0.7;
+                $budgetDataByConcept['salarios-administracion']['prima-' . $mes] = $valorMes * 0.15;
+                $budgetDataByConcept['salarios-administracion']['cesantias-' . $mes] = $valorMes * 0.15;
             }
         }
         
@@ -5208,9 +5132,8 @@ class PresupuestoController extends Controller
         foreach ($meses as $mes) {
             $valorMes = $this->getCapacitacionIndemnizacionesEjecucion($mes);
             if ($valorMes > 0) {
-                $budgetDataByConcept['capacitacion-indemnizaciones']['capacitacion-admin-' . $mes] = $valorMes * 0.4;
+                $budgetDataByConcept['capacitacion-indemnizaciones']['capacitacion-admin-' . $mes] = $valorMes * 0.6;
                 $budgetDataByConcept['capacitacion-indemnizaciones']['capacitacion-emc-docentes-' . $mes] = $valorMes * 0.3;
-                $budgetDataByConcept['capacitacion-indemnizaciones']['capacitacion-copassi-' . $mes] = $valorMes * 0.2;
                 $budgetDataByConcept['capacitacion-indemnizaciones']['indemnizaciones-' . $mes] = $valorMes * 0.1;
             }
         }
@@ -5222,25 +5145,7 @@ class PresupuestoController extends Controller
         
         foreach ($meses as $mes) {
             $valorMes = $this->getRubrosInstitucionalesEjecucion($mes);
-            // Distribuir proporcionalmente entre los conceptos de rubros institucionales
-            if ($valorMes > 0) {
-                $budgetDataByConcept['rubros-institucionales']['equipos-dotacion-' . $mes] = $valorMes * 0.15;
-                $budgetDataByConcept['rubros-institucionales']['examenes-medicos-' . $mes] = $valorMes * 0.05;
-                $budgetDataByConcept['rubros-institucionales']['tecnologia-institucional-' . $mes] = $valorMes * 0.20;
-                $budgetDataByConcept['rubros-institucionales']['insumos-enfermeria-' . $mes] = $valorMes * 0.03;
-                $budgetDataByConcept['rubros-institucionales']['mercadeo-admisiones-' . $mes] = $valorMes * 0.10;
-                $budgetDataByConcept['rubros-institucionales']['eventos-comunidad-' . $mes] = $valorMes * 0.08;
-                $budgetDataByConcept['rubros-institucionales']['mantenimiento-general-' . $mes] = $valorMes * 0.15;
-                $budgetDataByConcept['rubros-institucionales']['reparaciones-mayores-' . $mes] = $valorMes * 0.10;
-                $budgetDataByConcept['rubros-institucionales']['reparacion-muebles-' . $mes] = $valorMes * 0.02;
-                $budgetDataByConcept['rubros-institucionales']['utiles-oficina-' . $mes] = $valorMes * 0.05;
-                $budgetDataByConcept['rubros-institucionales']['elementos-aseo-' . $mes] = $valorMes * 0.02;
-                $budgetDataByConcept['rubros-institucionales']['gastos-agasajos-' . $mes] = $valorMes * 0.02;
-                $budgetDataByConcept['rubros-institucionales']['bienestar-institucional-' . $mes] = $valorMes * 0.02;
-                $budgetDataByConcept['rubros-institucionales']['eventos-internos-' . $mes] = $valorMes * 0.02;
-                $budgetDataByConcept['rubros-institucionales']['gastos-contratacion-' . $mes] = $valorMes * 0.01;
-                $budgetDataByConcept['rubros-institucionales']['afiliaciones-inscripciones-' . $mes] = $valorMes * 0.01;
-            }
+            $budgetDataByConcept['rubros-institucionales'][$mes] = $valorMes;
         }
         
         // 5. SERVICIOS PUBLICOS
@@ -5277,24 +5182,7 @@ class PresupuestoController extends Controller
         
         foreach ($meses as $mes) {
             $valorMes = $this->getSeccionesAcademiaEjecucion($mes);
-            // Distribuir proporcionalmente entre los conceptos de secciones
-            if ($valorMes > 0) {
-                $budgetDataByConcept['secciones-academia-general']['capacitacion-' . $mes] = $valorMes * 0.05;
-                $budgetDataByConcept['secciones-academia-general']['material-importado-' . $mes] = $valorMes * 0.10;
-                $budgetDataByConcept['secciones-academia-general']['textos-utiles-consumo-' . $mes] = $valorMes * 0.15;
-                $budgetDataByConcept['secciones-academia-general']['biblioteca-institucional-' . $mes] = $valorMes * 0.08;
-                $budgetDataByConcept['secciones-academia-general']['materiales-para-clases-' . $mes] = $valorMes * 0.12;
-                $budgetDataByConcept['secciones-academia-general']['material-deportivo-' . $mes] = $valorMes * 0.05;
-                $budgetDataByConcept['secciones-academia-general']['musicales-' . $mes] = $valorMes * 0.03;
-                $budgetDataByConcept['secciones-academia-general']['part-time-teacher-reemplazos-' . $mes] = $valorMes * 0.15;
-                $budgetDataByConcept['secciones-academia-general']['insumos-institucionales-seccion-' . $mes] = $valorMes * 0.08;
-                $budgetDataByConcept['secciones-academia-general']['pep-' . $mes] = $valorMes * 0.06;
-                $budgetDataByConcept['secciones-academia-general']['dp-' . $mes] = $valorMes * 0.04;
-                $budgetDataByConcept['secciones-academia-general']['pai-' . $mes] = $valorMes * 0.04;
-                $budgetDataByConcept['secciones-academia-general']['departamento-apoyo-' . $mes] = $valorMes * 0.03;
-                $budgetDataByConcept['secciones-academia-general']['consejeria-universitaria-' . $mes] = $valorMes * 0.01;
-                $budgetDataByConcept['secciones-academia-general']['direccion-general-' . $mes] = $valorMes * 0.01;
-            }
+            $budgetDataByConcept['secciones-academia-general'][$mes] = $valorMes;
         }
         
         // 8. CONTRATOS EXTERNOS
@@ -5307,21 +5195,6 @@ class PresupuestoController extends Controller
             if ($valorMes > 0) {
                 $budgetDataByConcept['contratos-externos']['cafeteria-' . $mes] = $valorMes * 0.4;
                 $budgetDataByConcept['contratos-externos']['transporte-' . $mes] = $valorMes * 0.6;
-            }
-        }
-
-        // 9. MEMBRESÍAS Y CONVENIOS
-        if (!isset($budgetDataByConcept['membresias-convenios'])) {
-            $budgetDataByConcept['membresias-convenios'] = [];
-        }
-        
-        foreach ($meses as $mes) {
-            $valorMes = $this->getMembresiasConveniosEjecucion($mes);
-            if ($valorMes > 0) {
-                // Distribución: 70% Bachillerato Internacional, 20% ACCBI, 10% RED PAPAZ
-                $budgetDataByConcept['membresias-convenios']['bachillerato-internacional-' . $mes] = $valorMes * 0.7;
-                $budgetDataByConcept['membresias-convenios']['accbi-' . $mes] = $valorMes * 0.2;
-                $budgetDataByConcept['membresias-convenios']['red-papaz-' . $mes] = $valorMes * 0.1;
             }
         }
 
@@ -5340,358 +5213,56 @@ class PresupuestoController extends Controller
             $monthNumber = $this->getMonthNumber($mes);
             $year = 2025; // Usar 2025 para todos los meses por ahora
             
-            // Usar los métodos ya existentes que tienen los filtros correctos
-            $salariosAcademia = $this->getSalariosAcademiaEjecucion($mes);
+            // Obtener ingresos escolares reales
+            $ingresosEscolares = PresupuestoItem::where('rubro', 'LIKE', '%Ingresos Escolares%')
+                ->whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->sum('valor');
+            
+            if ($ingresosEscolares > 0) {
+                $budgetData['resumen_ingresos']['ingresos_escolares'][$mes] = $ingresosEscolares;
+                $budgetData['resumen_ingresos']['total_ingresos'][$mes] += $ingresosEscolares;
+            }
+            
+            // Obtener otros ingresos escolares
+            $otrosIngresos = PresupuestoItem::where('rubro', 'LIKE', '%Otros Ingresos%')
+                ->whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->sum('valor');
+            
+            if ($otrosIngresos > 0) {
+                $budgetData['resumen_ingresos']['ingresos_otros_escolares'][$mes] = $otrosIngresos;
+                $budgetData['resumen_ingresos']['total_ingresos'][$mes] += $otrosIngresos;
+            }
+            
+            // Obtener gastos de salarios academia
+            $salariosAcademia = PresupuestoItem::where('rubro', 'LIKE', '%Salarios%Academia%')
+                ->whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->sum('valor');
+            
             if ($salariosAcademia > 0) {
                 $budgetData['resumen_gastos']['total_salarios_prestaciones_academia'][$mes] = abs($salariosAcademia);
+                $budgetData['resumen_gastos']['total_gastos'][$mes] += abs($salariosAcademia);
             }
             
             // Obtener gastos administrativos
-            $salariosAdmin = $this->getSalariosAdministracionEjecucion($mes);
+            $salariosAdmin = PresupuestoItem::where('rubro', 'LIKE', '%Administrativos%')
+                ->whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->sum('valor');
+            
             if ($salariosAdmin > 0) {
                 $budgetData['resumen_gastos']['total_salarios_prestaciones_administrativos_sena'][$mes] = abs($salariosAdmin);
+                $budgetData['resumen_gastos']['total_gastos'][$mes] += abs($salariosAdmin);
             }
             
-            // Obtener otros egresos
-            $otrosEgresos = $this->getOtrosEgresosEjecucion($mes);
-            if ($otrosEgresos > 0) {
-                $budgetData['resumen_gastos']['total_servicios_publicos_otros_egresos'][$mes] = abs($otrosEgresos);
-            }
-            
-            // Obtener servicios públicos
-            $serviciosPublicos = $this->getServiciosPublicosEjecucion($mes);
-            if ($serviciosPublicos > 0) {
-                $budgetData['resumen_gastos']['total_servicios_publicos_otros_egresos'][$mes] += abs($serviciosPublicos);
-            }
-            
-            // Calcular total de gastos
-            $totalGastos = ($budgetData['resumen_gastos']['total_salarios_prestaciones_academia'][$mes] ?? 0) +
-                          ($budgetData['resumen_gastos']['total_salarios_prestaciones_administrativos_sena'][$mes] ?? 0) +
-                          ($budgetData['resumen_gastos']['total_servicios_publicos_otros_egresos'][$mes] ?? 0);
-            
-            if ($totalGastos > 0) {
-                $budgetData['resumen_gastos']['total_gastos'][$mes] = $totalGastos;
-            }
-            
-            // Actualizar diferencia (para esto necesitaríamos ingresos reales, por ahora solo gastos)
-            $totalIngresos = $budgetData['resumen_ingresos']['total_ingresos'][$mes] ?? 0;
+            // Actualizar diferencia
+            $totalIngresos = $budgetData['resumen_ingresos']['total_ingresos'][$mes];
+            $totalGastos = $budgetData['resumen_gastos']['total_gastos'][$mes];
             $budgetData['saldo_diferencia']['diferencia'][$mes] = $totalIngresos - $totalGastos;
         }
         
         return $budgetData;
-    }
-    
-    /**
-     * Obtener permisos específicos de sección por usuario
-     */
-    private function getUserSectionPermissions()
-    {
-        $userName = auth()->user()->name;
-        
-        // Definir permisos específicos por usuario
-        $sectionPermissions = [
-            'Ana Maria Grisales' => ['preescolar'],
-            'GINA LORENA HURTADO GÓMEZ' => ['escuela-media'],
-            'Maria Constanza Bernal Baracaldo' => ['escuela-alta'],
-            'Andrea Carolina Florez Varon' => ['pai'],
-            'HELENA ORTIZ' => ['pep'],
-            'Laura Rodriguez Laverde' => ['biblioteca'],
-            'Johanna Gavidia Barbosa' => ['departamento-apoyo']
-        ];
-        
-        return $sectionPermissions[$userName] ?? [];
-    }
-
-    /**
-     * Mostrar solo la vista de Secciones Generales para usuarios específicos
-     */
-    private function showSeccionesGenerales()
-    {
-        // Obtener permisos específicos del usuario
-        $userSectionPermissions = $this->getUserSectionPermissions();
-        $isAdmin = false; // Los usuarios específicos no son admin
-        
-        // Obtener datos básicos necesarios para la vista
-        $availableMonths = ['Mayo', 'Junio', 'Julio'];
-        
-        // Crear estructura mínima de datos para la vista de secciones
-        $sheets = ['Secciones' => 'Secciones Generales'];
-        $sampleData = [];
-        $optimizedData = [];
-        $maxRows = 50;
-        
-        // Obtener datos reales de presupuesto filtrados
-        $presupuestoItems = $this->aplicarFiltroCuentas(\App\Models\PresupuestoItem::query())
-            ->whereYear('fecha', 2025)
-            ->get();
-        
-        // Obtener datos de secciones
-        $seccionesData = $this->getDataForSectionUser($userSectionPermissions);
-        
-        // Filtrar el resumen consolidado por concepto según los permisos del usuario
-        $resumenConceptos = $this->getResumenConceptosFiltrado($userSectionPermissions);
-        
-        // Datos vacíos para tablas principales (no accesibles para usuarios específicos)
-        $budgetData = [];
-        $budgetDataByConcept = [];
-        $equiposDotacionData = [];
-        $aseoCafeteriaData = [];
-        $dotacionesData = [];
-        $agasajosData = [];
-        $tecnologiaData = [];
-        $gastosContratosData = [];
-        $afiliacionesSuscripcionesData = [];
-        $bachilleratoInternacionalData = [];
-        $deportesData = [];
-        $entrenamientosData = [];
-        $serviciosPublicosData = [];
-        $reparacionesMayoresData = [];
-        $reparacionMueblesData = [];
-        $mercadeoData = [];
-        $honorariosData = [];
-        $spreadsheetData = [];
-        $presupuestosTotalesSecciones = [];
-        
-        return view('presupuesto.secciones-generales', compact(
-            'sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 
-            'seccionesData', 'resumenConceptos', 'budgetData', 'budgetDataByConcept', 
-            'equiposDotacionData', 'aseoCafeteriaData', 'dotacionesData', 'agasajosData', 
-            'tecnologiaData', 'gastosContratosData', 'afiliacionesSuscripcionesData', 
-            'bachilleratoInternacionalData', 'deportesData', 'entrenamientosData', 
-            'serviciosPublicosData', 'reparacionesMayoresData', 'reparacionMueblesData', 
-            'mercadeoData', 'honorariosData', 'spreadsheetData', 'availableMonths', 
-            'presupuestosTotalesSecciones', 'userSectionPermissions', 'isAdmin'
-        ));
-    }
-
-    /**
-     * Obtener resumen de conceptos filtrado por permisos de usuario
-     */
-    private function getResumenConceptosFiltrado($userSectionPermissions)
-    {
-        // Datos específicos para cada sección basados en los reportes existentes
-        $datosPorSeccion = [
-            'preescolar' => [
-                'Capacitación' => ['presupuesto' => 3166667, 'ejecutado' => 0, 'saldo' => 3166667],
-                'Material Importado' => ['presupuesto' => 3166667, 'ejecutado' => 5869621, 'saldo' => -2702954],
-                'Material Deportivo' => ['presupuesto' => 3166667, 'ejecutado' => 0, 'saldo' => 3166667],
-                'Musicales' => ['presupuesto' => 3166667, 'ejecutado' => 0, 'saldo' => 3166667],
-                'Part time teacher - reemplazos' => ['presupuesto' => 3166667, 'ejecutado' => 0, 'saldo' => 3166667],
-                'Apoyo Institucional' => ['presupuesto' => 3166667, 'ejecutado' => 0, 'saldo' => 3166667],
-                'Eventos Académicos y Sociales' => ['presupuesto' => 3166667, 'ejecutado' => 0, 'saldo' => 3166667],
-                'Insumos Tecnológicos' => ['presupuesto' => 3166667, 'ejecutado' => 0, 'saldo' => 3166667],
-                'Salidas Académicas Sección' => ['presupuesto' => 3166667, 'ejecutado' => 0, 'saldo' => 3166667],
-                'Alimentación' => ['presupuesto' => 3166667, 'ejecutado' => 0, 'saldo' => 3166667],
-                'Transporte' => ['presupuesto' => 3166667, 'ejecutado' => 0, 'saldo' => 3166667],
-                'Insumos de la Sección / Material para Clase' => ['presupuesto' => 3166667, 'ejecutado' => 0, 'saldo' => 3166667]
-            ],
-            'escuela-media' => [
-                'Part time teacher- reemplazos' => ['presupuesto' => 12435714, 'ejecutado' => 0, 'saldo' => 12435714],
-                'Preparación Pruebas saber' => ['presupuesto' => 6233333, 'ejecutado' => 0, 'saldo' => 6233333]
-            ],
-            'escuela-alta' => [
-                'Musicales' => ['presupuesto' => 12435714, 'ejecutado' => 0, 'saldo' => 12435714],
-                'MUN TVS-Otros Colegios- GLY' => ['presupuesto' => 9269048, 'ejecutado' => 0, 'saldo' => 9269048]
-            ],
-            'pai' => [
-                'Personal Project PAI' => ['presupuesto' => 6625000, 'ejecutado' => 0, 'saldo' => 6625000],
-                'Proyecto Comunitario' => ['presupuesto' => 9660714, 'ejecutado' => 0, 'saldo' => 9660714]
-            ],
-            'pep' => [
-                'Exhibición PEP' => ['presupuesto' => 6666667, 'ejecutado' => 0, 'saldo' => 6666667],
-                'Monografia' => ['presupuesto' => 6233333, 'ejecutado' => 0, 'saldo' => 6233333]
-            ],
-            'biblioteca' => [
-                'Biblioteca institucional' => ['presupuesto' => 28000000, 'ejecutado' => 0, 'saldo' => 28000000],
-                'Biblioteca' => ['presupuesto' => 0, 'ejecutado' => 0, 'saldo' => 0]
-            ],
-            'departamento-apoyo' => [
-                'Capacitación' => ['presupuesto' => 25727381, 'ejecutado' => 0, 'saldo' => 25727381],
-                'Gastos Importación/Material Importado' => ['presupuesto' => 25727381, 'ejecutado' => 7807657, 'saldo' => 17919724],
-                'Psicología Institucional' => ['presupuesto' => 0, 'ejecutado' => 0, 'saldo' => 0]
-            ]
-        ];
-        
-        $resumenFiltrado = [];
-        $totalPresupuesto = 0;
-        $totalEjecutado = 0;
-        $totalSaldo = 0;
-        
-        foreach ($userSectionPermissions as $seccion) {
-            if (isset($datosPorSeccion[$seccion])) {
-                foreach ($datosPorSeccion[$seccion] as $concepto => $datos) {
-                    $resumenFiltrado[$concepto] = $datos;
-                    $totalPresupuesto += $datos['presupuesto'];
-                    $totalEjecutado += $datos['ejecutado'];
-                    $totalSaldo += $datos['saldo'];
-                }
-            }
-        }
-        
-        // Agregar total si hay datos
-        if (!empty($resumenFiltrado)) {
-            $resumenFiltrado['TOTAL'] = [
-                'presupuesto' => $totalPresupuesto,
-                'ejecutado' => $totalEjecutado,
-                'saldo' => $totalSaldo
-            ];
-        }
-
-        return $resumenFiltrado;
-    }
-
-    /**
-     * Obtener datos específicos para usuarios de sección
-     */
-    private function getDataForSectionUser($userSectionPermissions)
-    {
-        $data = [];
-        
-        foreach ($userSectionPermissions as $seccion) {
-            switch ($seccion) {
-                case 'preescolar':
-                    $data['preescolar'] = $this->getPreescolarData();
-                    break;
-                case 'escuela-media':
-                    $data['escuela-media'] = $this->getEscuelaMediaData();
-                    break;
-                case 'escuela-alta':
-                    $data['escuela-alta'] = $this->getEscuelaAltaData();
-                    break;
-                case 'pai':
-                    $data['pai'] = $this->getPaiData();
-                    break;
-                case 'pep':
-                    $data['pep'] = $this->getPepData();
-                    break;
-                case 'biblioteca':
-                    $data['biblioteca'] = $this->getBibliotecaData();
-                    break;
-                case 'departamento-apoyo':
-                    $data['departamento-apoyo'] = $this->getDepartamentoApoyoData();
-                    break;
-            }
-        }
-        
-        return $data;
-    }
-
-    /**
-     * Obtener datos específicos de Preescolar y Primaria
-     */
-    private function getPreescolarData()
-    {
-        // Mapeo de conceptos específicos basado en la información proporcionada
-        $conceptos = [
-            'Capacitación' => ['presupuesto' => 3166667],
-            'Material Importado' => ['presupuesto' => 3166667],
-            'Material Deportivo' => ['presupuesto' => 3166667],
-            'Musicales' => ['presupuesto' => 3166667],
-            'Part time teacher - reemplazos' => ['presupuesto' => 3166667],
-            'Apoyo Institucional' => ['presupuesto' => 3166667],
-            'Eventos Académicos y Sociales' => ['presupuesto' => 3166667],
-            'Insumos Tecnológicos' => ['presupuesto' => 3166667],
-            'Salidas Académicas Sección' => ['presupuesto' => 3166667],
-            'Alimentación' => ['presupuesto' => 3166667],
-            'Transporte' => ['presupuesto' => 3166667],
-            'Insumos de la Sección / Material para Clase' => ['presupuesto' => 3166667]
-        ];
-
-        // Centros de costo específicos para preescolar
-        $centrosCosto = ['11010101', '11010102', '11010201', '11010202', '11010205'];
-        
-        // Obtener datos reales por mes
-        $meses = ['junio' => 6, 'julio' => 7, 'agosto' => 8, 'septiembre' => 9, 'octubre' => 10, 
-                  'noviembre' => 11, 'diciembre' => 12, 'enero' => 1, 'febrero' => 2];
-
-        foreach ($conceptos as $concepto => &$datos) {
-            foreach ($meses as $mesNombre => $mesNumero) {
-                $year = ($mesNumero >= 6) ? 2025 : 2026; // Enero y febrero son del siguiente año
-                
-                // Buscar datos específicos por concepto y centro de costo
-                $valor = \App\Models\PresupuestoItem::whereIn('centro_costo', $centrosCosto)
-                    ->where(function($q) use ($concepto) {
-                        $q->where('descripcion', 'LIKE', '%' . $concepto . '%');
-                        
-                        // Mapeos específicos según el concepto
-                        if (str_contains(strtolower($concepto), 'material importado')) {
-                            $q->orWhere('descripcion', 'LIKE', '%importado%')
-                              ->orWhere('descripcion', 'LIKE', '%import%');
-                        }
-                        if (str_contains(strtolower($concepto), 'deportivo')) {
-                            $q->orWhere('descripcion', 'LIKE', '%deporte%')
-                              ->orWhere('descripcion', 'LIKE', '%deportivo%');
-                        }
-                        if (str_contains(strtolower($concepto), 'musical')) {
-                            $q->orWhere('descripcion', 'LIKE', '%musica%')
-                              ->orWhere('descripcion', 'LIKE', '%musical%');
-                        }
-                    })
-                    ->whereMonth('fecha', $mesNumero)
-                    ->whereYear('fecha', $year)
-                    ->sum('valor');
-                
-                $datos[$mesNombre] = $valor;
-            }
-        }
-
-        return $conceptos;
-    }
-
-    /**
-     * Datos por defecto para otras secciones (implementar según necesidad)
-     */
-    private function getEscuelaMediaData()
-    {
-        return [
-            'Salarios' => ['presupuesto' => 38400000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Capacitación' => ['presupuesto' => 1200000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Material' => ['presupuesto' => 2800000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0]
-        ];
-    }
-
-    private function getEscuelaAltaData()
-    {
-        return [
-            'Salarios' => ['presupuesto' => 44800000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Capacitación' => ['presupuesto' => 1500000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Material' => ['presupuesto' => 3200000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0]
-        ];
-    }
-
-    private function getPaiData()
-    {
-        return [
-            'Capacitación PAI' => ['presupuesto' => 2000000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Proyecto Personal' => ['presupuesto' => 1800000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Material PAI' => ['presupuesto' => 1200000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0]
-        ];
-    }
-
-    private function getPepData()
-    {
-        return [
-            'Capacitación PEP' => ['presupuesto' => 1500000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Exhibición PEP' => ['presupuesto' => 2200000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Material PEP' => ['presupuesto' => 1800000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0]
-        ];
-    }
-
-    private function getBibliotecaData()
-    {
-        return [
-            'Libros y Material' => ['presupuesto' => 8000000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Software Biblioteca' => ['presupuesto' => 1200000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Eventos Biblioteca' => ['presupuesto' => 800000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0]
-        ];
-    }
-
-    private function getDepartamentoApoyoData()
-    {
-        return [
-            'Psicología' => ['presupuesto' => 6000000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Apoyo Académico' => ['presupuesto' => 4500000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0],
-            'Material Especializado' => ['presupuesto' => 2000000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0]
-        ];
     }
 }

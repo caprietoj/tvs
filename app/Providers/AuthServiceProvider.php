@@ -65,6 +65,27 @@ class AuthServiceProvider extends ServiceProvider
             return $user->hasRole('admin') || $user->email === 'asistentegeneral@tvs.edu.co';
         });
 
+        // Gate para verificar acceso al módulo de presupuesto
+        Gate::define('presupuesto.access', function ($user) {
+            // Administradores tienen acceso completo
+            if ($user->hasRole('admin')) {
+                return true;
+            }
+            
+            // Usuarios específicos con acceso a secciones del presupuesto
+            $allowedUsers = [
+                'Ana Maria Grisales',
+                'GINA LORENA HURTADO GÓMEZ',
+                'Maria Constanza Bernal Baracaldo',
+                'Andrea Carolina Florez Varon',
+                'HELENA ORTIZ',
+                'Laura Rodriguez Laverde',
+                'Johanna Gavidia Barbosa'
+            ];
+            
+            return in_array($user->name, $allowedUsers);
+        });
+
         // ... existing code ...
     }
 }
