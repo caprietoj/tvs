@@ -365,12 +365,12 @@ class PurchaseRequest extends Model
     public function items()
     {
         if ($this->isPurchaseRequest()) {
-            return $this->purchase_items ?? [];
+            return collect($this->purchase_items ?? []);
         } else {
-            return array_merge(
+            return collect(array_merge(
                 $this->copy_items ?? [], 
                 $this->material_items ?? []
-            );
+            ));
         }
     }
 

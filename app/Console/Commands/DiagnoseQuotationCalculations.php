@@ -56,7 +56,7 @@ class DiagnoseQuotationCalculations extends Command
         
         $this->info("\n--- Items de la solicitud ---");
         $items = $request->items();
-        if (is_array($items) && !empty($items)) {
+        if ($items->isNotEmpty()) {
             foreach ($items as $index => $item) {
                 if (is_array($item)) {
                     $description = $item['description'] ?? 'Sin descripción';

@@ -1987,7 +1987,7 @@
                                                 <td><strong>{{ $concepto }}</strong></td>
                                                 <td class="number-cell editable" data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
                                                 <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="junio" class="number-cell editable">${{ number_format($junioValue, 0, ',', '.') }}</td>
-                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">${{ number_format($julioValue, 0, ',', '.') }}</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable rubros-julio-clickeable" data-mes="julio" data-rubro="{{ $concepto }}" style="cursor: pointer; background-color: #f8f9fa;" title="Clic para ver detalles de {{ $concepto }} en julio">${{ number_format($julioValue, 0, ',', '.') }}</td>
                                                 <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">${{ number_format($agostoValue, 0, ',', '.') }}</td>
                                                 <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">${{ number_format($septiembreValue, 0, ',', '.') }}</td>
                                                 <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">${{ number_format($octubreValue, 0, ',', '.') }}</td>
@@ -2632,6 +2632,83 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Modal para detalles de Rubros Institucionales -->
+                    <div id="rubrosInstitucionalesModal" class="custom-modal" style="display: none;">
+                        <div class="custom-modal-overlay" onclick="cerrarModalRubros()"></div>
+                        <div class="custom-modal-content" style="max-width: 900px;">
+                            <div class="custom-modal-header">
+                                <h5 class="custom-modal-title">
+                                    <i class="fas fa-building"></i> Detalles de Rubros Institucionales
+                                </h5>
+                                <button type="button" class="custom-close-btn" onclick="cerrarModalRubros()">
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                            <div class="custom-modal-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <div class="info-card">
+                                            <h6 class="info-title"><i class="fas fa-calendar-alt"></i> Información del Mes</h6>
+                                            <div class="info-item">
+                                                <strong>Mes:</strong>
+                                                <span id="rubros-modal-mes"></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Total del Mes:</strong>
+                                                <span id="rubros-modal-total" class="text-success font-weight-bold"></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Registros:</strong>
+                                                <span id="rubros-modal-cantidad"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="info-card">
+                                            <h6 class="info-title"><i class="fas fa-chart-pie"></i> Resumen por Categoría</h6>
+                                            <div id="rubros-resumen-categorias">
+                                                <!-- Se llenará dinámicamente -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="info-card">
+                                            <h6 class="info-title"><i class="fas fa-list"></i> Detalles de Gastos</h6>
+                                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                                <table class="table table-striped table-sm" id="rubros-tabla-detalles">
+                                                    <thead class="thead-dark" style="position: sticky; top: 0; z-index: 10;">
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Categoría</th>
+                                                            <th>Descripción</th>
+                                                            <th>Valor</th>
+                                                            <th>Cuenta</th>
+                                                            <th>Tercero</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!-- Se llenará dinámicamente -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="custom-modal-footer">
+                                <button type="button" class="btn btn-info" onclick="exportarRubrosDetalle()">
+                                    <i class="fas fa-download"></i> Exportar Excel
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cerrarModalRubros()">
+                                    <i class="fas fa-times"></i> Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
                 @elseif($sheetKey == 'Aseo y Cafeteria')
                     <!-- Hoja Aseo y Cafetería -->
                     <div class="table-content">
@@ -6189,6 +6266,36 @@
     font-weight: bold !important;
 }
 
+/* Estilos específicos para celdas de rubros institucionales clickeables */
+.rubros-julio-clickeable {
+    cursor: pointer !important;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.rubros-julio-clickeable:hover {
+    background-color: #e3f2fd !important;
+    color: #1976d2 !important;
+    font-weight: bold !important;
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.2);
+}
+
+.rubros-julio-clickeable:hover::after {
+    content: "📋 Ver detalles";
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
 /* Estilos para el modal de detalles */
 .info-card {
     background: #f8f9fa;
@@ -6214,6 +6321,59 @@
     color: #495057;
     display: inline-block;
     min-width: 120px;
+}
+
+/* Estilos específicos para modal de rubros institucionales */
+.categoria-item {
+    padding: 8px 12px;
+    background: #e9ecef;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.categoria-item strong {
+    color: #495057;
+    font-size: 12px;
+}
+
+.categoria-item .text-success {
+    font-weight: bold;
+}
+
+.categoria-item .text-muted {
+    font-size: 11px;
+}
+
+#rubros-tabla-detalles {
+    font-size: 12px;
+}
+
+#rubros-tabla-detalles th {
+    background-color: #343a40;
+    color: white;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    padding: 10px 8px;
+}
+
+#rubros-tabla-detalles td {
+    padding: 8px;
+    vertical-align: middle;
+}
+
+#rubros-tabla-detalles .badge {
+    font-size: 10px;
+    padding: 4px 8px;
+}
+
+#rubros-tabla-detalles .text-right {
+    text-align: right;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
 }
 
 .info-item span {
@@ -6244,15 +6404,30 @@
 
 /* Estilos para modal personalizado */
 .custom-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Estilos específicos para el modal de rubros institucionales */
+#rubrosInstitucionalesModal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 10000 !important;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 .custom-modal-overlay {
@@ -7853,6 +8028,8 @@ function cerrarModal() {
     document.body.style.overflow = 'auto'; // Restaurar scroll del body
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+
 // Función global para abrir el modal
 function abrirModal() {
     const modal = document.getElementById('detalleGastoModal');
@@ -7860,60 +8037,197 @@ function abrirModal() {
     document.body.style.overflow = 'hidden'; // Prevenir scroll del body
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Variables globales
-    let currentSheet = 'BUDGET';
-    let sortOrder = {};
-    let currentPage = 1;
-    let itemsPerPage = 50;
-    let allItems = [];
-    let filteredItems = [];
-    let isLoading = false;
+// Funciones para el modal de Rubros Institucionales (temporalmente simplificadas)
+function cerrarModalRubros() {
+    console.log('Función cerrarModalRubros llamada');
+}
+
+function abrirModalRubros() {
+    console.log('Función abrirModalRubros llamada - usando ventana emergente en su lugar');
+    return true;
+}
+
+// Función para mostrar detalles de rubros institucionales
+async function mostrarDetalleRubrosInstitucionales(mes, rubro = null) {
+    console.log('Iniciando mostrarDetalleRubrosInstitucionales con mes:', mes, 'y rubro:', rubro);
     
-    // Función para mostrar modal de detalles del gasto
-    function mostrarDetalleGasto(element) {
-        // Extraer datos del elemento
-        const datos = {
-            seccion: element.getAttribute('data-seccion'),
-            rubro: element.getAttribute('data-rubro'),
-            cuenta: element.getAttribute('data-cuenta'),
-            documento: element.getAttribute('data-documento'),
-            fecha: element.getAttribute('data-fecha'),
-            descripcion: element.getAttribute('data-descripcion'),
-            nombreTercero: element.getAttribute('data-nombre-tercero'),
-            centroCosto: element.getAttribute('data-centro-costo'),
-            valor: element.getAttribute('data-valor')
-        };
+    try {
+        // Construir URL con parámetros
+        let url = `/contabilidad/presupuesto/rubros-institucionales-detalle/${mes}`;
+        if (rubro) {
+            url += `?rubro=${encodeURIComponent(rubro)}`;
+        }
         
-        // Llenar el modal con los datos
-        document.getElementById('modal-seccion').textContent = datos.seccion || '-';
-        document.getElementById('modal-rubro').textContent = datos.rubro || '-';
-        document.getElementById('modal-cuenta').textContent = datos.cuenta || '-';
-        document.getElementById('modal-documento').textContent = datos.documento || '-';
-        document.getElementById('modal-fecha').textContent = datos.fecha || '-';
-        document.getElementById('modal-valor').textContent = '$' + new Intl.NumberFormat('es-CO').format(datos.valor || 0);
-        document.getElementById('modal-centro-costo').textContent = datos.centroCosto || '-';
-        document.getElementById('modal-descripcion').textContent = datos.descripcion || 'Sin descripción disponible';
-        document.getElementById('modal-nombre-tercero').textContent = datos.nombreTercero || '-';
+        console.log('URL a consultar:', url);
         
-        // Mostrar el modal personalizado
-        abrirModal();
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Datos recibidos del backend:', data);
+
+        // Construir el mensaje para el alert
+        let alertMessage = `📊 Detalle ${rubro ? 'de ' + rubro : 'General'}\n`;
+        alertMessage += `Mes: ${data.mes}\n\n`;
+        alertMessage += `💰 Total: ${data.total_formateado}\n`;
+        alertMessage += `📋 Cantidad de registros: ${data.cantidad_registros}\n\n`;
+
+        if (data.categorias && Object.keys(data.categorias).length > 0) {
+            alertMessage += `📈 Resumen por Categorías\n`;
+            for (const [categoria, info] of Object.entries(data.categorias)) {
+                alertMessage += `${categoria}: ${info.total_formateado} (${info.cantidad} registros, ${info.porcentaje}%)\n`;
+            }
+            alertMessage += '\n';
+        }
+
+        // Mostrar alert
+        alert(alertMessage);
+
+        // Crear contenido HTML para la ventana emergente
+        let htmlContent = `
+        <html>
+        <head>
+            <title>Detalle ${rubro ? 'de ' + rubro : 'General'} - ${data.mes}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+                .header { background: #2563eb; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                .summary { background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                .categoria { background: #e5e7eb; padding: 10px; margin: 10px 0; border-radius: 6px; }
+                .transaccion { border-bottom: 1px solid #d1d5db; padding: 10px 0; }
+                .valor { font-weight: bold; color: #059669; }
+                .fecha { color: #6b7280; }
+                .tercero { color: #374151; font-style: italic; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>📊 Detalle ${rubro ? 'de ' + rubro : 'General'}</h1>
+                <p>Mes: ${data.mes}</p>
+            </div>
+            
+            <div class="summary">
+                <h2>💰 Resumen</h2>
+                <p><strong>Total:</strong> ${data.total_formateado}</p>
+                <p><strong>Cantidad de registros:</strong> ${data.cantidad_registros}</p>
+            </div>`;
+
+        if (data.categorias && Object.keys(data.categorias).length > 0) {
+            htmlContent += `<div class="categoria">
+                <h2>📈 Resumen por Categorías</h2>`;
+            for (const [categoria, info] of Object.entries(data.categorias)) {
+                htmlContent += `<p><strong>${categoria}:</strong> ${info.total_formateado} (${info.cantidad} registros, ${info.porcentaje}%)</p>`;
+            }
+            htmlContent += `</div>`;
+        }
+
+        if (data.transacciones && data.transacciones.length > 0) {
+            htmlContent += `<div>
+                <h2>📋 Detalle de Transacciones</h2>`;
+            data.transacciones.forEach((transaccion, index) => {
+                htmlContent += `
+                <div class="transaccion">
+                    <p><strong>${index + 1}. ${transaccion.categoria}</strong></p>
+                    <p class="fecha">${transaccion.fecha} - ${transaccion.descripcion}</p>
+                    <p class="valor">Valor: ${transaccion.valor_formateado}</p>
+                    <p>Cuenta: ${transaccion.cuenta}</p>
+                    <p class="tercero">Tercero: ${transaccion.tercero}</p>
+                </div>`;
+            });
+            htmlContent += `</div>`;
+        }
+
+        htmlContent += `</body></html>`;
+
+        // Abrir ventana emergente
+        const popup = window.open('', 'DetalleRubros', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        popup.document.write(htmlContent);
+        popup.document.close();
+
+    } catch (error) {
+        console.error('Error al obtener detalles de rubros institucionales:', error);
+        alert('Error al cargar los detalles: ' + error.message);
+    }
+}
+
+// Funciones para el modal de Rubros Institucionales (temporalmente simplificadas)
+function cerrarModalRubros() {
+    console.log('Función cerrarModalRubros llamada');
+}
+
+function abrirModalRubros() {
+    console.log('Función abrirModalRubros llamada - usando ventana emergente en su lugar');
+    return true;
+}
+
+// Función para mostrar modal de detalles del gasto
+function mostrarDetalleGasto(element) {
+    // Extraer datos del elemento
+    const datos = {
+        seccion: element.getAttribute('data-seccion'),
+        rubro: element.getAttribute('data-rubro'),
+        cuenta: element.getAttribute('data-cuenta'),
+        documento: element.getAttribute('data-documento'),
+        fecha: element.getAttribute('data-fecha'),
+        descripcion: element.getAttribute('data-descripcion'),
+        nombreTercero: element.getAttribute('data-nombre-tercero'),
+        centroCosto: element.getAttribute('data-centro-costo'),
+        valor: element.getAttribute('data-valor')
+    };
+    
+    // Llenar el modal con los datos
+    document.getElementById('modal-seccion').textContent = datos.seccion || '-';
+    document.getElementById('modal-rubro').textContent = datos.rubro || '-';
+    document.getElementById('modal-cuenta').textContent = datos.cuenta || '-';
+    document.getElementById('modal-documento').textContent = datos.documento || '-';
+    document.getElementById('modal-fecha').textContent = datos.fecha || '-';
+    document.getElementById('modal-valor').textContent = '$' + new Intl.NumberFormat('es-CO').format(datos.valor || 0);
+    document.getElementById('modal-centro-costo').textContent = datos.centroCosto || '-';
+    document.getElementById('modal-descripcion').textContent = datos.descripcion || 'Sin descripción disponible';
+    document.getElementById('modal-nombre-tercero').textContent = datos.nombreTercero || '-';
+    
+    // Mostrar el modal personalizado
+    abrirModal();
+}
+
+// Event listener para valores clickeables
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('valor-clickeable')) {
+        e.preventDefault();
+        mostrarDetalleGasto(e.target);
     }
     
-    // Event listener para valores clickeables
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('valor-clickeable')) {
-            e.preventDefault();
-            mostrarDetalleGasto(e.target);
-        }
-    });
-    
-    // Event listeners para el modal personalizado
-    document.addEventListener('keydown', function(e) {
+    // Event listener para celdas de rubros institucionales
+    if (e.target.classList.contains('rubros-julio-clickeable')) {
+        e.preventDefault();
+        console.log('Clic detectado en celda de rubros institucionales');
+        const mes = e.target.getAttribute('data-mes');
+        const rubro = e.target.getAttribute('data-rubro');
+        console.log('Mes obtenido del atributo:', mes);
+        console.log('Rubro obtenido del atributo:', rubro);
+        mostrarDetalleRubrosInstitucionales(mes, rubro);
+    }
+});
+
+// Event listeners para los modales
+document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             const modal = document.getElementById('detalleGastoModal');
+            const modalRubros = document.getElementById('rubrosInstitucionalesModal');
             if (modal.style.display === 'flex') {
                 cerrarModal();
+            }
+            if (modalRubros.style.display === 'flex') {
+                cerrarModalRubros();
             }
         }
     });
@@ -8521,6 +8835,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Cargar datos iniciales para las secciones si estamos en la pestaña Secciones
     loadInitialSectionData();
+    
+    // Inicializar las tablas de secciones
+    initSectionTables();
+    
+    // Inicializar sistema de filtros
+    initFilterSystem();
 });
 
 // Función para cargar datos iniciales de las secciones
@@ -8669,10 +8989,6 @@ function cargarMasRegistros(filtro) {
 }
 
 // Funciones para las tablas de secciones
-document.addEventListener('DOMContentLoaded', function() {
-    initSectionTables();
-});
-
 function initSectionTables() {
     // Hacer editables solo las celdas de ejecución (no presupuesto)
     const editableCells = document.querySelectorAll('.section-budget-table .editable[data-type="ejecucion"]');
@@ -8778,7 +9094,7 @@ function formatNumber(num) {
 }
 
 // Funcionalidad de filtrado de tablas
-document.addEventListener('DOMContentLoaded', function() {
+function initFilterSystem() {
     console.log('Inicializando sistema de filtros...');
     
     const filterDropdown = document.getElementById('budget-filter');
@@ -9344,7 +9660,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        console.log('=== FIN DEBUG ===\n');
+        console.log('=== FIN DEBUG ===');
     }
     
     function getColumnIndex(cell) {
@@ -9712,8 +10028,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+}
 
-    function showLoadingForSections() {
+function showLoadingForSections() {
         const tables = ['preescolar-table', 'escuela-media-table', 'escuela-alta-table'];
         tables.forEach(tableId => {
             const table = document.getElementById(tableId);
@@ -9722,9 +10039,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 table.style.pointerEvents = 'none';
             }
         });
-    }
+}
 
-    function hideLoadingForSections() {
+function hideLoadingForSections() {
         const tables = ['preescolar-table', 'escuela-media-table', 'escuela-alta-table'];
         tables.forEach(tableId => {
             const table = document.getElementById(tableId);
@@ -9733,9 +10050,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 table.style.pointerEvents = 'auto';
             }
         });
-    }
+}
 
-    function updateSectionTables(data) {
+function updateSectionTables(data) {
         // Actualizar tabla Preescolar y Primaria
         updateSectionTable('preescolar-tbody', data['PREESCOLAR Y PRIMARIA'] || {}, 'preescolar');
         
@@ -9744,9 +10061,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Actualizar tabla Escuela Alta
         updateSectionTable('escuela-alta-tbody', data['ALTA'] || {}, 'escuela-alta');
-    }
+}
 
-    function updateSectionTable(tbodyId, sectionData, sectionKey) {
+function updateSectionTable(tbodyId, sectionData, sectionKey) {
         const tbody = document.getElementById(tbodyId);
         if (!tbody) return;
 
@@ -9790,14 +10107,19 @@ document.addEventListener('DOMContentLoaded', function() {
         tbody.appendChild(totalRow);
     }
 
-    function formatNumber(number) {
-        return new Intl.NumberFormat('es-CO').format(number);
-    }
+function formatNumber(number) {
+    return new Intl.NumberFormat('es-CO').format(number);
+}
 
-    // Hacer funciones globales
-    window.updateSectionTables = updateSectionTables;
-    window.updateSectionTable = updateSectionTable;
-    window.formatNumber = formatNumber;
+// Hacer funciones globales
+window.updateSectionTables = updateSectionTables;
+window.updateSectionTable = updateSectionTable;
+window.formatNumber = formatNumber;
+
+        }
+    }
+}
+
 });
 </script>
 @stop

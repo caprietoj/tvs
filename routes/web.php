@@ -211,6 +211,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.procesar-extracto-contable');
         Route::post('/presupuesto/filter-sections-by-month', [PresupuestoController::class, 'filterSectionsByMonth'])->name('presupuesto.filter-sections-by-month');
         
+        // Ruta para obtener detalles de rubros institucionales por mes
+        Route::get('/presupuesto/rubros-institucionales-detalle/{mes}', [PresupuestoController::class, 'getRubrosInstitucionalesDetalle'])->name('presupuesto.rubros-institucionales-detalle');
+        
         // Nuevas rutas para funcionalidad Excel
         Route::post('/presupuesto/upload-excel', [PresupuestoController::class, 'uploadExcel'])->name('presupuesto.upload-excel');
         Route::post('/presupuesto/update-excel-data', [PresupuestoController::class, 'updateExcelData'])->name('presupuesto.update-excel-data');

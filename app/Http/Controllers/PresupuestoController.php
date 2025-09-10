@@ -5694,4 +5694,160 @@ class PresupuestoController extends Controller
             'Material Especializado' => ['presupuesto' => 2000000, 'junio' => 0, 'julio' => 0, 'agosto' => 0, 'septiembre' => 0, 'octubre' => 0, 'noviembre' => 0, 'diciembre' => 0, 'enero' => 0, 'febrero' => 0]
         ];
     }
+
+    /**
+     * Obtener detalles de gastos de rubros institucionales por mes
+     */
+    public function getRubrosInstitucionalesDetalle($mes, Request $request)
+    {
+        // Verificar permisos
+        if (!auth()->user()->can('presupuesto.access')) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        $mesNumero = $this->getMonthNumber($mes);
+        
+        if (!$mesNumero) {
+            return response()->json(['error' => 'Mes inválido'], 400);
+        }
+
+        // Obtener el rubro específico si se proporciona
+        $rubroFiltro = $request->query('rubro');
+
+        // Obtener los registros detallados de rubros institucionales para el mes específico
+        $query = PresupuestoItem::where('centro_costo', '!=', '12010201')
+            ->where(function($q) {
+                $q->where('descripcion', 'LIKE', '%dotacion%')
+                  ->orWhere('descripcion', 'LIKE', '%suministro%')
+                  ->orWhere('descripcion', 'LIKE', '%oficina%')
+                  ->orWhere('descripcion', 'LIKE', '%examen%')
+                  ->orWhere('descripcion', 'LIKE', '%medico%')
+                  ->orWhere('descripcion', 'LIKE', '%tecnologia%')
+                  ->orWhere('descripcion', 'LIKE', '%insumo%')
+                  ->orWhere('descripcion', 'LIKE', '%enfermeria%')
+                  ->orWhere('descripcion', 'LIKE', '%mercadeo%')
+                  ->orWhere('descripcion', 'LIKE', '%admision%')
+                  ->orWhere('descripcion', 'LIKE', '%evento%')
+                  ->orWhere('descripcion', 'LIKE', '%mantenimiento%')
+                  ->orWhere('descripcion', 'LIKE', '%reparacion%')
+                  ->orWhere('descripcion', 'LIKE', '%mueble%')
+                  ->orWhere('descripcion', 'LIKE', '%utiles%')
+                  ->orWhere('descripcion', 'LIKE', '%aseo%')
+                  ->orWhere('descripcion', 'LIKE', '%agasajo%')
+                  ->orWhere('descripcion', 'LIKE', '%bienestar%')
+                  ->orWhere('descripcion', 'LIKE', '%contratacion%')
+                  ->orWhere('descripcion', 'LIKE', '%afiliacion%')
+                  ->orWhere('descripcion', 'LIKE', '%inscripcion%');
+            })
+            ->whereMonth('fecha', $mesNumero)
+            ->whereYear('fecha', 2025);
+
+        // Si se proporciona un rubro específico, filtrar por él
+        if ($rubroFiltro) {
+            $query->where(function($q) use ($rubroFiltro) {
+                // Mapear el nombre del rubro a las descripciones correspondientes
+                $filtros = $this->getFiltrosRubro($rubroFiltro);
+                foreach ($filtros as $filtro) {
+                    $q->orWhere('descripcion', 'LIKE', "%{$filtro}%");
+                }
+            });
+        }
+
+        $detalles = $query->orderBy('fecha', 'desc')
+            ->get(['id', 'fecha', 'descripcion', 'valor', 'cuenta', 'documento', 'centro_costo', 'nombre_tercero'])
+            ->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'fecha' => $item->fecha->format('d/m/Y'),
+                    'descripcion' => $item->descripcion,
+                    'valor' => $item->valor,
+                    'valor_formateado' => '$' . number_format($item->valor, 0, ',', '.'),
+                    'cuenta' => $item->cuenta,
+                    'documento' => $item->documento,
+                    'centro_costo' => $item->centro_costo,
+                    'tercero' => $item->nombre_tercero,
+                    'categoria' => $this->categorizarRubroInstitucional($item->descripcion)
+                ];
+            });
+
+        $totalMes = $detalles->sum('valor');
+
+        // Agrupar por categorías para el resumen
+        $categorias = [];
+        foreach ($detalles as $detalle) {
+            $categoria = $detalle['categoria'];
+            if (!isset($categorias[$categoria])) {
+                $categorias[$categoria] = [
+                    'total' => 0,
+                    'cantidad' => 0
+                ];
+            }
+            $categorias[$categoria]['total'] += $detalle['valor'];
+            $categorias[$categoria]['cantidad']++;
+        }
+
+        // Formatear categorías
+        foreach ($categorias as $categoria => &$info) {
+            $info['total_formateado'] = '$' . number_format($info['total'], 0, ',', '.');
+            $info['porcentaje'] = $totalMes > 0 ? round(($info['total'] / $totalMes) * 100, 1) : 0;
+        }
+
+        return response()->json([
+            'mes' => ucfirst($mes),
+            'rubro_filtro' => $rubroFiltro,
+            'total' => $totalMes,
+            'total_formateado' => '$' . number_format($totalMes, 0, ',', '.'),
+            'cantidad_registros' => $detalles->count(),
+            'categorias' => $categorias,
+            'transacciones' => $detalles->toArray()
+        ]);
+    }
+
+    /**
+     * Obtener filtros de descripción para un rubro específico
+     */
+    private function getFiltrosRubro($rubro)
+    {
+        $filtros = [
+            'Dotación Personal' => ['dotacion', 'uniforme'],
+            'Tecnología' => ['tecnologia', 'sistema', 'software'],
+            'Suministros de Oficina' => ['suministro', 'oficina', 'papeleria', 'utiles'],
+            'Insumos Médicos' => ['medico', 'enfermeria', 'insumo medico'],
+            'Mantenimiento' => ['mantenimiento de extintores', 'reparaciones locat'], // Más específico
+            'Mercadeo y Eventos' => ['mercadeo', 'evento', 'admision'],
+            'Aseo y Limpieza' => ['elementos de aseo', 'aseo', 'limpieza'],
+            'Bienestar' => ['bienestar', 'agasajo'],
+            'Otros Gastos Institucionales' => ['examen', 'chapa', 'cerradura', 'contratacion', 'afiliacion', 'inscripcion']
+        ];
+
+        return $filtros[$rubro] ?? [];
+    }
+
+    /**
+     * Categorizar rubro institucional basado en la descripción
+     */
+    private function categorizarRubroInstitucional($descripcion)
+    {
+        $descripcion = strtolower($descripcion);
+        
+        if (str_contains($descripcion, 'dotacion') || str_contains($descripcion, 'uniforme')) {
+            return 'Dotación Personal';
+        } elseif (str_contains($descripcion, 'tecnologia') || str_contains($descripcion, 'sistema') || str_contains($descripcion, 'software')) {
+            return 'Tecnología';
+        } elseif (str_contains($descripcion, 'suministro') || str_contains($descripcion, 'oficina') || str_contains($descripcion, 'papeleria')) {
+            return 'Suministros de Oficina';
+        } elseif (str_contains($descripcion, 'medico') || str_contains($descripcion, 'enfermeria') || str_contains($descripcion, 'insumo')) {
+            return 'Insumos Médicos';
+        } elseif (str_contains($descripcion, 'mantenimiento') || str_contains($descripcion, 'reparacion')) {
+            return 'Mantenimiento';
+        } elseif (str_contains($descripcion, 'mercadeo') || str_contains($descripcion, 'evento') || str_contains($descripcion, 'admision')) {
+            return 'Mercadeo y Eventos';
+        } elseif (str_contains($descripcion, 'aseo') || str_contains($descripcion, 'limpieza')) {
+            return 'Aseo y Limpieza';
+        } elseif (str_contains($descripcion, 'bienestar') || str_contains($descripcion, 'agasajo')) {
+            return 'Bienestar';
+        } else {
+            return 'Otros Gastos Institucionales';
+        }
+    }
 }
