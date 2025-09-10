@@ -142,7 +142,13 @@ class QuotationController extends Controller
                     $rawQuantity = $originalItemQuantities[$index] ?? ($requestItems[$index]['quantity'] ?? 1);
                     
                     // Asegurar que la cantidad sea numérica
-                    $quantity = is_numeric($rawQuantity) ? floatval($rawQuantity) : 1;
+                    if (is_numeric($rawQuantity)) {
+                        $quantity = floatval($rawQuantity);
+                    } else {
+                        // Extraer número de strings como "5 paq x 100 und" o "2 frascos de 1 Litro"
+                        preg_match('/^(\d+(?:\.\d+)?)/', (string)$rawQuantity, $matches);
+                        $quantity = isset($matches[1]) ? floatval($matches[1]) : 1;
+                    }
                     $unitPrice = floatval($price);
                     $itemTotal = $quantity * $unitPrice;
                     
@@ -227,12 +233,12 @@ class QuotationController extends Controller
                 'diferencia' => abs($subtotal - $originalItemsTotal),
                 'original_item_totals' => $originalItemTotals,
                 'original_item_prices' => $originalItemPrices,
-                'items_en_request' => $purchaseRequest->items->map(function($item) {
+                'items_en_request' => $purchaseRequest->items()->map(function($item) {
                     return [
-                        'id' => $item->id,
-                        'description' => $item->description,
-                        'quantity' => $item->quantity,
-                        'unit' => $item->unit
+                        'id' => $item['id'] ?? null,
+                        'description' => $item['description'] ?? 'Sin descripción',
+                        'quantity' => $item['quantity'] ?? 0,
+                        'unit' => $item['unit'] ?? ''
                     ];
                 })
             ]);
