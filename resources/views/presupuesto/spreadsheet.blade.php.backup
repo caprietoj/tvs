@@ -317,6 +317,7 @@
                             </div>
                         </div>
                         
+                        @if($isAdmin || in_array('preescolar', $userSectionPermissions))
                         <!-- Tabla 1: Preescolar y Primaria -->
                         <div class="section-table" id="preescolar-table">
                             <h3 class="section-title">Preescolar y Primaria</h3>
@@ -374,7 +375,9 @@
                                 </table>
                             </div>
                         </div>
+                        @endif
 
+                        @if($isAdmin || in_array('escuela-media', $userSectionPermissions))
                         <!-- Tabla 2: Escuela Media -->
                         <div class="section-table" id="escuela-media-table">
                             <h3 class="section-title">Escuela Media</h3>
@@ -432,7 +435,9 @@
                                 </table>
                             </div>
                         </div>
+                        @endif
 
+                        @if($isAdmin || in_array('escuela-alta', $userSectionPermissions))
                         <!-- Tabla 3: Escuela Alta -->
                         <div class="section-table" id="escuela-alta-table">
                             <h3 class="section-title">Escuela Alta</h3>
@@ -490,7 +495,9 @@
                                 </table>
                             </div>
                         </div>
+                        @endif
 
+                        @if($isAdmin || in_array('pai', $userSectionPermissions))
                         <!-- Tabla 4: PAI -->
                         <div class="section-table">
                             <h3 class="section-title">PAI</h3>
@@ -548,7 +555,9 @@
                                 </table>
                             </div>
                         </div>
+                        @endif
 
+                        @if($isAdmin || in_array('pep', $userSectionPermissions))
                         <!-- Tabla 5: PEP -->
                         <div class="section-table">
                             <h3 class="section-title">PEP</h3>
@@ -606,6 +615,7 @@
                                 </table>
                             </div>
                         </div>
+                        @endif
 
                         <!-- Tabla 6: Deportes -->
                         <div class="section-table">
@@ -665,6 +675,7 @@
                             </div>
                         </div>
 
+                        @if($isAdmin || in_array('biblioteca', $userSectionPermissions))
                         <!-- Tabla 7: Biblioteca -->
                         <div class="section-table">
                             <h3 class="section-title">Biblioteca</h3>
@@ -722,6 +733,7 @@
                                 </table>
                             </div>
                         </div>
+                        @endif
 
                         <!-- Tabla 8: Psicología Institucional -->
                         <div class="section-table">
@@ -897,6 +909,7 @@
                             </div>
                         </div>
 
+                        @if($isAdmin || in_array('departamento-apoyo', $userSectionPermissions))
                         <!-- Tabla 11: Departamento de Apoyo -->
                         <div class="section-table">
                             <h3 class="section-title">Departamento de Apoyo</h3>
@@ -954,6 +967,7 @@
                                 </table>
                             </div>
                         </div>
+                        @endif
                     </div>
                     
                     <!-- Tabla de Resumen Consolidado -->
@@ -1074,6 +1088,7 @@
                             </div>
                         </div>
 
+                        @if($isAdmin)
                         <!-- TABLA 1: RESUMEN -->
                         <div class="budget-section filter-resumen" data-filter-category="resumen">
                             <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">RESUMEN</h5>
@@ -1206,6 +1221,7 @@
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
                                             <td class="number-cell">0</td>
                                             <td class="number-cell">0</td>
                                             <td class="number-cell">0</td>
@@ -1216,6 +1232,7 @@
                                         <tr>
                                             <td><strong>Ingresos otros escolares</strong></td>
                                             <td class="number-cell">$868.862.765</td>
+                                            <td class="number-cell editable">$-</td>
                                             <td class="number-cell"></td>
                                             <td class="number-cell"></td>
                                             <td class="number-cell editable">$-</td>
@@ -1275,10 +1292,12 @@
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Total Salarios, Prestaciones Administrativos y Sena</strong></td>
                                             <td class="number-cell">$1.453.226.337</td>
+                                            <td class="number-cell editable">$-</td>
                                             <td class="number-cell"></td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
@@ -1299,10 +1318,12 @@
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Total Rubros Institucionales</strong></td>
                                             <td class="number-cell">$1.172.440.107</td>
+                                            <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
@@ -1323,6 +1344,7 @@
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Total Servicios Públicos y Otros Egresos</strong></td>
@@ -1335,10 +1357,12 @@
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">$-</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Total Costos Contratos Externos</strong></td>
                                             <td class="number-cell">$1.831.454.774</td>
+                                            <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
@@ -1373,6 +1397,7 @@
                                         <tr>
                                             <th>CONCEPTO</th>
                                             <th>PRESUPUESTO APROBADO</th>
+                                            <th>JUNIO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
@@ -1387,6 +1412,8 @@
                                         <tr>
                                             <td><strong>Matriculas</strong></td>
                                             <td class="number-cell">$979.804.763</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1399,6 +1426,8 @@
                                         <tr>
                                             <td><strong>Pensiones</strong></td>
                                             <td class="number-cell">$8.816.286.570</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1411,6 +1440,8 @@
                                         <tr>
                                             <td><strong>Seguros Estudiantiles</strong></td>
                                             <td class="number-cell">$3.922.844</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1423,6 +1454,8 @@
                                         <tr>
                                             <td><strong>Desarrollo curricular bilingüe / Bibliobanco</strong></td>
                                             <td class="number-cell">$443.751.216</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1435,6 +1468,7 @@
                                         <tr>
                                             <td><strong>Sistematización de Notas</strong></td>
                                             <td class="number-cell">$98.984.742</td>
+                                            <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1447,6 +1481,7 @@
                                         <tr>
                                             <td><strong>Materiales generales</strong></td>
                                             <td class="number-cell">$115.165.581</td>
+                                            <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
                                             <td class="number-cell editable"></td>
@@ -1482,6 +1517,7 @@
                                         <tr>
                                             <th>CONCEPTO</th>
                                             <th>PRESUPUESTO APROBADO</th>
+                                            <th>JUNIO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
@@ -1496,6 +1532,8 @@
                                         <tr>
                                             <td><strong>Rendimientos/Intereses</strong></td>
                                             <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1508,6 +1546,8 @@
                                         <tr>
                                             <td><strong>Agenda escolar</strong></td>
                                             <td class="number-cell">$114.682.596</td>
+                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1520,6 +1560,7 @@
                                         <tr>
                                             <td><strong>Anuario</strong></td>
                                             <td class="number-cell">$9.257.396</td>
+                                            <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1532,6 +1573,7 @@
                                         <tr>
                                             <td><strong>Examenes de Admisión</strong></td>
                                             <td class="number-cell">$38.371.950</td>
+                                            <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1544,6 +1586,7 @@
                                         <tr>
                                             <td><strong>Ingresos Por Servicio Cafeteria</strong></td>
                                             <td class="number-cell">$6.424.511</td>
+                                            <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1556,6 +1599,7 @@
                                         <tr>
                                             <td><strong>Ingresos Por Servicio Transporte</strong></td>
                                             <td class="number-cell">$700.126.312</td>
+                                            <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
                                             <td class="number-cell editable">0</td>
@@ -1591,6 +1635,7 @@
                                         <tr>
                                             <th>CONCEPTO</th>
                                             <th>PRESUPUESTO APROBADO</th>
+                                            <th>JUNIO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
@@ -1602,29 +1647,44 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        @php
+                                            $salariosAcademiaData = $budgetDataByConcept['salarios-academia'] ?? [];
+                                            // Obtener valores mensuales reales
+                                            $junioValue = $salariosAcademiaData['junio'] ?? 0;
+                                            $julioValue = $salariosAcademiaData['julio'] ?? 0;
+                                            $agostoValue = $salariosAcademiaData['agosto'] ?? 0;
+                                            $septiembreValue = $salariosAcademiaData['septiembre'] ?? 0;
+                                            $octubreValue = $salariosAcademiaData['octubre'] ?? 0;
+                                            $noviembreValue = $salariosAcademiaData['noviembre'] ?? 0;
+                                            $diciembreValue = $salariosAcademiaData['diciembre'] ?? 0;
+                                            $eneroValue = $salariosAcademiaData['enero'] ?? 0;
+                                            $febreroValue = $salariosAcademiaData['febrero'] ?? 0;
+                                        @endphp
                                         <tr>
                                             <td><strong>Salarios y Prestaciones Sociales Academia</strong></td>
                                             <td class="number-cell">$6.600.750.523</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell editable">${{ number_format($junioValue, 0, ',', '.') }}</td>
+                                            <td class="number-cell editable">${{ number_format($julioValue, 0, ',', '.') }}</td>
+                                            <td class="number-cell editable">${{ number_format($agostoValue, 0, ',', '.') }}</td>
+                                            <td class="number-cell editable">${{ number_format($septiembreValue, 0, ',', '.') }}</td>
+                                            <td class="number-cell editable">${{ number_format($octubreValue, 0, ',', '.') }}</td>
+                                            <td class="number-cell editable">${{ number_format($noviembreValue, 0, ',', '.') }}</td>
+                                            <td class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
+                                            <td class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
+                                            <td class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>TOTAL SALARIOS ACADEMIA</strong></td>
                                             <td class="number-cell calculated"><strong>$6.600.750.523</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($junioValue, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($julioValue, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($agostoValue, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($septiembreValue, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($octubreValue, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($noviembreValue, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diciembreValue, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($eneroValue, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($febreroValue, 0, ',', '.') }}</strong></td>
                                         </tr>
                                         <tr>
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
@@ -1652,6 +1712,7 @@
                                         <tr>
                                             <th>CONCEPTO</th>
                                             <th>PRESUPUESTO APROBADO</th>
+                                            <th>JUNIO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
@@ -1674,31 +1735,73 @@
                                         @foreach($conceptLabels as $conceptKey => $concepto)
                                             @php
                                                 $presupuesto = $salariosAdminData[$conceptKey] ?? 0;
+                                                // Obtener valores mensuales reales
+                                                $junioValue = $salariosAdminData[$conceptKey . '-junio'] ?? 0;
+                                                $julioValue = $salariosAdminData[$conceptKey . '-julio'] ?? 0;
+                                                $agostoValue = $salariosAdminData[$conceptKey . '-agosto'] ?? 0;
+                                                $septiembreValue = $salariosAdminData[$conceptKey . '-septiembre'] ?? 0;
+                                                $octubreValue = $salariosAdminData[$conceptKey . '-octubre'] ?? 0;
+                                                $noviembreValue = $salariosAdminData[$conceptKey . '-noviembre'] ?? 0;
+                                                $diciembreValue = $salariosAdminData[$conceptKey . '-diciembre'] ?? 0;
+                                                $eneroValue = $salariosAdminData[$conceptKey . '-enero'] ?? 0;
+                                                $febreroValue = $salariosAdminData[$conceptKey . '-febrero'] ?? 0;
                                             @endphp
                                             <tr>
                                                 <td><strong>{{ $concepto }}</strong></td>
                                                 <td class="number-cell editable" data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
-                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
-                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
-                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
-                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
-                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
-                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
-                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
-                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="junio" class="number-cell editable">${{ number_format($junioValue, 0, ',', '.') }}</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">${{ number_format($julioValue, 0, ',', '.') }}</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">${{ number_format($agostoValue, 0, ',', '.') }}</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">${{ number_format($septiembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">${{ number_format($octubreValue, 0, ',', '.') }}</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">${{ number_format($noviembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
+                                                <td data-section="salarios-administracion" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
                                             </tr>
                                         @endforeach
+                                        @php
+                                            // Calcular totales mensuales reales
+                                            $totalJunio = ($salariosAdminData['salarios-aux-transporte-admin-junio'] ?? 0) + 
+                                                         ($salariosAdminData['capacitacion-administracion-junio'] ?? 0) + 
+                                                         ($salariosAdminData['aprendices-sena-junio'] ?? 0);
+                                            $totalJulio = ($salariosAdminData['salarios-aux-transporte-admin-julio'] ?? 0) + 
+                                                         ($salariosAdminData['capacitacion-administracion-julio'] ?? 0) + 
+                                                         ($salariosAdminData['aprendices-sena-julio'] ?? 0);
+                                            $totalAgosto = ($salariosAdminData['salarios-aux-transporte-admin-agosto'] ?? 0) + 
+                                                          ($salariosAdminData['capacitacion-administracion-agosto'] ?? 0) + 
+                                                          ($salariosAdminData['aprendices-sena-agosto'] ?? 0);
+                                            $totalSeptiembre = ($salariosAdminData['salarios-aux-transporte-admin-septiembre'] ?? 0) + 
+                                                              ($salariosAdminData['capacitacion-administracion-septiembre'] ?? 0) + 
+                                                              ($salariosAdminData['aprendices-sena-septiembre'] ?? 0);
+                                            $totalOctubre = ($salariosAdminData['salarios-aux-transporte-admin-octubre'] ?? 0) + 
+                                                           ($salariosAdminData['capacitacion-administracion-octubre'] ?? 0) + 
+                                                           ($salariosAdminData['aprendices-sena-octubre'] ?? 0);
+                                            $totalNoviembre = ($salariosAdminData['salarios-aux-transporte-admin-noviembre'] ?? 0) + 
+                                                             ($salariosAdminData['capacitacion-administracion-noviembre'] ?? 0) + 
+                                                             ($salariosAdminData['aprendices-sena-noviembre'] ?? 0);
+                                            $totalDiciembre = ($salariosAdminData['salarios-aux-transporte-admin-diciembre'] ?? 0) + 
+                                                             ($salariosAdminData['capacitacion-administracion-diciembre'] ?? 0) + 
+                                                             ($salariosAdminData['aprendices-sena-diciembre'] ?? 0);
+                                            $totalEnero = ($salariosAdminData['salarios-aux-transporte-admin-enero'] ?? 0) + 
+                                                         ($salariosAdminData['capacitacion-administracion-enero'] ?? 0) + 
+                                                         ($salariosAdminData['aprendices-sena-enero'] ?? 0);
+                                            $totalFebrero = ($salariosAdminData['salarios-aux-transporte-admin-febrero'] ?? 0) + 
+                                                           ($salariosAdminData['capacitacion-administracion-febrero'] ?? 0) + 
+                                                           ($salariosAdminData['aprendices-sena-febrero'] ?? 0);
+                                        @endphp
                                         <tr class="total-row">
                                             <td><strong>TOTAL SALARIOS ADMINISTRATIVOS</strong></td>
                                             <td class="number-cell calculated"><strong>{{ number_format(array_sum($salariosAdminData), 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalAgosto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalSeptiembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalOctubre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalNoviembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalDiciembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalEnero, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalFebrero, 0, ',', '.') }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1714,6 +1817,7 @@
                                         <tr>
                                             <th>CONCEPTO</th>
                                             <th>PRESUPUESTO APROBADO</th>
+                                            <th>JUNIO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
@@ -1737,28 +1841,83 @@
                                         @foreach($capacitacionLabels as $conceptKey => $concepto)
                                             @php
                                                 $presupuesto = $capacitacionData[$conceptKey] ?? 0;
+                                                // Obtener valores mensuales reales
+                                                $junioValue = $capacitacionData[$conceptKey . '-junio'] ?? 0;
+                                                $julioValue = $capacitacionData[$conceptKey . '-julio'] ?? 0;
+                                                $agostoValue = $capacitacionData[$conceptKey . '-agosto'] ?? 0;
+                                                $septiembreValue = $capacitacionData[$conceptKey . '-septiembre'] ?? 0;
+                                                $octubreValue = $capacitacionData[$conceptKey . '-octubre'] ?? 0;
+                                                $noviembreValue = $capacitacionData[$conceptKey . '-noviembre'] ?? 0;
+                                                $diciembreValue = $capacitacionData[$conceptKey . '-diciembre'] ?? 0;
+                                                $eneroValue = $capacitacionData[$conceptKey . '-enero'] ?? 0;
+                                                $febreroValue = $capacitacionData[$conceptKey . '-febrero'] ?? 0;
                                             @endphp
                                             <tr>
                                                 <td><strong>{{ $concepto }}</strong></td>
                                                 <td class="number-cell editable" data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="junio" class="number-cell editable">${{ number_format($junioValue, 0, ',', '.') }}</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">${{ number_format($julioValue, 0, ',', '.') }}</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">${{ number_format($agostoValue, 0, ',', '.') }}</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">${{ number_format($septiembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">${{ number_format($octubreValue, 0, ',', '.') }}</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">${{ number_format($noviembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
+                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
                                             </tr>
                                         @endforeach
+                                        @php
+                                            // Calcular totales mensuales reales para Capacitación e Indemnizaciones
+                                            $totalCapJunio = ($capacitacionData['capacitacion-admin-junio'] ?? 0) + 
+                                                            ($capacitacionData['capacitacion-emc-docentes-junio'] ?? 0) + 
+                                                            ($capacitacionData['capacitacion-copassi-junio'] ?? 0) + 
+                                                            ($capacitacionData['indemnizaciones-junio'] ?? 0);
+                                            $totalCapJulio = ($capacitacionData['capacitacion-admin-julio'] ?? 0) + 
+                                                            ($capacitacionData['capacitacion-emc-docentes-julio'] ?? 0) + 
+                                                            ($capacitacionData['capacitacion-copassi-julio'] ?? 0) + 
+                                                            ($capacitacionData['indemnizaciones-julio'] ?? 0);
+                                            $totalCapAgosto = ($capacitacionData['capacitacion-admin-agosto'] ?? 0) + 
+                                                             ($capacitacionData['capacitacion-emc-docentes-agosto'] ?? 0) + 
+                                                             ($capacitacionData['capacitacion-copassi-agosto'] ?? 0) + 
+                                                             ($capacitacionData['indemnizaciones-agosto'] ?? 0);
+                                            $totalCapSeptiembre = ($capacitacionData['capacitacion-admin-septiembre'] ?? 0) + 
+                                                                 ($capacitacionData['capacitacion-emc-docentes-septiembre'] ?? 0) + 
+                                                                 ($capacitacionData['capacitacion-copassi-septiembre'] ?? 0) + 
+                                                                 ($capacitacionData['indemnizaciones-septiembre'] ?? 0);
+                                            $totalCapOctubre = ($capacitacionData['capacitacion-admin-octubre'] ?? 0) + 
+                                                              ($capacitacionData['capacitacion-emc-docentes-octubre'] ?? 0) + 
+                                                              ($capacitacionData['capacitacion-copassi-octubre'] ?? 0) + 
+                                                              ($capacitacionData['indemnizaciones-octubre'] ?? 0);
+                                            $totalCapNoviembre = ($capacitacionData['capacitacion-admin-noviembre'] ?? 0) + 
+                                                                ($capacitacionData['capacitacion-emc-docentes-noviembre'] ?? 0) + 
+                                                                ($capacitacionData['capacitacion-copassi-noviembre'] ?? 0) + 
+                                                                ($capacitacionData['indemnizaciones-noviembre'] ?? 0);
+                                            $totalCapDiciembre = ($capacitacionData['capacitacion-admin-diciembre'] ?? 0) + 
+                                                                ($capacitacionData['capacitacion-emc-docentes-diciembre'] ?? 0) + 
+                                                                ($capacitacionData['capacitacion-copassi-diciembre'] ?? 0) + 
+                                                                ($capacitacionData['indemnizaciones-diciembre'] ?? 0);
+                                            $totalCapEnero = ($capacitacionData['capacitacion-admin-enero'] ?? 0) + 
+                                                            ($capacitacionData['capacitacion-emc-docentes-enero'] ?? 0) + 
+                                                            ($capacitacionData['capacitacion-copassi-enero'] ?? 0) + 
+                                                            ($capacitacionData['indemnizaciones-enero'] ?? 0);
+                                            $totalCapFebrero = ($capacitacionData['capacitacion-admin-febrero'] ?? 0) + 
+                                                              ($capacitacionData['capacitacion-emc-docentes-febrero'] ?? 0) + 
+                                                              ($capacitacionData['capacitacion-copassi-febrero'] ?? 0) + 
+                                                              ($capacitacionData['indemnizaciones-febrero'] ?? 0);
+                                        @endphp
                                         <tr class="total-row">
                                             <td><strong>TOTAL CAPACITACION E INDEMNIZACIONES</strong></td>
                                             <td class="number-cell calculated"><strong>{{ number_format(array_sum($capacitacionData), 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapJunio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapJulio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapAgosto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapSeptiembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapOctubre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapNoviembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapDiciembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapEnero, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapFebrero, 0, ',', '.') }}</strong></td>
+                                        </tr>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -1777,6 +1936,7 @@
                                         <tr>
                                             <th>CONCEPTO</th>
                                             <th>PRESUPUESTO APROBADO</th>
+                                            <th>JUNIO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
@@ -1812,25 +1972,44 @@
                                         @foreach($rubrosLabels as $conceptKey => $concepto)
                                             @php
                                                 $presupuesto = $rubrosData[$conceptKey] ?? 0;
+                                                // Obtener valores mensuales reales
+                                                $junioValue = $rubrosData[$conceptKey . '-junio'] ?? 0;
+                                                $julioValue = $rubrosData[$conceptKey . '-julio'] ?? 0;
+                                                $agostoValue = $rubrosData[$conceptKey . '-agosto'] ?? 0;
+                                                $septiembreValue = $rubrosData[$conceptKey . '-septiembre'] ?? 0;
+                                                $octubreValue = $rubrosData[$conceptKey . '-octubre'] ?? 0;
+                                                $noviembreValue = $rubrosData[$conceptKey . '-noviembre'] ?? 0;
+                                                $diciembreValue = $rubrosData[$conceptKey . '-diciembre'] ?? 0;
+                                                $eneroValue = $rubrosData[$conceptKey . '-enero'] ?? 0;
+                                                $febreroValue = $rubrosData[$conceptKey . '-febrero'] ?? 0;
                                             @endphp
                                             <tr>
                                                 <td><strong>{{ $concepto }}</strong></td>
                                                 <td class="number-cell editable" data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
-                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
-                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
-                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
-                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
-                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
-                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
-                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
-                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="junio" class="number-cell editable">${{ number_format($junioValue, 0, ',', '.') }}</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable rubros-julio-clickeable" data-mes="julio" data-rubro="{{ $concepto }}" style="cursor: pointer; background-color: #f8f9fa;" title="Clic para ver detalles de {{ $concepto }} en julio">${{ number_format($julioValue, 0, ',', '.') }}</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">${{ number_format($agostoValue, 0, ',', '.') }}</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">${{ number_format($septiembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">${{ number_format($octubreValue, 0, ',', '.') }}</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">${{ number_format($noviembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
+                                                <td data-section="rubros-institucionales" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
                                             </tr>
                                         @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL INSTITUCIONAL</strong></td>
                                             <td class="number-cell calculated"><strong>{{ number_format(array_sum($rubrosData), 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            @php
+                                                $totalJunio = 0;
+                                                $totalJulio = 0;
+                                                foreach($rubrosLabels as $conceptKey => $concepto) {
+                                                    $totalJunio += $rubrosData[$conceptKey . '-junio'] ?? 0;
+                                                    $totalJulio += $rubrosData[$conceptKey . '-julio'] ?? 0;
+                                                }
+                                            @endphp
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -1864,6 +2043,7 @@
                                         <tr>
                                             <th>CONCEPTO</th>
                                             <th>PRESUPUESTO APROBADO</th>
+                                            <th>JUNIO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
@@ -1886,25 +2066,44 @@
                                         @foreach($membresiasLabels as $conceptKey => $concepto)
                                             @php
                                                 $presupuesto = $membresiasData[$conceptKey] ?? 0;
+                                                // Obtener valores mensuales reales
+                                                $junioValue = $membresiasData[$conceptKey . '-junio'] ?? 0;
+                                                $julioValue = $membresiasData[$conceptKey . '-julio'] ?? 0;
+                                                $agostoValue = $membresiasData[$conceptKey . '-agosto'] ?? 0;
+                                                $septiembreValue = $membresiasData[$conceptKey . '-septiembre'] ?? 0;
+                                                $octubreValue = $membresiasData[$conceptKey . '-octubre'] ?? 0;
+                                                $noviembreValue = $membresiasData[$conceptKey . '-noviembre'] ?? 0;
+                                                $diciembreValue = $membresiasData[$conceptKey . '-diciembre'] ?? 0;
+                                                $eneroValue = $membresiasData[$conceptKey . '-enero'] ?? 0;
+                                                $febreroValue = $membresiasData[$conceptKey . '-febrero'] ?? 0;
                                             @endphp
                                             <tr>
                                                 <td><strong>{{ $concepto }}</strong></td>
                                                 <td class="number-cell editable" data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
-                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
-                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
-                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
-                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
-                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
-                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
-                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
-                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="junio" class="number-cell editable">${{ number_format($junioValue, 0, ',', '.') }}</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">${{ number_format($julioValue, 0, ',', '.') }}</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">${{ number_format($agostoValue, 0, ',', '.') }}</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">${{ number_format($septiembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">${{ number_format($octubreValue, 0, ',', '.') }}</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">${{ number_format($noviembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
+                                                <td data-section="membresias-convenios" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
                                             </tr>
                                         @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL MEMBRESIAS Y CONVENIOS</strong></td>
                                             <td class="number-cell calculated"><strong>{{ number_format(array_sum($membresiasData), 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            @php
+                                                $totalJunio = 0;
+                                                $totalJulio = 0;
+                                                foreach($membresiasLabels as $conceptKey => $concepto) {
+                                                    $totalJunio += $membresiasData[$conceptKey . '-junio'] ?? 0;
+                                                    $totalJulio += $membresiasData[$conceptKey . '-julio'] ?? 0;
+                                                }
+                                            @endphp
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -1938,6 +2137,7 @@
                                         <tr>
                                             <th>CONCEPTO</th>
                                             <th>PRESUPUESTO APROBADO</th>
+                                            <th>JUNIO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
@@ -1962,31 +2162,55 @@
                                         @foreach($serviciosLabels as $conceptKey => $concepto)
                                             @php
                                                 $presupuesto = $serviciosData[$conceptKey] ?? 0;
+                                                // Obtener valores mensuales reales distribuidos entre conceptos
+                                                $junioValue = ($serviciosPublicosData['meses']['junio'] ?? 0) / count($serviciosLabels);
+                                                $julioValue = ($serviciosPublicosData['meses']['julio'] ?? 0) / count($serviciosLabels);
+                                                $agostoValue = ($serviciosPublicosData['meses']['agosto'] ?? 0) / count($serviciosLabels);
+                                                $septiembreValue = ($serviciosPublicosData['meses']['septiembre'] ?? 0) / count($serviciosLabels);
+                                                $octubreValue = ($serviciosPublicosData['meses']['octubre'] ?? 0) / count($serviciosLabels);
+                                                $noviembreValue = ($serviciosPublicosData['meses']['noviembre'] ?? 0) / count($serviciosLabels);
+                                                $diciembreValue = ($serviciosPublicosData['meses']['diciembre'] ?? 0) / count($serviciosLabels);
+                                                $eneroValue = ($serviciosPublicosData['meses']['enero'] ?? 0) / count($serviciosLabels);
+                                                $febreroValue = ($serviciosPublicosData['meses']['febrero'] ?? 0) / count($serviciosLabels);
                                             @endphp
                                             <tr>
                                                 <td><strong>{{ $concepto }}</strong></td>
                                                 <td class="number-cell editable" data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
-                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
-                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
-                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
-                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
-                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
-                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
-                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
-                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="junio" class="number-cell editable">${{ number_format($junioValue, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">${{ number_format($julioValue, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">${{ number_format($agostoValue, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">${{ number_format($septiembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">${{ number_format($octubreValue, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">${{ number_format($noviembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
                                             </tr>
                                         @endforeach
+                                        @php
+                                            // Calcular totales mensuales
+                                            $junioTotal = $serviciosPublicosData['meses']['junio'] ?? 0;
+                                            $julioTotal = $serviciosPublicosData['meses']['julio'] ?? 0;
+                                            $agostoTotal = $serviciosPublicosData['meses']['agosto'] ?? 0;
+                                            $septiembreTotal = $serviciosPublicosData['meses']['septiembre'] ?? 0;
+                                            $octubreTotal = $serviciosPublicosData['meses']['octubre'] ?? 0;
+                                            $noviembreTotal = $serviciosPublicosData['meses']['noviembre'] ?? 0;
+                                            $diciembreTotal = $serviciosPublicosData['meses']['diciembre'] ?? 0;
+                                            $eneroTotal = $serviciosPublicosData['meses']['enero'] ?? 0;
+                                            $febreroTotal = $serviciosPublicosData['meses']['febrero'] ?? 0;
+                                        @endphp
                                         <tr class="total-row">
                                             <td><strong>TOTAL SERVICIOS PUBLICOS</strong></td>
-                                            <td class="number-cell calculated"><strong>{{ number_format(array_sum($serviciosData), 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ number_format(array_sum($serviciosPublicosData['meses']), 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($junioTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($julioTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($agostoTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($septiembreTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($octubreTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($noviembreTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diciembreTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($eneroTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($febreroTotal, 0, ',', '.') }}</strong></td>
                                         </tr>
                                         <tr class="percentage-row">
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
@@ -2014,6 +2238,7 @@
                                         <tr>
                                             <th>CONCEPTO</th>
                                             <th>PRESUPUESTO APROBADO</th>
+                                            <th>JUNIO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
@@ -2046,34 +2271,59 @@
                                         @foreach($otrosEgresosLabels as $conceptKey => $concepto)
                                             @php
                                                 $presupuesto = $otrosEgresosData[$conceptKey] ?? 0;
+                                                // Obtener valores mensuales reales de budgetDataByConcept
+                                                $junioValue = $otrosEgresosData['junio'] ?? 0;
+                                                $julioValue = $otrosEgresosData['julio'] ?? 0;
+                                                $agostoValue = $otrosEgresosData['agosto'] ?? 0;
+                                                $septiembreValue = $otrosEgresosData['septiembre'] ?? 0;
+                                                $octubreValue = $otrosEgresosData['octubre'] ?? 0;
+                                                $noviembreValue = $otrosEgresosData['noviembre'] ?? 0;
+                                                $diciembreValue = $otrosEgresosData['diciembre'] ?? 0;
+                                                $eneroValue = $otrosEgresosData['enero'] ?? 0;
+                                                $febreroValue = $otrosEgresosData['febrero'] ?? 0;
                                             @endphp
                                             <tr>
                                                 <td><strong>{{ $concepto }}</strong></td>
                                                 <td class="number-cell editable" data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
-                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
-                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
-                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
-                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
-                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
-                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
-                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
-                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="junio" class="number-cell editable">${{ number_format($junioValue / count($otrosEgresosLabels), 0, ',', '.') }}</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">${{ number_format($julioValue / count($otrosEgresosLabels), 0, ',', '.') }}</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">${{ number_format($agostoValue / count($otrosEgresosLabels), 0, ',', '.') }}</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">${{ number_format($septiembreValue / count($otrosEgresosLabels), 0, ',', '.') }}</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">${{ number_format($octubreValue / count($otrosEgresosLabels), 0, ',', '.') }}</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">${{ number_format($noviembreValue / count($otrosEgresosLabels), 0, ',', '.') }}</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue / count($otrosEgresosLabels), 0, ',', '.') }}</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue / count($otrosEgresosLabels), 0, ',', '.') }}</td>
+                                                <td data-section="otros-egresos" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue / count($otrosEgresosLabels), 0, ',', '.') }}</td>
                                             </tr>
                                         @endforeach
+                                        @php
+                                            // Calcular totales mensuales para otros egresos
+                                            $junioTotal = $otrosEgresosData['junio'] ?? 0;
+                                            $julioTotal = $otrosEgresosData['julio'] ?? 0;
+                                            $agostoTotal = $otrosEgresosData['agosto'] ?? 0;
+                                            $septiembreTotal = $otrosEgresosData['septiembre'] ?? 0;
+                                            $octubreTotal = $otrosEgresosData['octubre'] ?? 0;
+                                            $noviembreTotal = $otrosEgresosData['noviembre'] ?? 0;
+                                            $diciembreTotal = $otrosEgresosData['diciembre'] ?? 0;
+                                            $eneroTotal = $otrosEgresosData['enero'] ?? 0;
+                                            $febreroTotal = $otrosEgresosData['febrero'] ?? 0;
+                                        @endphp
                                         <tr class="total-row">
                                             <td><strong>TOTAL OTROS EGRESOS</strong></td>
                                             <td class="number-cell calculated"><strong>{{ number_format(array_sum($otrosEgresosData), 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($junioTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($julioTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($agostoTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($septiembreTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($octubreTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($noviembreTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diciembreTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($eneroTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($febreroTotal, 0, ',', '.') }}</strong></td>
                                         </tr>
                                         <tr class="impact-row">
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
+                                            <td class="number-cell calculated"><strong>-</strong></td>
                                             <td class="number-cell calculated"><strong>-</strong></td>
                                             <td class="number-cell calculated"><strong>-</strong></td>
                                             <td class="number-cell calculated"><strong>-</strong></td>
@@ -2098,6 +2348,7 @@
                                         <tr>
                                             <th>CONCEPTO</th>
                                             <th>PRESUPUESTO APROBADO</th>
+                                            <th>JUNIO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
@@ -2132,24 +2383,44 @@
                                         @foreach($seccionesLabels as $conceptKey => $concepto)
                                             @php
                                                 $presupuesto = $seccionesAcademiaData[$conceptKey] ?? 0;
+                                                // Obtener valores mensuales reales
+                                                $junioValue = $seccionesAcademiaData[$conceptKey . '-junio'] ?? 0;
+                                                $julioValue = $seccionesAcademiaData[$conceptKey . '-julio'] ?? 0;
+                                                $agostoValue = $seccionesAcademiaData[$conceptKey . '-agosto'] ?? 0;
+                                                $septiembreValue = $seccionesAcademiaData[$conceptKey . '-septiembre'] ?? 0;
+                                                $octubreValue = $seccionesAcademiaData[$conceptKey . '-octubre'] ?? 0;
+                                                $noviembreValue = $seccionesAcademiaData[$conceptKey . '-noviembre'] ?? 0;
+                                                $diciembreValue = $seccionesAcademiaData[$conceptKey . '-diciembre'] ?? 0;
+                                                $eneroValue = $seccionesAcademiaData[$conceptKey . '-enero'] ?? 0;
+                                                $febreroValue = $seccionesAcademiaData[$conceptKey . '-febrero'] ?? 0;
                                             @endphp
                                             <tr>
                                                 <td><strong>{{ $concepto }}</strong></td>
                                                 <td class="number-cell editable" data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="junio" class="number-cell editable">${{ number_format($junioValue, 0, ',', '.') }}</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">${{ number_format($julioValue, 0, ',', '.') }}</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">${{ number_format($agostoValue, 0, ',', '.') }}</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">${{ number_format($septiembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">${{ number_format($octubreValue, 0, ',', '.') }}</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">${{ number_format($noviembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
+                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
                                             </tr>
                                         @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL SECCIONES ACADEMIA GENERAL</strong></td>
                                             <td class="number-cell calculated"><strong>{{ number_format(array_sum($seccionesAcademiaData), 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            @php
+                                                $totalJunio = 0;
+                                                $totalJulio = 0;
+                                                foreach($seccionesLabels as $conceptKey => $concepto) {
+                                                    $totalJunio += $seccionesAcademiaData[$conceptKey . '-junio'] ?? 0;
+                                                    $totalJulio += $seccionesAcademiaData[$conceptKey . '-julio'] ?? 0;
+                                                }
+                                            @endphp
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -2184,6 +2455,7 @@
                                         <tr>
                                             <th>CONCEPTO</th>
                                             <th>PRESUPUESTO APROBADO</th>
+                                            <th>JUNIO</th>
                                             <th>JULIO</th>
                                             <th>AGOSTO</th>
                                             <th>SEPTIEMBRE</th>
@@ -2205,25 +2477,44 @@
                                         @foreach($contratosLabels as $conceptKey => $concepto)
                                             @php
                                                 $presupuesto = $contratosExternosData[$conceptKey] ?? 0;
+                                                // Obtener valores mensuales reales
+                                                $junioValue = $contratosExternosData[$conceptKey . '-junio'] ?? 0;
+                                                $julioValue = $contratosExternosData[$conceptKey . '-julio'] ?? 0;
+                                                $agostoValue = $contratosExternosData[$conceptKey . '-agosto'] ?? 0;
+                                                $septiembreValue = $contratosExternosData[$conceptKey . '-septiembre'] ?? 0;
+                                                $octubreValue = $contratosExternosData[$conceptKey . '-octubre'] ?? 0;
+                                                $noviembreValue = $contratosExternosData[$conceptKey . '-noviembre'] ?? 0;
+                                                $diciembreValue = $contratosExternosData[$conceptKey . '-diciembre'] ?? 0;
+                                                $eneroValue = $contratosExternosData[$conceptKey . '-enero'] ?? 0;
+                                                $febreroValue = $contratosExternosData[$conceptKey . '-febrero'] ?? 0;
                                             @endphp
                                             <tr>
                                                 <td><strong>{{ $concepto }}</strong></td>
                                                 <td class="number-cell editable" data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
-                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">$-</td>
-                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">$-</td>
-                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">$-</td>
-                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">$-</td>
-                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">$-</td>
-                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">$-</td>
-                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">$-</td>
-                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">$-</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="junio" class="number-cell editable">${{ number_format($junioValue, 0, ',', '.') }}</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">${{ number_format($julioValue, 0, ',', '.') }}</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">${{ number_format($agostoValue, 0, ',', '.') }}</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">${{ number_format($septiembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">${{ number_format($octubreValue, 0, ',', '.') }}</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">${{ number_format($noviembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
+                                                <td data-section="contratos-externos" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
                                             </tr>
                                         @endforeach
                                         <tr class="total-row">
                                             <td><strong>TOTAL CONTRATOS EXTERNOS</strong></td>
                                             <td class="number-cell calculated"><strong>{{ number_format(array_sum($contratosExternosData), 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            @php
+                                                $totalJunio = 0;
+                                                $totalJulio = 0;
+                                                foreach($contratosLabels as $conceptKey => $concepto) {
+                                                    $totalJunio += $contratosExternosData[$conceptKey . '-junio'] ?? 0;
+                                                    $totalJulio += $contratosExternosData[$conceptKey . '-julio'] ?? 0;
+                                                }
+                                            @endphp
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -2235,6 +2526,7 @@
                                 </table>
                             </div>
                         </div>
+                        @endif
                     </div>
                 @elseif($sheetKey == 'Equipo y Dotacion Salones')
                     <!-- Hoja Equipo y Dotación Salones -->
@@ -2340,6 +2632,83 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Modal para detalles de Rubros Institucionales -->
+                    <div id="rubrosInstitucionalesModal" class="custom-modal" style="display: none;">
+                        <div class="custom-modal-overlay" onclick="cerrarModalRubros()"></div>
+                        <div class="custom-modal-content" style="max-width: 900px;">
+                            <div class="custom-modal-header">
+                                <h5 class="custom-modal-title">
+                                    <i class="fas fa-building"></i> Detalles de Rubros Institucionales
+                                </h5>
+                                <button type="button" class="custom-close-btn" onclick="cerrarModalRubros()">
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                            <div class="custom-modal-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <div class="info-card">
+                                            <h6 class="info-title"><i class="fas fa-calendar-alt"></i> Información del Mes</h6>
+                                            <div class="info-item">
+                                                <strong>Mes:</strong>
+                                                <span id="rubros-modal-mes"></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Total del Mes:</strong>
+                                                <span id="rubros-modal-total" class="text-success font-weight-bold"></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Registros:</strong>
+                                                <span id="rubros-modal-cantidad"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="info-card">
+                                            <h6 class="info-title"><i class="fas fa-chart-pie"></i> Resumen por Categoría</h6>
+                                            <div id="rubros-resumen-categorias">
+                                                <!-- Se llenará dinámicamente -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="info-card">
+                                            <h6 class="info-title"><i class="fas fa-list"></i> Detalles de Gastos</h6>
+                                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                                <table class="table table-striped table-sm" id="rubros-tabla-detalles">
+                                                    <thead class="thead-dark" style="position: sticky; top: 0; z-index: 10;">
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Categoría</th>
+                                                            <th>Descripción</th>
+                                                            <th>Valor</th>
+                                                            <th>Cuenta</th>
+                                                            <th>Tercero</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!-- Se llenará dinámicamente -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="custom-modal-footer">
+                                <button type="button" class="btn btn-info" onclick="exportarRubrosDetalle()">
+                                    <i class="fas fa-download"></i> Exportar Excel
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cerrarModalRubros()">
+                                    <i class="fas fa-times"></i> Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
                 @elseif($sheetKey == 'Aseo y Cafeteria')
                     <!-- Hoja Aseo y Cafetería -->
                     <div class="table-content">
@@ -3672,6 +4041,7 @@
                                         <td class="number-cell">${{ number_format($concepto['ppto_ejecutar']) }}</td>
                                         <td class="number-cell">{{ $concepto['porcentaje_restante'] }}%</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">
                                             @if($concepto['concepto'] == 'PYP ANNUAL FEE- SEP US $ 7,443 TRM 4.300')
                                                 ${{ number_format(29735564) }}
@@ -3697,6 +4067,7 @@
                                             @endif
                                         </td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">
                                             @if($concepto['concepto'] == 'DERECHO EXAMENES US 14409 TRM 4.000')
                                                 ${{ number_format(88440551) }}
@@ -3707,12 +4078,19 @@
                                             @endif
                                         </td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                     </tr>
                                     @endforeach
                                     <tr class="total-row">
@@ -3903,7 +4281,9 @@
                                         <td class="number-cell">${{ number_format($concepto['ppto_ejecutar']) }}</td>
                                         <td class="number-cell">{{ $concepto['porcentaje_restante'] }}%</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">
                                             @if($concepto['concepto'] == 'AFILIACION')
                                                 ${{ number_format(4195000) }}
@@ -3930,12 +4310,19 @@
                                             @endif
                                         </td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                     </tr>
                                     @endforeach
                                     <tr class="total-row">
@@ -4408,14 +4795,23 @@
                                             @endif
                                         </td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                     </tr>
                                     @endforeach
                                     <tr class="total-row">
@@ -4653,9 +5049,13 @@
                                         <td class="number-cell">${{ number_format($reparacionesMayoresData['meses']['enero']) }}</td>
                                         <td class="number-cell">${{ number_format($reparacionesMayoresData['meses']['febrero']) }}</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -4943,9 +5343,13 @@
                                             @endif
                                         </td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                     </tr>
                                     @endforeach
                                     <!-- Fila Total -->
@@ -5171,9 +5575,13 @@
                                         <td class="number-cell text-primary">${{ number_format($mercadeoData['meses']['enero']) }}</td>
                                         <td class="number-cell">${{ number_format($mercadeoData['meses']['febrero']) }}</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -5432,9 +5840,13 @@
                                         <td class="number-cell">${{ number_format($reparacionMueblesData['meses']['enero']) }}</td>
                                         <td class="number-cell">${{ number_format($reparacionMueblesData['meses']['febrero']) }}</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                         <td class="number-cell">$0</td>
+                                            <td class="number-cell editable">$-</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -5854,6 +6266,36 @@
     font-weight: bold !important;
 }
 
+/* Estilos específicos para celdas de rubros institucionales clickeables */
+.rubros-julio-clickeable {
+    cursor: pointer !important;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.rubros-julio-clickeable:hover {
+    background-color: #e3f2fd !important;
+    color: #1976d2 !important;
+    font-weight: bold !important;
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.2);
+}
+
+.rubros-julio-clickeable:hover::after {
+    content: "📋 Ver detalles";
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
 /* Estilos para el modal de detalles */
 .info-card {
     background: #f8f9fa;
@@ -5879,6 +6321,59 @@
     color: #495057;
     display: inline-block;
     min-width: 120px;
+}
+
+/* Estilos específicos para modal de rubros institucionales */
+.categoria-item {
+    padding: 8px 12px;
+    background: #e9ecef;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.categoria-item strong {
+    color: #495057;
+    font-size: 12px;
+}
+
+.categoria-item .text-success {
+    font-weight: bold;
+}
+
+.categoria-item .text-muted {
+    font-size: 11px;
+}
+
+#rubros-tabla-detalles {
+    font-size: 12px;
+}
+
+#rubros-tabla-detalles th {
+    background-color: #343a40;
+    color: white;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    padding: 10px 8px;
+}
+
+#rubros-tabla-detalles td {
+    padding: 8px;
+    vertical-align: middle;
+}
+
+#rubros-tabla-detalles .badge {
+    font-size: 10px;
+    padding: 4px 8px;
+}
+
+#rubros-tabla-detalles .text-right {
+    text-align: right;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
 }
 
 .info-item span {
@@ -5909,15 +6404,30 @@
 
 /* Estilos para modal personalizado */
 .custom-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Estilos específicos para el modal de rubros institucionales */
+#rubrosInstitucionalesModal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 10000 !important;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 .custom-modal-overlay {
@@ -7518,6 +8028,8 @@ function cerrarModal() {
     document.body.style.overflow = 'auto'; // Restaurar scroll del body
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+
 // Función global para abrir el modal
 function abrirModal() {
     const modal = document.getElementById('detalleGastoModal');
@@ -7525,60 +8037,197 @@ function abrirModal() {
     document.body.style.overflow = 'hidden'; // Prevenir scroll del body
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Variables globales
-    let currentSheet = 'BUDGET';
-    let sortOrder = {};
-    let currentPage = 1;
-    let itemsPerPage = 50;
-    let allItems = [];
-    let filteredItems = [];
-    let isLoading = false;
+// Funciones para el modal de Rubros Institucionales (temporalmente simplificadas)
+function cerrarModalRubros() {
+    console.log('Función cerrarModalRubros llamada');
+}
+
+function abrirModalRubros() {
+    console.log('Función abrirModalRubros llamada - usando ventana emergente en su lugar');
+    return true;
+}
+
+// Función para mostrar detalles de rubros institucionales
+async function mostrarDetalleRubrosInstitucionales(mes, rubro = null) {
+    console.log('Iniciando mostrarDetalleRubrosInstitucionales con mes:', mes, 'y rubro:', rubro);
     
-    // Función para mostrar modal de detalles del gasto
-    function mostrarDetalleGasto(element) {
-        // Extraer datos del elemento
-        const datos = {
-            seccion: element.getAttribute('data-seccion'),
-            rubro: element.getAttribute('data-rubro'),
-            cuenta: element.getAttribute('data-cuenta'),
-            documento: element.getAttribute('data-documento'),
-            fecha: element.getAttribute('data-fecha'),
-            descripcion: element.getAttribute('data-descripcion'),
-            nombreTercero: element.getAttribute('data-nombre-tercero'),
-            centroCosto: element.getAttribute('data-centro-costo'),
-            valor: element.getAttribute('data-valor')
-        };
+    try {
+        // Construir URL con parámetros
+        let url = `/contabilidad/presupuesto/rubros-institucionales-detalle/${mes}`;
+        if (rubro) {
+            url += `?rubro=${encodeURIComponent(rubro)}`;
+        }
         
-        // Llenar el modal con los datos
-        document.getElementById('modal-seccion').textContent = datos.seccion || '-';
-        document.getElementById('modal-rubro').textContent = datos.rubro || '-';
-        document.getElementById('modal-cuenta').textContent = datos.cuenta || '-';
-        document.getElementById('modal-documento').textContent = datos.documento || '-';
-        document.getElementById('modal-fecha').textContent = datos.fecha || '-';
-        document.getElementById('modal-valor').textContent = '$' + new Intl.NumberFormat('es-CO').format(datos.valor || 0);
-        document.getElementById('modal-centro-costo').textContent = datos.centroCosto || '-';
-        document.getElementById('modal-descripcion').textContent = datos.descripcion || 'Sin descripción disponible';
-        document.getElementById('modal-nombre-tercero').textContent = datos.nombreTercero || '-';
+        console.log('URL a consultar:', url);
         
-        // Mostrar el modal personalizado
-        abrirModal();
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Datos recibidos del backend:', data);
+
+        // Construir el mensaje para el alert
+        let alertMessage = `📊 Detalle ${rubro ? 'de ' + rubro : 'General'}\n`;
+        alertMessage += `Mes: ${data.mes}\n\n`;
+        alertMessage += `💰 Total: ${data.total_formateado}\n`;
+        alertMessage += `📋 Cantidad de registros: ${data.cantidad_registros}\n\n`;
+
+        if (data.categorias && Object.keys(data.categorias).length > 0) {
+            alertMessage += `📈 Resumen por Categorías\n`;
+            for (const [categoria, info] of Object.entries(data.categorias)) {
+                alertMessage += `${categoria}: ${info.total_formateado} (${info.cantidad} registros, ${info.porcentaje}%)\n`;
+            }
+            alertMessage += '\n';
+        }
+
+        // Mostrar alert
+        alert(alertMessage);
+
+        // Crear contenido HTML para la ventana emergente
+        let htmlContent = `
+        <html>
+        <head>
+            <title>Detalle ${rubro ? 'de ' + rubro : 'General'} - ${data.mes}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+                .header { background: #2563eb; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                .summary { background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                .categoria { background: #e5e7eb; padding: 10px; margin: 10px 0; border-radius: 6px; }
+                .transaccion { border-bottom: 1px solid #d1d5db; padding: 10px 0; }
+                .valor { font-weight: bold; color: #059669; }
+                .fecha { color: #6b7280; }
+                .tercero { color: #374151; font-style: italic; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>📊 Detalle ${rubro ? 'de ' + rubro : 'General'}</h1>
+                <p>Mes: ${data.mes}</p>
+            </div>
+            
+            <div class="summary">
+                <h2>💰 Resumen</h2>
+                <p><strong>Total:</strong> ${data.total_formateado}</p>
+                <p><strong>Cantidad de registros:</strong> ${data.cantidad_registros}</p>
+            </div>`;
+
+        if (data.categorias && Object.keys(data.categorias).length > 0) {
+            htmlContent += `<div class="categoria">
+                <h2>📈 Resumen por Categorías</h2>`;
+            for (const [categoria, info] of Object.entries(data.categorias)) {
+                htmlContent += `<p><strong>${categoria}:</strong> ${info.total_formateado} (${info.cantidad} registros, ${info.porcentaje}%)</p>`;
+            }
+            htmlContent += `</div>`;
+        }
+
+        if (data.transacciones && data.transacciones.length > 0) {
+            htmlContent += `<div>
+                <h2>📋 Detalle de Transacciones</h2>`;
+            data.transacciones.forEach((transaccion, index) => {
+                htmlContent += `
+                <div class="transaccion">
+                    <p><strong>${index + 1}. ${transaccion.categoria}</strong></p>
+                    <p class="fecha">${transaccion.fecha} - ${transaccion.descripcion}</p>
+                    <p class="valor">Valor: ${transaccion.valor_formateado}</p>
+                    <p>Cuenta: ${transaccion.cuenta}</p>
+                    <p class="tercero">Tercero: ${transaccion.tercero}</p>
+                </div>`;
+            });
+            htmlContent += `</div>`;
+        }
+
+        htmlContent += `</body></html>`;
+
+        // Abrir ventana emergente
+        const popup = window.open('', 'DetalleRubros', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        popup.document.write(htmlContent);
+        popup.document.close();
+
+    } catch (error) {
+        console.error('Error al obtener detalles de rubros institucionales:', error);
+        alert('Error al cargar los detalles: ' + error.message);
+    }
+}
+
+// Funciones para el modal de Rubros Institucionales (temporalmente simplificadas)
+function cerrarModalRubros() {
+    console.log('Función cerrarModalRubros llamada');
+}
+
+function abrirModalRubros() {
+    console.log('Función abrirModalRubros llamada - usando ventana emergente en su lugar');
+    return true;
+}
+
+// Función para mostrar modal de detalles del gasto
+function mostrarDetalleGasto(element) {
+    // Extraer datos del elemento
+    const datos = {
+        seccion: element.getAttribute('data-seccion'),
+        rubro: element.getAttribute('data-rubro'),
+        cuenta: element.getAttribute('data-cuenta'),
+        documento: element.getAttribute('data-documento'),
+        fecha: element.getAttribute('data-fecha'),
+        descripcion: element.getAttribute('data-descripcion'),
+        nombreTercero: element.getAttribute('data-nombre-tercero'),
+        centroCosto: element.getAttribute('data-centro-costo'),
+        valor: element.getAttribute('data-valor')
+    };
+    
+    // Llenar el modal con los datos
+    document.getElementById('modal-seccion').textContent = datos.seccion || '-';
+    document.getElementById('modal-rubro').textContent = datos.rubro || '-';
+    document.getElementById('modal-cuenta').textContent = datos.cuenta || '-';
+    document.getElementById('modal-documento').textContent = datos.documento || '-';
+    document.getElementById('modal-fecha').textContent = datos.fecha || '-';
+    document.getElementById('modal-valor').textContent = '$' + new Intl.NumberFormat('es-CO').format(datos.valor || 0);
+    document.getElementById('modal-centro-costo').textContent = datos.centroCosto || '-';
+    document.getElementById('modal-descripcion').textContent = datos.descripcion || 'Sin descripción disponible';
+    document.getElementById('modal-nombre-tercero').textContent = datos.nombreTercero || '-';
+    
+    // Mostrar el modal personalizado
+    abrirModal();
+}
+
+// Event listener para valores clickeables
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('valor-clickeable')) {
+        e.preventDefault();
+        mostrarDetalleGasto(e.target);
     }
     
-    // Event listener para valores clickeables
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('valor-clickeable')) {
-            e.preventDefault();
-            mostrarDetalleGasto(e.target);
-        }
-    });
-    
-    // Event listeners para el modal personalizado
-    document.addEventListener('keydown', function(e) {
+    // Event listener para celdas de rubros institucionales
+    if (e.target.classList.contains('rubros-julio-clickeable')) {
+        e.preventDefault();
+        console.log('Clic detectado en celda de rubros institucionales');
+        const mes = e.target.getAttribute('data-mes');
+        const rubro = e.target.getAttribute('data-rubro');
+        console.log('Mes obtenido del atributo:', mes);
+        console.log('Rubro obtenido del atributo:', rubro);
+        mostrarDetalleRubrosInstitucionales(mes, rubro);
+    }
+});
+
+// Event listeners para los modales
+document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             const modal = document.getElementById('detalleGastoModal');
+            const modalRubros = document.getElementById('rubrosInstitucionalesModal');
             if (modal.style.display === 'flex') {
                 cerrarModal();
+            }
+            if (modalRubros.style.display === 'flex') {
+                cerrarModalRubros();
             }
         }
     });
@@ -8186,6 +8835,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Cargar datos iniciales para las secciones si estamos en la pestaña Secciones
     loadInitialSectionData();
+    
+    // Inicializar las tablas de secciones
+    initSectionTables();
+    
+    // Inicializar sistema de filtros
+    initFilterSystem();
 });
 
 // Función para cargar datos iniciales de las secciones
@@ -8334,10 +8989,6 @@ function cargarMasRegistros(filtro) {
 }
 
 // Funciones para las tablas de secciones
-document.addEventListener('DOMContentLoaded', function() {
-    initSectionTables();
-});
-
 function initSectionTables() {
     // Hacer editables solo las celdas de ejecución (no presupuesto)
     const editableCells = document.querySelectorAll('.section-budget-table .editable[data-type="ejecucion"]');
@@ -8443,7 +9094,7 @@ function formatNumber(num) {
 }
 
 // Funcionalidad de filtrado de tablas
-document.addEventListener('DOMContentLoaded', function() {
+function initFilterSystem() {
     console.log('Inicializando sistema de filtros...');
     
     const filterDropdown = document.getElementById('budget-filter');
@@ -8984,485 +9635,154 @@ document.addEventListener('DOMContentLoaded', function() {
     // Función de debugging para entender la estructura de las tablas
     function debugTableStructure() {
         console.log('=== DEBUG: Estructura de Tablas ===');
-        
+
         const budgetTables = document.querySelectorAll('.budget-table');
-        
+
         budgetTables.forEach((table, tableIndex) => {
-            console.log(`\nTabla ${tableIndex + 1}:`);
+            console.log(`Tabla ${tableIndex + 1} encontrada`);
             
-            // Headers
-            const headers = table.querySelectorAll('thead th');
-            console.log('Headers:', Array.from(headers).map((h, i) => `[${i}] ${h.textContent.trim()}`));
-            
-            // Primera fila de datos
-            const firstDataRow = table.querySelector('tbody tr:not(.total-row)');
-            if (firstDataRow) {
-                const dataCells = firstDataRow.querySelectorAll('td');
-                console.log('Primera fila datos:', Array.from(dataCells).map((c, i) => `[${i}] ${c.textContent.trim()} (${c.classList.toString()})`));
-            }
-            
-            // Fila de totales
             const totalRow = table.querySelector('.total-row');
             if (totalRow) {
                 const totalCells = totalRow.querySelectorAll('td');
                 console.log('Fila totales:', Array.from(totalCells).map((c, i) => `[${i}] ${c.textContent.trim()} (${c.classList.toString()})`));
             }
         });
-        
-        console.log('=== FIN DEBUG ===\n');
+
+        console.log('=== FIN DEBUG ===');
     }
-    
-    function getColumnIndex(cell) {
-        const row = cell.closest('tr');
-        const cells = row.querySelectorAll('td');
-        return Array.from(cells).indexOf(cell);
-    }
-    
-    // Funciones para persistencia de datos
-    function extractCellData(cell) {
-        const row = cell.closest('tr');
-        const table = cell.closest('table');
-        const budgetSection = cell.closest('.budget-section');
+
+    // Configurar funcionalidad de Rubros Institucionales
+    function configurarRubrosInstitucionales() {
+        const celdas = document.querySelectorAll('.rubros-julio-clickeable');
+        console.log('Configurando celdas clickeables de rubros:', celdas.length);
         
-        if (!row || !table) {
-            console.error('❌ No se pudo encontrar fila o tabla para la celda');
-            console.error('❌ Elemento:', cell.tagName, cell.className);
-            return null;
-        }
-        
-        // Obtener nombre de la tabla desde el título de la sección
-        let tablaNombre = 'Presupuesto';
-        if (budgetSection) {
-            const titleElement = budgetSection.querySelector('h5');
-            tablaNombre = titleElement ? titleElement.textContent.trim() : 'Presupuesto';
-        }
-        
-        // Obtener concepto desde la primera celda de la fila
-        const firstCell = row.querySelector('td');
-        const concepto = firstCell ? firstCell.textContent.trim().replace(/\*\*/g, '') : 'Sin concepto';
-        
-        // Obtener nombre de la columna desde el header
-        const cellIndex = getColumnIndex(cell);
-        const headerRow = table.querySelector('thead tr');
-        const headerCells = headerRow ? headerRow.querySelectorAll('th') : [];
-        const columna = headerCells[cellIndex] ? headerCells[cellIndex].textContent.trim() : `Columna_${cellIndex}`;
-        
-        // Extraer valor numérico
-        const valor = extractNumericValue(cell.textContent);
-        
-        // Determinar si es una fila de total
-        const esTotal = row.classList.contains('total-row');
-        
-        const cellData = {
-            tabla_nombre: tablaNombre,
-            concepto: concepto,
-            columna: columna,
-            valor: valor,
-            fila_orden: Array.from(row.parentNode.children).indexOf(row),
-            columna_orden: cellIndex,
-            es_total: esTotal
-        };
-        
-        console.log('📊 Celda extraída - Concepto:', concepto, 'Columna:', columna, 'Valor:', valor);
-        return cellData;
-    }
-    
-    function saveAllData() {
-        const saveButton = document.getElementById('save-data');
-        
-        // Deshabilitar botón y cambiar texto
-        if (saveButton) {
-            saveButton.disabled = true;
-            saveButton.innerHTML = '⏳ Guardando...';
-        }
-        
-        // Buscar todas las celdas editables que no sean totales
-        const editableCells = document.querySelectorAll('.number-cell:not(.total-row .number-cell)');
-        const dataToSave = [];
-        
-        console.log(`📊 Preparando guardado de ${editableCells.length} celdas...`);
-        
-        // Extraer datos de todas las celdas
-        editableCells.forEach((cell, index) => {
-            const cellData = extractCellData(cell);
-            if (cellData && !cellData.es_total) {
-                dataToSave.push(cellData);
-            }
-        });
-        
-        console.log(`💾 ${dataToSave.length} celdas válidas para guardar`);
-        
-        if (dataToSave.length === 0) {
-            console.log('⚠️ No hay datos para guardar');
-            if (saveButton) {
-                saveButton.disabled = false;
-                saveButton.innerHTML = '💾 Guardar Datos';
-            }
-            return;
-        }
-        
-        // Verificar CSRF token
-        const csrfToken = document.querySelector('meta[name="csrf-token"]');
-        if (!csrfToken) {
-            console.error('❌ Token CSRF no encontrado');
-            if (saveButton) {
-                saveButton.disabled = false;
-                saveButton.innerHTML = '💾 Guardar Datos';
-            }
-            return;
-        }
-        
-        // Enviar datos al servidor
-        fetch('{{ route("presupuesto.guardar-celda-masivo") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken.getAttribute('content')
-            },
-            body: JSON.stringify({
-                celdas: dataToSave
-            })
-        })
-        .then(response => {
-            console.log('📨 Respuesta del servidor:', response.status, response.statusText);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('📦 Datos recibidos:', data);
-            if (data.success) {
-                console.log(`✅ ${data.guardadas} celdas guardadas exitosamente`);
-                
-                // Mostrar mensaje de éxito
-                if (saveButton) {
-                    saveButton.innerHTML = '✅ ¡Guardado!';
-                    saveButton.style.backgroundColor = '#28a745';
-                    
-                    setTimeout(() => {
-                        saveButton.innerHTML = '💾 Guardar Datos';
-                        saveButton.style.backgroundColor = '#007bff';
-                        saveButton.disabled = false;
-                    }, 1000); // Reducido de 3000 a 1000ms (1 segundo)
-                }
-                
-                // Agregar indicador visual a todas las celdas guardadas
-                editableCells.forEach(cell => {
-                    cell.style.borderLeft = '3px solid #28a745';
-                    setTimeout(() => {
-                        cell.style.borderLeft = '';
-                    }, 2000); // Reducido de 5000 a 2000ms (2 segundos)
-                });
-                
-            } else {
-                console.error('❌ Error al guardar:', data.message);
-                if (saveButton) {
-                    saveButton.innerHTML = '❌ Error';
-                    saveButton.style.backgroundColor = '#dc3545';
-                    
-                    setTimeout(() => {
-                        saveButton.innerHTML = '💾 Guardar Datos';
-                        saveButton.style.backgroundColor = '#007bff';
-                        saveButton.disabled = false;
-                    }, 1500); // Reducido de 3000 a 1500ms (1.5 segundos)
-                }
-            }
-        })
-        .catch(error => {
-            console.error('❌ Error de conexión:', error);
-            if (saveButton) {
-                saveButton.innerHTML = '❌ Error';
-                saveButton.style.backgroundColor = '#dc3545';
-                
-                setTimeout(() => {
-                    saveButton.innerHTML = '💾 Guardar Datos';
-                    saveButton.style.backgroundColor = '#007bff';
-                    saveButton.disabled = false;
-                }, 1500); // Reducido de 3000 a 1500ms (1.5 segundos)
-            }
-        });
-    }
-    
-    // Función para cargar datos desde la base de datos
-    function loadDataFromDatabase() {
-        // Los datos ya vienen desde el servidor con la variable $spreadsheetData
-        @if(isset($spreadsheetData))
-            const spreadsheetData = @json($spreadsheetData);
-            console.log('Datos cargados desde la base de datos:', spreadsheetData);
-            populateTableWithData(spreadsheetData);
-        @else
-            console.log('No hay datos guardados para cargar');
-        @endif
-    }
-    
-    function populateTableWithData(spreadsheetData) {
-        // Iterar sobre todas las tablas y llenar con datos guardados
-        Object.keys(spreadsheetData).forEach(tablaNombre => {
-            const tabla = spreadsheetData[tablaNombre];
-            
-            Object.keys(tabla).forEach(concepto => {
-                const conceptoData = tabla[concepto];
-                
-                Object.keys(conceptoData).forEach(columna => {
-                    const cellData = conceptoData[columna];
-                    
-                    // Buscar la celda correspondiente en el DOM
-                    const cell = findCellInDOM(tablaNombre, concepto, columna);
-                    if (cell && !cellData.es_total) {
-                        // Solo llenar celdas no-totales (los totales se calculan)
-                        cell.textContent = `$${formatNumber(cellData.valor)}`;
-                        cell.style.backgroundColor = '#e8f5e8'; // Indicar que viene de BD
-                    }
-                });
+        celdas.forEach(celda => {
+            celda.addEventListener('click', function() {
+                const mes = this.dataset.mes;
+                const rubro = this.dataset.rubro;
+                console.log(`Clic en ${rubro} para ${mes}`);
+                mostrarDetalleRubrosInstitucionales(mes, rubro);
             });
         });
-        
-        // Recalcular totales después de cargar datos
-        setTimeout(() => {
-            calculateAllTotals();
-        }, 500);
     }
-    
-    function findCellInDOM(tablaNombre, concepto, columna) {
-        // Buscar la sección de presupuesto correspondiente
-        const sections = document.querySelectorAll('.budget-section');
+
+    // Función para mostrar detalle de rubros institucionales
+    function mostrarDetalleRubrosInstitucionales(mes, rubro) {
+        console.log(`Mostrando detalles de ${rubro} en ${mes}`);
         
-        for (let section of sections) {
-            const titleElement = section.querySelector('h5');
-            if (titleElement && titleElement.textContent.trim() === tablaNombre) {
-                const table = section.querySelector('table');
-                if (table) {
-                    // Buscar la fila con el concepto
-                    const rows = table.querySelectorAll('tbody tr');
-                    for (let row of rows) {
-                        const firstCell = row.querySelector('td');
-                        if (firstCell && firstCell.textContent.trim().replace(/\*\*/g, '') === concepto) {
-                            // Encontrar la columna correspondiente
-                            const headerCells = table.querySelectorAll('thead th');
-                            for (let i = 0; i < headerCells.length; i++) {
-                                if (headerCells[i].textContent.trim() === columna) {
-                                    const targetCell = row.querySelectorAll('td')[i];
-                                    if (targetCell && targetCell.classList.contains('number-cell')) {
-                                        return targetCell;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        const modal = document.getElementById('rubrosInstitucionalesModal');
+        if (!modal) {
+            console.error('Modal no encontrado');
+            return;
         }
-        return null;
+
+        // Mostrar modal con datos
+        modal.style.display = 'block';
+        
+        // Simular llamada AJAX
+        fetch(`/contabilidad/presupuesto/rubros-institucionales-detalle/${mes}?rubro=${encodeURIComponent(rubro)}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Datos recibidos:', data);
+                // Aquí puedes procesar los datos recibidos
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cargar los detalles');
+            });
     }
-    
-    // Cargar datos al inicializar la página
-    loadDataFromDatabase();
-    
-    // Inicializar sistema completo después de cargar datos
-    setTimeout(() => {
-        console.log('🚀 Inicializando sistema completo...');
-        
-        // Solo inicializar auto-cálculo si ya hay modo editable activado
-        const editButton = document.querySelector('[onclick="toggleEditable()"]');
-        if (editButton && editButton.textContent.includes('Solo Lectura')) {
-            console.log('📝 Modo editable detectado, inicializando auto-cálculo...');
-            initializeAutoCalculation();
-            initializeStatElements();
-        } else {
-            console.log('📖 Modo solo lectura, esperando activación manual');
-        }
-    }, 1000);
-    
-    // Función de test para debug
-    window.testSaveFunction = function() {
-        console.log('🧪 Iniciando test de función de guardado...');
-        
-        // Simular datos de celda
-        const testCellData = {
-            tabla_nombre: 'Test Table',
-            concepto: 'Test Concepto',
-            columna: 'Enero',
-            valor: 12345,
-            fila_orden: 1,
-            columna_orden: 1,
-            es_total: false
-        };
-        
-        // Crear elemento de prueba
-        const testElement = document.createElement('div');
-        testElement.textContent = '$12,345';
-        
-        console.log('🔢 Datos de prueba:', testCellData);
-        saveCellToDatabase(testCellData, testElement);
-    };
-    
-    // Función para test directo de edición
-    window.testDirectEdit = function() {
-        console.log('🧪 Test directo de edición...');
-        
-        // Buscar la primera celda editable
-        const firstCell = document.querySelector('.number-cell:not(.total-row .number-cell)');
-        if (firstCell) {
-            console.log('🎯 Celda encontrada:', firstCell.textContent);
-            
-            // Hacer la celda editable
-            firstCell.contentEditable = true;
-            firstCell.style.backgroundColor = '#fff3cd';
-            
-            // Simular edición
-            firstCell.textContent = '$99,999';
-            
-            // Extraer datos
-            const cellData = extractCellData(firstCell);
-            console.log('📊 Datos extraídos:', cellData);
-            
-            if (cellData) {
-                saveCellToDatabase(cellData, firstCell);
-            }
-        } else {
-            console.log('❌ No se encontró celda editable');
+
+    // Función para cerrar modal
+    window.cerrarModalRubros = function() {
+        const modal = document.getElementById('rubrosInstitucionalesModal');
+        if (modal) {
+            modal.style.display = 'none';
         }
     };
-    
-    console.log('🎯 Funciones de test disponibles:');
-    console.log('- testSaveFunction() - Prueba función de guardado');
-    console.log('- testDirectEdit() - Prueba edición directa');
 
-    // Filtro por mes para secciones
-    const monthFilter = document.getElementById('monthFilter');
-    const monthFilterStatus = document.getElementById('monthFilterStatus');
-    
-    if (monthFilter) {
-        monthFilter.addEventListener('change', function() {
-            const selectedMonth = this.value;
-            const selectedText = this.options[this.selectedIndex].text;
-            
-            if (selectedMonth) {
-                // Mostrar loading
-                showLoadingForSections();
-                
-                // Actualizar estado del filtro
-                monthFilterStatus.textContent = `Filtrando por: ${selectedText}`;
-                
-                // Realizar petición AJAX
-                fetch('{{ route("presupuesto.filter-sections-by-month") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({
-                        month: selectedMonth
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateSectionTables(data.data);
-                        hideLoadingForSections();
-                    } else {
-                        console.error('Error al filtrar por mes:', data);
-                        hideLoadingForSections();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error en la petición:', error);
-                    hideLoadingForSections();
-                });
-            } else {
-                // Reset - mostrar todos los meses
-                monthFilterStatus.textContent = 'Mostrando todos los meses';
-                location.reload(); // Recargar para mostrar todos los datos
-            }
-        });
-    }
+    // Llamar configuraciones específicas
+    configurarRubrosInstitucionales()
 
-    function showLoadingForSections() {
-        const tables = ['preescolar-table', 'escuela-media-table', 'escuela-alta-table'];
-        tables.forEach(tableId => {
-            const table = document.getElementById(tableId);
-            if (table) {
-                table.style.opacity = '0.5';
-                table.style.pointerEvents = 'none';
-            }
-        });
-    }
+}); // Fin DOMContentLoaded
 
-    function hideLoadingForSections() {
-        const tables = ['preescolar-table', 'escuela-media-table', 'escuela-alta-table'];
-        tables.forEach(tableId => {
-            const table = document.getElementById(tableId);
-            if (table) {
-                table.style.opacity = '1';
-                table.style.pointerEvents = 'auto';
-            }
-        });
-    }
+// Funciones globales fuera del DOMContentLoaded
+function showLoadingForSections() {
+    const tables = ['preescolar-tbody', 'escuela-media-tbody', 'escuela-alta-tbody'];
+    tables.forEach(tableId => {
+        const table = document.getElementById(tableId);
+        if (table) {
+            table.style.opacity = '0.5';
+            table.style.pointerEvents = 'none';
+        }
+    });
+}
 
-    function updateSectionTables(data) {
-        // Actualizar tabla Preescolar y Primaria
-        updateSectionTable('preescolar-tbody', data['PREESCOLAR Y PRIMARIA'] || {}, 'preescolar');
-        
-        // Actualizar tabla Escuela Media
-        updateSectionTable('escuela-media-tbody', data['ESCUELA MEDIA'] || {}, 'escuela-media');
-        
-        // Actualizar tabla Escuela Alta
-        updateSectionTable('escuela-alta-tbody', data['ALTA'] || {}, 'escuela-alta');
-    }
+function hideLoadingForSections() {
+    const tables = ['preescolar-tbody', 'escuela-media-tbody', 'escuela-alta-tbody'];
+    tables.forEach(tableId => {
+        const table = document.getElementById(tableId);
+        if (table) {
+            table.style.opacity = '1';
+            table.style.pointerEvents = 'auto';
+        }
+    });
+}
 
-    function updateSectionTable(tbodyId, sectionData, sectionKey) {
-        const tbody = document.getElementById(tbodyId);
-        if (!tbody) return;
+function updateSectionTables(data) {
+    updateSectionTable('preescolar-tbody', data['PREESCOLAR Y PRIMARIA'] || {}, 'preescolar');
+    updateSectionTable('escuela-media-tbody', data['ESCUELA MEDIA'] || {}, 'escuela-media');
+    updateSectionTable('escuela-alta-tbody', data['ALTA'] || {}, 'escuela-alta');
+}
 
-        // Limpiar tabla
-        tbody.innerHTML = '';
+function updateSectionTable(tbodyId, sectionData, sectionKey) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
 
-        let totalPresupuesto = 0;
-        let totalEjecucion = 0;
-        let totalSaldo = 0;
+    tbody.innerHTML = '';
 
-        // Agregar filas de datos
-        Object.keys(sectionData).forEach(concepto => {
-            const datos = sectionData[concepto];
-            const presupuesto = datos.presupuesto || 0;
-            const ejecutado = datos.ejecutado || 0;
-            const saldo = datos.saldo || 0;
+    let totalPresupuesto = 0;
+    let totalEjecucion = 0;
+    let totalSaldo = 0;
 
-            totalPresupuesto += presupuesto;
-            totalEjecucion += ejecutado;
-            totalSaldo += saldo;
+    Object.keys(sectionData).forEach(concepto => {
+        const datos = sectionData[concepto];
+        const presupuesto = datos.presupuesto || 0;
+        const ejecutado = datos.ejecutado || 0;
+        const saldo = datos.saldo || 0;
 
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${concepto}</td>
-                <td class="number-cell" data-section="${sectionKey}" data-concept="${concepto}" data-type="presupuesto">${formatNumber(presupuesto)}</td>
-                <td class="number-cell editable" data-section="${sectionKey}" data-concept="${concepto}" data-type="ejecucion">${formatNumber(ejecutado)}</td>
-                <td class="number-cell calculated ${saldo < 0 ? 'negative' : ''}">${formatNumber(saldo)}</td>
-            `;
-            tbody.appendChild(row);
-        });
+        totalPresupuesto += presupuesto;
+        totalEjecucion += ejecutado;
+        totalSaldo += saldo;
 
-        // Agregar fila total
-        const totalRow = document.createElement('tr');
-        totalRow.className = 'total-row';
-        totalRow.innerHTML = `
-            <td><strong>TOTAL</strong></td>
-            <td class="number-cell total-presupuesto"><strong>${formatNumber(totalPresupuesto)}</strong></td>
-            <td class="number-cell total-ejecucion"><strong>${formatNumber(totalEjecucion)}</strong></td>
-            <td class="number-cell total-saldo ${totalSaldo < 0 ? 'negative' : ''}"><strong>${formatNumber(totalSaldo)}</strong></td>
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${concepto}</td>
+            <td class="number-cell" data-section="${sectionKey}" data-concept="${concepto}" data-type="presupuesto">${formatNumber(presupuesto)}</td>
+            <td class="number-cell editable" data-section="${sectionKey}" data-concept="${concepto}" data-type="ejecucion">${formatNumber(ejecutado)}</td>
+            <td class="number-cell calculated ${saldo < 0 ? 'negative' : ''}">${formatNumber(saldo)}</td>
         `;
-        tbody.appendChild(totalRow);
-    }
+        tbody.appendChild(row);
+    });
 
-    function formatNumber(number) {
-        return new Intl.NumberFormat('es-CO').format(number);
-    }
+    const totalRow = document.createElement('tr');
+    totalRow.className = 'total-row';
+    totalRow.innerHTML = `
+        <td><strong>TOTAL</strong></td>
+        <td class="number-cell total-presupuesto"><strong>${formatNumber(totalPresupuesto)}</strong></td>
+        <td class="number-cell total-ejecucion"><strong>${formatNumber(totalEjecucion)}</strong></td>
+        <td class="number-cell total-saldo ${totalSaldo < 0 ? 'negative' : ''}"><strong>${formatNumber(totalSaldo)}</strong></td>
+    `;
+    tbody.appendChild(totalRow);
+}
 
-    // Hacer funciones globales
-    window.updateSectionTables = updateSectionTables;
-    window.updateSectionTable = updateSectionTable;
-    window.formatNumber = formatNumber;
-});
+function formatNumber(number) {
+    return new Intl.NumberFormat('es-CO').format(number);
+}
+
+// Hacer funciones globales
+window.updateSectionTables = updateSectionTables;
+window.updateSectionTable = updateSectionTable;
+window.formatNumber = formatNumber;
+
 </script>
 @stop

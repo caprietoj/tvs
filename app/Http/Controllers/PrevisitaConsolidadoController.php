@@ -139,7 +139,7 @@ class PrevisitaConsolidadoController extends Controller
             'aprobacion_sitio' => 'required|boolean',
             'observaciones_recomendaciones' => 'nullable|string',
             'archivos_novedades' => 'nullable|array|max:100', // Máximo 100 archivos
-            'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp,doc,docx|max:10240' // 10MB máximo por archivo, incluye Word
+            'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp,doc,docx|max:1048576' // 1GB máximo por archivo, incluye Word
         ], [
             'lugar.required' => 'El lugar es obligatorio.',
             'fecha_visita.required' => 'La fecha de visita es obligatoria.',
@@ -151,7 +151,7 @@ class PrevisitaConsolidadoController extends Controller
             'archivos_novedades.max' => 'No se pueden subir más de 100 archivos.',
             'archivos_novedades.*.file' => 'Cada archivo debe ser un archivo válido.',
             'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP, WEBP, DOC y DOCX.',
-            'archivos_novedades.*.max' => 'Cada archivo no debe superar los 10MB.'
+            'archivos_novedades.*.max' => 'Cada archivo no debe superar 1GB.'
         ]);
 
         if ($validator->fails()) {
@@ -236,7 +236,7 @@ class PrevisitaConsolidadoController extends Controller
             'aprobacion_sitio' => 'required|boolean',
             'observaciones_recomendaciones' => 'nullable|string',
             'archivos_novedades' => 'nullable|array|max:100', // Máximo 100 archivos
-            'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp,doc,docx|max:10240' // 10MB máximo por archivo, incluye Word
+            'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp,doc,docx|max:1048576' // 1GB máximo por archivo, incluye Word
         ], [
             'lugar.required' => 'El lugar es obligatorio.',
             'fecha_visita.required' => 'La fecha de visita es obligatoria.',
@@ -248,7 +248,7 @@ class PrevisitaConsolidadoController extends Controller
             'archivos_novedades.max' => 'No se pueden subir más de 100 archivos.',
             'archivos_novedades.*.file' => 'Cada archivo debe ser un archivo válido.',
             'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP, WEBP, DOC y DOCX.',
-            'archivos_novedades.*.max' => 'Cada archivo no debe superar los 10MB.'
+            'archivos_novedades.*.max' => 'Cada archivo no debe superar 1GB.'
         ]);
 
         if ($validator->fails()) {

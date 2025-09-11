@@ -219,7 +219,7 @@
                                                 <h5>Arrastra archivos aquí o haz clic para seleccionar</h5>
                                                 <p class="text-muted">
                                                     Formatos permitidos: PDF, JPG, PNG, GIF, BMP, WEBP, DOC, DOCX<br>
-                                                    Tamaño máximo: 10MB por archivo<br>
+                                                    Tamaño máximo: 1GB por archivo<br>
                                                     Máximo 100 archivos por previsita
                                                 </p>
                                                 <input type="file" 
@@ -662,7 +662,7 @@
     $(document).ready(function() {
         // Variables globales
         let selectedFiles = [];
-        const maxFileSize = 10485760; // 10MB
+        const maxFileSize = 1073741824; // 1GB
         const allowedTypes = [
             'application/pdf',
             'image/jpeg',
@@ -670,7 +670,9 @@
             'image/png',
             'image/gif',
             'image/bmp',
-            'image/webp'
+            'image/webp',
+            'application/msword', // Archivos .doc
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // Archivos .docx
         ];
         
         // Inicializar drag and drop
@@ -774,7 +776,7 @@
             
             // Validar tamaño
             if (file.size > maxFileSize) {
-                showFileError(`El archivo "${file.name}" supera el límite de 10MB.`, 'size');
+                showFileError(`El archivo "${file.name}" supera el límite de 1GB.`, 'size');
                 return false;
             }
             
@@ -782,8 +784,22 @@
         }
         
         function addFileToDisplay(file, index) {
-            const fileType = file.type.startsWith('image/') ? 'image' : 'pdf';
-            const icon = fileType === 'image' ? 'fas fa-image text-success' : 'fas fa-file-pdf text-danger';
+            let fileType, icon;
+            
+            if (file.type.startsWith('image/')) {
+                fileType = 'image';
+                icon = 'fas fa-image text-success';
+            } else if (file.type === 'application/pdf') {
+                fileType = 'pdf';
+                icon = 'fas fa-file-pdf text-danger';
+            } else if (file.type === 'application/msword' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                fileType = 'word';
+                icon = 'fas fa-file-word text-primary';
+            } else {
+                fileType = 'file';
+                icon = 'fas fa-file text-secondary';
+            }
+            
             const sizeFormatted = formatFileSize(file.size);
             
             const fileElement = $(`
@@ -820,8 +836,8 @@
             } else {
                 content.find('h5').text('Arrastra archivos aquí o haz clic para seleccionar');
                 content.find('p').html(`
-                    Formatos permitidos: PDF, JPG, PNG, GIF, BMP, WEBP<br>
-                    Tamaño máximo: 10MB por archivo<br>
+                    Formatos permitidos: PDF, JPG, PNG, GIF, BMP, WEBP, DOC, DOCX<br>
+                    Tamaño máximo: 1GB por archivo<br>
                     Máximo 100 archivos por previsita
                 `);
                 uploadArea.removeClass('has-files');
