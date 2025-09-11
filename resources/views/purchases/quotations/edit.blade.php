@@ -404,11 +404,11 @@
                                         <td class="align-middle">
                                             <span class="badge badge-success badge-lg item-total" id="item_total_{{ $index }}">
                                                 {{ isset($existingPrices[$index]) && isset($item['quantity']) ? 
-                                                    '$' . number_format($existingPrices[$index] * $item['quantity'], 2) : '$0.00' }}
+                                                    '$' . number_format((float)($existingPrices[$index] ?? 0) * (float)($item['quantity'] ?? 0), 2) : '$0.00' }}
                                             </span>
                                             <input type="hidden" name="item_totals[{{ $index }}]" id="item_total_input_{{ $index }}" 
                                                 value="{{ isset($existingPrices[$index]) && isset($item['quantity']) ? 
-                                                    $existingPrices[$index] * $item['quantity'] : 0 }}">
+                                                    (float)($existingPrices[$index] ?? 0) * (float)($item['quantity'] ?? 0) : 0 }}">
                                         </td>
                                     </tr>
                                     @endif
@@ -494,11 +494,11 @@
                                             <td>
                                                 <span class="item-total" id="item_total_{{ $index }}">
                                                     {{ isset($existingPrices[$index]) && isset($service['quantity']) ? 
-                                                        '$' . number_format($existingPrices[$index] * $service['quantity'], 2) : '$0.00' }}
+                                                        '$' . number_format((float)($existingPrices[$index] ?? 0) * (float)($service['quantity'] ?? 0), 2) : '$0.00' }}
                                                 </span>
                                                 <input type="hidden" name="item_totals[{{ $index }}]" id="item_total_input_{{ $index }}" 
                                                     value="{{ isset($existingPrices[$index]) && isset($service['quantity']) ? 
-                                                        $existingPrices[$index] * $service['quantity'] : 0 }}">
+                                                        (float)($existingPrices[$index] ?? 0) * (float)($service['quantity'] ?? 0) : 0 }}">
                                             </td>
                                         </tr>
                                         @endif
