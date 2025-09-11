@@ -156,6 +156,7 @@
                                     <th data-sort="rubro">Rubro</th>
                                     <th data-sort="cuenta">Cuenta</th>
                                     <th data-sort="documento">Documento</th>
+                                    <th data-sort="fuente">Fuente</th>
                                     <th data-sort="fecha">Fecha</th>
                                     <th data-sort="valor">Valor</th>
                                     <th data-sort="valor_moneda">Valor Moneda</th>
@@ -171,6 +172,7 @@
                                             <td>{{ $item->rubro }}</td>
                                             <td>{{ $item->cuenta }}</td>
                                             <td>{{ $item->documento ?? '-' }}</td>
+                                            <td>{{ $item->fuente ?? '-' }}</td>
                                             <td>{{ $item->fecha ? \Carbon\Carbon::parse($item->fecha)->format('d/m/Y') : '-' }}</td>
                                             <td class="number-cell valor-clickeable" 
                                 data-item-id="{{ $item->id }}"
@@ -178,6 +180,7 @@
                                 data-rubro="{{ $item->rubro }}"
                                 data-cuenta="{{ $item->cuenta }}"
                                 data-documento="{{ $item->documento ?? '-' }}"
+                                data-fuente="{{ $item->fuente ?? '-' }}"
                                 data-fecha="{{ $item->fecha ? \Carbon\Carbon::parse($item->fecha)->format('d/m/Y') : '-' }}"
                                 data-descripcion="{{ $item->descripcion ?? '-' }}"
                                 data-nombre-tercero="{{ $item->nombre_tercero ?? '-' }}"
@@ -251,6 +254,10 @@
                                             <div class="info-item">
                                                 <strong>Documento:</strong>
                                                 <span id="modal-documento"></span>
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Fuente:</strong>
+                                                <span id="modal-fuente"></span>
                                             </div>
                                         </div>
                                     </div>
@@ -7878,6 +7885,7 @@ document.addEventListener('DOMContentLoaded', function() {
             rubro: element.getAttribute('data-rubro'),
             cuenta: element.getAttribute('data-cuenta'),
             documento: element.getAttribute('data-documento'),
+            fuente: element.getAttribute('data-fuente'),
             fecha: element.getAttribute('data-fecha'),
             descripcion: element.getAttribute('data-descripcion'),
             nombreTercero: element.getAttribute('data-nombre-tercero'),
@@ -7890,6 +7898,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modal-rubro').textContent = datos.rubro || '-';
         document.getElementById('modal-cuenta').textContent = datos.cuenta || '-';
         document.getElementById('modal-documento').textContent = datos.documento || '-';
+        document.getElementById('modal-fuente').textContent = datos.fuente || '-';
         document.getElementById('modal-fecha').textContent = datos.fecha || '-';
         document.getElementById('modal-valor').textContent = '$' + new Intl.NumberFormat('es-CO').format(datos.valor || 0);
         document.getElementById('modal-centro-costo').textContent = datos.centroCosto || '-';
