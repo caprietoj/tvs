@@ -1455,11 +1455,6 @@ class PurchaseOrdersController extends Controller
             abort(403, 'No tienes permisos para editar PDFs de órdenes de compra.');
         }
 
-        // Restricción específica para usuario compras@tvs.edu.co
-        if (auth()->id() === 11) {
-            abort(403, 'No tienes permisos para editar PDFs de órdenes de compra.');
-        }
-
         // Cargar relaciones necesarias
         $purchaseOrder->load([
             'purchaseRequest.user',

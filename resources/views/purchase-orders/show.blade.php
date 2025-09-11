@@ -57,7 +57,7 @@
                             <a href="{{ route('purchase-orders.view', $purchaseOrder->id) }}" class="btn btn-sm btn-outline-info" target="_blank">
                                 <i class="fas fa-eye"></i> Ver PDF
                             </a>
-                            @if((auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras')) && auth()->id() !== 11)
+                            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('compras'))
                                 <a href="{{ route('purchase-orders.edit-pdf', $purchaseOrder->id) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-file-pdf"></i> Editar PDF
                                 </a>
