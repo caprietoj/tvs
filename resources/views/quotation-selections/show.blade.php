@@ -189,7 +189,7 @@
                                                         
                                                         // Verificar si este proveedor cotizó específicamente este item
                                                         if (isset($quotation->original_item_prices[$index])) {
-                                                            $unitPrice = $quotation->original_item_prices[$index];
+                                                            $unitPrice = (float)($quotation->original_item_prices[$index] ?? 0);
                                                             $priceSource = 'specific';
                                                             $hasItemPrice = true;
                                                         }
@@ -199,7 +199,7 @@
                                                             continue; // Saltar este proveedor si no cotizó este item
                                                         }
                                                         
-                                                        $totalPrice = $unitPrice * ($item['quantity'] ?? 1);
+                                                        $totalPrice = (float)($unitPrice ?? 0) * (float)($item['quantity'] ?? 1);
                                                         $isSelected = $selection->quotation_id == $quotation->id;
                                                     @endphp
                                                     <option value="{{ $quotation->id }}" 
@@ -207,7 +207,7 @@
                                                             data-unit-price="{{ $unitPrice }}"
                                                             data-total-price="{{ $totalPrice }}"
                                                             {{ $isSelected ? 'selected' : '' }}>
-                                                        {{ $quotation->provider_name }} - ${{ number_format($unitPrice, 2, ',', '.') }}
+                                                        {{ $quotation->provider_name }} - ${{ number_format((float)($unitPrice ?? 0), 2, ',', '.') }}
                                                         @if($priceSource === 'fallback')
                                                             <small>(est.)</small>
                                                         @endif
@@ -233,7 +233,7 @@
                                                         
                                                         // Verificar si este proveedor cotizó específicamente este item
                                                         if (isset($quotation->original_item_prices[$index])) {
-                                                            $unitPrice = $quotation->original_item_prices[$index];
+                                                            $unitPrice = (float)($quotation->original_item_prices[$index] ?? 0);
                                                             $priceSource = 'specific';
                                                             $hasItemPrice = true;
                                                         }
@@ -243,13 +243,13 @@
                                                             continue; // Saltar este proveedor si no cotizó este item
                                                         }
                                                         
-                                                        $totalPrice = $unitPrice * ($item['quantity'] ?? 1);
+                                                        $totalPrice = (float)($unitPrice ?? 0) * (float)($item['quantity'] ?? 1);
                                                     @endphp
                                                     <option value="{{ $quotation->id }}" 
                                                             data-provider-name="{{ $quotation->provider_name }}"
                                                             data-unit-price="{{ $unitPrice }}"
                                                             data-total-price="{{ $totalPrice }}">
-                                                        {{ $quotation->provider_name }} - ${{ number_format($unitPrice, 2, ',', '.') }}
+                                                        {{ $quotation->provider_name }} - ${{ number_format((float)($unitPrice ?? 0), 2, ',', '.') }}
                                                     </option>
                                                 @endforeach
                                             </select>
