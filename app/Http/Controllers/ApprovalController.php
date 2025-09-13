@@ -860,8 +860,8 @@ class ApprovalController extends Controller
         $totalAmount = $quotation->total_amount;
         $paymentTerms = $quotation->payment_terms ?? 'Contado';
         
-        // CORREGIDO: Verificar específicamente si incluye IVA 19%, no asumir por defecto
-        $includesIva = $quotation->includes_iva_19 && $quotation->iva_19_amount > 0;
+        // CORREGIDO: Usar los campos correctos de IVA
+        $includesIva = $quotation->includes_iva && $quotation->iva_amount > 0;
         
         if ($includesIva) {
             // Si el total ya incluye IVA, calcular subtotal e IVA
@@ -930,6 +930,26 @@ class ApprovalController extends Controller
         }
         
         // 🔧 CREAR ESTRUCTURA COMPLETA DE PDF_CUSTOM_DATA (igual que en PurchaseOrdersController)
+        
+        // CORREGIDO: No asumir IVA 19% por defecto
+        // Usar impuestos específicos de la cotización si existen
+        $firstQuotation = $purchaseRequest->quotations->first();
+        $appliedTaxes = [];
+        if ($firstQuotation) {
+            if ($firstQuotation->includes_iva && $firstQuotation->iva_amount > 0) {
+                $appliedTaxes[] = 'iva_19';
+            }
+            if ($firstQuotation->includes_iva_5 && $firstQuotation->iva_5_amount > 0) {
+                $appliedTaxes[] = 'iva_5';
+            }
+            if ($firstQuotation->includes_ipoconsumo_8 && $firstQuotation->ipoconsumo_8_amount > 0) {
+                $appliedTaxes[] = 'consumo_8';
+            }
+            if ($firstQuotation->includes_ipoconsumo_4 && $firstQuotation->ipoconsumo_4_amount > 0) {
+                $appliedTaxes[] = 'consumo_4';
+            }
+        }
+        
         $pdfCustomData = [
             'provider_name' => $provider->nombre,
             'provider_nit' => $provider->nit,
@@ -952,6 +972,7 @@ class ApprovalController extends Controller
             'shared_budget_info' => null,
             'individual_taxes_total' => 0,
             'individual_taxes_breakdown' => ['4' => 0, '5' => 0, '8' => 0, '16' => 0, '19' => 0],
+            'applied_taxes' => $appliedTaxes, // 🔧 AÑADIR: Impuestos aplicados para etiquetas PDF
             'edited_by' => Auth::id() ?? 1,
             'edited_at' => now()->toISOString(),
             'calculation_source' => 'items_based',
@@ -959,26 +980,6 @@ class ApprovalController extends Controller
             'additional_items_count' => 0
         ];
 
-        // Crear la orden de compra
-        
-        // CORREGIDO: No asumir IVA 19% por defecto
-        // Usar impuestos específicos de la cotización si existen
-        $firstQuotation = $purchaseRequest->quotations->first();
-        $appliedTaxes = [];
-        if ($firstQuotation) {
-            if ($firstQuotation->includes_iva_19 && $firstQuotation->iva_19_amount > 0) {
-                $appliedTaxes[] = 'iva_19';
-            }
-            if ($firstQuotation->includes_iva_5 && $firstQuotation->iva_5_amount > 0) {
-                $appliedTaxes[] = 'iva_5';
-            }
-            if ($firstQuotation->includes_ipoconsumo_8 && $firstQuotation->ipoconsumo_8_amount > 0) {
-                $appliedTaxes[] = 'consumo_8';
-            }
-            if ($firstQuotation->includes_ipoconsumo_4 && $firstQuotation->ipoconsumo_4_amount > 0) {
-                $appliedTaxes[] = 'consumo_4';
-            }
-        }
         $taxesCalculation = $this->calculateTaxesForPurchaseOrder($subtotal, $appliedTaxes);
         
         $purchaseOrder = \App\Models\PurchaseOrder::create([
