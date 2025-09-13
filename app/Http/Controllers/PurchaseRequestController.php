@@ -1884,6 +1884,7 @@ class PurchaseRequestController extends Controller
             $html = view('purchase-requests.partials.table', compact(
                 'requests', 
                 'typeFilter',
+                'sectionFilter',
                 'canBulkApproveCopies',
                 'copiesCount'
             ))->render();

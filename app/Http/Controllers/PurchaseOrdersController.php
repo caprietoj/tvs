@@ -378,55 +378,58 @@ class PurchaseOrdersController extends Controller
                     'tax_calculations' => $taxCalculations
                 ]);
             } elseif ($hasMixedSelection) {
-                // Para selección mixta, calcular totales
-                $total = floatval($purchaseRequest->quotationItemSelections()->sum('total_price'));
+                // Para selección mixta, calcular totales basados en las cotizaciones individuales
+                $selections = $purchaseRequest->quotationItemSelections();
+                $subtotalSinIva = 0;
+                $totalIva = 0;
                 
-                if ($total <= 0) {
-                    Log::error('Selección mixta con total inválido', [
-                        'purchase_request_id' => $purchaseRequest->id,
-                        'selections_total' => $total
-                    ]);
-                    return redirect()->back()->with('error', 'El total de la selección mixta debe ser mayor a cero.');
-                }
-
-                // Obtener impuestos aplicados de manera correcta
-                $appliedTaxes = $this->getAppliedTaxesFromRequest($purchaseRequest);
-                
-                // Calcular tasa total de impuestos
-                $totalTaxRate = 0;
-                foreach ($appliedTaxes as $tax) {
-                    switch ($tax) {
-                        case 'iva_19':
-                            $totalTaxRate += 0.19;
-                            break;
-                        case 'iva_5':
-                            $totalTaxRate += 0.05;
-                            break;
-                        case 'consumo_8':
-                            $totalTaxRate += 0.08;
-                            break;
-                        case 'consumo_4':
-                            $totalTaxRate += 0.04;
-                            break;
+                // Analizar cada selección individualmente basado en configuración real de impuestos
+                foreach ($selections->get() as $selection) {
+                    $quotation = App\Models\Quotation::find($selection->quotation_id);
+                    $itemTotal = $selection->total_price;
+                    $itemIndex = $selection->item_index;
+                    
+                    // Obtener la configuración real de impuestos para este item específico
+                    $originalItemTaxes = $quotation->original_item_taxes ?? [];
+                    $itemTaxConfig = $originalItemTaxes[$itemIndex] ?? [];
+                    
+                    // Verificar si este item específico tiene IVA
+                    $itemHasIva = isset($itemTaxConfig['iva_19']) && $itemTaxConfig['iva_19'] === true;
+                    
+                    // FALLBACK: Si no hay configuración específica por item, usar configuración general de la cotización
+                    if (empty($itemTaxConfig) && $quotation->includes_iva) {
+                        $itemHasIva = true;
                     }
+                    
+                    if ($itemHasIva) {
+                        // Si el item tiene IVA, el precio incluye IVA - extraer subtotal e IVA
+                        $itemSubtotal = round($itemTotal / 1.19, 2);
+                        $itemIva = $itemTotal - $itemSubtotal;
+                    } else {
+                        // Si el item no tiene IVA, el total es el subtotal
+                        $itemSubtotal = $itemTotal;
+                        $itemIva = 0;
+                    }
+                    
+                    $subtotalSinIva += $itemSubtotal;
+                    $totalIva += $itemIva;
                 }
-                // CORREGIDO: No aplicar IVA por defecto si no hay impuestos
-                // if ($totalTaxRate == 0) $totalTaxRate = 0.19; // IVA 19% por defecto
-
-                // Calcular subtotal correcto basado en los impuestos aplicados
-                $subtotal = round($total / (1 + $totalTaxRate), 2);
-                $taxCalculations = $this->calculateTaxes($subtotal, $appliedTaxes);
-                $ivaAmount = $taxCalculations['total_tax_amount'];
+                
+                $subtotal = $subtotalSinIva;
+                $ivaAmount = $totalIva;
+                $finalTotal = $subtotal + $ivaAmount;
                 $includesIva = true;
                 $additionalItems = [];
+                
+                // Configurar impuestos aplicados basados en el análisis
+                $appliedTaxes = $totalIva > 0 ? ['iva_19'] : [];
 
-                Log::info('Calculando precios para selección mixta', [
+                Log::info('Calculando precios para selección mixta (corregido)', [
                     'selections_count' => $purchaseRequest->quotationItemSelections()->count(),
-                    'applied_taxes' => $appliedTaxes,
-                    'total_tax_rate' => $totalTaxRate,
-                    'total' => $total,
-                    'subtotal' => $subtotal,
-                    'tax_calculations' => $taxCalculations
+                    'subtotal_sin_iva' => $subtotal,
+                    'total_iva_extraido' => $ivaAmount,
+                    'final_total' => $finalTotal,
+                    'applied_taxes' => $appliedTaxes
                 ]);
             } else {
                 // Para cotización única tradicional
@@ -503,6 +506,7 @@ class PurchaseOrdersController extends Controller
                     }
                 }
                 
+                $finalTotal = $subtotal + $ivaAmount; // Total final para cotización única
                 $additionalItems = $selectedQuotation->additional_items ?? [];
                 
                 Log::info('Calculando precios para cotización única', [
@@ -589,7 +593,8 @@ class PurchaseOrdersController extends Controller
                 'payment_terms' => $request->payment_terms ?? ($isNoQuotationService ? 'Contado' : 'A definir'),
                 'delivery_date' => $request->delivery_date ?? now()->addDays($isNoQuotationService ? 30 : 15),
                 'observations' => $observations,
-                'total_amount' => $total,
+                'total_amount' => $finalTotal,
+                'total_price' => $finalTotal,
                 'file_path' => 'pending_generation',
                 'status' => 'pending',
                 'additional_items' => $additionalItems,
@@ -2332,8 +2337,18 @@ class PurchaseOrdersController extends Controller
         Log::info('Procesando selecciones mixtas', ['selections_count' => $selections->count()]);
 
         foreach ($selections as $selection) {
-            $itemSubtotal = $selection->quantity * $selection->unit_price;
+            // CORREGIDO: Usar el total_price ya calculado en lugar de recalcular
+            $itemSubtotal = $selection->total_price;
             $subtotal += $itemSubtotal;
+
+            Log::info('Procesando selección individual', [
+                'item_index' => $selection->item_index,
+                'unit_price' => $selection->unit_price,
+                'quantity' => $selection->quantity,
+                'calculated_manually' => $selection->quantity * $selection->unit_price,
+                'total_price_stored' => $selection->total_price,
+                'using_total_price' => $itemSubtotal
+            ]);
 
             // Para selecciones mixtas, los impuestos generalmente se aplican desde la cotización asociada
             if ($selection->quotation) {
@@ -2651,10 +2666,45 @@ class PurchaseOrdersController extends Controller
                     continue;
                 }
                 
-                // Calcular IVA correctamente - para selecciones mixtas asumimos que los precios ya incluyen IVA
-                $includesIva = true;
-                $subtotal = round($totalAmount / 1.19, 2); // Calcular subtotal sin IVA
-                $ivaAmount = round($totalAmount - $subtotal, 2); // Calcular IVA
+                // CORREGIDO: Calcular IVA correctamente basado en la información real de cada item
+                $subtotalSinIva = 0;
+                $totalIva = 0;
+                
+                foreach ($providerSelections as $selection) {
+                    $quotationOfSelection = App\Models\Quotation::find($selection->quotation_id);
+                    $itemTotal = $selection->total_price;
+                    $itemIndex = $selection->item_index;
+                    
+                    // Obtener la configuración real de impuestos para este item específico
+                    $originalItemTaxes = $quotationOfSelection->original_item_taxes ?? [];
+                    $itemTaxConfig = $originalItemTaxes[$itemIndex] ?? [];
+                    
+                    // Verificar si este item específico tiene IVA
+                    $itemHasIva = isset($itemTaxConfig['iva_19']) && $itemTaxConfig['iva_19'] === true;
+                    
+                    // FALLBACK: Si no hay configuración específica por item, usar configuración general de la cotización
+                    if (empty($itemTaxConfig) && $quotationOfSelection->includes_iva) {
+                        $itemHasIva = true;
+                    }
+                    
+                    if ($itemHasIva) {
+                        // Si el item tiene IVA, el precio incluye IVA - extraer subtotal e IVA
+                        $itemSubtotal = round($itemTotal / 1.19, 2);
+                        $itemIva = $itemTotal - $itemSubtotal;
+                    } else {
+                        // Si el item no tiene IVA, el total es el subtotal
+                        $itemSubtotal = $itemTotal;
+                        $itemIva = 0;
+                    }
+                    
+                    $subtotalSinIva += $itemSubtotal;
+                    $totalIva += $itemIva;
+                }
+                
+                $subtotal = $subtotalSinIva;
+                $ivaAmount = $totalIva;
+                $finalTotalProvider = $subtotal + $ivaAmount;
+                $includesIva = $totalIva > 0;
                 
                 // Generar número de orden único para este proveedor
                 $orderNumber = 'OC-' . date('Ym') . '-' . str_pad(PurchaseOrder::count() + $orderCounter, 3, '0', STR_PAD_LEFT);
@@ -2695,7 +2745,8 @@ class PurchaseOrdersController extends Controller
                     'payment_terms' => $request->payment_terms ?? $quotation->payment_terms ?? 'Contado',
                     'delivery_date' => $request->delivery_date ?? now()->addDays(15),
                     'observations' => $providerObservations,
-                    'total_amount' => $totalAmount,
+                    'total_amount' => $finalTotalProvider,
+                    'total_price' => $finalTotalProvider,
                     'file_path' => 'pending_generation',
                     'status' => 'pending',
                     'additional_items' => [],
@@ -3359,17 +3410,12 @@ class PurchaseOrdersController extends Controller
             // Calcular totales basándose en si la cotización incluye IVA
             $totalAmount = $providerSelections->sum('total_price');
             
-            if ($quotationIncludesIva) {
-                // El total ya incluye IVA, calcular subtotal
-                $subtotal = round($totalAmount / 1.19, 2);
-                $ivaAmount = round($totalAmount - $subtotal, 2);
-                $finalTotal = $totalAmount;
-            } else {
-                // El total no incluye IVA, calcularlo
-                $subtotal = $totalAmount;
-                $ivaAmount = round($totalAmount * 0.19, 2);
-                $finalTotal = $subtotal + $ivaAmount;
-            }
+            // CRÍTICO: Para selecciones mixtas, los total_price SON precios base SIN IVA
+            // Independientemente de la configuración de la cotización original
+            // porque cada selección individual es un precio unitario * cantidad
+            $subtotal = $totalAmount;  // Los total_price ya son subtotales
+            $ivaAmount = round($totalAmount * 0.19, 2);  // Calcular IVA sobre el subtotal
+            $finalTotal = $subtotal + $ivaAmount;  // Subtotal + IVA
 
             Log::info('Cálculo de IVA para orden', [
                 'provider_name' => $request->provider_name,
@@ -3377,7 +3423,8 @@ class PurchaseOrdersController extends Controller
                 'selections_total' => $totalAmount,
                 'calculated_subtotal' => $subtotal,
                 'calculated_iva' => $ivaAmount,
-                'final_total' => $finalTotal
+                'final_total' => $finalTotal,
+                'note' => 'Selecciones mixtas: total_price son precios base SIN IVA'
             ]);
 
             // Crear la orden de compra

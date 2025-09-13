@@ -605,16 +605,26 @@
                                 'order_id' => $order->id
                             ]);
                         } else {
-                            // Fallback: calcular subtotal desde total - IVA
-                            if ($selectedQuotation->total_amount > 0 && ($selectedQuotation->iva_19_amount > 0 || $selectedQuotation->iva_5_amount > 0)) {
-                                $totalIva = floatval($selectedQuotation->iva_19_amount) + floatval($selectedQuotation->iva_5_amount);
-                                $calculatedSubtotal = floatval($selectedQuotation->total_amount) - $totalIva;
-                                Log::info('🎯 VISTA PDF: Calculando subtotal desde total-IVA', [
+                            // CRÍTICO: Para selecciones mixtas, NO usar datos de cotización completa
+                            // Usar los valores ya calculados de la orden actual
+                            if ($order->subtotal_amount > 0) {
+                                $calculatedSubtotal = floatval($order->subtotal_amount);
+                                Log::info('🎯 VISTA PDF: Usando subtotal de orden (selección mixta)', [
                                     'subtotal' => $calculatedSubtotal,
-                                    'total' => $selectedQuotation->total_amount,
-                                    'iva_total' => $totalIva,
-                                    'order_id' => $order->id
+                                    'order_id' => $order->id,
+                                    'note' => 'Valores de orden, no cotización completa'
                                 ]);
+                            } else {
+                                // Último recurso: calcular desde total - IVA de la ORDEN, no de la cotización
+                                if ($order->total_amount > 0 && $order->iva_amount > 0) {
+                                    $calculatedSubtotal = floatval($order->total_amount) - floatval($order->iva_amount);
+                                    Log::info('🎯 VISTA PDF: Calculando subtotal desde orden (total-IVA)', [
+                                        'subtotal' => $calculatedSubtotal,
+                                        'order_total' => $order->total_amount,
+                                        'order_iva' => $order->iva_amount,
+                                        'order_id' => $order->id
+                                    ]);
+                                }
                             }
                         }
                     }
@@ -672,23 +682,34 @@
                             'iva_5_amount' => $selectedQuotation->iva_5_amount,
                         ]);
                         
-                        if ($selectedQuotation->iva_19_enabled && $selectedQuotation->iva_19_amount > 0) {
-                            $calculatedIva = floatval($selectedQuotation->iva_19_amount);
-                        } elseif ($selectedQuotation->iva_5_enabled && $selectedQuotation->iva_5_amount > 0) {
-                            $calculatedIva = floatval($selectedQuotation->iva_5_amount);
-                        } elseif ($selectedQuotation->iva_19_amount > 0) {
-                            // Aunque no esté habilitado, si hay monto, usarlo
-                            $calculatedIva = floatval($selectedQuotation->iva_19_amount);
-                        } elseif ($selectedQuotation->iva_5_amount > 0) {
-                            $calculatedIva = floatval($selectedQuotation->iva_5_amount);
+                        // CRÍTICO: Para selecciones mixtas, usar IVA de la ORDEN, no de la cotización completa
+                        if ($order->iva_amount > 0) {
+                            $calculatedIva = floatval($order->iva_amount);
+                            Log::info('🎯 VISTA PDF: Usando IVA de orden (selección mixta)', [
+                                'iva_amount' => $calculatedIva,
+                                'order_id' => $order->id,
+                                'note' => 'IVA de orden, no cotización completa'
+                            ]);
+                        } else {
+                            // Fallback a cotización solo si la orden no tiene IVA calculado
+                            if ($selectedQuotation->iva_19_enabled && $selectedQuotation->iva_19_amount > 0) {
+                                $calculatedIva = floatval($selectedQuotation->iva_19_amount);
+                            } elseif ($selectedQuotation->iva_5_enabled && $selectedQuotation->iva_5_amount > 0) {
+                                $calculatedIva = floatval($selectedQuotation->iva_5_amount);
+                            } elseif ($selectedQuotation->iva_19_amount > 0) {
+                                // Aunque no esté habilitado, si hay monto, usarlo
+                                $calculatedIva = floatval($selectedQuotation->iva_19_amount);
+                            } elseif ($selectedQuotation->iva_5_amount > 0) {
+                                $calculatedIva = floatval($selectedQuotation->iva_5_amount);
+                            }
+                            
+                            Log::info('🎯 VISTA PDF: IVA calculado desde cotización (fallback)', [
+                                'iva_amount' => $calculatedIva,
+                                'iva_19_enabled' => $selectedQuotation->iva_19_enabled,
+                                'iva_5_enabled' => $selectedQuotation->iva_5_enabled,
+                                'order_id' => $order->id
+                            ]);
                         }
-                        
-                        Log::info('🎯 VISTA PDF: IVA calculado desde cotización', [
-                            'iva_amount' => $calculatedIva,
-                            'iva_19_enabled' => $selectedQuotation->iva_19_enabled,
-                            'iva_5_enabled' => $selectedQuotation->iva_5_enabled,
-                            'order_id' => $order->id
-                        ]);
                     }
                 }
                 

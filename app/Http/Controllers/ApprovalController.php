@@ -683,10 +683,14 @@ class ApprovalController extends Controller
             // Calcular total para este proveedor
             $totalAmount = $providerSelections->sum('total_price');
             
-            // Calcular IVA correctamente - para selecciones mixtas asumimos que los precios ya incluyen IVA
+            // CRÍTICO: Para selecciones mixtas, los total_price SON precios base SIN IVA
+            // Independientemente de la configuración de la cotización original
+            // porque cada selección individual es un precio unitario * cantidad
+            $totalAmount = $providerSelections->sum('total_price');
+            $subtotal = $totalAmount;  // Los total_price ya son subtotales
+            $ivaAmount = round($totalAmount * 0.19, 2);  // Calcular IVA sobre el subtotal
+            $finalTotalProvider = $subtotal + $ivaAmount;  // Subtotal + IVA
             $includesIva = true;
-            $subtotal = round($totalAmount / 1.19, 2); // Calcular subtotal sin IVA
-            $ivaAmount = round($totalAmount - $subtotal, 2); // Calcular IVA
             
             // Preparar items para la orden mixta
             $orderItems = $providerSelections->map(function($selection) {
@@ -715,7 +719,7 @@ class ApprovalController extends Controller
                 'ipoconsumo_rate' => 0,
                 'ipoconsumo_amount' => 0,
                 'subtotal' => $subtotal,
-                'total' => $totalAmount,
+                'total' => $finalTotalProvider,
                 'items' => $orderItems, // 🔧 IMPORTANTE: Guardar en estructura 'items'
                 'additional_items' => [],
                 'observations' => $this->generateObservationsForSharedPurchase($purchaseRequest, $quotation->provider_name),
@@ -751,7 +755,8 @@ class ApprovalController extends Controller
                 'purchase_request_id' => $purchaseRequest->id,
                 'provider_id' => $provider->id,
                 'order_number' => 'ORD-' . str_pad($purchaseRequest->id, 4, '0', STR_PAD_LEFT) . '-' . $orderCounter,
-                'total_amount' => $totalAmount,
+                'total_amount' => $finalTotalProvider,
+                'total_price' => $finalTotalProvider,
                 'subtotal' => $subtotal,
                 'iva_amount' => $ivaAmount,
                 'includes_iva' => $includesIva,

@@ -1222,46 +1222,65 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        @php
+                                            // Obtener datos dinámicos de ingresos escolares por mes (desde el controlador)
+                                            $ingresosEscolaresData = $budgetDataByConcept['ingresos-escolares'] ?? [];
+                                            $otrosEscolaresData = $budgetDataByConcept['otros-escolares'] ?? [];
+                                            
+                                            // Debug temporal - ver qué datos llegan
+                                            \Log::info('Vista - Ingresos escolares data:', $ingresosEscolaresData);
+                                            \Log::info('Vista - Otros escolares data:', $otrosEscolaresData);
+                                            
+                                            // Presupuestos aprobados
+                                            $presupuestoIngresosEscolares = 10457915716;
+                                            $presupuestoOtrosEscolares = 868862765;
+                                        @endphp
                                         <tr>
                                             <td><strong>Ingresos Escolares</strong></td>
-                                            <td class="number-cell">$10.457.915.716</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell">0</td>
-                                            <td class="number-cell">0</td>
-                                            <td class="number-cell">0</td>
-                                            <td class="number-cell">0</td>
-                                            <td class="number-cell">0</td>
-                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">${{ number_format($presupuestoIngresosEscolares, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($ingresosEscolaresData['junio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($ingresosEscolaresData['julio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($ingresosEscolaresData['agosto'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($ingresosEscolaresData['septiembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($ingresosEscolaresData['octubre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($ingresosEscolaresData['noviembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($ingresosEscolaresData['diciembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($ingresosEscolaresData['enero'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($ingresosEscolaresData['febrero'] ?? 0, 0, ',', '.') }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Ingresos otros escolares</strong></td>
-                                            <td class="number-cell">$868.862.765</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell">0</td>
-                                            <td class="number-cell">0</td>
-                                            <td class="number-cell">0</td>
-                                            <td class="number-cell">0</td>
-                                            <td class="number-cell">0</td>
-                                            <td class="number-cell">0</td>
+                                            <td class="number-cell">${{ number_format($presupuestoOtrosEscolares, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($otrosEscolaresData['junio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($otrosEscolaresData['julio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($otrosEscolaresData['agosto'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($otrosEscolaresData['septiembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($otrosEscolaresData['octubre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($otrosEscolaresData['noviembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($otrosEscolaresData['diciembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($otrosEscolaresData['enero'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($otrosEscolaresData['febrero'] ?? 0, 0, ',', '.') }}</td>
                                         </tr>
+                                        @php
+                                            // Calcular totales dinámicos por mes
+                                            $meses = ['junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'];
+                                            $totalesPorMes = [];
+                                            foreach ($meses as $mes) {
+                                                $totalesPorMes[$mes] = ($ingresosEscolaresData[$mes] ?? 0) + ($otrosEscolaresData[$mes] ?? 0);
+                                            }
+                                        @endphp
                                         <tr class="total-row">
                                             <td><strong>TOTAL INGRESOS</strong></td>
-                                            <td class="number-cell"><strong>$11.326.778.481</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell"><strong>${{ number_format($presupuestoIngresosEscolares + $presupuestoOtrosEscolares, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalesPorMes['junio'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalesPorMes['julio'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalesPorMes['agosto'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalesPorMes['septiembre'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalesPorMes['octubre'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalesPorMes['noviembre'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalesPorMes['diciembre'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalesPorMes['enero'], 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalesPorMes['febrero'], 0, ',', '.') }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1288,96 +1307,134 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        @php
+                                            // Obtener datos de las tablas detalladas correspondientes
+                                            $salariosAcademiaData = $budgetDataByConcept['salarios-academia'] ?? [];
+                                            $salariosAdminData = $budgetDataByConcept['salarios-administracion'] ?? [];
+                                            $rubrosData = $budgetDataByConcept['rubros-institucionales'] ?? [];
+                                            $seccionesAcademiaData = $budgetDataByConcept['secciones-academia-general'] ?? [];
+                                            $serviciosData = $budgetDataByConcept['servicios-publicos'] ?? [];
+                                            $contratosExternosData = $budgetDataByConcept['contratos-externos'] ?? [];
+                                        @endphp
+                                        
+                                        {{-- Total Salarios, Prestaciones Academia --}}
                                         <tr>
                                             <td><strong>Total Salarios, Prestaciones Academia</strong></td>
                                             <td class="number-cell">$6.600.750.523</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell">${{ number_format($salariosAcademiaData['junio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($salariosAcademiaData['julio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($salariosAcademiaData['agosto'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($salariosAcademiaData['septiembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($salariosAcademiaData['octubre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($salariosAcademiaData['noviembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($salariosAcademiaData['diciembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($salariosAcademiaData['enero'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($salariosAcademiaData['febrero'] ?? 0, 0, ',', '.') }}</td>
                                         </tr>
+                                        
+                                        {{-- Total Salarios, Prestaciones Administrativos y Sena --}}
+                                        @php
+                                            // Calcular totales de administración sumando todos los conceptos por mes
+                                            $adminJunio = ($salariosAdminData['salarios-aux-transporte-admin-junio'] ?? 0) + 
+                                                         ($salariosAdminData['capacitacion-administracion-junio'] ?? 0) + 
+                                                         ($salariosAdminData['aprendices-sena-junio'] ?? 0);
+                                            $adminJulio = ($salariosAdminData['salarios-aux-transporte-admin-julio'] ?? 0) + 
+                                                         ($salariosAdminData['capacitacion-administracion-julio'] ?? 0) + 
+                                                         ($salariosAdminData['aprendices-sena-julio'] ?? 0);
+                                            $adminAgosto = ($salariosAdminData['salarios-aux-transporte-admin-agosto'] ?? 0) + 
+                                                          ($salariosAdminData['capacitacion-administracion-agosto'] ?? 0) + 
+                                                          ($salariosAdminData['aprendices-sena-agosto'] ?? 0);
+                                            $adminSeptiembre = ($salariosAdminData['salarios-aux-transporte-admin-septiembre'] ?? 0) + 
+                                                              ($salariosAdminData['capacitacion-administracion-septiembre'] ?? 0) + 
+                                                              ($salariosAdminData['aprendices-sena-septiembre'] ?? 0);
+                                            $adminOctubre = ($salariosAdminData['salarios-aux-transporte-admin-octubre'] ?? 0) + 
+                                                           ($salariosAdminData['capacitacion-administracion-octubre'] ?? 0) + 
+                                                           ($salariosAdminData['aprendices-sena-octubre'] ?? 0);
+                                            $adminNoviembre = ($salariosAdminData['salarios-aux-transporte-admin-noviembre'] ?? 0) + 
+                                                             ($salariosAdminData['capacitacion-administracion-noviembre'] ?? 0) + 
+                                                             ($salariosAdminData['aprendices-sena-noviembre'] ?? 0);
+                                            $adminDiciembre = ($salariosAdminData['salarios-aux-transporte-admin-diciembre'] ?? 0) + 
+                                                             ($salariosAdminData['capacitacion-administracion-diciembre'] ?? 0) + 
+                                                             ($salariosAdminData['aprendices-sena-diciembre'] ?? 0);
+                                            $adminEnero = ($salariosAdminData['salarios-aux-transporte-admin-enero'] ?? 0) + 
+                                                         ($salariosAdminData['capacitacion-administracion-enero'] ?? 0) + 
+                                                         ($salariosAdminData['aprendices-sena-enero'] ?? 0);
+                                            $adminFebrero = ($salariosAdminData['salarios-aux-transporte-admin-febrero'] ?? 0) + 
+                                                           ($salariosAdminData['capacitacion-administracion-febrero'] ?? 0) + 
+                                                           ($salariosAdminData['aprendices-sena-febrero'] ?? 0);
+                                        @endphp
                                         <tr>
                                             <td><strong>Total Salarios, Prestaciones Administrativos y Sena</strong></td>
                                             <td class="number-cell">$1.453.226.337</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell">${{ number_format($adminJunio, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($adminJulio, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($adminAgosto, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($adminSeptiembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($adminOctubre, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($adminNoviembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($adminDiciembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($adminEnero, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($adminFebrero, 0, ',', '.') }}</td>
                                         </tr>
-                                        <tr>
-                                            <td><strong>Capacitación e Indemnizaciones</strong></td>
-                                            <td class="number-cell">$11.276.365</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                        </tr>
+                                        
+                                        {{-- Total Rubros Institucionales --}}
                                         <tr>
                                             <td><strong>Total Rubros Institucionales</strong></td>
                                             <td class="number-cell">$1.172.440.107</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell">${{ number_format($rubrosData['junio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($rubrosData['julio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($rubrosData['agosto'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($rubrosData['septiembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($rubrosData['octubre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($rubrosData['noviembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($rubrosData['diciembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($rubrosData['enero'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($rubrosData['febrero'] ?? 0, 0, ',', '.') }}</td>
                                         </tr>
+                                        
+                                        {{-- Total Seccion Academia --}}
                                         <tr>
                                             <td><strong>Total Seccion Academia</strong></td>
                                             <td class="number-cell">$481.271.150</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell">${{ number_format($seccionesAcademiaData['junio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($seccionesAcademiaData['julio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($seccionesAcademiaData['agosto'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($seccionesAcademiaData['septiembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($seccionesAcademiaData['octubre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($seccionesAcademiaData['noviembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($seccionesAcademiaData['diciembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($seccionesAcademiaData['enero'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($seccionesAcademiaData['febrero'] ?? 0, 0, ',', '.') }}</td>
                                         </tr>
+                                        
+                                        {{-- Total Servicios Públicos y Otros Egresos --}}
                                         <tr>
                                             <td><strong>Total Servicios Públicos y Otros Egresos</strong></td>
                                             <td class="number-cell">$2.594.069.715</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell">${{ number_format($serviciosData['junio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($serviciosData['julio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($serviciosData['agosto'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($serviciosData['septiembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($serviciosData['octubre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($serviciosData['noviembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($serviciosData['diciembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($serviciosData['enero'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($serviciosData['febrero'] ?? 0, 0, ',', '.') }}</td>
                                         </tr>
+                                        
+                                        {{-- Total Costos Contratos Externos --}}
                                         <tr>
                                             <td><strong>Total Costos Contratos Externos</strong></td>
                                             <td class="number-cell">$1.831.454.774</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell">${{ number_format($contratosExternosData['junio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($contratosExternosData['julio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($contratosExternosData['agosto'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($contratosExternosData['septiembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($contratosExternosData['octubre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($contratosExternosData['noviembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($contratosExternosData['diciembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($contratosExternosData['enero'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell">${{ number_format($contratosExternosData['febrero'] ?? 0, 0, ',', '.') }}</td>
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>TOTAL GASTOS</strong></td>
@@ -1809,125 +1866,6 @@
                                             <td class="number-cell calculated"><strong>${{ number_format($totalDiciembre, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($totalEnero, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($totalFebrero, 0, ',', '.') }}</strong></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- TABLA 4.2: CAPACITACION E INDEMNIZACIONES -->
-                        <div class="budget-section filter-salarios" data-filter-category="salarios">
-                            <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">CAPACITACION E INDEMNIZACIONES</h5>
-                            <div class="table-wrapper">
-                                <table class="data-table budget-table">
-                                    <thead>
-                                        <tr>
-                                            <th>CONCEPTO</th>
-                                            <th>PRESUPUESTO APROBADO</th>
-                                            <th>JUNIO</th>
-                                            <th>JULIO</th>
-                                            <th>AGOSTO</th>
-                                            <th>SEPTIEMBRE</th>
-                                            <th>OCTUBRE</th>
-                                            <th>NOVIEMBRE</th>
-                                            <th>DICIEMBRE</th>
-                                            <th>ENERO</th>
-                                            <th>FEBRERO</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @php
-                                            $capacitacionData = $budgetDataByConcept['capacitacion-indemnizaciones'] ?? [];
-                                            $capacitacionLabels = [
-                                                'capacitacion-admin' => 'Capacitación admin',
-                                                'capacitacion-emc-docentes' => 'Capacitación EMC/Docentes',
-                                                'capacitacion-copassi' => 'Capacitación COPASSI (Inspectoras, bomberos)',
-                                                'indemnizaciones' => 'Indemnizaciones'
-                                            ];
-                                        @endphp
-                                        @foreach($capacitacionLabels as $conceptKey => $concepto)
-                                            @php
-                                                $presupuesto = $capacitacionData[$conceptKey] ?? 0;
-                                                // Obtener valores mensuales reales
-                                                $junioValue = $capacitacionData[$conceptKey . '-junio'] ?? 0;
-                                                $julioValue = $capacitacionData[$conceptKey . '-julio'] ?? 0;
-                                                $agostoValue = $capacitacionData[$conceptKey . '-agosto'] ?? 0;
-                                                $septiembreValue = $capacitacionData[$conceptKey . '-septiembre'] ?? 0;
-                                                $octubreValue = $capacitacionData[$conceptKey . '-octubre'] ?? 0;
-                                                $noviembreValue = $capacitacionData[$conceptKey . '-noviembre'] ?? 0;
-                                                $diciembreValue = $capacitacionData[$conceptKey . '-diciembre'] ?? 0;
-                                                $eneroValue = $capacitacionData[$conceptKey . '-enero'] ?? 0;
-                                                $febreroValue = $capacitacionData[$conceptKey . '-febrero'] ?? 0;
-                                            @endphp
-                                            <tr>
-                                                <td><strong>{{ $concepto }}</strong></td>
-                                                <td class="number-cell editable" data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="junio" class="number-cell editable">${{ number_format($junioValue, 0, ',', '.') }}</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">${{ number_format($julioValue, 0, ',', '.') }}</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">${{ number_format($agostoValue, 0, ',', '.') }}</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">${{ number_format($septiembreValue, 0, ',', '.') }}</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">${{ number_format($octubreValue, 0, ',', '.') }}</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">${{ number_format($noviembreValue, 0, ',', '.') }}</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
-                                                <td data-section="capacitacion-indemnizaciones" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
-                                            </tr>
-                                        @endforeach
-                                        @php
-                                            // Calcular totales mensuales reales para Capacitación e Indemnizaciones
-                                            $totalCapJunio = ($capacitacionData['capacitacion-admin-junio'] ?? 0) + 
-                                                            ($capacitacionData['capacitacion-emc-docentes-junio'] ?? 0) + 
-                                                            ($capacitacionData['capacitacion-copassi-junio'] ?? 0) + 
-                                                            ($capacitacionData['indemnizaciones-junio'] ?? 0);
-                                            $totalCapJulio = ($capacitacionData['capacitacion-admin-julio'] ?? 0) + 
-                                                            ($capacitacionData['capacitacion-emc-docentes-julio'] ?? 0) + 
-                                                            ($capacitacionData['capacitacion-copassi-julio'] ?? 0) + 
-                                                            ($capacitacionData['indemnizaciones-julio'] ?? 0);
-                                            $totalCapAgosto = ($capacitacionData['capacitacion-admin-agosto'] ?? 0) + 
-                                                             ($capacitacionData['capacitacion-emc-docentes-agosto'] ?? 0) + 
-                                                             ($capacitacionData['capacitacion-copassi-agosto'] ?? 0) + 
-                                                             ($capacitacionData['indemnizaciones-agosto'] ?? 0);
-                                            $totalCapSeptiembre = ($capacitacionData['capacitacion-admin-septiembre'] ?? 0) + 
-                                                                 ($capacitacionData['capacitacion-emc-docentes-septiembre'] ?? 0) + 
-                                                                 ($capacitacionData['capacitacion-copassi-septiembre'] ?? 0) + 
-                                                                 ($capacitacionData['indemnizaciones-septiembre'] ?? 0);
-                                            $totalCapOctubre = ($capacitacionData['capacitacion-admin-octubre'] ?? 0) + 
-                                                              ($capacitacionData['capacitacion-emc-docentes-octubre'] ?? 0) + 
-                                                              ($capacitacionData['capacitacion-copassi-octubre'] ?? 0) + 
-                                                              ($capacitacionData['indemnizaciones-octubre'] ?? 0);
-                                            $totalCapNoviembre = ($capacitacionData['capacitacion-admin-noviembre'] ?? 0) + 
-                                                                ($capacitacionData['capacitacion-emc-docentes-noviembre'] ?? 0) + 
-                                                                ($capacitacionData['capacitacion-copassi-noviembre'] ?? 0) + 
-                                                                ($capacitacionData['indemnizaciones-noviembre'] ?? 0);
-                                            $totalCapDiciembre = ($capacitacionData['capacitacion-admin-diciembre'] ?? 0) + 
-                                                                ($capacitacionData['capacitacion-emc-docentes-diciembre'] ?? 0) + 
-                                                                ($capacitacionData['capacitacion-copassi-diciembre'] ?? 0) + 
-                                                                ($capacitacionData['indemnizaciones-diciembre'] ?? 0);
-                                            $totalCapEnero = ($capacitacionData['capacitacion-admin-enero'] ?? 0) + 
-                                                            ($capacitacionData['capacitacion-emc-docentes-enero'] ?? 0) + 
-                                                            ($capacitacionData['capacitacion-copassi-enero'] ?? 0) + 
-                                                            ($capacitacionData['indemnizaciones-enero'] ?? 0);
-                                            $totalCapFebrero = ($capacitacionData['capacitacion-admin-febrero'] ?? 0) + 
-                                                              ($capacitacionData['capacitacion-emc-docentes-febrero'] ?? 0) + 
-                                                              ($capacitacionData['capacitacion-copassi-febrero'] ?? 0) + 
-                                                              ($capacitacionData['indemnizaciones-febrero'] ?? 0);
-                                        @endphp
-                                        <tr class="total-row">
-                                            <td><strong>TOTAL CAPACITACION E INDEMNIZACIONES</strong></td>
-                                            <td class="number-cell calculated"><strong>{{ number_format(array_sum($capacitacionData), 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapJunio, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapJulio, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapAgosto, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapSeptiembre, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapOctubre, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapNoviembre, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapDiciembre, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapEnero, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalCapFebrero, 0, ',', '.') }}</strong></td>
-                                        </tr>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>

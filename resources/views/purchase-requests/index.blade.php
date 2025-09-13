@@ -193,7 +193,13 @@
 
             <!-- Contenedor que se actualizará con AJAX -->
             <div id="table-container">
-                @include('purchase-requests.partials.table')
+                @include('purchase-requests.partials.table', [
+                    'requests' => $requests,
+                    'typeFilter' => $typeFilter,
+                    'sectionFilter' => $sectionFilter,
+                    'canBulkApproveCopies' => $canBulkApproveCopies,
+                    'copiesCount' => $copiesCount
+                ])
             </div>
 
             <div class="mt-3 d-flex justify-content-center" id="pagination-container">
@@ -227,57 +233,6 @@
         </div>
     </div>
 </div>
-
-<!-- Modal de Aprobación Masiva -->
-@if($canBulkApproveCopies)
-<div class="modal fade" id="bulkApproveModal" tabindex="-1" role="dialog" aria-labelledby="bulkApproveModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="bulkApproveModalLabel">
-                    <i class="fas fa-check-double mr-2"></i>
-                    Confirmar Aprobación Masiva
-                </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="text-center mb-3">
-                    <i class="fas fa-exclamation-triangle fa-3x text-warning"></i>
-                </div>
-                <h6 class="text-center mb-3">¿Está seguro de que desea aprobar todas las solicitudes de fotocopias?</h6>
-                <div class="alert alert-info">
-                    <strong>Detalles de la acción:</strong>
-                    <ul class="mb-0 mt-2">
-                        <li><strong>Sección:</strong> {{ $sectionFilter }}</li>
-                        <li><strong>Solicitudes a aprobar:</strong> {{ $copiesCount }}</li>
-                        <li><strong>Tipo:</strong> Fotocopias</li>
-                    </ul>
-                </div>
-                <p class="text-muted small">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Esta acción marcará todas las solicitudes como aprobadas y no se puede deshacer.
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    <i class="fas fa-times mr-1"></i>
-                    Cancelar
-                </button>
-                <form method="POST" action="{{ route('purchase-requests.bulk-approve-copies') }}" style="display: inline;">
-                    @csrf
-                    <input type="hidden" name="section" value="{{ $sectionFilter }}">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-check-double mr-1"></i>
-                        Aprobar {{ $copiesCount }} solicitudes
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
 
 @stop
 

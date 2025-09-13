@@ -760,8 +760,14 @@ function saveProviderSelection(itemIndex, quotationId, price, providerName) {
         return;
     }
     
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken) {
+        alert('Error: Token CSRF no encontrado. Por favor, recargue la página e intente nuevamente.');
+        return;
+    }
+    
     const formData = new FormData();
-    formData.append('_token', '{{ csrf_token() }}');
+    formData.append('_token', csrfToken.getAttribute('content'));
     formData.append('item_index', itemIndex);
     formData.append('quotation_id', quotationId);
     formData.append('unit_price', numericPrice);
@@ -963,12 +969,8 @@ function confirmPreapprovalSend() {
 $(document).ready(function() {
     console.log('DOM listo, configurando eventos para selects de proveedores...');
     
-    // Agregar eventos change a todos los selects de proveedores
-    document.querySelectorAll('.provider-select').forEach(select => {
-        select.addEventListener('change', function() {
-            handleProviderSelectChange(this);
-        });
-    });
+    // ⚠️ NOTA: Los selects ya tienen onchange="handleProviderSelectChange(this)" en el HTML
+    // NO agregamos addEventListener aquí para evitar duplicación de eventos
     
     // Contar selecciones existentes basándose en los selects con valores
     let existingSelectionsCount = 0;

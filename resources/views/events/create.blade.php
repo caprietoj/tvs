@@ -133,6 +133,7 @@
                                     <option value="Retiro San Juan">Retiro San Juan</option>
                                     <option value="Aula Multiple">Aula Multiple</option>
                                     <option value="Sala de Cine">Sala de Cine</option>
+                                    <option value="Oficina Admisiones">Oficina Admisiones</option>
                                 </select>
                             </div>
                             <div id="multiple_locations_container" style="display: none;">
@@ -148,6 +149,7 @@
                                     <option value="Retiro San Juan">Retiro San Juan</option>
                                     <option value="Aula Multiple">Aula Multiple</option>
                                     <option value="Sala de Cine">Sala de Cine</option>
+                                    <option value="Oficina Admisiones">Oficina Admisiones</option>
                                 </select>
                                 <small class="form-text text-muted">Mantenga presionada la tecla Ctrl para seleccionar varios lugares.</small>
                             </div>
