@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SalidaPedagogica;
+use App\Models\SalidaPedagogicaHistory;
 use App\Models\User;
 use App\Models\Event;
 use Illuminate\Http\Request;
@@ -283,8 +284,12 @@ class SalidaPedagogicaController extends Controller
             'transporteConfirmadoPor',
             'alimentacionConfirmadaPor',
             'accesosConfirmadosPor',
-            'enfermeriaConfirmadaPor'
+            'enfermeriaConfirmadaPor',
+            'history' => function($query) {
+                $query->with('user')->orderBy('created_at', 'desc');
+            }
         ]);
+        
         return view('salidas.show', compact('salida'));
     }
 
@@ -358,6 +363,14 @@ class SalidaPedagogicaController extends Controller
             ];
 
             $salida->update($data);
+
+            // Registrar específicamente que fue una edición manual por parte del usuario
+            \App\Models\SalidaPedagogicaHistory::logAction(
+                $salida,
+                'manual_edit',
+                null,
+                'Edición manual realizada por ' . auth()->user()->name
+            );
 
             // Update or create calendar event
             // TODO: Configurar correctamente la relación con eventos de calendario

@@ -360,6 +360,40 @@
                                     @endif
                                 </div>
                                 <div class="service-body p-3">
+                                    <!-- Información de Alimentación -->
+                                    <div class="mb-3">
+                                        <div class="row mb-2">
+                                            <div class="col-6">
+                                                <small class="text-muted d-block">Cantidad Snacks</small>
+                                                <strong>{{ $salida->cantidad_snacks ?? '--' }}</strong>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted d-block">Cantidad Almuerzos</small>
+                                                <strong>{{ $salida->cantidad_almuerzos ?? '--' }}</strong>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-2">
+                                            <small class="text-muted d-block">Hora Entrega Alimentos</small>
+                                            <strong>{{ $salida->hora_entrega_alimentos ? date('H:i', strtotime($salida->hora_entrega_alimentos)) : '--:--' }}</strong>
+                                        </div>
+                                        
+                                        @if($salida->menu_sugerido)
+                                        <div class="mb-2">
+                                            <small class="text-muted d-block">Menú Sugerido</small>
+                                            <p class="mb-0" style="font-size: 0.9rem;">{{ $salida->menu_sugerido }}</p>
+                                        </div>
+                                        @endif
+                                        
+                                        <div class="mb-3">
+                                            <small class="text-muted d-block">Observaciones Dietéticas</small>
+                                            <p class="mb-0" style="font-size: 0.9rem;">
+                                                {{ $salida->observaciones_dieteticas ?? 'No hay observaciones dietéticas' }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Estado de Confirmación -->
                                     @if($salida->alimentacion_confirmada)
                                         <div class="alert alert-success border-0 mb-3" style="background: #d4edda; color: #155724;">
                                             <i class="fas fa-check mr-2"></i>
@@ -577,6 +611,186 @@
                         </div>
                         @endif
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Cambios -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+                <div class="card-header text-white" style="background: #233e6c !important; padding: 1.5rem;">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-circle bg-white mr-3" style="width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #233e6c;">
+                            <i class="fas fa-history fa-lg"></i>
+                        </div>
+                        <h3 class="card-title mb-0 font-weight-bold">Historial de Cambios</h3>
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 2rem;">
+                    @if($salida->history && $salida->history->count() > 0)
+                        <div class="timeline timeline-inverse">
+                            @foreach($salida->history as $entry)
+                                <div class="time-label">
+                                    <span class="bg-primary">
+                                        {{ $entry->created_at->format('d/m/Y') }}
+                                    </span>
+                                </div>
+                                <div>
+                                    @if($entry->action === 'created')
+                                        <i class="fas fa-plus-circle bg-success"></i>
+                                    @elseif($entry->action === 'updated' || $entry->action === 'manual_edit')
+                                        <i class="fas fa-edit bg-warning"></i>
+                                    @elseif($entry->action === 'deleted')
+                                        <i class="fas fa-trash bg-danger"></i>
+                                    @else
+                                        <i class="fas fa-circle bg-info"></i>
+                                    @endif
+                                    
+                                    <div class="timeline-item">
+                                        <span class="time">
+                                            <i class="far fa-clock"></i> {{ $entry->created_at->format('H:i') }}
+                                        </span>
+                                        <h3 class="timeline-header">
+                                            @if($entry->action === 'created')
+                                                <span class="text-success">Salida Creada</span>
+                                            @elseif($entry->action === 'updated')
+                                                <span class="text-warning">Salida Actualizada</span>
+                                            @elseif($entry->action === 'manual_edit')
+                                                <span class="text-warning">Edición Manual</span>
+                                            @elseif($entry->action === 'deleted')
+                                                <span class="text-danger">Salida Eliminada</span>
+                                            @else
+                                                <span class="text-info">{{ ucfirst($entry->action) }}</span>
+                                            @endif
+                                        </h3>
+                                        <div class="timeline-body">
+                                            @if($entry->user)
+                                                <p class="mb-2">
+                                                    <strong>Realizado por:</strong> 
+                                                    <span class="badge badge-secondary">{{ $entry->user->name }}</span>
+                                                    @if($entry->ip_address)
+                                                        <small class="text-muted ml-2">IP: {{ $entry->ip_address }}</small>
+                                                    @endif
+                                                </p>
+                                            @endif
+                                            
+                                            @if($entry->notes)
+                                                <p class="mb-2"><strong>Descripción:</strong> {{ $entry->notes }}</p>
+                                            @endif
+                                            
+                                            @if($entry->changes && is_array($entry->changes) && !empty($entry->changes))
+                                                <div class="changes-details">
+                                                    <strong>Cambios realizados:</strong>
+                                                    <div class="mt-2">
+                                                        @foreach($entry->changes as $field => $change)
+                                                            @if(isset($change['old']) && isset($change['new']))
+                                                                @php
+                                                                    $fieldLabels = [
+                                                                        'grados' => 'Grados',
+                                                                        'lugar' => 'Lugar',
+                                                                        'responsable_id' => 'Responsable',
+                                                                        'fecha_salida' => 'Fecha de salida',
+                                                                        'fecha_regreso' => 'Fecha de regreso',
+                                                                        'cantidad_pasajeros' => 'Cantidad de pasajeros',
+                                                                        'observaciones' => 'Observaciones',
+                                                                        'calendario_general' => 'Calendario general',
+                                                                        'visita_inspeccion' => 'Visita de inspección',
+                                                                        'detalles_inspeccion' => 'Detalles de inspección',
+                                                                        'contacto_lugar' => 'Contacto del lugar',
+                                                                        'requiere_alimentacion' => 'Requiere alimentación',
+                                                                        'cantidad_snacks' => 'Cantidad de snacks',
+                                                                        'cantidad_almuerzos' => 'Cantidad de almuerzos',
+                                                                        'menu_sugerido' => 'Menú sugerido',
+                                                                        'hora_apertura_puertas' => 'Hora de apertura de puertas',
+                                                                        'requiere_enfermeria' => 'Requiere enfermería',
+                                                                        'requiere_comunicaciones' => 'Requiere comunicaciones',
+                                                                        'requiere_arl' => 'Requiere ARL',
+                                                                        'observaciones_comunicaciones' => 'Observaciones de comunicaciones',
+                                                                        'estado' => 'Estado',
+                                                                    ];
+                                                                    
+                                                                    $fieldName = $fieldLabels[$field] ?? $field;
+                                                                    
+                                                                    // Formatear valores
+                                                                    $oldValue = $change['old'];
+                                                                    $newValue = $change['new'];
+                                                                    
+                                                                    // Campos booleanos
+                                                                    if (in_array($field, ['calendario_general', 'visita_inspeccion', 'requiere_alimentacion', 'requiere_enfermeria', 'requiere_comunicaciones', 'requiere_arl'])) {
+                                                                        $oldValue = $oldValue ? 'Sí' : 'No';
+                                                                        $newValue = $newValue ? 'Sí' : 'No';
+                                                                    }
+                                                                    
+                                                                    // Campos de fecha/hora
+                                                                    if (in_array($field, ['fecha_salida', 'fecha_regreso']) && $oldValue) {
+                                                                        try {
+                                                                            $oldValue = \Carbon\Carbon::parse($oldValue)->format('d/m/Y H:i');
+                                                                        } catch (\Exception $e) {
+                                                                            // Mantener valor original si no se puede parsear
+                                                                        }
+                                                                    }
+                                                                    
+                                                                    if (in_array($field, ['fecha_salida', 'fecha_regreso']) && $newValue) {
+                                                                        try {
+                                                                            $newValue = \Carbon\Carbon::parse($newValue)->format('d/m/Y H:i');
+                                                                        } catch (\Exception $e) {
+                                                                            // Mantener valor original si no se puede parsear
+                                                                        }
+                                                                    }
+                                                                    
+                                                                    // Responsable (buscar nombre del usuario)
+                                                                    if ($field === 'responsable_id') {
+                                                                        if ($oldValue) {
+                                                                            $oldUser = \App\Models\User::find($oldValue);
+                                                                            $oldValue = $oldUser ? $oldUser->name : "Usuario ID: {$oldValue}";
+                                                                        }
+                                                                        if ($newValue) {
+                                                                            $newUser = \App\Models\User::find($newValue);
+                                                                            $newValue = $newUser ? $newUser->name : "Usuario ID: {$newValue}";
+                                                                        }
+                                                                    }
+                                                                    
+                                                                    // Valores nulos o vacíos
+                                                                    if (is_null($oldValue) || $oldValue === '') {
+                                                                        $oldValue = '(vacío)';
+                                                                    }
+                                                                    if (is_null($newValue) || $newValue === '') {
+                                                                        $newValue = '(vacío)';
+                                                                    }
+                                                                @endphp
+                                                                
+                                                                @if($oldValue !== $newValue)
+                                                                    <div class="alert alert-light border-left-info mb-2" style="border-left: 4px solid #17a2b8; font-size: 0.9rem;">
+                                                                        <strong>{{ $fieldName }}:</strong><br>
+                                                                        <span class="text-muted">Anterior:</span> <span class="badge badge-secondary">{{ $oldValue }}</span><br>
+                                                                        <span class="text-success">Nuevo:</span> <span class="badge badge-success">{{ $newValue }}</span>
+                                                                    </div>
+                                                                @endif
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                            <div>
+                                <i class="far fa-clock bg-gray"></i>
+                                <div class="timeline-item">
+                                    <span class="time"><i class="far fa-clock"></i> Inicio</span>
+                                    <h3 class="timeline-header no-border">Sistema de Auditoría Activado</h3>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="text-center py-4">
+                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No hay historial de cambios disponible para esta salida pedagógica.</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

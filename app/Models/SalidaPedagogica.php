@@ -12,6 +12,9 @@ class SalidaPedagogica extends Model
 
     protected $table = 'salidas_pedagogicas';
 
+    // Variable estática para almacenar cambios temporalmente durante la actualización
+    protected static $pendingChanges = [];
+
     protected $fillable = [
         'consecutivo',
         'fecha_solicitud',
@@ -123,6 +126,14 @@ class SalidaPedagogica extends Model
     }
 
     /**
+     * Relación con el historial de cambios
+     */
+    public function history()
+    {
+        return $this->hasMany(SalidaPedagogicaHistory::class, 'salida_pedagogica_id');
+    }
+
+    /**
      * Actualizar el estado automáticamente basado en la fecha de salida
      */
     public function updateEstadoAutomatico()
@@ -158,6 +169,74 @@ class SalidaPedagogica extends Model
             if (!$salida->fecha_solicitud) {
                 $salida->fecha_solicitud = now();
             }
+        });
+
+        // Registrar cuando se crea una nueva salida pedagógica
+        static::created(function ($salida) {
+            SalidaPedagogicaHistory::logAction(
+                $salida,
+                'created',
+                null,
+                'Salida pedagógica creada'
+            );
+        });
+
+        // Registrar los cambios antes de actualizar
+        static::updating(function ($salida) {
+            $changes = [];
+            $original = $salida->getOriginal();
+            $dirty = $salida->getDirty();
+
+            // Campos que queremos trackear específicamente
+            $trackedFields = [
+                'grados', 'lugar', 'responsable_id', 'fecha_salida', 'fecha_regreso',
+                'cantidad_pasajeros', 'observaciones', 'calendario_general',
+                'visita_inspeccion', 'detalles_inspeccion', 'contacto_lugar',
+                'requiere_alimentacion', 'cantidad_snacks', 'cantidad_almuerzos',
+                'hora_entrega_alimentos', 'menu_sugerido', 'observaciones_dieteticas',
+                'hora_apertura_puertas', 'requiere_enfermeria',
+                'requiere_comunicaciones', 'requiere_arl', 'observaciones_comunicaciones',
+                'estado'
+            ];
+
+            foreach ($trackedFields as $field) {
+                if (array_key_exists($field, $dirty) && $dirty[$field] !== $original[$field]) {
+                    $changes[$field] = [
+                        'old' => $original[$field],
+                        'new' => $dirty[$field]
+                    ];
+                }
+            }
+
+            // Guardar los cambios en la variable estática usando el ID del modelo
+            if (!empty($changes)) {
+                static::$pendingChanges[$salida->id] = $changes;
+            }
+        });
+
+        // Registrar los cambios después de actualizar
+        static::updated(function ($salida) {
+            if (isset(static::$pendingChanges[$salida->id]) && !empty(static::$pendingChanges[$salida->id])) {
+                SalidaPedagogicaHistory::logAction(
+                    $salida,
+                    'updated',
+                    static::$pendingChanges[$salida->id],
+                    'Salida pedagógica actualizada'
+                );
+                
+                // Limpiar los cambios pendientes para este modelo
+                unset(static::$pendingChanges[$salida->id]);
+            }
+        });
+
+        // Registrar cuando se elimina una salida pedagógica
+        static::deleted(function ($salida) {
+            SalidaPedagogicaHistory::logAction(
+                $salida,
+                'deleted',
+                null,
+                'Salida pedagógica eliminada'
+            );
         });
 
         // Actualizar estado automáticamente al cargar el modelo
