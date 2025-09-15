@@ -375,6 +375,11 @@ class ApprovalController extends Controller
             $validForRejection = true;
         }
         
+        // Para solicitudes de servicios: pueden estar pending o pre-aprobadas
+        if ($purchaseRequest->type === 'services' && in_array($purchaseRequest->status, ['pending', 'pre-approved', 'Pre-aprobada'])) {
+            $validForRejection = true;
+        }
+        
         if (!$validForRejection) {
             return redirect()->back()
                 ->with('error', 'Esta solicitud no está en un estado válido para rechazo.');

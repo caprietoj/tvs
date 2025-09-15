@@ -1428,17 +1428,30 @@
                                             <td class="number-cell">${{ number_format($contratosExternosData['enero'] ?? 0, 0, ',', '.') }}</td>
                                             <td class="number-cell">${{ number_format($contratosExternosData['febrero'] ?? 0, 0, ',', '.') }}</td>
                                         </tr>
+                                        @php
+                                            // Calcular totales por mes sumando todas las categorías
+                                            $totalJunio = ($salariosAcademiaData['junio'] ?? 0) + $adminJunio + ($rubrosData['junio'] ?? 0) + ($seccionesAcademiaData['junio'] ?? 0) + ($serviciosData['junio'] ?? 0) + ($contratosExternosData['junio'] ?? 0);
+                                            $totalJulio = ($salariosAcademiaData['julio'] ?? 0) + $adminJulio + ($rubrosData['julio'] ?? 0) + ($seccionesAcademiaData['julio'] ?? 0) + ($serviciosData['julio'] ?? 0) + ($contratosExternosData['julio'] ?? 0);
+                                            $totalAgosto = ($salariosAcademiaData['agosto'] ?? 0) + $adminAgosto + ($rubrosData['agosto'] ?? 0) + ($seccionesAcademiaData['agosto'] ?? 0) + ($serviciosData['agosto'] ?? 0) + ($contratosExternosData['agosto'] ?? 0);
+                                            $totalSeptiembre = ($salariosAcademiaData['septiembre'] ?? 0) + $adminSeptiembre + ($rubrosData['septiembre'] ?? 0) + ($seccionesAcademiaData['septiembre'] ?? 0) + ($serviciosData['septiembre'] ?? 0) + ($contratosExternosData['septiembre'] ?? 0);
+                                            $totalOctubre = ($salariosAcademiaData['octubre'] ?? 0) + $adminOctubre + ($rubrosData['octubre'] ?? 0) + ($seccionesAcademiaData['octubre'] ?? 0) + ($serviciosData['octubre'] ?? 0) + ($contratosExternosData['octubre'] ?? 0);
+                                            $totalNoviembre = ($salariosAcademiaData['noviembre'] ?? 0) + $adminNoviembre + ($rubrosData['noviembre'] ?? 0) + ($seccionesAcademiaData['noviembre'] ?? 0) + ($serviciosData['noviembre'] ?? 0) + ($contratosExternosData['noviembre'] ?? 0);
+                                            $totalDiciembre = ($salariosAcademiaData['diciembre'] ?? 0) + $adminDiciembre + ($rubrosData['diciembre'] ?? 0) + ($seccionesAcademiaData['diciembre'] ?? 0) + ($serviciosData['diciembre'] ?? 0) + ($contratosExternosData['diciembre'] ?? 0);
+                                            $totalEnero = ($salariosAcademiaData['enero'] ?? 0) + $adminEnero + ($rubrosData['enero'] ?? 0) + ($seccionesAcademiaData['enero'] ?? 0) + ($serviciosData['enero'] ?? 0) + ($contratosExternosData['enero'] ?? 0);
+                                            $totalFebrero = ($salariosAcademiaData['febrero'] ?? 0) + $adminFebrero + ($rubrosData['febrero'] ?? 0) + ($seccionesAcademiaData['febrero'] ?? 0) + ($serviciosData['febrero'] ?? 0) + ($contratosExternosData['febrero'] ?? 0);
+                                        @endphp
                                         <tr class="total-row">
                                             <td><strong>TOTAL GASTOS</strong></td>
                                             <td class="number-cell"><strong>$14.144.488.971</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalAgosto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalSeptiembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalOctubre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalNoviembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalDiciembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalEnero, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalFebrero, 0, ',', '.') }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1586,8 +1599,8 @@
                                             <td><strong>Rendimientos/Intereses</strong></td>
                                             <td class="number-cell">$0</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['junio']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Rendimientos/Intereses'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Rendimientos/Intereses'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Rendimientos/Intereses'], 0, ',', '.') : '$-' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
@@ -1599,8 +1612,8 @@
                                             <td><strong>Agenda escolar</strong></td>
                                             <td class="number-cell">$114.682.596</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['junio']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Agenda escolar'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Agenda escolar'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Agenda escolar'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Agenda escolar'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Agenda escolar'], 0, ',', '.') : '$-' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Agenda escolar'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Agenda escolar'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Agenda escolar'], 0, ',', '.') : '' }}</td>
@@ -1612,8 +1625,8 @@
                                             <td><strong>Anuario</strong></td>
                                             <td class="number-cell">$9.257.396</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['junio']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Anuario'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Anuario'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Anuario'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Anuario'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Anuario'], 0, ',', '.') : '$-' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Anuario'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Anuario'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Anuario'], 0, ',', '.') : '' }}</td>
@@ -1625,8 +1638,8 @@
                                             <td><strong>Examenes de Admisión</strong></td>
                                             <td class="number-cell">$38.371.950</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['junio']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Examenes de Admisión'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Examenes de Admisión'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Examenes de Admisión'], 0, ',', '.') : '$-' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
@@ -1638,8 +1651,8 @@
                                             <td><strong>Ingresos Por Servicio Cafeteria</strong></td>
                                             <td class="number-cell">$6.424.511</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['junio']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '$-' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
@@ -1651,8 +1664,8 @@
                                             <td><strong>Ingresos Por Servicio Transporte</strong></td>
                                             <td class="number-cell">$700.126.312</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['junio']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '$-' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
                                             <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
@@ -1740,15 +1753,29 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated">0,00%</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
-                                            <td class="number-cell calculated">#DIV/0!</td>
+                                            @php
+                                                $totalIngresos = $budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'] ?? 1;
+                                                $porcentajePresupuesto = ($totalIngresos > 0) ? (6600750523 / $totalIngresos) * 100 : 0;
+                                                $porcentajeJunio = ($totalIngresos > 0 && $junioValue > 0) ? ($junioValue / $totalIngresos) * 100 : 0;
+                                                $porcentajeJulio = ($totalIngresos > 0 && $julioValue > 0) ? ($julioValue / $totalIngresos) * 100 : 0;
+                                                $porcentajeAgosto = ($totalIngresos > 0 && $agostoValue > 0) ? ($agostoValue / $totalIngresos) * 100 : 0;
+                                                $porcentajeSeptiembre = ($totalIngresos > 0 && $septiembreValue > 0) ? ($septiembreValue / $totalIngresos) * 100 : 0;
+                                                $porcentajeOctubre = ($totalIngresos > 0 && $octubreValue > 0) ? ($octubreValue / $totalIngresos) * 100 : 0;
+                                                $porcentajeNoviembre = ($totalIngresos > 0 && $noviembreValue > 0) ? ($noviembreValue / $totalIngresos) * 100 : 0;
+                                                $porcentajeDiciembre = ($totalIngresos > 0 && $diciembreValue > 0) ? ($diciembreValue / $totalIngresos) * 100 : 0;
+                                                $porcentajeEnero = ($totalIngresos > 0 && $eneroValue > 0) ? ($eneroValue / $totalIngresos) * 100 : 0;
+                                                $porcentajeFebrero = ($totalIngresos > 0 && $febreroValue > 0) ? ($febreroValue / $totalIngresos) * 100 : 0;
+                                            @endphp
+                                            <td class="number-cell calculated">{{ sprintf('%.2f%%', $porcentajePresupuesto) }}</td>
+                                            <td class="number-cell calculated">{{ $porcentajeJunio > 0 ? sprintf('%.2f%%', $porcentajeJunio) : '-' }}</td>
+                                            <td class="number-cell calculated">{{ $porcentajeJulio > 0 ? sprintf('%.2f%%', $porcentajeJulio) : '-' }}</td>
+                                            <td class="number-cell calculated">{{ $porcentajeAgosto > 0 ? sprintf('%.2f%%', $porcentajeAgosto) : '-' }}</td>
+                                            <td class="number-cell calculated">{{ $porcentajeSeptiembre > 0 ? sprintf('%.2f%%', $porcentajeSeptiembre) : '-' }}</td>
+                                            <td class="number-cell calculated">{{ $porcentajeOctubre > 0 ? sprintf('%.2f%%', $porcentajeOctubre) : '-' }}</td>
+                                            <td class="number-cell calculated">{{ $porcentajeNoviembre > 0 ? sprintf('%.2f%%', $porcentajeNoviembre) : '-' }}</td>
+                                            <td class="number-cell calculated">{{ $porcentajeDiciembre > 0 ? sprintf('%.2f%%', $porcentajeDiciembre) : '-' }}</td>
+                                            <td class="number-cell calculated">{{ $porcentajeEnero > 0 ? sprintf('%.2f%%', $porcentajeEnero) : '-' }}</td>
+                                            <td class="number-cell calculated">{{ $porcentajeFebrero > 0 ? sprintf('%.2f%%', $porcentajeFebrero) : '-' }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1936,31 +1963,60 @@
                                             @php
                                                 $totalJunio = 0;
                                                 $totalJulio = 0;
+                                                $totalAgosto = 0;
+                                                $totalSeptiembre = 0;
+                                                $totalOctubre = 0;
+                                                $totalNoviembre = 0;
+                                                $totalDiciembre = 0;
+                                                $totalEnero = 0;
+                                                $totalFebrero = 0;
                                                 foreach($rubrosLabels as $conceptKey => $concepto) {
                                                     $totalJunio += $rubrosData[$conceptKey . '-junio'] ?? 0;
                                                     $totalJulio += $rubrosData[$conceptKey . '-julio'] ?? 0;
+                                                    $totalAgosto += $rubrosData[$conceptKey . '-agosto'] ?? 0;
+                                                    $totalSeptiembre += $rubrosData[$conceptKey . '-septiembre'] ?? 0;
+                                                    $totalOctubre += $rubrosData[$conceptKey . '-octubre'] ?? 0;
+                                                    $totalNoviembre += $rubrosData[$conceptKey . '-noviembre'] ?? 0;
+                                                    $totalDiciembre += $rubrosData[$conceptKey . '-diciembre'] ?? 0;
+                                                    $totalEnero += $rubrosData[$conceptKey . '-enero'] ?? 0;
+                                                    $totalFebrero += $rubrosData[$conceptKey . '-febrero'] ?? 0;
                                                 }
                                             @endphp
                                             <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalAgosto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalSeptiembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalOctubre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalNoviembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalDiciembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalEnero, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalFebrero, 0, ',', '.') }}</strong></td>
                                         </tr>
                                         <tr class="percentage-row">
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
+                                            @php
+                                                $totalIngresos = $budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'] ?? 1;
+                                                $porcentajePresupuesto = ($totalIngresos > 0) ? (array_sum($rubrosData) / $totalIngresos) * 100 : 0;
+                                                $porcentajeJunio = ($totalIngresos > 0 && $totalJunio > 0) ? ($totalJunio / $totalIngresos) * 100 : 0;
+                                                $porcentajeJulio = ($totalIngresos > 0 && $totalJulio > 0) ? ($totalJulio / $totalIngresos) * 100 : 0;
+                                                $porcentajeAgosto = ($totalIngresos > 0 && $totalAgosto > 0) ? ($totalAgosto / $totalIngresos) * 100 : 0;
+                                                $porcentajeSeptiembre = ($totalIngresos > 0 && $totalSeptiembre > 0) ? ($totalSeptiembre / $totalIngresos) * 100 : 0;
+                                                $porcentajeOctubre = ($totalIngresos > 0 && $totalOctubre > 0) ? ($totalOctubre / $totalIngresos) * 100 : 0;
+                                                $porcentajeNoviembre = ($totalIngresos > 0 && $totalNoviembre > 0) ? ($totalNoviembre / $totalIngresos) * 100 : 0;
+                                                $porcentajeDiciembre = ($totalIngresos > 0 && $totalDiciembre > 0) ? ($totalDiciembre / $totalIngresos) * 100 : 0;
+                                                $porcentajeEnero = ($totalIngresos > 0 && $totalEnero > 0) ? ($totalEnero / $totalIngresos) * 100 : 0;
+                                                $porcentajeFebrero = ($totalIngresos > 0 && $totalFebrero > 0) ? ($totalFebrero / $totalIngresos) * 100 : 0;
+                                            @endphp
+                                            <td class="number-cell calculated"><strong>{{ sprintf('%.2f%%', $porcentajePresupuesto) }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeJunio > 0 ? sprintf('%.2f%%', $porcentajeJunio) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeJulio > 0 ? sprintf('%.2f%%', $porcentajeJulio) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeAgosto > 0 ? sprintf('%.2f%%', $porcentajeAgosto) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeSeptiembre > 0 ? sprintf('%.2f%%', $porcentajeSeptiembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeOctubre > 0 ? sprintf('%.2f%%', $porcentajeOctubre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeNoviembre > 0 ? sprintf('%.2f%%', $porcentajeNoviembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeDiciembre > 0 ? sprintf('%.2f%%', $porcentajeDiciembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeEnero > 0 ? sprintf('%.2f%%', $porcentajeEnero) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeFebrero > 0 ? sprintf('%.2f%%', $porcentajeFebrero) : '-' }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -2030,31 +2086,60 @@
                                             @php
                                                 $totalJunio = 0;
                                                 $totalJulio = 0;
+                                                $totalAgosto = 0;
+                                                $totalSeptiembre = 0;
+                                                $totalOctubre = 0;
+                                                $totalNoviembre = 0;
+                                                $totalDiciembre = 0;
+                                                $totalEnero = 0;
+                                                $totalFebrero = 0;
                                                 foreach($membresiasLabels as $conceptKey => $concepto) {
                                                     $totalJunio += $membresiasData[$conceptKey . '-junio'] ?? 0;
                                                     $totalJulio += $membresiasData[$conceptKey . '-julio'] ?? 0;
+                                                    $totalAgosto += $membresiasData[$conceptKey . '-agosto'] ?? 0;
+                                                    $totalSeptiembre += $membresiasData[$conceptKey . '-septiembre'] ?? 0;
+                                                    $totalOctubre += $membresiasData[$conceptKey . '-octubre'] ?? 0;
+                                                    $totalNoviembre += $membresiasData[$conceptKey . '-noviembre'] ?? 0;
+                                                    $totalDiciembre += $membresiasData[$conceptKey . '-diciembre'] ?? 0;
+                                                    $totalEnero += $membresiasData[$conceptKey . '-enero'] ?? 0;
+                                                    $totalFebrero += $membresiasData[$conceptKey . '-febrero'] ?? 0;
                                                 }
                                             @endphp
                                             <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalAgosto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalSeptiembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalOctubre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalNoviembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalDiciembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalEnero, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalFebrero, 0, ',', '.') }}</strong></td>
                                         </tr>
                                         <tr class="percentage-row">
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
+                                            @php
+                                                $totalIngresos = $budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'] ?? 1;
+                                                $porcentajePresupuesto = ($totalIngresos > 0) ? (array_sum($membresiasData) / $totalIngresos) * 100 : 0;
+                                                $porcentajeJunio = ($totalIngresos > 0 && $totalJunio > 0) ? ($totalJunio / $totalIngresos) * 100 : 0;
+                                                $porcentajeJulio = ($totalIngresos > 0 && $totalJulio > 0) ? ($totalJulio / $totalIngresos) * 100 : 0;
+                                                $porcentajeAgosto = ($totalIngresos > 0 && $totalAgosto > 0) ? ($totalAgosto / $totalIngresos) * 100 : 0;
+                                                $porcentajeSeptiembre = ($totalIngresos > 0 && $totalSeptiembre > 0) ? ($totalSeptiembre / $totalIngresos) * 100 : 0;
+                                                $porcentajeOctubre = ($totalIngresos > 0 && $totalOctubre > 0) ? ($totalOctubre / $totalIngresos) * 100 : 0;
+                                                $porcentajeNoviembre = ($totalIngresos > 0 && $totalNoviembre > 0) ? ($totalNoviembre / $totalIngresos) * 100 : 0;
+                                                $porcentajeDiciembre = ($totalIngresos > 0 && $totalDiciembre > 0) ? ($totalDiciembre / $totalIngresos) * 100 : 0;
+                                                $porcentajeEnero = ($totalIngresos > 0 && $totalEnero > 0) ? ($totalEnero / $totalIngresos) * 100 : 0;
+                                                $porcentajeFebrero = ($totalIngresos > 0 && $totalFebrero > 0) ? ($totalFebrero / $totalIngresos) * 100 : 0;
+                                            @endphp
+                                            <td class="number-cell calculated"><strong>{{ sprintf('%.2f%%', $porcentajePresupuesto) }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeJunio > 0 ? sprintf('%.2f%%', $porcentajeJunio) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeJulio > 0 ? sprintf('%.2f%%', $porcentajeJulio) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeAgosto > 0 ? sprintf('%.2f%%', $porcentajeAgosto) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeSeptiembre > 0 ? sprintf('%.2f%%', $porcentajeSeptiembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeOctubre > 0 ? sprintf('%.2f%%', $porcentajeOctubre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeNoviembre > 0 ? sprintf('%.2f%%', $porcentajeNoviembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeDiciembre > 0 ? sprintf('%.2f%%', $porcentajeDiciembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeEnero > 0 ? sprintf('%.2f%%', $porcentajeEnero) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeFebrero > 0 ? sprintf('%.2f%%', $porcentajeFebrero) : '-' }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -2147,15 +2232,30 @@
                                         </tr>
                                         <tr class="percentage-row">
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
+                                            @php
+                                                $totalIngresos = $budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'] ?? 1;
+                                                $totalPresupuesto = array_sum($serviciosPublicosData['meses']);
+                                                $porcentajePresupuesto = ($totalIngresos > 0) ? ($totalPresupuesto / $totalIngresos) * 100 : 0;
+                                                $porcentajeJunio = ($totalIngresos > 0 && $junioTotal > 0) ? ($junioTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeJulio = ($totalIngresos > 0 && $julioTotal > 0) ? ($julioTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeAgosto = ($totalIngresos > 0 && $agostoTotal > 0) ? ($agostoTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeSeptiembre = ($totalIngresos > 0 && $septiembreTotal > 0) ? ($septiembreTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeOctubre = ($totalIngresos > 0 && $octubreTotal > 0) ? ($octubreTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeNoviembre = ($totalIngresos > 0 && $noviembreTotal > 0) ? ($noviembreTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeDiciembre = ($totalIngresos > 0 && $diciembreTotal > 0) ? ($diciembreTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeEnero = ($totalIngresos > 0 && $eneroTotal > 0) ? ($eneroTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeFebrero = ($totalIngresos > 0 && $febreroTotal > 0) ? ($febreroTotal / $totalIngresos) * 100 : 0;
+                                            @endphp
+                                            <td class="number-cell calculated"><strong>{{ sprintf('%.2f%%', $porcentajePresupuesto) }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeJunio > 0 ? sprintf('%.2f%%', $porcentajeJunio) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeJulio > 0 ? sprintf('%.2f%%', $porcentajeJulio) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeAgosto > 0 ? sprintf('%.2f%%', $porcentajeAgosto) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeSeptiembre > 0 ? sprintf('%.2f%%', $porcentajeSeptiembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeOctubre > 0 ? sprintf('%.2f%%', $porcentajeOctubre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeNoviembre > 0 ? sprintf('%.2f%%', $porcentajeNoviembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeDiciembre > 0 ? sprintf('%.2f%%', $porcentajeDiciembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeEnero > 0 ? sprintf('%.2f%%', $porcentajeEnero) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeFebrero > 0 ? sprintf('%.2f%%', $porcentajeFebrero) : '-' }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -2256,16 +2356,30 @@
                                         </tr>
                                         <tr class="impact-row">
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
+                                            @php
+                                                $totalIngresos = $budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'] ?? 1;
+                                                $totalPresupuesto = array_sum($otrosEgresosData);
+                                                $porcentajePresupuesto = ($totalIngresos > 0) ? ($totalPresupuesto / $totalIngresos) * 100 : 0;
+                                                $porcentajeJunio = ($totalIngresos > 0 && $junioTotal > 0) ? ($junioTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeJulio = ($totalIngresos > 0 && $julioTotal > 0) ? ($julioTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeAgosto = ($totalIngresos > 0 && $agostoTotal > 0) ? ($agostoTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeSeptiembre = ($totalIngresos > 0 && $septiembreTotal > 0) ? ($septiembreTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeOctubre = ($totalIngresos > 0 && $octubreTotal > 0) ? ($octubreTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeNoviembre = ($totalIngresos > 0 && $noviembreTotal > 0) ? ($noviembreTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeDiciembre = ($totalIngresos > 0 && $diciembreTotal > 0) ? ($diciembreTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeEnero = ($totalIngresos > 0 && $eneroTotal > 0) ? ($eneroTotal / $totalIngresos) * 100 : 0;
+                                                $porcentajeFebrero = ($totalIngresos > 0 && $febreroTotal > 0) ? ($febreroTotal / $totalIngresos) * 100 : 0;
+                                            @endphp
+                                            <td class="number-cell calculated"><strong>{{ sprintf('%.2f%%', $porcentajePresupuesto) }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeJunio > 0 ? sprintf('%.2f%%', $porcentajeJunio) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeJulio > 0 ? sprintf('%.2f%%', $porcentajeJulio) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeAgosto > 0 ? sprintf('%.2f%%', $porcentajeAgosto) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeSeptiembre > 0 ? sprintf('%.2f%%', $porcentajeSeptiembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeOctubre > 0 ? sprintf('%.2f%%', $porcentajeOctubre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeNoviembre > 0 ? sprintf('%.2f%%', $porcentajeNoviembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeDiciembre > 0 ? sprintf('%.2f%%', $porcentajeDiciembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeEnero > 0 ? sprintf('%.2f%%', $porcentajeEnero) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeFebrero > 0 ? sprintf('%.2f%%', $porcentajeFebrero) : '-' }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -2347,32 +2461,61 @@
                                             @php
                                                 $totalJunio = 0;
                                                 $totalJulio = 0;
+                                                $totalAgosto = 0;
+                                                $totalSeptiembre = 0;
+                                                $totalOctubre = 0;
+                                                $totalNoviembre = 0;
+                                                $totalDiciembre = 0;
+                                                $totalEnero = 0;
+                                                $totalFebrero = 0;
                                                 foreach($seccionesLabels as $conceptKey => $concepto) {
                                                     $totalJunio += $seccionesAcademiaData[$conceptKey . '-junio'] ?? 0;
                                                     $totalJulio += $seccionesAcademiaData[$conceptKey . '-julio'] ?? 0;
+                                                    $totalAgosto += $seccionesAcademiaData[$conceptKey . '-agosto'] ?? 0;
+                                                    $totalSeptiembre += $seccionesAcademiaData[$conceptKey . '-septiembre'] ?? 0;
+                                                    $totalOctubre += $seccionesAcademiaData[$conceptKey . '-octubre'] ?? 0;
+                                                    $totalNoviembre += $seccionesAcademiaData[$conceptKey . '-noviembre'] ?? 0;
+                                                    $totalDiciembre += $seccionesAcademiaData[$conceptKey . '-diciembre'] ?? 0;
+                                                    $totalEnero += $seccionesAcademiaData[$conceptKey . '-enero'] ?? 0;
+                                                    $totalFebrero += $seccionesAcademiaData[$conceptKey . '-febrero'] ?? 0;
                                                 }
                                             @endphp
                                             <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalAgosto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalSeptiembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalOctubre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalNoviembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalDiciembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalEnero, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($totalFebrero, 0, ',', '.') }}</strong></td>
                                         </tr>
                                         <tr class="impact-row">
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
-                                            <td class="number-cell calculated"><strong>-</strong></td>
+                                            @php
+                                                $totalIngresos = $budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'] ?? 1;
+                                                $totalPresupuesto = array_sum($seccionesAcademiaData);
+                                                $porcentajePresupuesto = ($totalIngresos > 0) ? ($totalPresupuesto / $totalIngresos) * 100 : 0;
+                                                $porcentajeJunio = ($totalIngresos > 0 && $totalJunio > 0) ? ($totalJunio / $totalIngresos) * 100 : 0;
+                                                $porcentajeJulio = ($totalIngresos > 0 && $totalJulio > 0) ? ($totalJulio / $totalIngresos) * 100 : 0;
+                                                $porcentajeAgosto = ($totalIngresos > 0 && $totalAgosto > 0) ? ($totalAgosto / $totalIngresos) * 100 : 0;
+                                                $porcentajeSeptiembre = ($totalIngresos > 0 && $totalSeptiembre > 0) ? ($totalSeptiembre / $totalIngresos) * 100 : 0;
+                                                $porcentajeOctubre = ($totalIngresos > 0 && $totalOctubre > 0) ? ($totalOctubre / $totalIngresos) * 100 : 0;
+                                                $porcentajeNoviembre = ($totalIngresos > 0 && $totalNoviembre > 0) ? ($totalNoviembre / $totalIngresos) * 100 : 0;
+                                                $porcentajeDiciembre = ($totalIngresos > 0 && $totalDiciembre > 0) ? ($totalDiciembre / $totalIngresos) * 100 : 0;
+                                                $porcentajeEnero = ($totalIngresos > 0 && $totalEnero > 0) ? ($totalEnero / $totalIngresos) * 100 : 0;
+                                                $porcentajeFebrero = ($totalIngresos > 0 && $totalFebrero > 0) ? ($totalFebrero / $totalIngresos) * 100 : 0;
+                                            @endphp
+                                            <td class="number-cell calculated"><strong>{{ sprintf('%.2f%%', $porcentajePresupuesto) }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeJunio > 0 ? sprintf('%.2f%%', $porcentajeJunio) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeJulio > 0 ? sprintf('%.2f%%', $porcentajeJulio) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeAgosto > 0 ? sprintf('%.2f%%', $porcentajeAgosto) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeSeptiembre > 0 ? sprintf('%.2f%%', $porcentajeSeptiembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeOctubre > 0 ? sprintf('%.2f%%', $porcentajeOctubre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeNoviembre > 0 ? sprintf('%.2f%%', $porcentajeNoviembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeDiciembre > 0 ? sprintf('%.2f%%', $porcentajeDiciembre) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeEnero > 0 ? sprintf('%.2f%%', $porcentajeEnero) : '-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $porcentajeFebrero > 0 ? sprintf('%.2f%%', $porcentajeFebrero) : '-' }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
