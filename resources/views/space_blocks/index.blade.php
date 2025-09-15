@@ -6,6 +6,9 @@
     <div class="d-flex justify-content-between align-items-center">
         <h1>Gestión de Bloqueos de Espacios</h1>
         <div>
+            <a href="{{ route('space-blocks.download-list') }}" class="btn btn-success mr-2">
+                <i class="fas fa-file-excel"></i> Descargar Excel
+            </a>
             <a href="{{ route('space-blocks.create-weekly') }}" class="btn btn-institutional-blue mr-2">
                 <i class="fas fa-calendar-week"></i> Bloqueo por dias de la semana...
             </a>

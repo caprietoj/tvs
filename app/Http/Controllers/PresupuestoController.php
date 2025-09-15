@@ -746,6 +746,14 @@ class PresupuestoController extends Controller
         // Actualizar con datos reales de ejecución
         $budgetData = $this->actualizarBudgetDataConEjecucionReal($budgetData);
         
+        // Obtener datos reales de ingresos escolares importados
+        $ingresosEscolaresReales = $this->getIngresosEscolaresReales();
+        $totalesIngresosEscolares = $this->calcularTotalesIngresosEscolares($ingresosEscolaresReales);
+        
+        // Obtener datos reales de otros ingresos escolares importados
+        $otrosEscolaresReales = $this->getOtrosEscolaresReales();
+        $totalesOtrosEscolares = $this->calcularTotalesOtrosEscolares($otrosEscolaresReales);
+        
         // Obtener datos específicos por concepto
         $budgetDataByConcept = $this->getBudgetDataByConcept();
 
@@ -804,7 +812,7 @@ class PresupuestoController extends Controller
         $userSectionPermissions = $this->getUserSectionPermissions();
         $isAdmin = auth()->user()->can('admin');
         
-        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData', 'budgetDataByConcept', 'equiposDotacionData', 'aseoCafeteriaData', 'dotacionesData', 'agasajosData', 'tecnologiaData', 'gastosContratosData', 'afiliacionesSuscripcionesData', 'bachilleratoInternacionalData', 'deportesData', 'entrenamientosData', 'serviciosPublicosData', 'reparacionesMayoresData', 'reparacionMueblesData', 'mercadeoData', 'honorariosData', 'spreadsheetData', 'availableMonths', 'presupuestosTotalesSecciones', 'userSectionPermissions', 'isAdmin'));
+        return view('presupuesto.spreadsheet', compact('sheets', 'sampleData', 'optimizedData', 'maxRows', 'presupuestoItems', 'seccionesData', 'resumenConceptos', 'budgetData', 'budgetDataByConcept', 'equiposDotacionData', 'aseoCafeteriaData', 'dotacionesData', 'agasajosData', 'tecnologiaData', 'gastosContratosData', 'afiliacionesSuscripcionesData', 'bachilleratoInternacionalData', 'deportesData', 'entrenamientosData', 'serviciosPublicosData', 'reparacionesMayoresData', 'reparacionMueblesData', 'mercadeoData', 'honorariosData', 'spreadsheetData', 'availableMonths', 'presupuestosTotalesSecciones', 'userSectionPermissions', 'isAdmin', 'ingresosEscolaresReales', 'totalesIngresosEscolares', 'otrosEscolaresReales', 'totalesOtrosEscolares'));
     }
 
     /**
@@ -5462,15 +5470,33 @@ class PresupuestoController extends Controller
         $monthNumber = $this->getMonthNumber($mes);
         $year = 2025;
         
-        // Buscar registros reales de ingresos para el mes
-        // Por ahora usar un cálculo base hasta implementar lógica específica de ingresos
+        // Buscar registros reales de INGRESOS para el mes
+        // Las cuentas de ingresos escolares empiezan con "4" (contabilidad colombiana)
+        $ingresosReales = PresupuestoItem::whereYear('fecha', $year)
+            ->whereMonth('fecha', $monthNumber)
+            ->where(function($query) {
+                // Cuentas de ingresos escolares (pensiones, matrículas, etc.)
+                $query->where('cuenta', 'like', '4%')
+                      ->orWhere('descripcion', 'like', '%pension%')
+                      ->orWhere('descripcion', 'like', '%matricula%')
+                      ->orWhere('descripcion', 'like', '%mensualidad%')
+                      ->orWhere('descripcion', 'like', '%cobro%')
+                      ->orWhere('descripcion', 'like', '%recaudo%');
+            })
+            ->where('valor', '>', 0) // Solo valores positivos para ingresos
+            ->sum('valor');
+            
+        if ($ingresosReales > 0) {
+            return abs($ingresosReales);
+        }
+        
+        // Si no hay registros específicos, buscar por patrones más amplios
         $registrosDelMes = PresupuestoItem::whereYear('fecha', $year)
             ->whereMonth('fecha', $monthNumber)
             ->count();
             
         if ($registrosDelMes > 0) {
-            // Calcular ingresos basado en actividad del mes
-            // Mientras se implementa lógica real, usar presupuesto proporcional
+            // Usar cálculo estimado basado en presupuesto mientras se afinan los filtros
             $presupuestoAnual = 10457915716;
             $base = $presupuestoAnual / 9;
             
@@ -5501,7 +5527,29 @@ class PresupuestoController extends Controller
         $monthNumber = $this->getMonthNumber($mes);
         $year = 2025;
         
-        // Buscar registros reales de ingresos para el mes
+        // Buscar registros reales de OTROS INGRESOS ESCOLARES para el mes
+        // Esto incluye ingresos adicionales como cafetería, uniformes, actividades extracurriculares, etc.
+        $otrosIngresosReales = PresupuestoItem::whereYear('fecha', $year)
+            ->whereMonth('fecha', $monthNumber)
+            ->where(function($query) {
+                // Cuentas de otros ingresos escolares
+                $query->where('descripcion', 'like', '%cafeteria%')
+                      ->orWhere('descripcion', 'like', '%uniforme%')
+                      ->orWhere('descripcion', 'like', '%transporte%')
+                      ->orWhere('descripcion', 'like', '%actividad%')
+                      ->orWhere('descripcion', 'like', '%extracurricular%')
+                      ->orWhere('descripcion', 'like', '%servicio%')
+                      ->orWhere('descripcion', 'like', '%adicional%')
+                      ->orWhere('cuenta', 'like', '42%'); // Otras cuentas de ingreso
+            })
+            ->where('valor', '>', 0) // Solo valores positivos para ingresos
+            ->sum('valor');
+            
+        if ($otrosIngresosReales > 0) {
+            return abs($otrosIngresosReales);
+        }
+        
+        // Si no hay registros específicos, usar cálculo estimado
         $registrosDelMes = PresupuestoItem::whereYear('fecha', $year)
             ->whereMonth('fecha', $monthNumber)
             ->count();
@@ -5537,11 +5585,32 @@ class PresupuestoController extends Controller
     {
         $meses = ['junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'];
         
-        // Actualizar ingresos escolares con datos reales
+        // Actualizar ingresos y gastos con datos reales
         foreach ($meses as $mes) {
             $monthNumber = $this->getMonthNumber($mes);
             $year = 2025; // Usar 2025 para todos los meses por ahora
             
+            // *** ACTUALIZAR INGRESOS ESCOLARES ***
+            $ingresosEscolares = $this->getIngresosEscolaresEjecucion($mes);
+            if ($ingresosEscolares > 0) {
+                $budgetData['resumen_ingresos']['ingresos_escolares'][$mes] = abs($ingresosEscolares);
+            }
+            
+            // *** ACTUALIZAR OTROS INGRESOS ESCOLARES ***
+            $otrosEscolares = $this->getOtrosEscolaresEjecucion($mes);
+            if ($otrosEscolares > 0) {
+                $budgetData['resumen_ingresos']['ingresos_otros_escolares'][$mes] = abs($otrosEscolares);
+            }
+            
+            // Calcular total de ingresos
+            $totalIngresos = ($budgetData['resumen_ingresos']['ingresos_escolares'][$mes] ?? 0) +
+                           ($budgetData['resumen_ingresos']['ingresos_otros_escolares'][$mes] ?? 0);
+            
+            if ($totalIngresos > 0) {
+                $budgetData['resumen_ingresos']['total_ingresos'][$mes] = $totalIngresos;
+            }
+            
+            // *** ACTUALIZAR GASTOS ***
             // Usar los métodos ya existentes que tienen los filtros correctos
             $salariosAcademia = $this->getSalariosAcademiaEjecucion($mes);
             if ($salariosAcademia > 0) {
@@ -5575,8 +5644,7 @@ class PresupuestoController extends Controller
                 $budgetData['resumen_gastos']['total_gastos'][$mes] = $totalGastos;
             }
             
-            // Actualizar diferencia (para esto necesitaríamos ingresos reales, por ahora solo gastos)
-            $totalIngresos = $budgetData['resumen_ingresos']['total_ingresos'][$mes] ?? 0;
+            // Actualizar diferencia con ingresos y gastos reales
             $budgetData['saldo_diferencia']['diferencia'][$mes] = $totalIngresos - $totalGastos;
         }
         
@@ -6051,5 +6119,223 @@ class PresupuestoController extends Controller
         } else {
             return 'Otros Gastos Institucionales';
         }
+    }
+
+    /**
+     * Obtener datos reales de ingresos escolares por concepto y mes
+     * NOTA: Los datos importados son principalmente egresos, no ingresos.
+     * Este método está preparado para cuando se importen datos reales de ingresos.
+     */
+    private function getIngresosEscolaresReales()
+    {
+        $conceptos = [
+            'Matriculas' => 0,
+            'Pensiones' => 0,
+            'Seguros Estudiantiles' => 0,
+            'Desarrollo curricular bilingüe / Bibliobanco' => 0,
+            'Sistematización de Notas' => 0,
+            'Materiales generales' => 0
+        ];
+
+        $meses = ['junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'];
+        
+        $ingresosPorMes = [];
+        foreach ($meses as $mes) {
+            $ingresosPorMes[$mes] = $conceptos;
+        }
+
+        // IMPORTANTE: Los datos importados son principalmente EGRESOS (pagos del colegio)
+        // No ingresos escolares reales. Los verdaderos ingresos vendrían de:
+        // - Recaudos bancarios de matrículas/pensiones
+        // - Registros donde el colegio sea el receptor de dinero
+        // - Cuentas por cobrar de padres de familia
+        
+        // Por ahora retornamos ceros hasta que se importen datos reales de ingresos
+        // o se identifique la fuente correcta de estos datos en el sistema contable
+        
+        foreach ($meses as $mes) {
+            $monthNumber = $this->getMonthNumber($mes);
+            $year = 2025;
+
+            // DESHABILITADO: Búsqueda de matrículas - los registros actuales no son ingresos reales
+            /*
+            $matriculas = PresupuestoItem::whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->whereRaw('LOWER(descripcion) LIKE ?', ['%matricula%'])
+                ->sum('valor');
+            */
+
+            // DESHABILITADO: Búsqueda de pensiones - los registros son pagos a otros colegios
+            /*
+            $pensiones = PresupuestoItem::whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->whereRaw('LOWER(descripcion) LIKE ?', ['%pension%'])
+                ->whereRaw('LOWER(descripcion) NOT LIKE ?', ['%colpensiones%'])
+                ->whereRaw('LOWER(nombre_tercero) NOT LIKE ?', ['%school%'])
+                ->whereRaw('LOWER(nombre_tercero) NOT LIKE ?', ['%colegio%'])
+                ->whereRaw('LOWER(nombre_tercero) NOT LIKE ?', ['%colombus%'])
+                ->sum('valor');
+            */
+
+            // Todos los conceptos permanecen en 0 hasta tener datos reales de ingresos
+            // Los valores se mantendrán como están inicializados (0)
+        }
+
+        return $ingresosPorMes;
+    }
+
+    /**
+     * Obtener datos reales de otros ingresos escolares por concepto y mes
+     * Incluye: rendimientos, agenda, anuario, exámenes, cafetería, transporte
+     */
+    private function getOtrosEscolaresReales()
+    {
+        $conceptos = [
+            'Rendimientos/Intereses' => 0,
+            'Agenda escolar' => 0,
+            'Anuario' => 0,
+            'Examenes de Admisión' => 0,
+            'Ingresos Por Servicio Cafeteria' => 0,
+            'Ingresos Por Servicio Transporte' => 0
+        ];
+
+        $meses = ['junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'];
+        
+        $ingresosPorMes = [];
+        foreach ($meses as $mes) {
+            $ingresosPorMes[$mes] = $conceptos;
+        }
+
+        foreach ($meses as $mes) {
+            $monthNumber = $this->getMonthNumber($mes);
+            $year = 2025;
+
+            // 1. Buscar rendimientos/intereses bancarios
+            $rendimientos = PresupuestoItem::whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->where(function($query) {
+                    $query->whereRaw('LOWER(descripcion) LIKE ?', ['%rendimiento%'])
+                          ->orWhereRaw('LOWER(descripcion) LIKE ?', ['%interes%'])
+                          ->orWhereRaw('LOWER(descripcion) LIKE ?', ['%intereses%']);
+                })
+                ->whereRaw('LOWER(nombre_tercero) LIKE ?', ['%banco%']) // Solo de bancos
+                ->where('valor', '>', 0) // Solo valores positivos
+                ->sum('valor');
+            
+            if ($rendimientos > 0) {
+                $ingresosPorMes[$mes]['Rendimientos/Intereses'] = $rendimientos;
+            }
+
+            // 2. Buscar agenda escolar (registros del propio colegio)
+            $agenda = PresupuestoItem::whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->whereRaw('LOWER(descripcion) LIKE ?', ['%agenda%'])
+                ->whereRaw('LOWER(nombre_tercero) LIKE ?', ['%colegio victoria%']) // Solo del propio colegio
+                ->where('valor', '>', 0)
+                ->sum('valor');
+            
+            if ($agenda > 0) {
+                $ingresosPorMes[$mes]['Agenda escolar'] = $agenda;
+            }
+
+            // 3. Buscar anuario (registros del propio colegio)
+            $anuario = PresupuestoItem::whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->whereRaw('LOWER(descripcion) LIKE ?', ['%anuario%'])
+                ->whereRaw('LOWER(nombre_tercero) LIKE ?', ['%colegio victoria%']) // Solo del propio colegio
+                ->where('valor', '>', 0)
+                ->sum('valor');
+            
+            if ($anuario > 0) {
+                $ingresosPorMes[$mes]['Anuario'] = $anuario;
+            }
+
+            // 4. Buscar exámenes de admisión (registros del propio colegio)
+            $examenes = PresupuestoItem::whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->where(function($query) {
+                    $query->whereRaw('LOWER(descripcion) LIKE ?', ['%examen%'])
+                          ->whereRaw('LOWER(descripcion) LIKE ?', ['%admision%']);
+                })
+                ->whereRaw('LOWER(nombre_tercero) LIKE ?', ['%colegio victoria%']) // Solo del propio colegio
+                ->where('valor', '>', 0)
+                ->sum('valor');
+            
+            if ($examenes > 0) {
+                $ingresosPorMes[$mes]['Examenes de Admisión'] = $examenes;
+            }
+
+            // 5. Buscar ingresos por cafetería (registros del propio colegio)
+            $cafeteria = PresupuestoItem::whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->whereRaw('LOWER(descripcion) LIKE ?', ['%cafeteria%'])
+                ->whereRaw('LOWER(nombre_tercero) LIKE ?', ['%colegio victoria%']) // Solo del propio colegio
+                ->where('valor', '>', 0)
+                ->sum('valor');
+            
+            if ($cafeteria > 0) {
+                $ingresosPorMes[$mes]['Ingresos Por Servicio Cafeteria'] = $cafeteria;
+            }
+
+            // 6. Buscar ingresos por transporte (registros del propio colegio + reintegros)
+            $transporte = PresupuestoItem::whereYear('fecha', $year)
+                ->whereMonth('fecha', $monthNumber)
+                ->where(function($query) {
+                    $query->where(function($q) {
+                        // Registros del propio colegio relacionados con transporte/rutas
+                        $q->whereRaw('LOWER(nombre_tercero) LIKE ?', ['%colegio victoria%'])
+                          ->where(function($subq) {
+                              $subq->whereRaw('LOWER(descripcion) LIKE ?', ['%ruta%'])
+                                   ->orWhereRaw('LOWER(descripcion) LIKE ?', ['%transporte%']);
+                          });
+                    })->orWhere(function($q) {
+                        // Reintegros por transporte de entidades gubernamentales
+                        $q->whereRaw('LOWER(descripcion) LIKE ?', ['%reintegro%'])
+                          ->where(function($subq) {
+                              $subq->whereRaw('LOWER(descripcion) LIKE ?', ['%transporte%'])
+                                   ->orWhereRaw('LOWER(descripcion) LIKE ?', ['%pico%'])
+                                   ->orWhereRaw('LOWER(descripcion) LIKE ?', ['%placa%']);
+                          });
+                    });
+                })
+                ->where('valor', '>', 0)
+                ->sum('valor');
+            
+            if ($transporte > 0) {
+                $ingresosPorMes[$mes]['Ingresos Por Servicio Transporte'] = $transporte;
+            }
+        }
+
+        return $ingresosPorMes;
+    }
+
+    /**
+     * Calcular totales de otros ingresos escolares por mes
+     */
+    private function calcularTotalesOtrosEscolares($otrosEscolaresPorMes)
+    {
+        $totales = [];
+        $meses = ['junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'];
+        
+        foreach ($meses as $mes) {
+            $totales[$mes] = array_sum($otrosEscolaresPorMes[$mes]);
+        }
+        
+        return $totales;
+    }
+
+    /**
+     * Calcular totales de ingresos escolares por mes
+     */
+    private function calcularTotalesIngresosEscolares($ingresosPorMes)
+    {
+        $totales = [];
+        $meses = ['junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'];
+        
+        foreach ($meses as $mes) {
+            $totales[$mes] = array_sum($ingresosPorMes[$mes]);
+        }
+        
+        return $totales;
     }
 }

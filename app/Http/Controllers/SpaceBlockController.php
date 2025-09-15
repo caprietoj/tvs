@@ -6,6 +6,8 @@ use App\Models\Space;
 use App\Models\SpaceBlock;
 use App\Models\SchoolCycle;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\SpaceBlocksExport;
 
 class SpaceBlockController extends Controller
 {
@@ -401,5 +403,15 @@ class SpaceBlockController extends Controller
         // Verificar si hay superposición
         // Los rangos se superponen si el inicio de uno es menor que el final del otro y viceversa
         return $start1->lt($end2) && $start2->lt($end1);
+    }
+
+    /**
+     * Descargar listado de bloqueos de espacios en Excel
+     */
+    public function downloadList()
+    {
+        $fileName = 'bloqueos_espacios_' . date('Y-m-d_H-i-s') . '.xlsx';
+        
+        return Excel::download(new SpaceBlocksExport, $fileName);
     }
 }

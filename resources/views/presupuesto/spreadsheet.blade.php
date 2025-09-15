@@ -1082,14 +1082,6 @@
                                     💾 Guardar Datos
                                 </button>
                                 
-                                <button id="recalculate-totals" style="padding: 8px 15px; background-color: #17a2b8; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-left: 10px;">
-                                    🧮 Recalcular Totales
-                                </button>
-                                
-                                <button id="debug-structure" style="padding: 8px 15px; background-color: #6f42c1; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-left: 10px;">
-                                    🔍 Debug Estructura
-                                </button>
-                                
                                 <span id="filter-status" style="margin-left: 15px; font-size: 12px; color: #28a745; font-weight: 500;">Mostrando: Todas las tablas</span>
                                 <span id="editable-status" style="margin-left: 10px; font-size: 12px; color: #dc3545; font-weight: 500;">Modo: Solo Lectura</span>
                             </div>
@@ -1476,96 +1468,93 @@
                                         <tr>
                                             <td><strong>Matriculas</strong></td>
                                             <td class="number-cell">$979.804.763</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Matriculas'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Matriculas'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Pensiones</strong></td>
                                             <td class="number-cell">$8.816.286.570</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Pensiones'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Pensiones'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Seguros Estudiantiles</strong></td>
                                             <td class="number-cell">$3.922.844</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Seguros Estudiantiles'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Desarrollo curricular bilingüe / Bibliobanco</strong></td>
                                             <td class="number-cell">$443.751.216</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Sistematización de Notas</strong></td>
                                             <td class="number-cell">$98.984.742</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Sistematización de Notas'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Materiales generales</strong></td>
                                             <td class="number-cell">$115.165.581</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
-                                            <td class="number-cell editable"></td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Materiales generales'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Materiales generales'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>TOTAL INGRESOS ESCOLARES</strong></td>
                                             <td class="number-cell calculated"><strong>$10.457.915.716</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesIngresosEscolares['junio'] > 0 ? '$'.number_format($totalesIngresosEscolares['junio'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesIngresosEscolares['julio'] > 0 ? '$'.number_format($totalesIngresosEscolares['julio'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesIngresosEscolares['agosto'] > 0 ? '$'.number_format($totalesIngresosEscolares['agosto'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesIngresosEscolares['septiembre'] > 0 ? '$'.number_format($totalesIngresosEscolares['septiembre'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesIngresosEscolares['octubre'] > 0 ? '$'.number_format($totalesIngresosEscolares['octubre'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesIngresosEscolares['noviembre'] > 0 ? '$'.number_format($totalesIngresosEscolares['noviembre'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesIngresosEscolares['diciembre'] > 0 ? '$'.number_format($totalesIngresosEscolares['diciembre'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesIngresosEscolares['enero'] > 0 ? '$'.number_format($totalesIngresosEscolares['enero'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesIngresosEscolares['febrero'] > 0 ? '$'.number_format($totalesIngresosEscolares['febrero'], 0, ',', '.') : '$-' }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1596,94 +1585,93 @@
                                         <tr>
                                             <td><strong>Rendimientos/Intereses</strong></td>
                                             <td class="number-cell">$0</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['junio']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Rendimientos/Intereses'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['diciembre']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['diciembre']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['enero']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['enero']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['febrero']['Rendimientos/Intereses'] > 0 ? '$'.number_format($otrosEscolaresReales['febrero']['Rendimientos/Intereses'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Agenda escolar</strong></td>
                                             <td class="number-cell">$114.682.596</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['junio']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Agenda escolar'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Agenda escolar'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Agenda escolar'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Agenda escolar'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Agenda escolar'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Agenda escolar'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['diciembre']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['diciembre']['Agenda escolar'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['enero']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['enero']['Agenda escolar'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['febrero']['Agenda escolar'] > 0 ? '$'.number_format($otrosEscolaresReales['febrero']['Agenda escolar'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Anuario</strong></td>
                                             <td class="number-cell">$9.257.396</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['junio']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Anuario'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Anuario'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Anuario'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Anuario'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Anuario'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Anuario'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['diciembre']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['diciembre']['Anuario'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['enero']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['enero']['Anuario'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['febrero']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['febrero']['Anuario'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Examenes de Admisión</strong></td>
                                             <td class="number-cell">$38.371.950</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['junio']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Examenes de Admisión'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['diciembre']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['diciembre']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['enero']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['enero']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['febrero']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['febrero']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Ingresos Por Servicio Cafeteria</strong></td>
                                             <td class="number-cell">$6.424.511</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['junio']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['diciembre']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['diciembre']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['enero']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['enero']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['febrero']['Ingresos Por Servicio Cafeteria'] > 0 ? '$'.number_format($otrosEscolaresReales['febrero']['Ingresos Por Servicio Cafeteria'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Ingresos Por Servicio Transporte</strong></td>
                                             <td class="number-cell">$700.126.312</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
-                                            <td class="number-cell editable">0</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['junio']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['diciembre']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['diciembre']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['enero']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['enero']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['febrero']['Ingresos Por Servicio Transporte'] > 0 ? '$'.number_format($otrosEscolaresReales['febrero']['Ingresos Por Servicio Transporte'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>TOTAL OTROS ESCOLARES</strong></td>
                                             <td class="number-cell calculated"><strong>$868.862.765</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesOtrosEscolares['junio'] > 0 ? '$'.number_format($totalesOtrosEscolares['junio'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesOtrosEscolares['julio'] > 0 ? '$'.number_format($totalesOtrosEscolares['julio'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesOtrosEscolares['agosto'] > 0 ? '$'.number_format($totalesOtrosEscolares['agosto'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesOtrosEscolares['septiembre'] > 0 ? '$'.number_format($totalesOtrosEscolares['septiembre'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesOtrosEscolares['octubre'] > 0 ? '$'.number_format($totalesOtrosEscolares['octubre'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesOtrosEscolares['noviembre'] > 0 ? '$'.number_format($totalesOtrosEscolares['noviembre'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesOtrosEscolares['diciembre'] > 0 ? '$'.number_format($totalesOtrosEscolares['diciembre'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesOtrosEscolares['enero'] > 0 ? '$'.number_format($totalesOtrosEscolares['enero'], 0, ',', '.') : '$-' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalesOtrosEscolares['febrero'] > 0 ? '$'.number_format($totalesOtrosEscolares['febrero'], 0, ',', '.') : '$-' }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -7428,11 +7416,11 @@ tr.editing {
 }
 
 /* Estilos para el botón de toggle editable */
-#toggle-editable, #recalculate-totals, #save-data {
+#toggle-editable, #save-data {
     transition: all 0.3s ease;
 }
 
-#toggle-editable:hover, #recalculate-totals:hover, #save-data:hover {
+#toggle-editable:hover, #save-data:hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
@@ -7451,12 +7439,6 @@ tr.editing {
     background-color: #6c757d !important;
     cursor: not-allowed;
     animation: none;
-}
-
-#recalculate-totals:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
 }
 
 /* Indicador visual para celdas editables */
@@ -8733,8 +8715,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterStatus = document.getElementById('filter-status');
     const toggleEditableButton = document.getElementById('toggle-editable');
     const editableStatus = document.getElementById('editable-status');
-    const recalculateButton = document.getElementById('recalculate-totals');
-    const debugButton = document.getElementById('debug-structure');
     
     let isEditableMode = false;
     
@@ -8743,9 +8723,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resetButton: !!resetButton,
         filterStatus: !!filterStatus,
         toggleEditableButton: !!toggleEditableButton,
-        editableStatus: !!editableStatus,
-        recalculateButton: !!recalculateButton,
-        debugButton: !!debugButton
+        editableStatus: !!editableStatus
     });
     
     if (filterDropdown) {
@@ -8791,45 +8769,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     } else {
         console.error('No se encontró el elemento save-data');
-    }
-    
-    // Manejo del botón para recalcular totales
-    if (recalculateButton) {
-        recalculateButton.addEventListener('click', function() {
-            console.log('Botón recalcular presionado');
-            
-            // Cambiar el texto del botón temporalmente
-            const originalText = this.textContent;
-            this.textContent = '🔄 Calculando...';
-            this.disabled = true;
-            
-            // Recalcular después de un pequeño delay para mostrar el feedback
-            setTimeout(() => {
-                calculateAllTotals();
-                
-                // Restaurar el botón
-                this.textContent = originalText;
-                this.disabled = false;
-                
-                // Mostrar confirmación temporal
-                this.textContent = '✅ ¡Calculado!';
-                setTimeout(() => {
-                    this.textContent = originalText;
-                }, 1500);
-            }, 200);
-        });
-    } else {
-        console.error('No se encontró el elemento recalculate-totals');
-    }
-    
-    // Manejo del botón de debug
-    if (debugButton) {
-        debugButton.addEventListener('click', function() {
-            console.log('🔍 Botón debug presionado');
-            debugTableStructure();
-        });
-    } else {
-        console.error('No se encontró el elemento debug-structure');
     }
     
     function filterTables(category) {
@@ -9186,6 +9125,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         console.log('Cálculo de todos los totales completado.');
+        
+        // Calcular porcentajes de impacto después de todos los totales
+        setTimeout(() => {
+            calculateImpactPercentages();
+        }, 100);
     }
     
     function updateTotalCell(cell, value) {
@@ -9230,6 +9174,103 @@ document.addEventListener('DOMContentLoaded', function() {
         return isNaN(number) ? 0 : Math.round(number); // Redondear a entero
     }
     
+    // Función para calcular porcentajes de impacto frente a ingresos totales
+    function calculateImpactPercentages() {
+        console.log('Calculando porcentajes de impacto...');
+        
+        // Obtener el total de ingresos desde la tabla RESUMEN
+        const totalIngresosValue = getTotalIngresosValue();
+        
+        if (totalIngresosValue === 0) {
+            console.log('Total de ingresos es 0, no se pueden calcular porcentajes');
+            return;
+        }
+        
+        // Buscar todas las filas de "Impacto % frente a ingresos totales"
+        const impactRows = document.querySelectorAll('tr');
+        
+        impactRows.forEach(row => {
+            const firstCell = row.querySelector('td');
+            if (firstCell && firstCell.textContent.includes('Impacto % frente a ingresos totales')) {
+                console.log('Procesando fila de impacto:', firstCell.textContent);
+                
+                // Encontrar la fila de totales anterior
+                const totalRow = findPreviousTotalRow(row);
+                if (totalRow) {
+                    const impactCells = row.querySelectorAll('td.number-cell');
+                    const totalCells = totalRow.querySelectorAll('td.number-cell');
+                    
+                    // Procesar cada mes (saltar primera columna de presupuesto aprobado)
+                    for (let i = 1; i < Math.min(impactCells.length, totalCells.length); i++) {
+                        const totalValue = extractNumericValue(totalCells[i].textContent);
+                        const percentage = totalValue > 0 ? ((totalValue / totalIngresosValue) * 100) : 0;
+                        
+                        updateImpactCell(impactCells[i], percentage);
+                    }
+                }
+            }
+        });
+        
+        console.log('Cálculo de porcentajes de impacto completado.');
+    }
+    
+    // Función para obtener el valor de Total Ingresos del presupuesto aprobado
+    function getTotalIngresosValue() {
+        const resumenTables = document.querySelectorAll('.filter-resumen .budget-table');
+        
+        for (let table of resumenTables) {
+            const rows = table.querySelectorAll('tbody tr');
+            
+            for (let row of rows) {
+                const firstCell = row.querySelector('td');
+                if (firstCell && firstCell.textContent.includes('Total Ingresos')) {
+                    const presupuestoCell = row.querySelector('td.number-cell:nth-child(2)');
+                    if (presupuestoCell) {
+                        const value = extractNumericValue(presupuestoCell.textContent);
+                        console.log('Total Ingresos encontrado:', value);
+                        return value;
+                    }
+                }
+            }
+        }
+        
+        console.log('No se encontró Total Ingresos');
+        return 0;
+    }
+    
+    // Función para encontrar la fila de totales anterior
+    function findPreviousTotalRow(impactRow) {
+        let currentRow = impactRow.previousElementSibling;
+        
+        while (currentRow) {
+            if (currentRow.classList.contains('total-row')) {
+                return currentRow;
+            }
+            currentRow = currentRow.previousElementSibling;
+        }
+        
+        return null;
+    }
+    
+    // Función para actualizar celda de impacto con porcentaje
+    function updateImpactCell(cell, percentage) {
+        const formattedPercentage = percentage > 0 ? `${percentage.toFixed(2)}%` : '-';
+        
+        if (cell.innerHTML !== formattedPercentage) {
+            cell.innerHTML = formattedPercentage;
+            
+            // Agregar clase para animación
+            cell.classList.add('updated');
+            
+            // Remover la clase de animación después de completarla
+            setTimeout(() => {
+                cell.classList.remove('updated');
+            }, 600);
+            
+            console.log(`Porcentaje de impacto actualizado: ${formattedPercentage}`);
+        }
+    }
+    
     function formatNumber(number) {
         if (isNaN(number) || number === null || number === undefined) return '0';
         
@@ -9261,37 +9302,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 debugTableStructure();
             }, 100);
         }
-    }
-    
-    // Función de debugging para entender la estructura de las tablas
-    function debugTableStructure() {
-        console.log('=== DEBUG: Estructura de Tablas ===');
-        
-        const budgetTables = document.querySelectorAll('.budget-table');
-        
-        budgetTables.forEach((table, tableIndex) => {
-            console.log(`\nTabla ${tableIndex + 1}:`);
-            
-            // Headers
-            const headers = table.querySelectorAll('thead th');
-            console.log('Headers:', Array.from(headers).map((h, i) => `[${i}] ${h.textContent.trim()}`));
-            
-            // Primera fila de datos
-            const firstDataRow = table.querySelector('tbody tr:not(.total-row)');
-            if (firstDataRow) {
-                const dataCells = firstDataRow.querySelectorAll('td');
-                console.log('Primera fila datos:', Array.from(dataCells).map((c, i) => `[${i}] ${c.textContent.trim()} (${c.classList.toString()})`));
-            }
-            
-            // Fila de totales
-            const totalRow = table.querySelector('.total-row');
-            if (totalRow) {
-                const totalCells = totalRow.querySelectorAll('td');
-                console.log('Fila totales:', Array.from(totalCells).map((c, i) => `[${i}] ${c.textContent.trim()} (${c.classList.toString()})`));
-            }
-        });
-        
-        console.log('=== FIN DEBUG ===\n');
     }
     
     function getColumnIndex(cell) {
@@ -9347,6 +9357,116 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('📊 Celda extraída - Concepto:', concepto, 'Columna:', columna, 'Valor:', valor);
         return cellData;
+    }
+    
+    // Variable para controlar el debouncing de guardado
+    let saveTimeouts = new Map();
+    
+    // Función para guardar una celda individual en la base de datos
+    function saveCellToDatabase(cellData, cellElement) {
+        console.log('💾 Solicitando guardado de celda individual:', cellData);
+        
+        // Verificar que los datos sean válidos
+        if (!cellData || cellData.es_total) {
+            console.log('⚠️ Saltando guardado: celda sin datos o es total');
+            return;
+        }
+        
+        // Crear una clave única para esta celda
+        const cellKey = `${cellData.tabla_nombre}-${cellData.concepto}-${cellData.columna}`;
+        
+        // Cancelar guardado anterior si existe
+        if (saveTimeouts.has(cellKey)) {
+            clearTimeout(saveTimeouts.get(cellKey));
+            console.log('⏱️ Cancelando guardado anterior para:', cellKey);
+        }
+        
+        // Programar guardado con debouncing de 500ms
+        const timeoutId = setTimeout(() => {
+            console.log('💾 Ejecutando guardado para:', cellKey);
+            actualSaveCellToDatabase(cellData, cellElement);
+            saveTimeouts.delete(cellKey);
+        }, 500);
+        
+        saveTimeouts.set(cellKey, timeoutId);
+        
+        // Indicador visual inmediato de "pendiente de guardado"
+        cellElement.style.borderLeft = '3px solid #6c757d'; // Gris para "pendiente"
+    }
+    
+    // Función interna que realiza el guardado real
+    function actualSaveCellToDatabase(cellData, cellElement) {
+        console.log('💾 Guardando celda individual:', cellData);
+        
+        // Verificar que los datos sean válidos
+        if (!cellData || cellData.es_total) {
+            console.log('⚠️ Saltando guardado: celda sin datos o es total');
+            return;
+        }
+        
+        // Verificar CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfToken) {
+            console.error('❌ Token CSRF no encontrado');
+            return;
+        }
+        
+        // Agregar indicador visual de guardado
+        cellElement.style.borderLeft = '3px solid #ffc107'; // Amarillo para "guardando"
+        
+        // Enviar datos al servidor usando la misma ruta masiva pero con una sola celda
+        fetch('{{ route("presupuesto.guardar-celda-masivo") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken.getAttribute('content')
+            },
+            body: JSON.stringify({
+                celdas: [cellData] // Enviar como array con una sola celda
+            })
+        })
+        .then(response => {
+            console.log('📨 Respuesta del servidor para celda individual:', response.status, response.statusText);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📦 Datos recibidos para celda individual:', data);
+            if (data.success) {
+                console.log('✅ Celda guardada exitosamente');
+                
+                // Indicador visual de éxito
+                cellElement.style.borderLeft = '3px solid #28a745'; // Verde para "guardado"
+                setTimeout(() => {
+                    cellElement.style.borderLeft = '';
+                }, 2000);
+                
+                // Recalcular porcentajes de impacto después de guardar
+                setTimeout(() => {
+                    calculateImpactPercentages();
+                }, 100);
+                
+            } else {
+                console.error('❌ Error al guardar celda:', data.message);
+                
+                // Indicador visual de error
+                cellElement.style.borderLeft = '3px solid #dc3545'; // Rojo para "error"
+                setTimeout(() => {
+                    cellElement.style.borderLeft = '';
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error de conexión al guardar celda:', error);
+            
+            // Indicador visual de error
+            cellElement.style.borderLeft = '3px solid #dc3545'; // Rojo para "error"
+            setTimeout(() => {
+                cellElement.style.borderLeft = '';
+            }, 3000);
+        });
     }
     
     function saveAllData() {
@@ -9472,7 +9592,8 @@ document.addEventListener('DOMContentLoaded', function() {
         @if(isset($spreadsheetData))
             const spreadsheetData = @json($spreadsheetData);
             console.log('Datos cargados desde la base de datos:', spreadsheetData);
-            populateTableWithData(spreadsheetData);
+            // TEMPORALMENTE DESHABILITADO: populateTableWithData(spreadsheetData);
+            console.log('⚠️ populateTableWithData() deshabilitado temporalmente para probar datos dinámicos');
         @else
             console.log('No hay datos guardados para cargar');
         @endif
@@ -9539,7 +9660,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Cargar datos al inicializar la página
-    loadDataFromDatabase();
+    // TEMPORALMENTE DESHABILITADO: loadDataFromDatabase();
+    console.log('⚠️ loadDataFromDatabase() deshabilitado temporalmente para probar datos dinámicos');
     
     // Inicializar sistema completo después de cargar datos
     setTimeout(() => {

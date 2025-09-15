@@ -943,6 +943,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('holidays.import');
     
     // Bloqueos de Espacios
+    Route::get('space-blocks/create-weekly', [App\Http\Controllers\SpaceBlockController::class, 'createWeekly'])
+        ->name('space-blocks.create-weekly');
+    Route::post('space-blocks/store-weekly', [App\Http\Controllers\SpaceBlockController::class, 'storeWeekly'])
+        ->name('space-blocks.store-weekly');
+    Route::get('space-blocks/download-list', [App\Http\Controllers\SpaceBlockController::class, 'downloadList'])
+        ->name('space-blocks.download-list');
     Route::resource('space-blocks', App\Http\Controllers\SpaceBlockController::class);
     Route::get('space-blocks/space/{spaceId}', [App\Http\Controllers\SpaceBlockController::class, 'getBlocksBySpace'])
         ->name('space-blocks.by-space');
