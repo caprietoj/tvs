@@ -34,6 +34,8 @@ class SpaceBlocksExport implements FromCollection, WithHeadings, WithMapping, Wi
             'Espacio',
             'Ciclo Escolar',
             'Día del Ciclo',
+            'Hora de Inicio',
+            'Hora de Fin',
             'Motivo'
         ];
     }
@@ -48,6 +50,8 @@ class SpaceBlocksExport implements FromCollection, WithHeadings, WithMapping, Wi
             $spaceBlock->space ? $spaceBlock->space->name : 'N/A',
             $spaceBlock->schoolCycle ? $spaceBlock->schoolCycle->year : 'N/A',
             $spaceBlock->cycle_day ?? 'N/A',
+            $spaceBlock->start_time ? substr($spaceBlock->start_time, 0, 5) : 'N/A',
+            $spaceBlock->end_time ? substr($spaceBlock->end_time, 0, 5) : 'N/A',
             $spaceBlock->reason ?? 'Sin motivo especificado'
         ];
     }
@@ -61,7 +65,9 @@ class SpaceBlocksExport implements FromCollection, WithHeadings, WithMapping, Wi
             'A' => 30,  // Espacio
             'B' => 15,  // Ciclo Escolar
             'C' => 15,  // Día del Ciclo
-            'D' => 50,  // Motivo
+            'D' => 15,  // Hora de Inicio
+            'E' => 15,  // Hora de Fin
+            'F' => 50,  // Motivo
         ];
     }
 
@@ -88,7 +94,7 @@ class SpaceBlocksExport implements FromCollection, WithHeadings, WithMapping, Wi
                 ]
             ],
             // Estilo para todas las filas de datos
-            'A:D' => [
+            'A:F' => [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER
                 ]
