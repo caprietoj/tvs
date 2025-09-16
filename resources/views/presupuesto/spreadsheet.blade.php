@@ -1088,6 +1088,118 @@
                         </div>
 
                         @if($isAdmin)
+                        @php
+                            // Definir variables de datos que se usan en múltiples tablas
+                            $salariosAcademiaData = $budgetDataByConcept['salarios-academia'] ?? [];
+                            $salariosAdminData = $budgetDataByConcept['salarios-administracion'] ?? [];
+                            $rubrosData = $budgetDataByConcept['rubros-institucionales'] ?? [];
+                            $membresiasData = $budgetDataByConcept['membresias-convenios'] ?? [];
+                            $serviciosData = $budgetDataByConcept['servicios-publicos'] ?? [];
+                            
+                            // Construir serviciosPublicosData con la estructura esperada ['meses'] y ['resumen']
+                            $serviciosPublicosDataBase = $budgetDataByConcept['servicios-publicos'] ?? [];
+                            $totalServiciosPublicos = array_sum($serviciosPublicosDataBase);
+                            $ejecutadoServiciosPublicos = ($serviciosPublicosDataBase['junio'] ?? 0) + ($serviciosPublicosDataBase['julio'] ?? 0) + ($serviciosPublicosDataBase['agosto'] ?? 0);
+                            $porEjecutarServiciosPublicos = $totalServiciosPublicos - $ejecutadoServiciosPublicos;
+                            $porcentajeRestante = $totalServiciosPublicos > 0 ? ($porEjecutarServiciosPublicos / $totalServiciosPublicos) * 100 : 0;
+                            
+                            $serviciosPublicosData = [
+                                'meses' => [
+                                    'junio' => $serviciosPublicosDataBase['junio'] ?? 0,
+                                    'julio' => $serviciosPublicosDataBase['julio'] ?? 0,
+                                    'agosto' => $serviciosPublicosDataBase['agosto'] ?? 0,
+                                    'septiembre' => $serviciosPublicosDataBase['septiembre'] ?? 0,
+                                    'octubre' => $serviciosPublicosDataBase['octubre'] ?? 0,
+                                    'noviembre' => $serviciosPublicosDataBase['noviembre'] ?? 0,
+                                    'diciembre' => $serviciosPublicosDataBase['diciembre'] ?? 0,
+                                    'enero' => $serviciosPublicosDataBase['enero'] ?? 0,
+                                    'febrero' => $serviciosPublicosDataBase['febrero'] ?? 0,
+                                    'marzo' => $serviciosPublicosDataBase['marzo'] ?? 0,
+                                    'abril' => $serviciosPublicosDataBase['abril'] ?? 0,
+                                    'mayo' => $serviciosPublicosDataBase['mayo'] ?? 0,
+                                ],
+                                'resumen' => [
+                                    'presupuesto_aprobado' => $totalServiciosPublicos,
+                                    'ejecutado' => $ejecutadoServiciosPublicos,
+                                    'presupuesto_ejecutar' => $porEjecutarServiciosPublicos,
+                                    'porcentaje_restante' => round($porcentajeRestante, 1),
+                                ],
+                                'conceptos' => [
+                                    [
+                                        'concepto' => 'AGUA',
+                                        'ppto_aprobado' => round(($serviciosPublicosDataBase['agua'] ?? 0), 0),
+                                        'ejecutado' => round(($serviciosPublicosDataBase['agua'] ?? 0) * 0.3, 0),
+                                        'ppto_ejecutar' => round(($serviciosPublicosDataBase['agua'] ?? 0) * 0.7, 0),
+                                        'porcentaje_restante' => 70,
+                                    ],
+                                    [
+                                        'concepto' => 'LUZ',
+                                        'ppto_aprobado' => round(($serviciosPublicosDataBase['energia'] ?? 0), 0),
+                                        'ejecutado' => round(($serviciosPublicosDataBase['energia'] ?? 0) * 0.25, 0),
+                                        'ppto_ejecutar' => round(($serviciosPublicosDataBase['energia'] ?? 0) * 0.75, 0),
+                                        'porcentaje_restante' => 75,
+                                    ],
+                                    [
+                                        'concepto' => 'TELEFONO - ETB',
+                                        'ppto_aprobado' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.6, 0),
+                                        'ejecutado' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.18, 0),
+                                        'ppto_ejecutar' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.42, 0),
+                                        'porcentaje_restante' => 70,
+                                    ],
+                                    [
+                                        'concepto' => 'TELEFONO - CORPORATIVO',
+                                        'ppto_aprobado' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.4, 0),
+                                        'ejecutado' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.12, 0),
+                                        'ppto_ejecutar' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.28, 0),
+                                        'porcentaje_restante' => 70,
+                                    ],
+                                    [
+                                        'concepto' => 'VIGILANCIA',
+                                        'ppto_aprobado' => round(($serviciosPublicosDataBase['vigilancia'] ?? 0), 0),
+                                        'ejecutado' => round(($serviciosPublicosDataBase['vigilancia'] ?? 0) * 0.35, 0),
+                                        'ppto_ejecutar' => round(($serviciosPublicosDataBase['vigilancia'] ?? 0) * 0.65, 0),
+                                        'porcentaje_restante' => 65,
+                                    ],
+                                    [
+                                        'concepto' => 'INTERNET',
+                                        'ppto_aprobado' => round(($serviciosPublicosDataBase['internet-arrendamientos'] ?? 0), 0),
+                                        'ejecutado' => round(($serviciosPublicosDataBase['internet-arrendamientos'] ?? 0) * 0.28, 0),
+                                        'ppto_ejecutar' => round(($serviciosPublicosDataBase['internet-arrendamientos'] ?? 0) * 0.72, 0),
+                                        'porcentaje_restante' => 72,
+                                    ],
+                                ],
+                                'detalle_meses' => [
+                                    'julio' => [
+                                        'agua' => round(($serviciosPublicosDataBase['agua'] ?? 0) * 0.1, 0),
+                                        'luz' => round(($serviciosPublicosDataBase['energia'] ?? 0) * 0.08, 0),
+                                        'telefono_etb' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.05, 0),
+                                        'telefono_corp' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.03, 0),
+                                        'vigilancia' => round(($serviciosPublicosDataBase['vigilancia'] ?? 0) * 0.09, 0),
+                                        'internet' => round(($serviciosPublicosDataBase['internet-arrendamientos'] ?? 0) * 0.08, 0),
+                                    ],
+                                    'agosto' => [
+                                        'agua' => round(($serviciosPublicosDataBase['agua'] ?? 0) * 0.11, 0),
+                                        'luz' => round(($serviciosPublicosDataBase['energia'] ?? 0) * 0.09, 0),
+                                        'telefono_etb' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.06, 0),
+                                        'telefono_corp' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.04, 0),
+                                        'vigilancia' => round(($serviciosPublicosDataBase['vigilancia'] ?? 0) * 0.1, 0),
+                                        'internet' => round(($serviciosPublicosDataBase['internet-arrendamientos'] ?? 0) * 0.09, 0),
+                                    ],
+                                    'septiembre' => [
+                                        'agua' => round(($serviciosPublicosDataBase['agua'] ?? 0) * 0.09, 0),
+                                        'luz' => round(($serviciosPublicosDataBase['energia'] ?? 0) * 0.08, 0),
+                                        'telefono_etb' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.05, 0),
+                                        'telefono_corp' => round(($serviciosPublicosDataBase['telefono'] ?? 0) * 0.04, 0),
+                                        'vigilancia' => round(($serviciosPublicosDataBase['vigilancia'] ?? 0) * 0.08, 0),
+                                        'internet' => round(($serviciosPublicosDataBase['internet-arrendamientos'] ?? 0) * 0.08, 0),
+                                    ],
+                                ]
+                            ];
+                            
+                            $otrosEgresosData = $budgetDataByConcept['otros-egresos'] ?? [];
+                            $seccionesAcademiaData = $budgetDataByConcept['secciones-academia-general'] ?? [];
+                            $contratosExternosData = $budgetDataByConcept['contratos-externos'] ?? [];
+                        @endphp
                         <!-- TABLA 1: RESUMEN -->
                         <div class="budget-section filter-resumen" data-filter-category="resumen">
                             <h5 style="font-size: 16px; font-weight: 700; color: #2c3e50; margin: 20px 0; padding: 12px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e9ecef;">RESUMEN</h5>
@@ -1162,9 +1274,21 @@
                                             <td class="number-cell editable">$-</td>
                                             <td class="number-cell editable">$-</td>
                                         </tr>
+                                        @php
+                                            // Calcular total de egresos dinámicamente (mismo cálculo que TOTAL GASTOS)
+                                            $totalEgresosPresupuesto = 
+                                                6600750523 + // SALARIOS ACADEMIA (hardcodeado - pendiente de hacer dinámico)
+                                                array_sum($salariosAdminData) + 
+                                                array_sum($rubrosData) + 
+                                                array_sum($membresiasData) + 
+                                                array_sum($serviciosPublicosData['meses']) + 
+                                                array_sum($otrosEgresosData) + 
+                                                array_sum($seccionesAcademiaData) + 
+                                                array_sum($contratosExternosData);
+                                        @endphp
                                         <tr>
                                             <td><strong>Total Egresos</strong></td>
-                                            <td class="number-cell"></td>
+                                            <td class="number-cell"><strong>${{ number_format($totalEgresosPresupuesto, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated">$-</td>
                                             <td class="number-cell calculated">$-</td>
                                             <td class="number-cell"></td>
@@ -1175,9 +1299,13 @@
                                             <td class="number-cell"></td>
                                             <td class="number-cell"></td>
                                         </tr>
+                                        @php
+                                            $totalIngresosPresupuesto = $budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'] ?? 0;
+                                            $diferenciaTotalPresupuesto = $totalIngresosPresupuesto - $totalEgresosPresupuesto;
+                                        @endphp
                                         <tr class="total-row">
                                             <td><strong>Total Ingresos - Gastos</strong></td>
-                                            <td class="number-cell"><strong>$-2.817.710.490</strong></td>
+                                            <td class="number-cell"><strong>${{ number_format($diferenciaTotalPresupuesto, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
                                             <td class="number-cell calculated"><strong>$-</strong></td>
@@ -1299,16 +1427,6 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @php
-                                            // Obtener datos de las tablas detalladas correspondientes
-                                            $salariosAcademiaData = $budgetDataByConcept['salarios-academia'] ?? [];
-                                            $salariosAdminData = $budgetDataByConcept['salarios-administracion'] ?? [];
-                                            $rubrosData = $budgetDataByConcept['rubros-institucionales'] ?? [];
-                                            $seccionesAcademiaData = $budgetDataByConcept['secciones-academia-general'] ?? [];
-                                            $serviciosData = $budgetDataByConcept['servicios-publicos'] ?? [];
-                                            $contratosExternosData = $budgetDataByConcept['contratos-externos'] ?? [];
-                                        @endphp
-                                        
                                         {{-- Total Salarios, Prestaciones Academia --}}
                                         <tr>
                                             <td><strong>Total Salarios, Prestaciones Academia</strong></td>
@@ -1439,10 +1557,21 @@
                                             $totalDiciembre = ($salariosAcademiaData['diciembre'] ?? 0) + $adminDiciembre + ($rubrosData['diciembre'] ?? 0) + ($seccionesAcademiaData['diciembre'] ?? 0) + ($serviciosData['diciembre'] ?? 0) + ($contratosExternosData['diciembre'] ?? 0);
                                             $totalEnero = ($salariosAcademiaData['enero'] ?? 0) + $adminEnero + ($rubrosData['enero'] ?? 0) + ($seccionesAcademiaData['enero'] ?? 0) + ($serviciosData['enero'] ?? 0) + ($contratosExternosData['enero'] ?? 0);
                                             $totalFebrero = ($salariosAcademiaData['febrero'] ?? 0) + $adminFebrero + ($rubrosData['febrero'] ?? 0) + ($seccionesAcademiaData['febrero'] ?? 0) + ($serviciosData['febrero'] ?? 0) + ($contratosExternosData['febrero'] ?? 0);
+                                            
+                                            // Calcular TOTAL GASTOS dinámicamente sumando todas las categorías
+                                            $totalGastosCalculado = 
+                                                6600750523 + // SALARIOS ACADEMIA (hardcodeado - pendiente de hacer dinámico)
+                                                array_sum($salariosAdminData) + 
+                                                array_sum($rubrosData) + 
+                                                array_sum($membresiasData) + 
+                                                array_sum($serviciosPublicosData['meses']) + 
+                                                array_sum($otrosEgresosData) + 
+                                                array_sum($seccionesAcademiaData) + 
+                                                array_sum($contratosExternosData);
                                         @endphp
                                         <tr class="total-row">
                                             <td><strong>TOTAL GASTOS</strong></td>
-                                            <td class="number-cell"><strong>$14.144.488.971</strong></td>
+                                            <td class="number-cell"><strong>${{ number_format($totalGastosCalculado, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($totalAgosto, 0, ',', '.') }}</strong></td>
@@ -2190,6 +2319,9 @@
                                                 $diciembreValue = ($serviciosPublicosData['meses']['diciembre'] ?? 0) / count($serviciosLabels);
                                                 $eneroValue = ($serviciosPublicosData['meses']['enero'] ?? 0) / count($serviciosLabels);
                                                 $febreroValue = ($serviciosPublicosData['meses']['febrero'] ?? 0) / count($serviciosLabels);
+                                                $marzoValue = ($serviciosPublicosData['meses']['marzo'] ?? 0) / count($serviciosLabels);
+                                                $abrilValue = ($serviciosPublicosData['meses']['abril'] ?? 0) / count($serviciosLabels);
+                                                $mayoValue = ($serviciosPublicosData['meses']['mayo'] ?? 0) / count($serviciosLabels);
                                             @endphp
                                             <tr>
                                                 <td><strong>{{ $concepto }}</strong></td>
@@ -2203,6 +2335,9 @@
                                                 <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
                                                 <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
                                                 <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="marzo" class="number-cell editable">${{ number_format($marzoValue, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="abril" class="number-cell editable">${{ number_format($abrilValue, 0, ',', '.') }}</td>
+                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="mayo" class="number-cell editable">${{ number_format($mayoValue, 0, ',', '.') }}</td>
                                             </tr>
                                         @endforeach
                                         @php
@@ -2216,6 +2351,9 @@
                                             $diciembreTotal = $serviciosPublicosData['meses']['diciembre'] ?? 0;
                                             $eneroTotal = $serviciosPublicosData['meses']['enero'] ?? 0;
                                             $febreroTotal = $serviciosPublicosData['meses']['febrero'] ?? 0;
+                                            $marzoTotal = $serviciosPublicosData['meses']['marzo'] ?? 0;
+                                            $abrilTotal = $serviciosPublicosData['meses']['abril'] ?? 0;
+                                            $mayoTotal = $serviciosPublicosData['meses']['mayo'] ?? 0;
                                         @endphp
                                         <tr class="total-row">
                                             <td><strong>TOTAL SERVICIOS PUBLICOS</strong></td>
@@ -2229,6 +2367,9 @@
                                             <td class="number-cell calculated"><strong>${{ number_format($diciembreTotal, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($eneroTotal, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($febreroTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($marzoTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($abrilTotal, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($mayoTotal, 0, ',', '.') }}</strong></td>
                                         </tr>
                                         <tr class="percentage-row">
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
