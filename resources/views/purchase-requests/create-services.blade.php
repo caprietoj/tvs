@@ -316,6 +316,144 @@
                     </div>
                 </div>
 
+                <!-- Configuración de Compra Compartida -->
+                <div class="card mt-3" style="border-left: 4px solid #364E76;">
+                    <div class="card-header" style="background-color: #f8f9fa;">
+                        <h6 class="mb-0"><i class="fas fa-share-alt mr-2"></i>Configuración de Compra Compartida</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="font-weight-bold">¿Este servicio será compartido con otra sección?</label>
+                            <div class="mt-2">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="is_shared" id="is_shared_no" value="no" checked>
+                                    <label class="form-check-label" for="is_shared_no">
+                                        <i class="fas fa-times text-danger mr-1"></i> No, esta compra es solo para mi sección
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="is_shared" id="is_shared_yes" value="yes">
+                                    <label class="form-check-label" for="is_shared_yes">
+                                        <i class="fas fa-check text-success mr-1"></i> Sí, esta compra será compartida
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuración de compra compartida -->
+                        <div id="sharedConfig" style="display: none;">
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-primary text-white">
+                                            <h6 class="mb-0"><i class="fas fa-user mr-1"></i> Mi Sección</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="mb-1"><strong>Sección:</strong></p>
+                                            <p class="section-display" id="currentSection">-</p>
+                                            <p class="mb-1"><strong>Porcentaje a pagar:</strong></p>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control percentage-input" id="myPercentage" name="my_percentage" min="1" max="99" value="50">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-success text-white">
+                                            <h6 class="mb-0"><i class="fas fa-users mr-1"></i> Sección Compartida</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="mb-1"><strong>Seleccionar sección:</strong></p>
+                                            <select class="form-control" id="sharedSection" name="shared_section">
+                                                <option value="">Seleccione una sección...</option>
+                                                <option value="Preescolar y Primaria">Preescolar y Primaria</option>
+                                                <option value="Escuela Media">Escuela Media</option>
+                                                <option value="Escuela Alta / DP">Escuela Alta / DP</option>
+                                                <option value="PAI">PAI</option>
+                                                <option value="PEP">PEP</option>
+                                                <option value="Deportes">Deportes</option>
+                                                <option value="Psicología Institucional">Psicología Institucional</option>
+                                                <option value="Biblioteca">Biblioteca</option>
+                                                <option value="Dirección General">Dirección General</option>
+                                                <option value="CAS">CAS</option>
+                                                <option value="Administración">Administración</option>
+                                                <option value="Tecnología Institucional">Tecnología Institucional</option>
+                                            </select>
+                                            <p class="mb-1 mt-2"><strong>Porcentaje a pagar:</strong></p>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control percentage-input" id="sharedPercentage" name="shared_percentage" readonly>
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botón para agregar tercera sección -->
+                            <div class="text-center mt-3">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="addThirdSection">
+                                    <i class="fas fa-plus mr-1"></i> Agregar otra sección
+                                </button>
+                            </div>
+
+                            <!-- Tercera sección compartida (oculta por defecto) -->
+                            <div id="thirdSectionConfig" style="display: none;" class="mt-3">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header bg-warning text-dark">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-users mr-1"></i> Tercera Sección Compartida
+                                                <button type="button" class="btn btn-sm btn-outline-danger float-right" id="removeThirdSection">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="mb-1"><strong>Seleccionar sección:</strong></p>
+                                            <select class="form-control" id="thirdSharedSection" name="third_shared_section" disabled tabindex="-1">
+                                                <option value="">Seleccione una sección...</option>
+                                                <option value="Preescolar y Primaria">Preescolar y Primaria</option>
+                                                <option value="Escuela Media">Escuela Media</option>
+                                                <option value="Escuela Alta / DP">Escuela Alta / DP</option>
+                                                <option value="PAI">PAI</option>
+                                                <option value="PEP">PEP</option>
+                                                <option value="Deportes">Deportes</option>
+                                                <option value="Psicología Institucional">Psicología Institucional</option>
+                                                <option value="Biblioteca">Biblioteca</option>
+                                                <option value="Dirección General">Dirección General</option>
+                                                <option value="CAS">CAS</option>
+                                                <option value="Administración">Administración</option>
+                                                <option value="Tecnología Institucional">Tecnología Institucional</option>
+                                            </select>
+                                            <p class="mb-1 mt-2"><strong>Porcentaje a pagar:</strong></p>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control percentage-input" id="thirdSharedPercentage" name="third_shared_percentage" min="1" max="97" value="0" disabled tabindex="-1">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                <strong>Importante:</strong> El total entre todas las secciones debe ser 100%. 
+                                Los porcentajes se ajustarán automáticamente cuando agregue más secciones.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Observaciones generales -->
                 <div class="form-group">
                     <label for="general_observations">OBSERVACIONES GENERALES:</label>
@@ -748,6 +886,279 @@ $(document).ready(function() {
 
     // Inicializar estado de los botones
     updateDeleteButtons();
+
+    // ==================== FUNCIONALIDAD DE COMPRA COMPARTIDA ====================
+    
+    // Función para actualizar la sección actual cuando cambie
+    $('#section_area').change(function() {
+        const currentSection = $(this).find('option:selected').text();
+        $('#currentSection').text(currentSection || '-');
+        
+        // Filtrar la sección actual del dropdown de sección compartida
+        $('#sharedSection option').show();
+        $('#sharedSection option').each(function() {
+            if ($(this).val() === $('#section_area').val()) {
+                $(this).hide();
+            }
+        });
+        
+        // Reset de sección compartida si está seleccionada la misma
+        if ($('#sharedSection').val() === $('#section_area').val()) {
+            $('#sharedSection').val('');
+        }
+    });
+
+    // Manejar cambio en la pregunta inicial
+    $('input[name="is_shared"]').change(function() {
+        if ($(this).val() === 'yes') {
+            $('#sharedConfig').slideDown();
+        } else {
+            $('#sharedConfig').slideUp();
+            // Limpiar también los campos de tercera sección cuando se deshabilita la compra compartida
+            $('#thirdSectionConfig').hide();
+            $('#addThirdSection').show();
+            
+            // Deshabilitar y limpiar los campos de la tercera sección
+            $('#thirdSharedSection').prop('disabled', true).attr('tabindex', '-1').val('');
+            $('#thirdSharedPercentage').prop('disabled', true).attr('tabindex', '-1').val(0);
+        }
+    });
+
+    // Calcular porcentaje automáticamente para dos secciones
+    $('#myPercentage').on('input', function() {
+        calculateSharedPercentages();
+    });
+
+    // Manejar cambios en el porcentaje de la tercera sección
+    $('#thirdSharedPercentage').on('input', function() {
+        calculateSharedPercentages();
+    });
+
+    // Función para calcular porcentajes automáticamente
+    function calculateSharedPercentages() {
+        const hasThirdSection = $('#thirdSectionConfig').is(':visible');
+        const myPercentage = parseInt($('#myPercentage').val()) || 0;
+        
+        if (hasThirdSection) {
+            const thirdPercentage = parseInt($('#thirdSharedPercentage').val()) || 0;
+            const sharedPercentage = 100 - myPercentage - thirdPercentage;
+            
+            // Validar que los porcentajes sean válidos
+            if (myPercentage + thirdPercentage > 99) {
+                // Ajustar automáticamente
+                const newThirdPercentage = 99 - myPercentage;
+                $('#thirdSharedPercentage').val(Math.max(1, newThirdPercentage));
+                $('#sharedPercentage').val(1);
+            } else if (sharedPercentage < 1) {
+                $('#sharedPercentage').val(1);
+            } else {
+                $('#sharedPercentage').val(sharedPercentage);
+            }
+        } else {
+            // Solo dos secciones
+            const sharedPercentage = 100 - myPercentage;
+            
+            if (myPercentage < 1) {
+                $('#myPercentage').val(1);
+                $('#sharedPercentage').val(99);
+            } else if (myPercentage > 99) {
+                $('#myPercentage').val(99);
+                $('#sharedPercentage').val(1);
+            } else {
+                $('#sharedPercentage').val(sharedPercentage);
+            }
+        }
+    }
+
+    // Manejar agregar tercera sección
+    $('#addThirdSection').click(function() {
+        $('#thirdSectionConfig').slideDown();
+        $(this).hide();
+        
+        // Habilitar los campos de la tercera sección
+        $('#thirdSharedSection').prop('disabled', false).removeAttr('tabindex');
+        $('#thirdSharedPercentage').prop('disabled', false).removeAttr('tabindex');
+        
+        // Redistribuir porcentajes equitativamente
+        const newPercentage = Math.floor(100 / 3);
+        $('#myPercentage').val(newPercentage);
+        $('#sharedPercentage').val(newPercentage);
+        $('#thirdSharedPercentage').val(100 - (newPercentage * 2));
+        
+        updateSharedSectionFilters();
+    });
+
+    // Manejar remover tercera sección
+    $('#removeThirdSection').click(function() {
+        $('#thirdSectionConfig').slideUp();
+        $('#addThirdSection').show();
+        
+        // Deshabilitar y limpiar los campos de la tercera sección
+        $('#thirdSharedSection').prop('disabled', true).attr('tabindex', '-1');
+        $('#thirdSharedPercentage').prop('disabled', true).attr('tabindex', '-1');
+        
+        // Resetear a dos secciones (50-50)
+        $('#myPercentage').val(50);
+        $('#sharedPercentage').val(50);
+        $('#thirdSharedPercentage').val(0);
+        $('#thirdSharedSection').val('');
+        
+        updateSharedSectionFilters();
+    });
+
+    // Función para actualizar filtros de secciones
+    function updateSharedSectionFilters() {
+        const currentSection = $('#section_area').val();
+        const sharedSection = $('#sharedSection').val();
+        const thirdSection = $('#thirdSharedSection').val();
+        
+        // Filtrar opciones para evitar duplicados
+        $('#sharedSection option, #thirdSharedSection option').show();
+        
+        $('#sharedSection option').each(function() {
+            if ($(this).val() === currentSection || $(this).val() === thirdSection) {
+                $(this).hide();
+            }
+        });
+        
+        $('#thirdSharedSection option').each(function() {
+            if ($(this).val() === currentSection || $(this).val() === sharedSection) {
+                $(this).hide();
+            }
+        });
+    }
+
+    // Manejar cambios en las secciones para filtrar duplicados
+    $('#section_area, #sharedSection, #thirdSharedSection').change(function() {
+        updateSharedSectionFilters();
+        
+        if ($(this).is('#section_area')) {
+            const currentSection = $(this).find('option:selected').text();
+            $('#currentSection').text(currentSection || '-');
+        }
+    });
+
+    // Agregar validación de compra compartida al formulario
+    $('#servicesForm').off('submit').on('submit', function(e) {
+        let hasServiceItems = false;
+        let isValid = true;
+        
+        // Verificar si hay al menos un servicio con descripción
+        $('#serviceItemsBody input[name*="[description]"]').each(function() {
+            if ($(this).val().trim() !== '') {
+                hasServiceItems = true;
+                return false;
+            }
+        });
+        
+        if (!hasServiceItems) {
+            e.preventDefault();
+            alert('Debe agregar al menos un servicio con descripción.');
+            isValid = false;
+        }
+        
+        // Verificar tipo de servicio
+        if ($('#service_type').val() === '') {
+            e.preventDefault();
+            alert('Debe seleccionar el tipo de servicio.');
+            $('#service_type').focus();
+            isValid = false;
+        }
+        
+        // Verificar campos del proveedor si es servicio sin cotización
+        if ($('#service_type').val() === 'no_quotation') {
+            if ($('#provider_name').val().trim() === '') {
+                e.preventDefault();
+                alert('El nombre del proveedor es obligatorio para servicios sin cotización.');
+                $('#provider_name').focus();
+                isValid = false;
+            }
+            
+            if ($('#no_quotation_reason').val().trim() === '') {
+                e.preventDefault();
+                alert('La justificación para no cotizar es obligatoria.');
+                $('#no_quotation_reason').focus();
+                isValid = false;
+            }
+            
+            if (!$('#quotation_file')[0].files.length) {
+                e.preventDefault();
+                alert('Debe adjuntar la cotización o orden de renovación.');
+                $('#quotation_file').focus();
+                isValid = false;
+            }
+        }
+        
+        // Verificar justificación
+        if ($('#service_justification').val().trim() === '') {
+            e.preventDefault();
+            alert('La justificación del servicio es obligatoria.');
+            $('#service_justification').focus();
+            isValid = false;
+        }
+        
+        // Verificar presupuesto
+        const budget = parseFloat($('#service_budget').val());
+        if (isNaN(budget) || budget <= 0) {
+            e.preventDefault();
+            alert('Debe ingresar un valor presupuestado válido.');
+            $('#service_budget').focus();
+            isValid = false;
+        }
+        
+        // Verificar sección/área
+        if ($('#section_area').val() === '') {
+            e.preventDefault();
+            alert('Debe seleccionar una sección y/o área.');
+            $('#section_area').focus();
+            isValid = false;
+        }
+        
+        // Validar configuración de compra compartida
+        const isShared = $('input[name="is_shared"]:checked').val();
+        if (isShared === 'yes') {
+            const sharedSection = $('#sharedSection').val();
+            if (!sharedSection) {
+                e.preventDefault();
+                alert('Por favor seleccione la segunda sección para compartir esta compra.');
+                $('#sharedSection').focus();
+                isValid = false;
+            }
+            
+            // Si la tercera sección está visible, validar que esté seleccionada
+            if ($('#thirdSectionConfig').is(':visible')) {
+                const thirdSection = $('#thirdSharedSection').val();
+                if (!thirdSection) {
+                    e.preventDefault();
+                    alert('Por favor seleccione la tercera sección o remueva la opción de tercera sección.');
+                    $('#thirdSharedSection').focus();
+                    isValid = false;
+                }
+            }
+            
+            // Validar que los porcentajes sumen 100%
+            const myPercentage = parseInt($('#myPercentage').val()) || 0;
+            const sharedPercentage = parseInt($('#sharedPercentage').val()) || 0;
+            const thirdPercentage = parseInt($('#thirdSharedPercentage').val()) || 0;
+            const total = myPercentage + sharedPercentage + thirdPercentage;
+            
+            if (total !== 100) {
+                e.preventDefault();
+                alert(`Los porcentajes deben sumar exactamente 100%. Actualmente suman ${total}%.`);
+                isValid = false;
+            }
+        }
+        
+        return isValid;
+    });
+
+    // Inicializar la sección actual en el display
+    const initialSection = $('#section_area option:selected').text();
+    $('#currentSection').text(initialSection || '-');
+    
+    // Establecer valores iniciales para compra compartida
+    $('#sharedPercentage').val(50);
+    updateSharedSectionFilters();
 });
 </script>
 @stop

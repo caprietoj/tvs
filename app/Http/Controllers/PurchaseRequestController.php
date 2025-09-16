@@ -714,7 +714,22 @@ class PurchaseRequestController extends Controller
             'service_items.*.description' => 'required|string',
             'service_items.*.observations' => 'nullable|string',
             'service_type' => 'required|in:regular,no_quotation',
+            // Reglas para compra compartida
+            'is_shared' => 'required|in:yes,no',
         ];
+        
+        // Solo agregar validaciones de compra compartida si is_shared es 'yes'
+        if ($request->input('is_shared') === 'yes') {
+            $rules['shared_section'] = 'required|string|max:255';
+            $rules['my_percentage'] = 'required|integer|min:1|max:97';
+            $rules['shared_percentage'] = 'required|integer|min:1|max:97';
+            $rules['third_shared_section'] = 'nullable|string|max:255';
+            
+            // Solo validar third_shared_percentage si se proporciona third_shared_section
+            if ($request->filled('third_shared_section')) {
+                $rules['third_shared_percentage'] = 'required|integer|min:1|max:97';
+            }
+        }
 
         // Agregar validación adicional para servicios sin cotización
         if ($request->service_type === 'no_quotation') {
@@ -756,6 +771,13 @@ class PurchaseRequestController extends Controller
             'general_observations' => $request->general_observations,
             'status' => 'pending',
             'service_type' => $request->service_type,
+            // Campos de compra compartida
+            'is_shared' => $request->is_shared === 'yes' ? true : false,
+            'shared_section' => $request->is_shared === 'yes' ? $request->shared_section : null,
+            'my_percentage' => $request->is_shared === 'yes' ? (int)$request->my_percentage : 100,
+            'shared_percentage' => $request->is_shared === 'yes' ? (int)$request->shared_percentage : 0,
+            'third_shared_section' => $request->is_shared === 'yes' ? $request->third_shared_section : null,
+            'third_shared_percentage' => $request->is_shared === 'yes' ? (int)$request->third_shared_percentage : 0,
         ];
 
         // Agregar campos del proveedor si es servicio sin cotización
@@ -1362,7 +1384,22 @@ class PurchaseRequestController extends Controller
             'service_items.*.description' => 'required|string',
             'service_items.*.observations' => 'nullable|string',
             'service_type' => 'required|in:regular,no_quotation',
+            // Reglas para compra compartida
+            'is_shared' => 'required|in:yes,no',
         ];
+        
+        // Solo agregar validaciones de compra compartida si is_shared es 'yes'
+        if ($request->input('is_shared') === 'yes') {
+            $rules['shared_section'] = 'required|string|max:255';
+            $rules['my_percentage'] = 'required|integer|min:1|max:97';
+            $rules['shared_percentage'] = 'required|integer|min:1|max:97';
+            $rules['third_shared_section'] = 'nullable|string|max:255';
+            
+            // Solo validar third_shared_percentage si se proporciona third_shared_section
+            if ($request->filled('third_shared_section')) {
+                $rules['third_shared_percentage'] = 'required|integer|min:1|max:97';
+            }
+        }
 
         // Agregar validación adicional para servicios sin cotización
         if ($request->service_type === 'no_quotation') {
@@ -1393,6 +1430,13 @@ class PurchaseRequestController extends Controller
             'service_items' => $request->service_items,
             'general_observations' => $request->general_observations,
             'service_type' => $request->service_type,
+            // Campos de compra compartida
+            'is_shared' => $request->is_shared === 'yes' ? true : false,
+            'shared_section' => $request->is_shared === 'yes' ? $request->shared_section : null,
+            'my_percentage' => $request->is_shared === 'yes' ? (int)$request->my_percentage : 100,
+            'shared_percentage' => $request->is_shared === 'yes' ? (int)$request->shared_percentage : 0,
+            'third_shared_section' => $request->is_shared === 'yes' ? $request->third_shared_section : null,
+            'third_shared_percentage' => $request->is_shared === 'yes' ? (int)$request->third_shared_percentage : 0,
         ];
 
         // Actualizar campos del proveedor si es servicio sin cotización
