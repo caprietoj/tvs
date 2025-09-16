@@ -9,6 +9,38 @@
         <p>Presupuesto 2025 - 2026</p>
     </div>
     
+    @php
+    // Calcular totales dinámicos para los small boxes
+    $presupuestoTotalCalc = $budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'] ?? 0;
+    $presupuestoEjecutadoCalc = 0;
+    
+    // Calcular presupuesto ejecutado sumando todas las ejecuciones de cada sección
+    if (isset($budgetDataByConcept)) {
+        foreach ($budgetDataByConcept as $seccion => $conceptos) {
+            foreach ($conceptos as $concepto => $valor) {
+                // Sumar valores que contienen meses (ejecutados)
+                if (strpos($concepto, '-junio') !== false || 
+                    strpos($concepto, '-julio') !== false || 
+                    strpos($concepto, '-agosto') !== false || 
+                    strpos($concepto, '-septiembre') !== false || 
+                    strpos($concepto, '-octubre') !== false || 
+                    strpos($concepto, '-noviembre') !== false || 
+                    strpos($concepto, '-diciembre') !== false || 
+                    strpos($concepto, '-enero') !== false || 
+                    strpos($concepto, '-febrero') !== false || 
+                    strpos($concepto, '-marzo') !== false || 
+                    strpos($concepto, '-abril') !== false || 
+                    strpos($concepto, '-mayo') !== false) {
+                    $presupuestoEjecutadoCalc += $valor ?? 0;
+                }
+            }
+        }
+    }
+    
+    // Calcular porcentaje de ejecución
+    $porcentajeEjecucionCalc = ($presupuestoTotalCalc > 0) ? ($presupuestoEjecutadoCalc / $presupuestoTotalCalc) * 100 : 0;
+    @endphp
+    
     <!-- Cajas de información de presupuesto -->
     <div class="stats-container">
         <div class="stat-box stat-box-primary">
@@ -40,11 +72,7 @@
             </div>
             <div class="stat-content">
                 <div class="stat-number" id="presupuestoEjecutado">
-                    @if(isset($presupuestoItems))
-                        {{ number_format($presupuestoItems->sum('valor_moneda'), 0, ',', '.') }}
-                    @else
-                        0
-                    @endif
+                    {{ number_format($presupuestoEjecutadoCalc, 0, ',', '.') }}
                 </div>
                 <div class="stat-label">Presupuesto Ejecutado</div>
             </div>
@@ -56,11 +84,7 @@
             </div>
             <div class="stat-content">
                 <div class="stat-number" id="porcentajeEjecucion">
-                    @if(isset($presupuestoItems) && $presupuestoItems->sum('valor') > 0)
-                        {{ number_format(($presupuestoItems->sum('valor_moneda') / $presupuestoItems->sum('valor')) * 100, 1) }}%
-                    @else
-                        0%
-                    @endif
+                    {{ number_format($porcentajeEjecucionCalc, 1) }}%
                 </div>
                 <div class="stat-label">% de Ejecución</div>
             </div>
@@ -8064,6 +8088,53 @@ function cerrarModal() {
     document.body.style.overflow = 'auto'; // Restaurar scroll del body
 }
 
+// Función para actualizar dinámicamente los small boxes
+function actualizarSmallBoxes() {
+    // Obtener presupuesto total
+    const presupuestoTotalElement = document.getElementById('presupuestoTotal');
+    const presupuestoTotal = presupuestoTotalElement ? 
+        parseFloat(presupuestoTotalElement.textContent.replace(/[^\d]/g, '')) : 
+        {{ $presupuestoTotalCalc }};
+    
+    // Calcular presupuesto ejecutado sumando todas las celdas de ejecución
+    let presupuestoEjecutado = 0;
+    const celdasEjecucion = document.querySelectorAll('.editable[data-type="ejecucion"]');
+    
+    celdasEjecucion.forEach(celda => {
+        const valor = parseFloat(celda.textContent.replace(/[^\d]/g, '')) || 0;
+        presupuestoEjecutado += valor;
+    });
+    
+    // También sumar las celdas editables de servicios públicos y otros conceptos mensuales
+    const celdasMensuales = document.querySelectorAll('.editable[data-column*="junio"], .editable[data-column*="julio"], .editable[data-column*="agosto"], .editable[data-column*="septiembre"], .editable[data-column*="octubre"], .editable[data-column*="noviembre"], .editable[data-column*="diciembre"], .editable[data-column*="enero"], .editable[data-column*="febrero"], .editable[data-column*="marzo"], .editable[data-column*="abril"], .editable[data-column*="mayo"]');
+    
+    celdasMensuales.forEach(celda => {
+        const valor = parseFloat(celda.textContent.replace(/[^\d]/g, '')) || 0;
+        presupuestoEjecutado += valor;
+    });
+    
+    // Calcular porcentaje de ejecución
+    const porcentajeEjecucion = presupuestoTotal > 0 ? (presupuestoEjecutado / presupuestoTotal) * 100 : 0;
+    
+    // Actualizar elementos en pantalla
+    const presupuestoEjecutadoElement = document.getElementById('presupuestoEjecutado');
+    const porcentajeEjecucionElement = document.getElementById('porcentajeEjecucion');
+    
+    if (presupuestoEjecutadoElement) {
+        presupuestoEjecutadoElement.textContent = new Intl.NumberFormat('es-CO').format(presupuestoEjecutado);
+    }
+    
+    if (porcentajeEjecucionElement) {
+        porcentajeEjecucionElement.textContent = porcentajeEjecucion.toFixed(1) + '%';
+    }
+    
+    console.log('Small boxes actualizados:', {
+        presupuestoTotal: presupuestoTotal,
+        presupuestoEjecutado: presupuestoEjecutado,
+        porcentajeEjecucion: porcentajeEjecucion.toFixed(1) + '%'
+    });
+}
+
 // Función global para abrir el modal
 function abrirModal() {
     const modal = document.getElementById('detalleGastoModal');
@@ -8734,6 +8805,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Cargar datos iniciales para las secciones si estamos en la pestaña Secciones
     loadInitialSectionData();
+    
+    // Actualizar small boxes al cargar la página
+    actualizarSmallBoxes();
 });
 
 // Función para cargar datos iniciales de las secciones
@@ -8916,6 +8990,9 @@ function initSectionTables() {
                 this.textContent = formatNumber(newValue);
                 calculateRowSaldo(this);
                 updateTableTotals(this.closest('.section-budget-table'));
+                
+                // Actualizar small boxes dinámicamente
+                actualizarSmallBoxes();
             };
             
             input.addEventListener('blur', saveValue);
