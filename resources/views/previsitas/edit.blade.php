@@ -286,7 +286,7 @@
                                                 <p class="text-muted">
                                                     Formatos permitidos: PDF, JPG, PNG, GIF, BMP, WEBP, DOC, DOCX<br>
                                                     Tamaño máximo: 10MB por archivo<br>
-                                                    Máximo 100 archivos por previsita
+                                                    Máximo 150 archivos por previsita
                                                 </p>
                                                 <input type="file" 
                                                        class="file-input @error('archivos_novedades') is-invalid @enderror" 
@@ -1046,8 +1046,8 @@
             }
             
             // Validar límite de archivos
-            if (files.length > 100) {
-                showFileError('No se pueden seleccionar más de 100 archivos a la vez.', 'limit');
+            if (files.length > 150) {
+                showFileError('No se pueden seleccionar más de 150 archivos a la vez.', 'limit');
                 updateUploadAreaText();
                 return;
             }
@@ -1129,7 +1129,7 @@
                 content.find('p').html(`
                     Formatos permitidos: PDF, JPG, PNG, GIF, BMP, WEBP<br>
                     Tamaño máximo: 10MB por archivo<br>
-                    Máximo 100 archivos por previsita
+                    Máximo 150 archivos por previsita
                 `);
                 uploadArea.removeClass('has-files');
             }

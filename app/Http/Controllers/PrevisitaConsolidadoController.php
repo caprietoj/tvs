@@ -138,7 +138,7 @@ class PrevisitaConsolidadoController extends Controller
             'responsable' => 'required|string|max:255',
             'aprobacion_sitio' => 'required|boolean',
             'observaciones_recomendaciones' => 'nullable|string',
-            'archivos_novedades' => 'nullable|array|max:100', // Máximo 100 archivos
+            'archivos_novedades' => 'nullable|array|max:150', // Máximo 150 archivos
             'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp,doc,docx|max:1048576' // 1GB máximo por archivo, incluye Word
         ], [
             'lugar.required' => 'El lugar es obligatorio.',
@@ -148,7 +148,7 @@ class PrevisitaConsolidadoController extends Controller
             'vencimiento.after_or_equal' => 'El vencimiento debe ser igual o posterior a la fecha de visita.',
             'responsable.required' => 'El responsable es obligatorio.',
             'aprobacion_sitio.required' => 'La aprobación del sitio es obligatoria.',
-            'archivos_novedades.max' => 'No se pueden subir más de 100 archivos.',
+            'archivos_novedades.max' => 'No se pueden subir más de 150 archivos.',
             'archivos_novedades.*.file' => 'Cada archivo debe ser un archivo válido.',
             'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP, WEBP, DOC y DOCX.',
             'archivos_novedades.*.max' => 'Cada archivo no debe superar 1GB.'
@@ -235,7 +235,7 @@ class PrevisitaConsolidadoController extends Controller
             'responsable' => 'required|string|max:255',
             'aprobacion_sitio' => 'required|boolean',
             'observaciones_recomendaciones' => 'nullable|string',
-            'archivos_novedades' => 'nullable|array|max:100', // Máximo 100 archivos
+            'archivos_novedades' => 'nullable|array|max:150', // Máximo 150 archivos
             'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp,doc,docx|max:1048576' // 1GB máximo por archivo, incluye Word
         ], [
             'lugar.required' => 'El lugar es obligatorio.',
@@ -245,7 +245,7 @@ class PrevisitaConsolidadoController extends Controller
             'vencimiento.after_or_equal' => 'El vencimiento debe ser igual o posterior a la fecha de visita.',
             'responsable.required' => 'El responsable es obligatorio.',
             'aprobacion_sitio.required' => 'La aprobación del sitio es obligatoria.',
-            'archivos_novedades.max' => 'No se pueden subir más de 100 archivos.',
+            'archivos_novedades.max' => 'No se pueden subir más de 150 archivos.',
             'archivos_novedades.*.file' => 'Cada archivo debe ser un archivo válido.',
             'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP, WEBP, DOC y DOCX.',
             'archivos_novedades.*.max' => 'Cada archivo no debe superar 1GB.'
