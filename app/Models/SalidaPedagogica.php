@@ -244,4 +244,24 @@ class SalidaPedagogica extends Model
             $salida->updateEstadoAutomatico();
         });
     }
+
+    /**
+     * Obtener color según el estado para mostrar en calendario
+     */
+    public function getStatusColor()
+    {
+        switch ($this->estado) {
+            case 'Programada':
+                return '#007bff'; // Azul para programadas
+            case 'Realizada':
+                return '#28a745'; // Verde para realizadas
+            case 'Cancelada':
+            case 'cancelada':
+                return '#dc3545'; // Rojo para canceladas
+            case 'En Proceso':
+                return '#ffc107'; // Amarillo para en proceso
+            default:
+                return '#6c757d'; // Gris por defecto
+        }
+    }
 }

@@ -20,6 +20,27 @@
 .fc-event {
     cursor: pointer;
 }
+
+/* Estilos para salidas pedagógicas */
+.salida-pedagogica-item {
+    border-left: 4px solid #17a2b8 !important;
+}
+
+.salida-pedagogica-item .fc-event-title {
+    font-style: italic;
+}
+
+/* Estilos para eventos regulares */
+.event-item {
+    border-left: 4px solid #007bff !important;
+}
+
+/* Tooltip personalizado */
+.fc-event:hover {
+    opacity: 0.8;
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+}
 </style>
 @stop
 
@@ -40,15 +61,33 @@ document.addEventListener('DOMContentLoaded', function() {
         events: [
             @foreach($events as $event)
             {
-                id: '{{ $event->id }}',
-                title: '{{ $event->event_name }}',
+                id: 'event_{{ $event->id }}',
+                title: {!! json_encode($event->event_name) !!},
                 start: '{{ $event->service_date->format("Y-m-d") }}T{{ date("H:i:s", strtotime($event->event_time)) }}',
                 url: '{{ route("events.show", $event->id) }}',
                 backgroundColor: '{{ $event->getStatusColor() }}',
                 borderColor: '{{ $event->getStatusColor() }}',
-                allDay: false
+                allDay: false,
+                className: 'event-item'
             },
             @endforeach
+            @if(isset($salidasPedagogicas))
+            @foreach($salidasPedagogicas as $salida)
+            {
+                id: 'salida_{{ $salida->id }}',
+                title: {!! json_encode('[SP] ' . $salida->lugar . ' - ' . $salida->grados) !!},
+                start: '{{ $salida->fecha_salida->format("Y-m-d") }}T{{ $salida->fecha_salida->format("H:i:s") }}',
+                @if($salida->fecha_regreso)
+                end: '{{ $salida->fecha_regreso->format("Y-m-d") }}T{{ $salida->fecha_regreso->format("H:i:s") }}',
+                @endif
+                url: '{{ route("salidas.show", $salida->id) }}',
+                backgroundColor: '{{ $salida->getStatusColor() }}',
+                borderColor: '{{ $salida->getStatusColor() }}',
+                allDay: {{ $salida->fecha_regreso && $salida->fecha_regreso->format('Y-m-d') != $salida->fecha_salida->format('Y-m-d') ? 'true' : 'false' }},
+                className: 'salida-pedagogica-item'
+            },
+            @endforeach
+            @endif
         ],
         eventClick: function(info) {
             if (info.event.url) {

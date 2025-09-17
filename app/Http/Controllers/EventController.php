@@ -379,7 +379,16 @@ class EventController extends Controller
         }
 
         $events = Event::orderBy('service_date')->get();
-        return view('events.calendar', compact('events'));
+        
+        // Agregar salidas pedagógicas al calendario
+        // Incluir salidas programadas, en proceso y realizadas (excluir solo canceladas)
+        $salidasPedagogicas = \App\Models\SalidaPedagogica::whereNotNull('fecha_salida')
+            ->where('estado', '!=', 'cancelada')
+            ->whereNotNull('lugar') // Asegurar que tengan lugar definido
+            ->orderBy('fecha_salida')
+            ->get();
+        
+        return view('events.calendar', compact('events', 'salidasPedagogicas'));
     }
 
     public function confirm(Event $event, Request $request)
