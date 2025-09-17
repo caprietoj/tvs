@@ -474,48 +474,59 @@ class PurchaseOrdersController extends Controller
                     $ivaAmount = $taxCalculations['total_tax_amount'];
                     // Recalcular total basado en subtotal + impuestos
                     $total = $subtotal + $ivaAmount;
-                } else {
-                    // Fallback: calcular subtotal desde el total si no hay subtotal en la cotización
-                    $taxRate = 0;
-                    foreach ($appliedTaxes as $tax) {
-                        switch ($tax) {
-                            case 'iva_19':
-                                $taxRate += 0.19;
-                                break;
-                            case 'iva_5':
-                                $taxRate += 0.05;
-                                break;
-                            case 'consumo_8':
-                                $taxRate += 0.08;
-                                break;
-                            case 'consumo_4':
-                                $taxRate += 0.04;
-                                break;
-                        }
-                    }
                     
-                    if ($taxRate > 0) {
-                        $subtotal = round($total / (1 + $taxRate), 2);
-                        $taxCalculations = $this->calculateTaxes($subtotal, $appliedTaxes);
-                        $ivaAmount = $taxCalculations['total_tax_amount'];
+                    Log::info('Usando subtotal directo de cotización', [
+                        'subtotal_original' => $selectedQuotation->subtotal,
+                        'impuestos_calculados' => $ivaAmount,
+                        'total_recalculado' => $total
+                    ]);
+                } else {
+                    // CORREGIDO: Solo calcular impuestos si están definidos en la cotización
+                    if (empty($appliedTaxes)) {
+                        // No hay impuestos definidos en la cotización
+                        $subtotal = floatval($selectedQuotation->total_amount);
+                        $ivaAmount = 0;
+                        $total = $subtotal;
+                        
+                        Log::info('Cotización sin impuestos detectados', [
+                            'total_amount' => $selectedQuotation->total_amount,
+                            'subtotal_final' => $subtotal,
+                            'iva_final' => $ivaAmount
+                        ]);
                     } else {
-                        // No hay impuestos
-                        $subtotal = $total;
-                        $taxCalculations = $this->calculateTaxes($subtotal, $appliedTaxes);
-                        $ivaAmount = $taxCalculations['total_tax_amount'];
+                        // Hay impuestos definidos, calcular desde el total
+                        $taxRate = $this->calculateTotalTaxRate($appliedTaxes);
+                        
+                        if ($taxRate > 0) {
+                            $subtotal = round($total / (1 + $taxRate), 2);
+                            $taxCalculations = $this->calculateTaxes($subtotal, $appliedTaxes);
+                            $ivaAmount = $taxCalculations['total_tax_amount'];
+                        } else {
+                            // Fallback de seguridad
+                            $subtotal = $total;
+                            $taxCalculations = $this->calculateTaxes($subtotal, $appliedTaxes);
+                            $ivaAmount = $taxCalculations['total_tax_amount'];
+                        }
+                        
+                        Log::info('Calculando impuestos desde total con tasa', [
+                            'tax_rate' => $taxRate,
+                            'total_original' => $total,
+                            'subtotal_calculado' => $subtotal,
+                            'impuestos_calculados' => $ivaAmount
+                        ]);
                     }
                 }
                 
                 $finalTotal = $subtotal + $ivaAmount; // Total final para cotización única
                 $additionalItems = $selectedQuotation->additional_items ?? [];
                 
-                Log::info('Calculando precios para cotización única', [
+                Log::info('Calculando precios para cotización única - FINAL', [
                     'quotation_id' => $selectedQuotation->id,
-                    'quotation_subtotal' => $selectedQuotation->subtotal,
+                    'quotation_subtotal_original' => $selectedQuotation->subtotal,
                     'applied_taxes' => $appliedTaxes,
-                    'total' => $total,
-                    'subtotal' => $subtotal,
-                    'tax_calculations' => $taxCalculations
+                    'subtotal_final' => $subtotal,
+                    'iva_amount_final' => $ivaAmount,
+                    'total_final' => $finalTotal
                 ]);
             }
             
@@ -2882,11 +2893,33 @@ class PurchaseOrdersController extends Controller
                 ]);
             }
 
-            // Calcular totales para la nueva orden
+            // CORREGIDO: Calcular totales basándose en la configuración real de impuestos de las cotizaciones
             $totalAmount = $providerSelections->sum('total_price');
-            $includesIva = true;
-            $subtotal = round($totalAmount / 1.19, 2);
-            $ivaAmount = round($totalAmount - $subtotal, 2);
+            
+            // Obtener la primera cotización del proveedor para verificar configuración de impuestos
+            $firstSelection = $providerSelections->first();
+            $quotationForTaxes = $firstSelection->quotation;
+            $appliedTaxes = $this->getAppliedTaxesFromQuotation($quotationForTaxes);
+            
+            Log::info('Calculando totales para orden separada', [
+                'provider_name' => $providerName,
+                'total_selections' => $totalAmount,
+                'quotation_id' => $quotationForTaxes->id,
+                'applied_taxes' => $appliedTaxes
+            ]);
+            
+            if (!empty($appliedTaxes)) {
+                // Hay impuestos definidos en la cotización
+                $taxRate = $this->calculateTotalTaxRate($appliedTaxes);
+                $subtotal = round($totalAmount / (1 + $taxRate), 2);
+                $ivaAmount = round($totalAmount - $subtotal, 2);
+                $includesIva = true;
+            } else {
+                // No hay impuestos definidos en la cotización
+                $subtotal = $totalAmount;
+                $ivaAmount = 0;
+                $includesIva = false;
+            }
 
             // Generar número de orden único
             $orderNumber = 'OC-' . date('Ym') . '-' . str_pad(PurchaseOrder::count() + 1, 3, '0', STR_PAD_LEFT);
@@ -3098,17 +3131,34 @@ class PurchaseOrdersController extends Controller
                 ]);
             }
 
-            // Calcular totales basados en la cotización
+            // CORREGIDO: Calcular totales basándose en la configuración real de impuestos de la cotización
             $totalAmount = $quotation->total_amount;
-            $includesIva = $quotation->includes_iva ?? true;
+            $appliedTaxes = $this->getAppliedTaxesFromQuotation($quotation);
             
-            if ($includesIva) {
-                $subtotal = round($totalAmount / 1.19, 2);
-                $ivaAmount = round($totalAmount - $subtotal, 2);
+            Log::info('Creando orden alternativa con impuestos detectados', [
+                'quotation_id' => $quotation->id,
+                'provider_name' => $providerName,
+                'total_amount' => $totalAmount,
+                'applied_taxes' => $appliedTaxes
+            ]);
+            
+            if (!empty($appliedTaxes)) {
+                // Usar subtotal de la cotización si existe, o calcular desde total
+                if ($quotation->subtotal && $quotation->subtotal > 0) {
+                    $subtotal = floatval($quotation->subtotal);
+                    $taxCalculations = $this->calculateTaxes($subtotal, $appliedTaxes);
+                    $ivaAmount = $taxCalculations['total_tax_amount'];
+                } else {
+                    $taxRate = $this->calculateTotalTaxRate($appliedTaxes);
+                    $subtotal = round($totalAmount / (1 + $taxRate), 2);
+                    $ivaAmount = round($totalAmount - $subtotal, 2);
+                }
+                $includesIva = true;
             } else {
+                // No hay impuestos definidos
                 $subtotal = $totalAmount;
-                $ivaAmount = round($totalAmount * 0.19, 2);
-                $totalAmount = $subtotal + $ivaAmount;
+                $ivaAmount = 0;
+                $includesIva = false;
             }
 
             // Generar número de orden único
@@ -3133,12 +3183,12 @@ class PurchaseOrdersController extends Controller
                 'subtotal' => $subtotal,
                 'iva_amount' => $ivaAmount,
                 'selected_quotation_id' => $quotationId,
-                'applied_taxes' => ['iva_19'], // Por defecto IVA 19%
+                'applied_taxes' => $appliedTaxes, // CORREGIDO: Usar impuestos reales de la cotización
                 'subtotal_amount' => $subtotal,
-                'tax_amount_19' => $ivaAmount,
-                'tax_amount_8' => 0,
-                'tax_amount_5' => 0,
-                'tax_amount_4' => 0,
+                'tax_amount_19' => in_array('iva_19', $appliedTaxes) ? $ivaAmount : 0,
+                'tax_amount_8' => in_array('consumo_8', $appliedTaxes) ? $ivaAmount : 0,
+                'tax_amount_5' => in_array('iva_5', $appliedTaxes) ? $ivaAmount : 0,
+                'tax_amount_4' => in_array('consumo_4', $appliedTaxes) ? $ivaAmount : 0,
                 'tax_amount' => $ivaAmount,
             ]);
 
@@ -4931,7 +4981,41 @@ class PurchaseOrdersController extends Controller
             ]);
         }
         
-        $ivaAmount = round($subtotalFromItems * 0.19, 2);
+        // CORREGIDO: Calcular IVA basándose en la cotización seleccionada, no automáticamente
+        $ivaAmount = 0;
+        $totalWithIva = $subtotalFromItems;
+        
+        if ($purchaseRequest->selectedQuotation) {
+            $quotation = $purchaseRequest->selectedQuotation;
+            
+            // Verificar si la cotización tiene impuestos configurados
+            if ($quotation->includes_iva_19 && $quotation->iva_19_amount > 0) {
+                $ivaAmount = $quotation->iva_19_amount;
+            } elseif ($quotation->includes_iva_5 && $quotation->iva_5_amount > 0) {
+                $ivaAmount = $quotation->iva_5_amount;
+            } elseif ($quotation->includes_iva && $quotation->iva_amount > 0) {
+                // Fallback a campos legacy solo si hay valores
+                $ivaAmount = $quotation->iva_amount;
+            }
+            
+            Log::info('🎯 IVA calculado desde cotización', [
+                'order_id' => $order->id,
+                'quotation_id' => $quotation->id,
+                'iva_19_enabled' => $quotation->includes_iva_19,
+                'iva_19_amount' => $quotation->iva_19_amount,
+                'iva_5_enabled' => $quotation->includes_iva_5,
+                'iva_5_amount' => $quotation->iva_5_amount,
+                'legacy_iva_enabled' => $quotation->includes_iva,
+                'legacy_iva_amount' => $quotation->iva_amount,
+                'calculated_iva' => $ivaAmount
+            ]);
+        } else {
+            // Sin cotización, no aplicar IVA automáticamente
+            Log::info('🎯 Sin cotización - No aplicar IVA automáticamente', [
+                'order_id' => $order->id
+            ]);
+        }
+        
         $totalWithIva = $subtotalFromItems + $ivaAmount;
 
         // ESTRATEGIA CONSERVADORA: Si hay totales pre-calculados válidos, preservarlos
@@ -4942,7 +5026,7 @@ class PurchaseOrdersController extends Controller
         // Si los totales originales parecen válidos, usarlos en lugar de recalcular
         if ($originalTotal > 0 && $originalSubtotal > 0) {
             $finalSubtotal = $originalSubtotal;
-            $finalIvaAmount = $originalIva > 0 ? $originalIva : round($originalSubtotal * 0.19, 2);
+            $finalIvaAmount = $originalIva; // CORREGIDO: No calcular IVA automáticamente, usar el original
             $finalTotal = $originalTotal;
             
             Log::info('📊 Usando totales originales (conservador)', [
@@ -5094,10 +5178,45 @@ class PurchaseOrdersController extends Controller
         if ($quotation->includes_iva_19 && $quotation->iva_19_amount > 0) {
             $appliedTaxes[] = 'iva_19';
         }
-        
         // Verificar IVA 5%
-        if ($quotation->includes_iva_5 && $quotation->iva_5_amount > 0) {
+        elseif ($quotation->includes_iva_5 && $quotation->iva_5_amount > 0) {
             $appliedTaxes[] = 'iva_5';
+        }
+        // FALLBACK CORREGIDO: Para cotizaciones legacy con includes_iva pero sin campos específicos
+        elseif ($quotation->includes_iva && $quotation->iva_amount > 0 && 
+                !$quotation->includes_iva_19 && !$quotation->includes_iva_5) {
+            
+            Log::info('Procesando cotización legacy con IVA', [
+                'quotation_id' => $quotation->id,
+                'includes_iva' => $quotation->includes_iva,
+                'iva_amount' => $quotation->iva_amount,
+                'total_amount' => $quotation->total_amount,
+                'subtotal' => $quotation->subtotal
+            ]);
+            
+            // Determinar el tipo de IVA basado en el porcentaje calculado
+            $subtotalCalculado = $quotation->subtotal ?? ($quotation->total_amount - $quotation->iva_amount);
+            if ($subtotalCalculado > 0) {
+                $porcentajeIva = ($quotation->iva_amount / $subtotalCalculado) * 100;
+                
+                Log::info('Calculando porcentaje IVA legacy', [
+                    'subtotal_calculado' => $subtotalCalculado,
+                    'iva_amount' => $quotation->iva_amount,
+                    'porcentaje_iva' => $porcentajeIva
+                ]);
+                
+                if ($porcentajeIva >= 18 && $porcentajeIva <= 20) {
+                    $appliedTaxes[] = 'iva_19';
+                    Log::info('Aplicando IVA 19% a cotización legacy');
+                } elseif ($porcentajeIva >= 4 && $porcentajeIva <= 6) {
+                    $appliedTaxes[] = 'iva_5';
+                    Log::info('Aplicando IVA 5% a cotización legacy');
+                } else {
+                    Log::warning('Porcentaje IVA no reconocido en cotización legacy', [
+                        'porcentaje' => $porcentajeIva
+                    ]);
+                }
+            }
         }
         
         // Verificar Impuesto al Consumo 8%
@@ -5110,12 +5229,10 @@ class PurchaseOrdersController extends Controller
             $appliedTaxes[] = 'consumo_4';
         }
         
-        // CORREGIDO: Eliminar fallback automático que causaba problemas
-        // Ya no asumimos IVA 19% basándonos en cálculos matemáticos
-        // Solo aplicamos impuestos específicamente definidos en la cotización
-        
-        // Si aún no hay impuestos detectados, retornar array vacío
-        // NO aplicar fallbacks automáticos
+        Log::info('Impuestos aplicados detectados desde cotización', [
+            'quotation_id' => $quotation->id,
+            'applied_taxes' => $appliedTaxes
+        ]);
         
         return $appliedTaxes;
     }
@@ -5142,5 +5259,32 @@ class PurchaseOrdersController extends Controller
 
         // CORREGIDO: NO asumir IVA 19% por defecto - retornar array vacío
         return [];
+    }
+
+    /**
+     * Calcular la tasa total de impuestos basada en los impuestos aplicados
+     */
+    private function calculateTotalTaxRate($appliedTaxes)
+    {
+        $taxRate = 0;
+        
+        foreach ($appliedTaxes as $tax) {
+            switch ($tax) {
+                case 'iva_19':
+                    $taxRate += 0.19;
+                    break;
+                case 'iva_5':
+                    $taxRate += 0.05;
+                    break;
+                case 'consumo_8':
+                    $taxRate += 0.08;
+                    break;
+                case 'consumo_4':
+                    $taxRate += 0.04;
+                    break;
+            }
+        }
+        
+        return $taxRate;
     }
 }

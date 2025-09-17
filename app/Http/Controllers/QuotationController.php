@@ -253,11 +253,13 @@ class QuotationController extends Controller
         }
         
         // Calcular todos los impuestos según el modo
-        $includesIva = $request->has('includes_iva');
         $includesIva19 = $request->has('includes_iva_19');
         $includesIva5 = $request->has('includes_iva_5');
         $includesIpoconsumo8 = $request->has('includes_ipoconsumo_8');
         $includesIpoconsumo4 = $request->has('includes_ipoconsumo_4');
+        
+        // CORREGIDO: Campo legacy calculado basándose en los nuevos campos
+        $includesIva = $includesIva19 || $includesIva5;
         
         if ($taxMode === 'global') {
             // Modo global: aplicar impuestos a todo el subtotal
@@ -372,7 +374,7 @@ class QuotationController extends Controller
                 'file_path' => $filePath,
                 'total_amount' => $request->total_amount,
                 'subtotal' => $request->subtotal,
-                'includes_iva' => $includesIva || $includesIva19,
+                'includes_iva' => $includesIva,
                 'iva_amount' => $expectedIvaAmount,
                 'includes_iva_19' => $includesIva19,
                 'iva_19_amount' => $iva19Amount,
@@ -658,14 +660,15 @@ class QuotationController extends Controller
             }
 
             // Procesar impuestos globales
-            $includesIva = $request->has('includes_iva') && $request->includes_iva;
-            $ivaAmount = $includesIva ? floatval($request->iva_amount ?? 0) : 0;
-            
             $includesIva19 = $request->has('includes_iva_19') && $request->includes_iva_19;
             $iva19Amount = $includesIva19 ? floatval($request->iva_19_amount ?? 0) : 0;
             
             $includesIva5 = $request->has('includes_iva_5') && $request->includes_iva_5;
             $iva5Amount = $includesIva5 ? floatval($request->iva_5_amount ?? 0) : 0;
+            
+            // CORREGIDO: Calcular campos legacy basándose en los nuevos campos para mantener consistencia
+            $includesIva = $includesIva19 || $includesIva5;
+            $ivaAmount = $iva19Amount + $iva5Amount;
             
             $includesIpoconsumo8 = $request->has('includes_ipoconsumo_8') && $request->includes_ipoconsumo_8;
             $ipoconsumo8Amount = $includesIpoconsumo8 ? floatval($request->ipoconsumo_8_amount ?? 0) : 0;

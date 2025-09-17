@@ -689,13 +689,34 @@ class ApprovalController extends Controller
             $totalAmount = $providerSelections->sum('total_price');
             
             // CRÍTICO: Para selecciones mixtas, los total_price SON precios base SIN IVA
-            // Independientemente de la configuración de la cotización original
-            // porque cada selección individual es un precio unitario * cantidad
+            // Consultar configuración de IVA de la cotización para respetarla
+            $quotationRequest = $providerSelections->first()->purchaseRequest ?? null;
+            $quotationId = $quotationRequest ? $quotationRequest->quotation_id : null;
+            $quotation = $quotationId ? \App\Models\Quotation::find($quotationId) : null;
+            
             $totalAmount = $providerSelections->sum('total_price');
             $subtotal = $totalAmount;  // Los total_price ya son subtotales
-            $ivaAmount = round($totalAmount * 0.19, 2);  // Calcular IVA sobre el subtotal
+            
+            // Determinar si incluir IVA según configuración de la cotización
+            if ($quotation) {
+                $includesIva19 = $quotation->includes_iva_19 ?? false;
+                $includesIva5 = $quotation->includes_iva_5 ?? false;
+                $includesIva = $includesIva19 || $includesIva5;
+                
+                if ($includesIva19) {
+                    $ivaAmount = round($totalAmount * 0.19, 2);
+                } elseif ($includesIva5) {
+                    $ivaAmount = round($totalAmount * 0.05, 2);
+                } else {
+                    $ivaAmount = 0;
+                }
+            } else {
+                // Si no hay cotización, aplicar IVA por defecto (lógica de negocio)
+                $ivaAmount = round($totalAmount * 0.19, 2);
+                $includesIva = true;
+            }
+            
             $finalTotalProvider = $subtotal + $ivaAmount;  // Subtotal + IVA
-            $includesIva = true;
             
             // Preparar items para la orden mixta
             $orderItems = $providerSelections->map(function($selection) {
@@ -865,19 +886,33 @@ class ApprovalController extends Controller
         $totalAmount = $quotation->total_amount;
         $paymentTerms = $quotation->payment_terms ?? 'Contado';
         
-        // CORREGIDO: Usar los campos correctos de IVA
-        $includesIva = $quotation->includes_iva && $quotation->iva_amount > 0;
+        // CORREGIDO: Calcular impuestos basándose en la configuración de la cotización
+        $ivaAmount = 0;
+        $subtotal = $quotation->subtotal ?? $totalAmount;
         
-        if ($includesIva) {
-            // Si el total ya incluye IVA, calcular subtotal e IVA
-            $subtotal = round($totalAmount / 1.19, 2);
-            $ivaAmount = round($totalAmount - $subtotal, 2);
-        } else {
-            // Si el total no incluye IVA, calcular IVA y nuevo total
-            $subtotal = $totalAmount;
-            $ivaAmount = round($totalAmount * 0.19, 2);
-            $totalAmount = $subtotal + $ivaAmount;
+        // Verificar impuestos específicos de la cotización
+        if ($quotation->includes_iva_19 && $quotation->iva_19_amount > 0) {
+            $ivaAmount = $quotation->iva_19_amount;
+        } elseif ($quotation->includes_iva_5 && $quotation->iva_5_amount > 0) {
+            $ivaAmount = $quotation->iva_5_amount;
+        } elseif ($quotation->includes_iva && $quotation->iva_amount > 0) {
+            $ivaAmount = $quotation->iva_amount;
         }
+        
+        // Usar valores de la cotización o calcular si es necesario
+        if ($quotation->subtotal > 0) {
+            $subtotal = $quotation->subtotal;
+            $totalAmount = $subtotal + $ivaAmount;
+        } else {
+            // Fallback: calcular subtotal desde total
+            if ($ivaAmount > 0) {
+                $subtotal = $totalAmount - $ivaAmount;
+            } else {
+                $subtotal = $totalAmount;
+            }
+        }
+        
+        $includesIva = $ivaAmount > 0;
         
         // Preparar items para la orden
         $orderItems = [];

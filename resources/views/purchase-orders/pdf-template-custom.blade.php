@@ -579,7 +579,7 @@
             
             // Establecer etiquetas por defecto si no se detectaron impuestos
             if (!$ivaType) {
-                $ivaLabel = 'IVA (0%)';
+                $ivaLabel = 'IVA'; // No especificar porcentaje si no hay IVA
             }
             if (!$ipoconsumoType) {
                 $ipoconsumoLabel = null; // No mostrar línea de impuesto al consumo si no hay
@@ -883,8 +883,13 @@
             <tr>
                 <td class="label">FECHA:</td>
                 <td class="value">{{ isset($approvalDate) ? \Carbon\Carbon::parse($approvalDate)->format('d/m/Y') : $order->created_at->format('d/m/Y') }}</td>
+                @if($calculatedIva > 0)
                 <td class="label bold">{{ $ivaLabel }}</td>
                 <td class="value bold right">${{ number_format($calculatedIva, 0, ',', '.') }}</td>
+                @else
+                <td class="label bold">IVA</td>
+                <td class="value bold right">$0</td>
+                @endif
             </tr>
             @if($showTaxColumn && $calculatedIndividualTaxes > 0)
             <tr>
