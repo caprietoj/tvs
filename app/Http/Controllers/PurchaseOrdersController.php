@@ -1674,15 +1674,33 @@ class PurchaseOrdersController extends Controller
         }
 
         try {
-            // FORZAR: Para órdenes con selección mixta, IGNORAR datos previos del PDF
+            // 🔧 NUEVA LÓGICA: Detectar si es edición de PDF existente vs generación inicial
+            $isEditingExistingPdf = !empty($purchaseOrder->pdf_custom_data) && 
+                                   !empty($request->items) && 
+                                   count($request->items) <= 10; // Umbral razonable para edición
+            
             $purchaseRequest = $purchaseOrder->purchaseRequest;
             $hasMixedSelection = $purchaseRequest ? $purchaseRequest->quotationItemSelections()->exists() : false;
             
-            // Siempre empezar con datos limpios para asegurar consistencia en los cálculos
+            // Solo aplicar limpieza agresiva si NO es edición de PDF existente
             $currentCustomData = [];
             
-            if ($hasMixedSelection) {
-                Log::info('🔥 FORZANDO LIMPIEZA - Selección mixta detectada', [
+            if ($isEditingExistingPdf) {
+                Log::info('✏️ MODO EDICIÓN PRESERVATIVO - PDF existente detectado', [
+                    'order' => $purchaseOrder->order_number,
+                    'provider' => $purchaseOrder->provider->nombre,
+                    'items_count' => count($request->items ?? []),
+                    'preserving_existing_data' => true
+                ]);
+                
+                // En modo edición, preservar datos existentes como base
+                $existingData = $purchaseOrder->pdf_custom_data ?? '{}';
+                $currentCustomData = is_array($existingData) 
+                    ? $existingData 
+                    : json_decode($existingData, true);
+                    
+            } elseif ($hasMixedSelection) {
+                Log::info('🔥 MODO GENERACIÓN INICIAL - Selección mixta detectada', [
                     'order' => $purchaseOrder->order_number,
                     'provider' => $purchaseOrder->provider->nombre,
                     'cleaning_previous_data' => true
@@ -1707,24 +1725,46 @@ class PurchaseOrdersController extends Controller
                 }
             }
             
-            // CORRECCIÓN CRÍTICA: USAR SOLO LOS DATOS DEL FORMULARIO COMO FUENTE DE VERDAD
-            // Los items que llegan del formulario - ESTOS SON LOS ÚNICOS QUE DEBEN GUARDARSE
+            // Los items que llegan del formulario
             $itemsToSave = $request->items ?? [];
             
-            // 🔧 CORRECCIÓN: Filtro menos restrictivo para permitir edición de descripciones vacías
-            $itemsToSave = array_filter($itemsToSave, function($item) {
-                // Mantener items que tengan al menos UNA de estas condiciones:
-                // 1. Descripción no vacía
-                // 2. Cantidad > 0
-                // 3. Precio > 0
-                $hasDescription = !empty($item['description']) && trim($item['description']) !== '';
-                $hasQuantity = isset($item['quantity']) && floatval($item['quantity']) > 0;
-                $hasPrice = isset($item['unit_price']) && floatval($item['unit_price']) > 0;
+            // 🔧 CORRECCIÓN: Filtrado inteligente basado en el modo de operación
+            if ($isEditingExistingPdf) {
+                // MODO EDICIÓN: Filtro mínimo - solo remover items completamente vacíos
+                $itemsToSave = array_filter($itemsToSave, function($item) {
+                    // En edición, mantener cualquier item que tenga AL MENOS UNO de estos campos
+                    $hasDescription = !empty(trim($item['description'] ?? ''));
+                    $hasQuantity = isset($item['quantity']) && floatval($item['quantity']) > 0;
+                    $hasPrice = isset($item['unit_price']) && floatval($item['unit_price']) > 0;
+                    $hasTotal = isset($item['total']) && floatval($item['total']) > 0;
+                    
+                    return $hasDescription || $hasQuantity || $hasPrice || $hasTotal;
+                });
                 
-                // 🔧 CAMBIO CRÍTICO: Permitir items con descripción vacía si tienen cantidad o precio
-                // Esto permite que los usuarios editen las descripciones después
-                return $hasDescription || $hasQuantity || $hasPrice;
-            });
+                Log::info('✏️ FILTRADO PRESERVATIVO APLICADO', [
+                    'order' => $purchaseOrder->order_number,
+                    'items_before_filter' => count($request->items ?? []),
+                    'items_after_filter' => count($itemsToSave),
+                    'mode' => 'editing_existing_pdf'
+                ]);
+                
+            } else {
+                // MODO GENERACIÓN: Filtro más estricto para datos iniciales
+                $itemsToSave = array_filter($itemsToSave, function($item) {
+                    $hasDescription = !empty($item['description']) && trim($item['description']) !== '';
+                    $hasQuantity = isset($item['quantity']) && floatval($item['quantity']) > 0;
+                    $hasPrice = isset($item['unit_price']) && floatval($item['unit_price']) > 0;
+                    
+                    return $hasDescription || $hasQuantity || $hasPrice;
+                });
+                
+                Log::info('🔥 FILTRADO GENERACIÓN APLICADO', [
+                    'order' => $purchaseOrder->order_number,
+                    'items_before_filter' => count($request->items ?? []),
+                    'items_after_filter' => count($itemsToSave),
+                    'mode' => 'initial_generation'
+                ]);
+            }
             
             // Reindexar el array para evitar problemas con índices
             $itemsToSave = array_values($itemsToSave);
@@ -1744,11 +1784,9 @@ class PurchaseOrdersController extends Controller
                 }, $itemsToSave, array_keys($itemsToSave))
             ]); 
             
-            // ELIMINADO: Lógica de sobrescritura con precios originales que causaba discrepancias
-            // El formulario debe ser la fuente de verdad absoluta
-            
-            if ($hasMixedSelection) {
-                // Para órdenes mixtas: verificar que solo tengamos items del proveedor
+            // Solo aplicar correcciones agresivas en modo generación inicial
+            if (!$isEditingExistingPdf && $hasMixedSelection) {
+                // Para órdenes mixtas EN GENERACIÓN INICIAL: verificar que solo tengamos items del proveedor
                 $providerSelections = $purchaseRequest->quotationItemSelections()
                     ->with('quotation')
                     ->whereHas('quotation', function($query) use ($purchaseOrder) {
@@ -1759,10 +1797,10 @@ class PurchaseOrdersController extends Controller
                 $expectedItemCount = $providerSelections->count();
                 $receivedItemCount = count($itemsToSave);
                 
-                // FORZAR: Solo guardar los primeros N items que corresponden al proveedor
+                // Solo forzar filtrado en generación inicial, NO en edición
                 $itemsToSave = array_slice($itemsToSave, 0, $expectedItemCount);
                 
-                Log::info('🎯 FORZANDO FILTRADO CORRECTO', [
+                Log::info('🎯 FILTRADO PARA SELECCIÓN MIXTA (SOLO GENERACIÓN)', [
                     'order' => $purchaseOrder->order_number,
                     'provider' => $purchaseOrder->provider->nombre,
                     'expected_items' => $expectedItemCount,
@@ -1770,21 +1808,21 @@ class PurchaseOrdersController extends Controller
                     'final_items_saved' => count($itemsToSave)
                 ]);
             }
-            // CORRECCIÓN CRÍTICA: Usar siempre la plantilla pdf-template-custom.blade.php
-            Log::critical('🔧 APLICANDO SOLUCIÓN DEFINITIVA PARA PDF', [
+            
+            Log::critical('🔧 PROCESANDO PDF', [
                 'order' => $purchaseOrder->order_number,
                 'provider' => $purchaseOrder->provider->nombre,
-                'using_custom_template' => true,
+                'mode' => $isEditingExistingPdf ? 'editing_existing' : 'initial_generation',
                 'template' => 'pdf-template-custom.blade.php',
                 'items_to_save' => count($itemsToSave)
             ]);
             
-            // INTERCEPTAR: Si llegan más de 10 items, es sospechoso de ser error de selección mixta
-            if (count($itemsToSave) > 10) {
-                Log::warning('🚨 INTERCEPTANDO POSIBLE ERROR - Demasiados items detectados', [
+            // INTERCEPTAR errores solo en generación inicial, NO en ediciones
+            if (!$isEditingExistingPdf && count($itemsToSave) > 10) {
+                Log::warning('🚨 INTERCEPTANDO POSIBLE ERROR - Demasiados items detectados (SOLO GENERACIÓN)', [
                     'order' => $purchaseOrder->order_number,
                     'items_received' => count($itemsToSave),
-                    'forcing_cleanup' => true
+                    'mode' => 'initial_generation_only'
                 ]);
                 
                 // VERIFICAR si es selección mixta por contenido
@@ -1798,8 +1836,8 @@ class PurchaseOrdersController extends Controller
                 }
                 
                 if ($hasAromatica && $hasCafe && count($itemsToSave) >= 14) {
-                    // ESTO ES DEFINITIVAMENTE EL ERROR - FORZAR LIMPIEZA
-                    Log::error('🔥 ERROR CONFIRMADO - Forzando corrección inmediata', [
+                    // ESTO ES DEFINITIVAMENTE EL ERROR - FORZAR LIMPIEZA SOLO EN GENERACIÓN
+                    Log::error('🔥 ERROR CONFIRMADO - Forzando corrección (GENERACIÓN INICIAL ÚNICAMENTE)', [
                         'order' => $purchaseOrder->order_number,
                         'detected_items' => count($itemsToSave),
                         'has_aromatica' => $hasAromatica,
@@ -1809,7 +1847,7 @@ class PurchaseOrdersController extends Controller
                     // FORZAR: Solo los primeros 7 items
                     $itemsToSave = array_slice($itemsToSave, 0, 7);
                     
-                    Log::info('✅ CORRECCIÓN FORZADA APLICADA', [
+                    Log::info('✅ CORRECCIÓN FORZADA APLICADA (SOLO GENERACIÓN)', [
                         'order' => $purchaseOrder->order_number,
                         'items_after_correction' => count($itemsToSave)
                     ]);
@@ -1981,8 +2019,6 @@ class PurchaseOrdersController extends Controller
                 'ipoconsumo_amount' => $ipoconsumoAmount,
                 'subtotal' => $rawSubtotal,
                 'total' => $rawTotal,
-                'items' => $itemsToSave,
-                'additional_items' => $additionalItemsToSave,
                 'observations' => $request->observations,
                 'shared_budget_info' => $request->shared_budget_info,
                 'individual_taxes_total' => $individualTaxesTotal,
@@ -1993,6 +2029,27 @@ class PurchaseOrdersController extends Controller
                 'items_count' => count($itemsToSave),
                 'additional_items_count' => count($additionalItemsToSave)
             ]);
+            
+            // 🔧 CORRECCIÓN CRÍTICA: Solo sobrescribir items si NO es edición preservativa
+            if (!$isEditingExistingPdf || !$hasMixedSelection) {
+                // Para generación inicial o ediciones de órdenes no-mixtas
+                $customData['items'] = $itemsToSave;
+                $customData['additional_items'] = $additionalItemsToSave;
+                
+                Log::info('✏️ GUARDANDO ITEMS EN CUSTOMDATA (generación/edición normal)', [
+                    'order' => $purchaseOrder->order_number,
+                    'mode' => $isEditingExistingPdf ? 'editing_non_mixed' : 'initial_generation',
+                    'items_saved' => count($itemsToSave)
+                ]);
+            } else {
+                // Para edición preservativa de órdenes mixtas: NO sobrescribir items
+                // El template usará quotationItemSelections originales
+                Log::info('🔒 PRESERVANDO ITEMS ORIGINALES (edición mixta preservativa)', [
+                    'order' => $purchaseOrder->order_number,
+                    'preserving_quotation_selections' => true,
+                    'items_not_overwritten' => count($itemsToSave)
+                ]);
+            }
             
             Log::critical('📋 DATOS FINALES QUE SE GUARDARÁN', [
                 'order' => $purchaseOrder->order_number,

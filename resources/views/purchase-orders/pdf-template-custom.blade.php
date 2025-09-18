@@ -273,9 +273,9 @@
                     // Intentar obtener el precio de diferentes fuentes
                     if (isset($selection->unit_price)) {
                         $unitPrice = $selection->unit_price;
-                    } elseif ($selection->quotation && isset($selection->quotation->original_item_prices[$selection->item_index])) {
+                    } elseif (isset($selection->quotation) && $selection->quotation && isset($selection->quotation->original_item_prices[$selection->item_index])) {
                         $unitPrice = $selection->quotation->original_item_prices[$selection->item_index];
-                    } elseif ($selection->quotation && isset($selection->quotation->item_prices[$selection->item_index])) {
+                    } elseif (isset($selection->quotation) && $selection->quotation && isset($selection->quotation->item_prices[$selection->item_index])) {
                         $unitPrice = $selection->quotation->item_prices[$selection->item_index];
                     }
                     
@@ -319,7 +319,7 @@
                         }
                     }
                     
-                    if ($selection->quotation) {
+                    if (isset($selection->quotation) && $selection->quotation) {
                         $quotation = $selection->quotation;
                         
                         // 🔥 INTENTAR EXTRAER DATOS REALES DE LA COTIZACIÓN ORIGINAL
@@ -419,12 +419,13 @@
                     if ($taxRate === 0 && $taxType === 'Sin impuesto') {
                         $description = strtolower($selection->item_description ?? '');
                         
-                        // Productos SIN IMPUESTO
-                        $noTaxProducts = ['jeringas', 'tijeras'];
+                        // 🚨 CORRECCIÓN: Productos específicos SIN IMPUESTO (solo gasas estériles)
+                        $noTaxProducts = ['gasas estériles', 'gasas esteriles', 'gasa esteril', 'gasa estéril'];
                         $shouldHaveTax = true;
                         foreach ($noTaxProducts as $product) {
                             if (strpos($description, $product) !== false) {
                                 $shouldHaveTax = false;
+                                $taxType = 'Sin impuesto';
                                 break;
                             }
                         }
@@ -440,7 +441,7 @@
                                 }
                             }
                             
-                            // Productos con Ipoconsumo 8% (corregido - removido 'pijamas')
+                            // Productos con Ipoconsumo 8%
                             if ($taxRate === 0) {
                                 $ipoconsumo8Products = ['sábanas', 'curitas', 'aplicadores'];
                                 foreach ($ipoconsumo8Products as $product) {
@@ -1110,17 +1111,40 @@
                 }
             }
             
-            $calculatedTotal = round($calculatedSubtotal + $calculatedIva + $calculatedIpoconsumo + $calculatedIndividualTaxes);
-            
-            Log::info('🎯 VISTA PDF: Totales finales calculados', [
-                'order_id' => $order->id,
-                'subtotal' => $calculatedSubtotal,
-                'iva' => $calculatedIva,
-                'ipoconsumo' => $calculatedIpoconsumo,
-                'individual_taxes' => $calculatedIndividualTaxes,
-                'total' => $calculatedTotal,
-                'source' => isset($customData['subtotal']) ? 'customData' : 'dynamic'
-            ]);
+            // 🔧 CORRECCIÓN CRÍTICA: Calcular total según el tipo de aplicación de impuestos
+            if ($hasItemLevelTaxes) {
+                // Para impuestos por ítem: el total es la suma de los totales individuales con impuestos
+                $calculatedTotal = 0;
+                foreach ($itemsToShow as $item) {
+                    $itemPrice = floatval($item['unit_price'] ?? $item['precio_unitario'] ?? 0);
+                    $itemQuantity = floatval($item['quantity'] ?? $item['cantidad'] ?? 1);
+                    $itemSubtotal = $itemPrice * $itemQuantity;
+                    $itemTaxAmount = $itemSubtotal * (($item['tax_rate'] ?? 0) / 100);
+                    $itemTotalWithTax = $itemSubtotal + $itemTaxAmount;
+                    $calculatedTotal += $itemTotalWithTax;
+                }
+                $calculatedTotal = round($calculatedTotal);
+                
+                Log::info('🎯 VISTA PDF: Total calculado desde items individuales con impuestos', [
+                    'order_id' => $order->id,
+                    'subtotal' => $calculatedSubtotal,
+                    'total_from_individual_items' => $calculatedTotal,
+                    'calculation_method' => 'per_item_taxes'
+                ]);
+            } else {
+                // Para impuestos globales: subtotal + IVA + Ipoconsumo + impuestos individuales
+                $calculatedTotal = round($calculatedSubtotal + $calculatedIva + $calculatedIpoconsumo + $calculatedIndividualTaxes);
+                
+                Log::info('🎯 VISTA PDF: Total calculado con impuestos globales', [
+                    'order_id' => $order->id,
+                    'subtotal' => $calculatedSubtotal,
+                    'iva' => $calculatedIva,
+                    'ipoconsumo' => $calculatedIpoconsumo,
+                    'individual_taxes' => $calculatedIndividualTaxes,
+                    'total' => $calculatedTotal,
+                    'calculation_method' => 'global_taxes'
+                ]);
+            }
             
             // ===== CORRECCIÓN CRÍTICA: VERIFICAR MODO DE APLICACIÓN DE IMPUESTOS =====
             $hasItemLevelTaxes = false;
@@ -1128,14 +1152,14 @@
             // MÉTODO PRINCIPAL: Verificar el tax_application_mode de las cotizaciones relacionadas
             if (isset($quotationItemSelections) && $quotationItemSelections->count() > 0) {
                 foreach ($quotationItemSelections as $selection) {
-                    if ($selection->quotation && $selection->quotation->tax_application_mode === 'per_item') {
+                    if (isset($selection->quotation) && $selection->quotation && isset($selection->quotation->tax_application_mode) && $selection->quotation->tax_application_mode === 'per_item') {
                         $hasItemLevelTaxes = true;
                         Log::info('📋 PDF: Impuestos POR ÍTEM detectados desde cotización', [
                             'quotation_id' => $selection->quotation->id,
                             'tax_mode' => $selection->quotation->tax_application_mode
                         ]);
                         break;
-                    } elseif ($selection->quotation && $selection->quotation->tax_application_mode === 'global') {
+                    } elseif (isset($selection->quotation) && $selection->quotation && isset($selection->quotation->tax_application_mode) && $selection->quotation->tax_application_mode === 'global') {
                         $hasItemLevelTaxes = false;
                         Log::info('📋 PDF: Impuestos GLOBALES detectados desde cotización', [
                             'quotation_id' => $selection->quotation->id,

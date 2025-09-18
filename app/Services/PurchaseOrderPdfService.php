@@ -105,6 +105,9 @@ class PurchaseOrderPdfService
             ]);
         }
 
+        // 🔧 CORRECCIÓN CRÍTICA: Para órdenes mixtas, SIEMPRE priorizar selecciones originales
+        // Los datos editados en customData suelen tener cantidades incorrectas (todas 1)
+        
         // Detectar si es orden mixta o si se pasaron selecciones
         $hasMixedItems = $providerSelections !== null || 
                         QuotationItemSelection::whereHas('quotation', function($query) use ($order) {
@@ -112,9 +115,56 @@ class PurchaseOrderPdfService
                         })->exists() || 
                         ($order->additional_items && count($order->additional_items) > 0);
 
-        // 🔧 PRIORIDAD 1: Si hay datos personalizados más recientes (el usuario editó la orden)
-        if ($hasRecentCustomData) {
-            Log::info('🎯 Usando datos editados recientes de pdf_custom_data', [
+        // 🔧 NUEVA PRIORIDAD 1: ÓRDENES MIXTAS - Usar selecciones originales SIEMPRE
+        if ($hasMixedItems) {
+            Log::info('🎯 ORDEN MIXTA DETECTADA - Priorizando selecciones originales', [
+                'order_id' => $order->id,
+                'ignoring_edited_data' => $hasRecentCustomData
+            ]);
+            
+            // Usar selecciones pasadas como parámetro o buscarlas usando la relación
+            if ($providerSelections && $providerSelections->count() > 0) {
+                $data['quotationItemSelections'] = $providerSelections;
+                Log::info('✅ Usando selecciones pasadas como parámetro', [
+                    'order_id' => $order->id,
+                    'selections_count' => $providerSelections->count()
+                ]);
+            } else {
+                // Cargar la relación y obtener las selecciones
+                $order->load(['provider', 'purchaseRequest.quotationItemSelections.quotation']);
+                $selections = $this->getQuotationItemSelections($order);
+                
+                // Si no hay selecciones de BD pero hay additional_items, usar esos
+                if ($selections->count() === 0 && $order->additional_items && count($order->additional_items) > 0) {
+                    // Convertir additional_items a formato compatible con selecciones
+                    $additionalItems = collect($order->additional_items)->map(function($item, $index) {
+                        return (object) [
+                            'id' => 'additional_' . $index,
+                            'item_description' => $item['description'] ?? 'N/A',
+                            'quantity' => $item['quantity'] ?? 1,
+                            'unit_price' => $item['unit_price'] ?? 0,
+                            'total_price' => $item['total_price'] ?? 0,
+                            'unit' => $item['unit'] ?? 'Unidad',
+                            'observations' => $item['observations'] ?? ''
+                        ];
+                    });
+                    $data['quotationItemSelections'] = $additionalItems;
+                    Log::info('✅ Usando additional_items como selecciones', [
+                        'order_id' => $order->id,
+                        'items_count' => $additionalItems->count()
+                    ]);
+                } else {
+                    $data['quotationItemSelections'] = $selections;
+                    Log::info('✅ Usando selecciones desde base de datos', [
+                        'order_id' => $order->id,
+                        'selections_count' => $selections->count()
+                    ]);
+                }
+            }
+            
+        // 🔧 PRIORIDAD 2: Si hay datos personalizados más recientes Y NO es mixta
+        } elseif ($hasRecentCustomData) {
+            Log::info('🎯 Usando datos editados recientes de pdf_custom_data (orden NO mixta)', [
                 'order_id' => $order->id,
                 'items_count' => count($customData['items'])
             ]);
@@ -139,48 +189,6 @@ class PurchaseOrderPdfService
             });
             
             $data['quotationItemSelections'] = $customItems;
-            
-        // 🔧 PRIORIDAD 2: Orden mixta con selecciones originales
-        } elseif ($hasMixedItems) {
-            // Usar selecciones pasadas como parámetro o buscarlas usando la relación
-            if ($providerSelections && $providerSelections->count() > 0) {
-                $data['quotationItemSelections'] = $providerSelections;
-                Log::info('Usando selecciones pasadas como parámetro', [
-                    'order_id' => $order->id,
-                    'selections_count' => $providerSelections->count()
-                ]);
-            } else {
-                // Cargar la relación y obtener las selecciones
-                $order->load(['provider', 'purchaseRequest.quotationItemSelections.quotation']);
-                $selections = $this->getQuotationItemSelections($order);
-                
-                // Si no hay selecciones de BD pero hay additional_items, usar esos
-                if ($selections->count() === 0 && $order->additional_items && count($order->additional_items) > 0) {
-                    // Convertir additional_items a formato compatible con selecciones
-                    $additionalItems = collect($order->additional_items)->map(function($item, $index) {
-                        return (object) [
-                            'id' => 'additional_' . $index,
-                            'item_description' => $item['description'] ?? 'N/A',
-                            'quantity' => $item['quantity'] ?? 1,
-                            'unit_price' => $item['unit_price'] ?? 0,
-                            'total_price' => $item['total_price'] ?? 0,
-                            'unit' => $item['unit'] ?? 'Unidad',
-                            'observations' => $item['observations'] ?? ''
-                        ];
-                    });
-                    $data['quotationItemSelections'] = $additionalItems;
-                    Log::info('Usando additional_items como selecciones', [
-                        'order_id' => $order->id,
-                        'items_count' => $additionalItems->count()
-                    ]);
-                } else {
-                    $data['quotationItemSelections'] = $selections;
-                    Log::info('Obteniendo selecciones desde base de datos', [
-                        'order_id' => $order->id,
-                        'selections_count' => $selections->count()
-                    ]);
-                }
-            }
         } else {
             // 🔧 PARA ÓRDENES NO MIXTAS: Cargar items desde pdf_custom_data
             Log::info('Procesando orden NO MIXTA - buscando items en pdf_custom_data', [
