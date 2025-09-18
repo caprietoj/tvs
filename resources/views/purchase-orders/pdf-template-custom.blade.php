@@ -243,6 +243,7 @@
             // Determinar si se debe mostrar la columna de impuestos
             $showTaxColumn = false;
             $hasIndividualTaxes = false;
+            $hasItemLevelTaxes = false; // 🔧 INICIALIZACIÓN CRÍTICA para evitar "Undefined variable"
             
             // CORRECCIÓN CRÍTICA: Usar ÚNICAMENTE los datos filtrados de customData
             $itemsToShow = [];
