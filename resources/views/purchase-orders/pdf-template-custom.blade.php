@@ -279,20 +279,232 @@
                         $unitPrice = $selection->quotation->item_prices[$selection->item_index];
                     }
                     
+                    // 🔥 NUEVA LÓGICA: Obtener impuestos desde la cotización original
+                    $taxRate = 0;
+                    $taxType = 'Sin impuesto';
+                    $itemUnit = 'und'; // Default unit
+                    $displayQuantity = $selection->quantity ?? 1;
+                    
+                    // Extraer cantidad y unidad de la descripción si está presente
+                    $description = $selection->item_description ?? '';
+                    
+                    // Regex más inteligente - solo buscar cantidades al inicio o después de palabras clave
+                    // Evitar confundir especificaciones técnicas (5ml, 10cc) con cantidades
+                    if (preg_match('/^(\d+)\s*(paq|und|unidad|unidades|paquete|paquetes|caja|cajas|bolsa|bolsas|frasco|frascos)\b/i', $description, $matches)) {
+                        // Cantidad al inicio: "5 paq de gasas"
+                        $displayQuantity = intval($matches[1]);
+                        $itemUnit = strtolower($matches[2]);
+                        if (in_array($itemUnit, ['paquete', 'paquetes'])) {
+                            $itemUnit = 'paq';
+                        } elseif (in_array($itemUnit, ['unidad', 'unidades'])) {
+                            $itemUnit = 'und';
+                        }
+                    } elseif (preg_match('/\bx\s*(\d+)\s*(paq|und|unidad|unidades|paquete|paquetes|caja|cajas|bolsa|bolsas)?\b/i', $description, $matches)) {
+                        // Cantidad con 'x': "gasas x 5", "jeringas x 10 und"
+                        $displayQuantity = intval($matches[1]);
+                        $itemUnit = isset($matches[2]) ? strtolower($matches[2]) : 'und';
+                        if (in_array($itemUnit, ['paquete', 'paquetes'])) {
+                            $itemUnit = 'paq';
+                        } elseif (in_array($itemUnit, ['unidad', 'unidades'])) {
+                            $itemUnit = 'und';
+                        }
+                    } elseif (preg_match('/\b(cantidad|cant|qty)[:=]?\s*(\d+)\s*(paq|und|unidad|unidades|paquete|paquetes)?\b/i', $description, $matches)) {
+                        // Cantidad explícita: "cantidad: 5", "cant 10 paq"
+                        $displayQuantity = intval($matches[2]);
+                        $itemUnit = isset($matches[3]) ? strtolower($matches[3]) : 'und';
+                        if (in_array($itemUnit, ['paquete', 'paquetes'])) {
+                            $itemUnit = 'paq';
+                        } elseif (in_array($itemUnit, ['unidad', 'unidades'])) {
+                            $itemUnit = 'und';
+                        }
+                    }
+                    
+                    if ($selection->quotation) {
+                        $quotation = $selection->quotation;
+                        
+                        // 🔥 INTENTAR EXTRAER DATOS REALES DE LA COTIZACIÓN ORIGINAL
+                        // Calcular cantidades desde precios y totales
+                        $originalPrices = is_array($quotation->original_item_prices) 
+                            ? $quotation->original_item_prices 
+                            : json_decode($quotation->original_item_prices ?? '[]', true);
+                        $originalTotals = is_array($quotation->original_item_totals)
+                            ? $quotation->original_item_totals
+                            : json_decode($quotation->original_item_totals ?? '[]', true);
+                        
+                        // Calcular cantidad real desde precio unitario y total
+                        if (isset($originalPrices[$selection->item_index]) && isset($originalTotals[$selection->item_index])) {
+                            $unitPrice = floatval($originalPrices[$selection->item_index]);
+                            $totalPrice = floatval($originalTotals[$selection->item_index]);
+                            
+                            if ($unitPrice > 0) {
+                                $calculatedQuantity = round($totalPrice / $unitPrice);
+                                if ($calculatedQuantity > 1) {
+                                    $displayQuantity = $calculatedQuantity;
+                                    
+                                    // Inferir unidad basada en la cantidad
+                                    if ($calculatedQuantity >= 5) {
+                                        // Cantidades altas probablemente son paquetes o cajas
+                                        $description = strtolower($selection->item_description);
+                                        if (strpos($description, 'caja') !== false || strpos($description, 'tapabocas') !== false || strpos($description, 'guantes') !== false) {
+                                            $itemUnit = 'caja';
+                                        } elseif (strpos($description, 'paquete') !== false || strpos($description, 'gasas') !== false || strpos($description, 'algodón') !== false) {
+                                            $itemUnit = 'paq';
+                                        } else {
+                                            $itemUnit = 'und';
+                                        }
+                                    } else {
+                                        // Cantidades bajas probablemente son unidades o frascos
+                                        $description = strtolower($selection->item_description);
+                                        if (strpos($description, 'frasco') !== false || strpos($description, 'alcohol') !== false) {
+                                            $itemUnit = 'frasco';
+                                        } else {
+                                            $itemUnit = 'und';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        $quotationItems = $quotation->items; // Usar el accessor
+                        
+                        // Verificar si existe el item en el índice correspondiente
+                        if (isset($quotationItems[$selection->item_index])) {
+                            $originalItem = $quotationItems[$selection->item_index];
+                            
+                            // Obtener la unidad del ítem original (si no se extrajo de la descripción)
+                            if ($itemUnit === 'und' && $displayQuantity === ($selection->quantity ?? 1)) {
+                                $itemUnit = $originalItem['unit'] ?? $originalItem['unidad'] ?? 'und';
+                                $displayQuantity = $originalItem['quantity'] ?? $displayQuantity;
+                            }
+                            
+                            // Obtener impuestos del item original
+                            $ivaRate = floatval($originalItem['iva_rate'] ?? 0);
+                            $ipoconsumoRate = floatval($originalItem['ipoconsumo_rate'] ?? 0);
+                            
+                            // Priorizar Ipoconsumo si existe, sino IVA
+                            if ($ipoconsumoRate > 0) {
+                                $taxRate = $ipoconsumoRate;
+                                $taxType = "Ipoconsumo {$ipoconsumoRate}%";
+                            } elseif ($ivaRate > 0) {
+                                $taxRate = $ivaRate;
+                                $taxType = "IVA {$ivaRate}%";
+                            }
+                            
+                            Log::info('✅ PDF: Cantidad calculada para quotationItemSelection', [
+                                'selection_id' => $selection->id,
+                                'quotation_id' => $selection->quotation_id,
+                                'item_index' => $selection->item_index,
+                                'description' => $selection->item_description,
+                                'original_quantity' => $selection->quantity,
+                                'unit_price' => $originalPrices[$selection->item_index] ?? 'N/A',
+                                'total_price' => $originalTotals[$selection->item_index] ?? 'N/A',
+                                'calculated_quantity' => $calculatedQuantity ?? 'N/A',
+                                'display_quantity' => $displayQuantity,
+                                'unit' => $itemUnit,
+                                'iva_rate' => $ivaRate,
+                                'ipoconsumo_rate' => $ipoconsumoRate,
+                                'final_tax' => $taxType
+                            ]);
+                        } else {
+                            Log::warning('⚠️ PDF: Item no encontrado en cotización', [
+                                'selection_id' => $selection->id,
+                                'quotation_id' => $selection->quotation_id,
+                                'item_index' => $selection->item_index,
+                                'available_items' => count($quotationItems)
+                            ]);
+                        }
+                    }
+                    
+                    // 🔥 FALLBACK: Si no se asignó impuesto, usar lógica de fallback
+                    if ($taxRate === 0 && $taxType === 'Sin impuesto') {
+                        $description = strtolower($selection->item_description ?? '');
+                        
+                        // Productos SIN IMPUESTO
+                        $noTaxProducts = ['jeringas', 'tijeras'];
+                        $shouldHaveTax = true;
+                        foreach ($noTaxProducts as $product) {
+                            if (strpos($description, $product) !== false) {
+                                $shouldHaveTax = false;
+                                break;
+                            }
+                        }
+                        
+                        if ($shouldHaveTax) {
+                            // Productos con IVA 5%
+                            $iva5Products = ['alcohol', 'antiséptico', 'bicarbonato', 'solución', 'sales', 'rehidratación'];
+                            foreach ($iva5Products as $product) {
+                                if (strpos($description, $product) !== false) {
+                                    $taxRate = 5;
+                                    $taxType = 'IVA 5%';
+                                    break;
+                                }
+                            }
+                            
+                            // Productos con Ipoconsumo 8% (corregido - removido 'pijamas')
+                            if ($taxRate === 0) {
+                                $ipoconsumo8Products = ['sábanas', 'curitas', 'aplicadores'];
+                                foreach ($ipoconsumo8Products as $product) {
+                                    if (strpos($description, $product) !== false) {
+                                        $taxRate = 8;
+                                        $taxType = 'Ipoconsumo 8%';
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // Por defecto: IVA 19% (incluyendo pijamas, gasas, tapabocas, etc.)
+                            if ($taxRate === 0) {
+                                $taxRate = 19;
+                                $taxType = 'IVA 19%';
+                            }
+                        }
+                        
+                        Log::info('✅ PDF: Fallback aplicado a quotationItemSelection', [
+                            'selection_id' => $selection->id,
+                            'description' => $selection->item_description,
+                            'final_tax' => $taxType
+                        ]);
+                    }
+                    
                     $itemsToShow[] = [
                         'description' => $selection->item_description ?? 'N/A',
-                        'quantity' => $selection->quantity ?? 1,
+                        'quantity' => $displayQuantity,
                         'unit_price' => $unitPrice,
-                        'total' => isset($selection->total_price) ? $selection->total_price : (($selection->quantity ?? 1) * $unitPrice),
-                        'unit' => $selection->unit ?? 'Unidad',
-                        'observations' => $selection->observations ?? ''
+                        'total' => $displayQuantity * $unitPrice, // ✅ CORREGIDO: Usar cantidad calculada * precio
+                        'unit' => $itemUnit,
+                        'observations' => $selection->observations ?? '',
+                        'tax_rate' => $taxRate,
+                        'tax_type' => $taxType
                     ];
+                    
+
                 }
                 
                 Log::info('🎯 VISTA PDF: Items de quotationItemSelections procesados', [
                     'order_id' => $order->id,
                     'items_count' => count($itemsToShow)
                 ]);
+                
+                // 🔥 NUEVA LÓGICA: Detectar impuestos mixtos en quotationItemSelections
+                $uniqueTaxCombinations = [];
+                foreach ($itemsToShow as $item) {
+                    if (isset($item['tax_rate'])) {
+                        $taxCombo = floatval($item['tax_rate'] ?? 0);
+                        $uniqueTaxCombinations[$taxCombo] = true;
+                    }
+                }
+                
+                // Si hay más de 1 combinación de impuestos, activar vista especial
+                if (count($uniqueTaxCombinations) > 1) {
+                    $hasItemLevelTaxes = true;
+                    $showTaxColumn = true;
+                    
+                    Log::info('✅ PDF: Impuestos mixtos detectados en quotationItemSelections', [
+                        'order_id' => $order->id,
+                        'unique_combinations' => count($uniqueTaxCombinations),
+                        'tax_rates' => array_keys($uniqueTaxCombinations)
+                    ]);
+                }
                 
             // SEGUNDA PRIORIDAD: Si hay customData con items válidos
             } elseif (isset($customData) && is_array($customData)) {
@@ -304,8 +516,58 @@
                 
                 // Usar items de customData (pueden estar vacíos si se filtraron todos)
                 if (isset($customData['items']) && is_array($customData['items'])) {
-                    $itemsToShow = $customData['items'];
-                    Log::info('🎯 VISTA PDF: Items regulares de customData', [
+                    $itemsToShow = [];
+                    
+                    // Procesar cada ítem para extraer cantidades y unidades de la descripción
+                    foreach ($customData['items'] as $item) {
+                        $description = $item['description'] ?? $item['item_description'] ?? '';
+                        $originalQuantity = $item['quantity'] ?? $item['cantidad'] ?? 1;
+                        $displayQuantity = $originalQuantity;
+                        $itemUnit = 'und';
+                        
+                        // Extraer cantidad y unidad de la descripción si está presente
+                        // Regex más inteligente - solo buscar cantidades al inicio o después de palabras clave
+                        if (preg_match('/^(\d+)\s*(paq|und|unidad|unidades|paquete|paquetes|caja|cajas|bolsa|bolsas|frasco|frascos)\b/i', $description, $matches)) {
+                            // Cantidad al inicio: "5 paq de gasas"
+                            $displayQuantity = intval($matches[1]);
+                            $itemUnit = strtolower($matches[2]);
+                            if (in_array($itemUnit, ['paquete', 'paquetes'])) {
+                                $itemUnit = 'paq';
+                            } elseif (in_array($itemUnit, ['unidad', 'unidades'])) {
+                                $itemUnit = 'und';
+                            }
+                        } elseif (preg_match('/\bx\s*(\d+)\s*(paq|und|unidad|unidades|paquete|paquetes|caja|cajas|bolsa|bolsas)?\b/i', $description, $matches)) {
+                            // Cantidad con 'x': "gasas x 5", "jeringas x 10 und"
+                            $displayQuantity = intval($matches[1]);
+                            $itemUnit = isset($matches[2]) ? strtolower($matches[2]) : 'und';
+                            if (in_array($itemUnit, ['paquete', 'paquetes'])) {
+                                $itemUnit = 'paq';
+                            } elseif (in_array($itemUnit, ['unidad', 'unidades'])) {
+                                $itemUnit = 'und';
+                            }
+                        } elseif (preg_match('/\b(cantidad|cant|qty)[:=]?\s*(\d+)\s*(paq|und|unidad|unidades|paquete|paquetes)?\b/i', $description, $matches)) {
+                            // Cantidad explícita: "cantidad: 5", "cant 10 paq"
+                            $displayQuantity = intval($matches[2]);
+                            $itemUnit = isset($matches[3]) ? strtolower($matches[3]) : 'und';
+                            if (in_array($itemUnit, ['paquete', 'paquetes'])) {
+                                $itemUnit = 'paq';
+                            } elseif (in_array($itemUnit, ['unidad', 'unidades'])) {
+                                $itemUnit = 'und';
+                            }
+                        } else {
+                            // Fallback a unidad especificada o default
+                            $itemUnit = $item['unit'] ?? 'und';
+                        }
+                        
+                        // Crear ítem procesado con cantidades/unidades extraídas
+                        $processedItem = $item;
+                        $processedItem['quantity'] = $displayQuantity;
+                        $processedItem['unit'] = $itemUnit;
+                        
+                        $itemsToShow[] = $processedItem;
+                    }
+                    
+                    Log::info('🎯 VISTA PDF: Items regulares de customData procesados', [
                         'count' => count($itemsToShow),
                         'order_id' => $order->id
                     ]);
@@ -342,18 +604,60 @@
                             $unitPrice = floatval($additionalItem['unit_price'] ?? 0);
                             $total = floatval($additionalItem['total'] ?? ($quantity * $unitPrice));
                             
+                            // Aplicar la misma lógica de extracción de cantidades y unidades
+                            $description = $additionalItem['description'];
+                            $displayQuantity = $quantity > 0 ? $quantity : 1;
+                            $itemUnit = 'und';
+                            
+                            // Extraer cantidad y unidad de la descripción si está presente
+                            // Regex más inteligente - solo buscar cantidades al inicio o después de palabras clave
+                            if (preg_match('/^(\d+)\s*(paq|und|unidad|unidades|paquete|paquetes|caja|cajas|bolsa|bolsas|frasco|frascos)\b/i', $description, $matches)) {
+                                // Cantidad al inicio: "5 paq de gasas"
+                                $displayQuantity = intval($matches[1]);
+                                $itemUnit = strtolower($matches[2]);
+                                if (in_array($itemUnit, ['paquete', 'paquetes'])) {
+                                    $itemUnit = 'paq';
+                                } elseif (in_array($itemUnit, ['unidad', 'unidades'])) {
+                                    $itemUnit = 'und';
+                                }
+                            } elseif (preg_match('/\bx\s*(\d+)\s*(paq|und|unidad|unidades|paquete|paquetes|caja|cajas|bolsa|bolsas)?\b/i', $description, $matches)) {
+                                // Cantidad con 'x': "gasas x 5", "jeringas x 10 und"
+                                $displayQuantity = intval($matches[1]);
+                                $itemUnit = isset($matches[2]) ? strtolower($matches[2]) : 'und';
+                                if (in_array($itemUnit, ['paquete', 'paquetes'])) {
+                                    $itemUnit = 'paq';
+                                } elseif (in_array($itemUnit, ['unidad', 'unidades'])) {
+                                    $itemUnit = 'und';
+                                }
+                            } elseif (preg_match('/\b(cantidad|cant|qty)[:=]?\s*(\d+)\s*(paq|und|unidad|unidades|paquete|paquetes)?\b/i', $description, $matches)) {
+                                // Cantidad explícita: "cantidad: 5", "cant 10 paq"
+                                $displayQuantity = intval($matches[2]);
+                                $itemUnit = isset($matches[3]) ? strtolower($matches[3]) : 'und';
+                                if (in_array($itemUnit, ['paquete', 'paquetes'])) {
+                                    $itemUnit = 'paq';
+                                } elseif (in_array($itemUnit, ['unidad', 'unidades'])) {
+                                    $itemUnit = 'und';
+                                }
+                            } else {
+                                // Fallback a unidad especificada
+                                $itemUnit = $additionalItem['unit'] ?? 'und';
+                            }
+                            
                             $itemsToShow[] = [
                                 'description' => $additionalItem['description'],
-                                'quantity' => $quantity,
+                                'quantity' => $displayQuantity,
                                 'unit_price' => $unitPrice,
                                 'total' => $total,
-                                'unit' => $additionalItem['unit'] ?? 'Unidad',
+                                'unit' => $itemUnit,
                                 'observations' => $additionalItem['observations'] ?? '',
                                 'tax_rate' => $additionalItem['tax_rate'] ?? 0
                             ];
                             
                             Log::info('✅ VISTA PDF: Additional_item agregado', [
                                 'description' => $additionalItem['description'],
+                                'original_quantity' => $quantity,
+                                'display_quantity' => $displayQuantity,
+                                'unit' => $itemUnit,
                                 'total' => $total
                             ]);
                         }
@@ -490,7 +794,9 @@
                 }
             }
             
-            $showTaxColumn = $hasIndividualTaxes;
+            // NOTA: La lógica antigua que forzaba showTaxColumn para órdenes específicas 
+            // se ha reemplazado por la verificación del tax_application_mode de la cotización
+            // para garantizar la correcta aplicación de impuestos globales vs por ítem
             
             // CORRECCIÓN: Usar PRIORITARIAMENTE los cálculos guardados en customData
             $calculatedSubtotal = 0;
@@ -585,16 +891,57 @@
                 $ipoconsumoLabel = null; // No mostrar línea de impuesto al consumo si no hay
             }
             
-            // Si hay customData con cálculos ya realizados, usarlos DIRECTAMENTE
+            // Si hay customData con cálculos ya realizados, VALIDAR COHERENCIA antes de usar
+            $customDataIncoherente = false; // Bandera para controlar recálculo total
             if (isset($customData) && is_array($customData)) {
-                // Usar subtotal de customData si está disponible y es coherente
-                if (isset($customData['subtotal']) && is_numeric($customData['subtotal']) && $customData !== null) {
-                    $calculatedSubtotal = floatval($customData['subtotal']);
-                    Log::info('🎯 VISTA PDF: Usando subtotal de customData (coherente)', [
-                        'subtotal' => $calculatedSubtotal,
+                // 🔍 NUEVA VALIDACIÓN: Verificar coherencia del customData vs items calculados
+                $subtotalCalculadoDesdeItems = 0;
+                if (!empty($itemsToShow)) {
+                    foreach ($itemsToShow as $item) {
+                        $subtotalCalculadoDesdeItems += floatval($item['total']);
+                    }
+                }
+                
+                $customDataSubtotal = floatval($customData['subtotal'] ?? 0);
+                $diferencia = abs($subtotalCalculadoDesdeItems - $customDataSubtotal);
+                
+                // Si la diferencia es significativa (más de $50.000), forzar recálculo
+                if ($subtotalCalculadoDesdeItems > 0 && $diferencia > 50000) {
+                    $customDataIncoherente = true; // ✅ Marcar para recálculo completo
+                    
+                    Log::warning('⚠️ VISTA PDF: CustomData incoherente, forzando recálculo completo', [
+                        'customData_subtotal' => $customDataSubtotal,
+                        'calculated_subtotal' => $subtotalCalculadoDesdeItems,
+                        'difference' => $diferencia,
                         'order_id' => $order->id
                     ]);
+                    
+                    // ✅ USAR CÁLCULO CORREGIDO en lugar de customData
+                    $calculatedSubtotal = $subtotalCalculadoDesdeItems;
+                    $calculatedIva = round($calculatedSubtotal * 0.19);
+                    $calculatedIpoconsumo = 0; // Reset ipoconsumo para recálculo
+                    $calculatedTotal = $calculatedSubtotal + $calculatedIva + $calculatedIpoconsumo;
+                    
+                    Log::info('✅ VISTA PDF: Totales recalculados por incoherencia', [
+                        'new_subtotal' => $calculatedSubtotal,
+                        'new_iva' => $calculatedIva,
+                        'new_ipoconsumo' => $calculatedIpoconsumo,
+                        'new_total' => $calculatedTotal
+                    ]);
+                    
                 } else {
+                    // Usar subtotal de customData si está disponible y es coherente
+                    if (isset($customData['subtotal']) && is_numeric($customData['subtotal']) && $customData !== null) {
+                        $calculatedSubtotal = floatval($customData['subtotal']);
+                        Log::info('🎯 VISTA PDF: Usando subtotal de customData (coherente)', [
+                            'subtotal' => $calculatedSubtotal,
+                            'order_id' => $order->id
+                        ]);
+                    }
+                }
+                
+                // Si no se estableció un subtotal en el bloque anterior, buscar en otras fuentes
+                if ($calculatedSubtotal <= 0) {
                     // Si no hay subtotal en customData, obtenerlo de la cotización seleccionada
                     if ($order->purchaseRequest && $order->purchaseRequest->selectedQuotation) {
                         $selectedQuotation = $order->purchaseRequest->selectedQuotation;
@@ -630,10 +977,22 @@
                     }
                 }
                 
-                // Usar IVA de customData si está disponible y es coherente
-                if (isset($customData['iva_amount']) && is_numeric($customData['iva_amount'])) {
+                // 🔥 CORRECCIÓN CRÍTICA: Si hay incoherencia detectada, forzar recálculo completo del IVA
+                if ($customDataIncoherente) {
+                    // Cuando customData es incoherente, recalcular IVA desde el subtotal corregido
+                    $calculatedIva = round($calculatedSubtotal * 0.19);
+                    $calculatedIpoconsumo = 0; // Reset para evitar usar valores incorretos
+                    
+                    Log::info('🚨 VISTA PDF: Recalculando IVA por incoherencia detectada', [
+                        'corrected_subtotal' => $calculatedSubtotal,
+                        'recalculated_iva' => $calculatedIva,
+                        'previous_iva_from_customData' => $customData['iva_amount'] ?? 'N/A',
+                        'order_id' => $order->id
+                    ]);
+                } elseif (isset($customData['iva_amount']) && is_numeric($customData['iva_amount'])) {
+                    // Solo usar IVA de customData si NO hay incoherencia detectada
                     $customIva = floatval($customData['iva_amount']);
-                    $customIpoconsumo = floatval($customData['ipoconsumo_amount'] ?? 0); // Agregar impuesto al consumo
+                    $customIpoconsumo = floatval($customData['ipoconsumo_amount'] ?? 0);
                     $customSubtotal = floatval($customData['subtotal'] ?? 0);
                     $customTotal = floatval($customData['total'] ?? 0);
                     
@@ -730,7 +1089,8 @@
                 ]);
                 
                 foreach ($itemsToShow as $item) {
-                    $itemTotal = floatval($item['total'] ?? (($item['quantity'] ?? 1) * floatval($item['unit_price'] ?? 0)));
+                    // ✅ CORRECCIÓN: Usar SIEMPRE el total calculado desde displayQuantity × unitPrice
+                    $itemTotal = floatval($item['total']);
                     $calculatedSubtotal += $itemTotal;
                     
                     // Calcular impuestos individuales por item solo si no hay customData
@@ -745,13 +1105,8 @@
                 
                 // Calcular IVA solo si no hay customData
                 if ($calculatedIva <= 0 && $calculatedSubtotal > 0) {
-                    // Verificar si hay tasa de IVA en customData
-                    if (isset($customData['iva_rate']) && is_numeric(str_replace('%', '', $customData['iva_rate']))) {
-                        $ivaRate = floatval(str_replace('%', '', $customData['iva_rate']));
-                        $calculatedIva = round($calculatedSubtotal * ($ivaRate / 100));
-                    } else {
-                        $calculatedIva = 0; // Por defecto sin IVA si no está especificado
-                    }
+                    // Para órdenes sin customData, aplicar IVA estándar del 19%
+                    $calculatedIva = round($calculatedSubtotal * 0.19);
                 }
             }
             
@@ -766,8 +1121,61 @@
                 'total' => $calculatedTotal,
                 'source' => isset($customData['subtotal']) ? 'customData' : 'dynamic'
             ]);
+            
+            // ===== CORRECCIÓN CRÍTICA: VERIFICAR MODO DE APLICACIÓN DE IMPUESTOS =====
+            $hasItemLevelTaxes = false;
+            
+            // MÉTODO PRINCIPAL: Verificar el tax_application_mode de las cotizaciones relacionadas
+            if (isset($quotationItemSelections) && $quotationItemSelections->count() > 0) {
+                foreach ($quotationItemSelections as $selection) {
+                    if ($selection->quotation && $selection->quotation->tax_application_mode === 'per_item') {
+                        $hasItemLevelTaxes = true;
+                        Log::info('📋 PDF: Impuestos POR ÍTEM detectados desde cotización', [
+                            'quotation_id' => $selection->quotation->id,
+                            'tax_mode' => $selection->quotation->tax_application_mode
+                        ]);
+                        break;
+                    } elseif ($selection->quotation && $selection->quotation->tax_application_mode === 'global') {
+                        $hasItemLevelTaxes = false;
+                        Log::info('📋 PDF: Impuestos GLOBALES detectados desde cotización', [
+                            'quotation_id' => $selection->quotation->id,
+                            'tax_mode' => $selection->quotation->tax_application_mode
+                        ]);
+                        break;
+                    }
+                }
+            }
+            
+            // FALLBACK: Solo si no se encontró información de cotización
+            if (!isset($quotationItemSelections) || $quotationItemSelections->count() === 0) {
+                // Método fallback: Si hay muchos ítems (más de 8) asumir impuestos por ítem
+                if (count($itemsToShow) > 8) {
+                    $hasItemLevelTaxes = true;
+                    Log::info('📋 PDF: FALLBACK - Muchos ítems detectados, usando impuestos por ítem', [
+                        'items_count' => count($itemsToShow)
+                    ]);
+                }
+            }
+            
+            // Definir si mostrar columna de impuestos basado en el modo de aplicación
+            $showTaxColumn = $hasItemLevelTaxes;
+            
+            Log::info('📋 PDF: MODO DE IMPUESTOS DETERMINADO', [
+                'hasItemLevelTaxes' => $hasItemLevelTaxes,
+                'showTaxColumn' => $showTaxColumn,
+                'method' => isset($quotationItemSelections) && $quotationItemSelections->count() > 0 ? 'cotization_tax_mode' : 'fallback_item_count'
+            ]);
+            
+            // Asegurar que las variables críticas estén definidas para uso posterior
+            $calculatedSubtotal = $calculatedSubtotal ?? 0;
+            $calculatedIva = $calculatedIva ?? 0;
+            $calculatedIpoconsumo = $calculatedIpoconsumo ?? 0;
+            $calculatedTotal = $calculatedTotal ?? 0;
+            $hasItemLevelTaxes = $hasItemLevelTaxes ?? false;
+            $showTaxColumn = $showTaxColumn ?? false;
+            $itemsToShow = $itemsToShow ?? [];
         @endphp
-
+        
         <!-- Items -->
         <table>
             <tr>
@@ -775,10 +1183,16 @@
                 <td class="items-header">DESCRIPCIÓN</td>
                 <td class="items-header" style="width: 60px;">CANT</td>
                 <td class="items-header" style="width: 100px;">VALOR UNIT</td>
-                @if($showTaxColumn)
-                <td class="items-header" style="width: 80px;">IMPUESTO</td>
-                @endif
+                @if($showTaxColumn && $hasItemLevelTaxes)
+                <td class="items-header" style="width: 80px;">IMPUESTO APLICADO</td>
                 <td class="items-header" style="width: 100px;">VALOR TOTAL</td>
+                <td class="items-header" style="width: 100px;">TOTAL CON IMPUESTO</td>
+                @elseif($showTaxColumn)
+                <td class="items-header" style="width: 80px;">IMPUESTO</td>
+                <td class="items-header" style="width: 100px;">VALOR TOTAL</td>
+                @else
+                <td class="items-header" style="width: 100px;">VALOR TOTAL</td>
+                @endif
             </tr>
 
             @if(!empty($itemsToShow))
@@ -786,21 +1200,64 @@
                 <tr>
                     <td class="center">{{ $index + 1 }}</td>
                     <td>{{ $item['description'] ?? $item['item_description'] ?? 'N/A' }}</td>
-                    <td class="center">{{ $item['quantity'] ?? $item['cantidad'] ?? 1 }}</td>
+                    <td class="center">{{ ($item['quantity'] ?? $item['cantidad'] ?? 1) . ' ' . ($item['unit'] ?? 'und') }}</td>
                     <td class="right">${{ number_format(round(floatval($item['unit_price'] ?? $item['precio_unitario'] ?? $item['unit_price_display'] ?? 0)), 0, ',', '.') }}</td>
-                    @if($showTaxColumn)
+
+                    @if($showTaxColumn && $hasItemLevelTaxes)
                     <td class="center">
                         @php
                             $itemTaxRate = $item['tax_rate'] ?? 0;
+                            $itemTaxType = $item['tax_type'] ?? '';
                         @endphp
                         @if($itemTaxRate > 0)
-                            {{ $itemTaxRate }}%
+                            @if($itemTaxType)
+                                {{ $itemTaxType }}
+                            @else
+                                {{ $itemTaxRate }}%
+                            @endif
                         @else
-                            -
+                            Sin impuesto
                         @endif
                     </td>
+                    @php
+                        $itemPrice = floatval($item['unit_price'] ?? $item['precio_unitario'] ?? 0);
+                        $itemQuantity = floatval($item['quantity'] ?? $item['cantidad'] ?? 1);
+                        $itemSubtotal = $itemPrice * $itemQuantity;
+                        $itemTaxAmount = $itemSubtotal * (($item['tax_rate'] ?? 0) / 100);
+                        $itemTotalWithTax = $itemSubtotal + $itemTaxAmount;
+                    @endphp
+                    <td class="right">${{ number_format($itemSubtotal, 0, ',', '.') }}</td>
+                    <td class="right">${{ number_format($itemTotalWithTax, 0, ',', '.') }}</td>
+                    @elseif($showTaxColumn)
+                    <td class="center">
+                        @php
+                            $itemTaxRate = $item['tax_rate'] ?? 0;
+                            $itemTaxType = $item['tax_type'] ?? '';
+                        @endphp
+                        @if($itemTaxRate > 0)
+                            @if($itemTaxType)
+                                {{ $itemTaxType }}
+                            @else
+                                {{ $itemTaxRate }}%
+                            @endif
+                        @else
+                            Sin impuesto
+                        @endif
+                    </td>
+                    @php
+                        $itemPrice = floatval($item['unit_price'] ?? $item['precio_unitario'] ?? 0);
+                        $itemQuantity = floatval($item['quantity'] ?? $item['cantidad'] ?? 1);
+                        $itemTotal = $itemPrice * $itemQuantity;
+                    @endphp
+                    <td class="right">${{ number_format($itemTotal, 0, ',', '.') }}</td>
+                    @else
+                    @php
+                        $itemPrice = floatval($item['unit_price'] ?? $item['precio_unitario'] ?? 0);
+                        $itemQuantity = floatval($item['quantity'] ?? $item['cantidad'] ?? 1);
+                        $itemTotal = $itemPrice * $itemQuantity;
+                    @endphp
+                    <td class="right">${{ number_format($itemTotal, 0, ',', '.') }}</td>
                     @endif
-                    <td class="right">${{ number_format(floatval($item['total'] ?? $item['total_price'] ?? (($item['quantity'] ?? 1) * floatval($item['unit_price'] ?? 0))), 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
             @else
@@ -883,9 +1340,12 @@
             <tr>
                 <td class="label">FECHA:</td>
                 <td class="value">{{ isset($approvalDate) ? \Carbon\Carbon::parse($approvalDate)->format('d/m/Y') : $order->created_at->format('d/m/Y') }}</td>
-                @if($calculatedIva > 0)
+                @if($calculatedIva > 0 && !$hasItemLevelTaxes)
                 <td class="label bold">{{ $ivaLabel }}</td>
                 <td class="value bold right">${{ number_format($calculatedIva, 0, ',', '.') }}</td>
+                @elseif($hasItemLevelTaxes)
+                <td class="label bold">IVA</td>
+                <td class="value bold right">Aplicado por ítem</td>
                 @else
                 <td class="label bold">IVA</td>
                 <td class="value bold right">$0</td>
@@ -901,9 +1361,12 @@
             <tr>
                 <td class="label">SOLICITUD Nº:</td>
                 <td class="value">{{ $order->purchaseRequest->request_number ?? 'SC-0012' }}</td>
-                @if($ipoconsumoType && $ipoconsumoLabel)
+                @if($ipoconsumoType && $ipoconsumoLabel && !$hasItemLevelTaxes)
                 <td class="label bold">{{ $ipoconsumoLabel }}</td>
                 <td class="value bold right">${{ number_format($calculatedIpoconsumo, 0, ',', '.') }}</td>
+                @elseif($hasItemLevelTaxes)
+                <td class="label bold">Imp. Consumo</td>
+                <td class="value bold right">Aplicado por ítem</td>
                 @else
                 <td class="label bold">Sin Imp. Consumo</td>
                 <td class="value bold right">$0</td>
@@ -913,9 +1376,12 @@
             <tr>
                 <td class="label">PRESUPUESTO:</td>
                 <td class="value">{{ $budget ?? 'N/A' }}</td>
-                @if($ipoconsumoType && $ipoconsumoLabel)
+                @if($ipoconsumoType && $ipoconsumoLabel && !$hasItemLevelTaxes)
                 <td class="label bold">{{ $ipoconsumoLabel }}</td>
                 <td class="value bold right">${{ number_format($calculatedIpoconsumo, 0, ',', '.') }}</td>
+                @elseif($hasItemLevelTaxes)
+                <td class="label bold">Imp. Consumo</td>
+                <td class="value bold right">Aplicado por ítem</td>
                 @else
                 <td class="label bold">Sin Imp. Consumo</td>
                 <td class="value bold right">$0</td>

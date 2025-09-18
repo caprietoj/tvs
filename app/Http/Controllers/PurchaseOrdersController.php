@@ -3596,6 +3596,26 @@ class PurchaseOrdersController extends Controller
             
             // Crear items incluso si no hay precios específicos
             if ($purchaseItems && count($purchaseItems) > 0) {
+                // Verificar si hay impuestos por ítem en la cotización
+                $itemTaxes = [];
+                if ($quotation->original_item_taxes) {
+                    $itemTaxes = is_array($quotation->original_item_taxes) 
+                        ? $quotation->original_item_taxes 
+                        : json_decode($quotation->original_item_taxes, true);
+                    
+                    if (!is_array($itemTaxes)) {
+                        $itemTaxes = [];
+                    }
+                }
+                
+                Log::info('Información de impuestos por ítem en cotización', [
+                    'quotation_id' => $quotation->id,
+                    'tax_application_mode' => $quotation->tax_application_mode,
+                    'has_original_item_taxes' => !empty($quotation->original_item_taxes),
+                    'item_taxes_count' => count($itemTaxes),
+                    'item_taxes_sample' => array_slice($itemTaxes, 0, 3, true)
+                ]);
+                
                 foreach ($purchaseItems as $index => $item) {
                     // Si no hay precio específico, calcular desde el total de la cotización
                     $unitPrice = 0;
@@ -3609,13 +3629,37 @@ class PurchaseOrdersController extends Controller
                     
                     $quantity = $item['quantity'] ?? 1;
                     
-                    $orderItems[] = [
+                    $orderItem = [
                         'description' => $item['description'],
                         'quantity' => $quantity,
                         'unit_price' => $unitPrice,
                         'total' => $quantity * $unitPrice,
                         'unit' => $item['unit'] ?? 'Unidad'
                     ];
+                    
+                    // Agregar información de impuestos por ítem si existe
+                    if (isset($itemTaxes[$index]) && is_array($itemTaxes[$index])) {
+                        $appliedTaxesForItem = [];
+                        
+                        if (isset($itemTaxes[$index]['iva_19']) && $itemTaxes[$index]['iva_19']) {
+                            $appliedTaxesForItem[] = 'iva_19';
+                        }
+                        if (isset($itemTaxes[$index]['iva_5']) && $itemTaxes[$index]['iva_5']) {
+                            $appliedTaxesForItem[] = 'iva_5';
+                        }
+                        if (isset($itemTaxes[$index]['ipoconsumo_8']) && $itemTaxes[$index]['ipoconsumo_8']) {
+                            $appliedTaxesForItem[] = 'consumo_8';
+                        }
+                        if (isset($itemTaxes[$index]['ipoconsumo_4']) && $itemTaxes[$index]['ipoconsumo_4']) {
+                            $appliedTaxesForItem[] = 'consumo_4';
+                        }
+                        
+                        if (!empty($appliedTaxesForItem)) {
+                            $orderItem['applied_taxes'] = $appliedTaxesForItem;
+                        }
+                    }
+                    
+                    $orderItems[] = $orderItem;
                 }
                 
                 Log::info('OrderItems creados en PurchaseOrdersController', [

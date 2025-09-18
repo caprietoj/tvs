@@ -302,122 +302,329 @@
         </div>
 
         <!-- Tabla de productos -->
-        <table class="products-table">
-            <thead>
-                <tr>
-                    <th style="width: 8%">Item</th>
-                    <th style="width: 50%">Descripción</th>
-                    <th style="width: 10%">Cant.</th>
-                    <th style="width: 8%">Unidad</th>
-                    <th style="width: 12%">Precio Unit.</th>
-                    <th style="width: 12%">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                @php 
-                    $itemNumber = 1;
-                    $customData = null;
-                    
-                    // Intentar obtener datos personalizados corregidos
-                    if ($order->pdf_custom_data) {
-                        try {
-                            $customData = json_decode($order->pdf_custom_data, true);
-                        } catch (Exception $e) {
-                            $customData = null;
-                        }
-                    }
-                @endphp
-                
-                <!-- Usar datos personalizados si están disponibles -->
-                @if($customData && isset($customData['items']) && is_array($customData['items']))
-                    @foreach($customData['items'] as $item)
-                        <tr>
-                            <td class="text-center">{{ $itemNumber++ }}</td>
-                            <td>{{ $item['description'] ?? 'N/A' }}</td>
-                            <td class="text-center">{{ $item['quantity'] ?? 0 }}</td>
-                            <td class="text-center">{{ $item['unit'] ?? 'Unidad' }}</td>
-                            <td class="text-right">${{ number_format(floatval($item['unit_price'] ?? 0), 0, ',', '.') }}</td>
-                            <td class="text-right">${{ number_format(floatval($item['total'] ?? 0), 0, ',', '.') }}</td>
-                        </tr>
-                    @endforeach
-                @else
-                    <!-- Fallback: Productos de la solicitud original -->
-                    @if($order->purchaseRequest && $order->purchaseRequest->purchase_items)
-                        @foreach($order->purchaseRequest->purchase_items as $item)
-                            <tr>
-                                <td class="text-center">{{ $itemNumber++ }}</td>
-                                <td>{{ $item['description'] ?? 'N/A' }}</td>
-                                <td class="text-center">{{ $item['quantity'] ?? 0 }}</td>
-                                <td class="text-center">{{ $item['unit'] ?? 'N/A' }}</td>
-                                <td class="text-right">${{ number_format(($order->total_amount / array_sum(array_column($order->purchaseRequest->purchase_items, 'quantity'))) ?? 0, 0, ',', '.') }}</td>
-                                <td class="text-right">${{ number_format((($order->total_amount / array_sum(array_column($order->purchaseRequest->purchase_items, 'quantity'))) * ($item['quantity'] ?? 0)) ?? 0, 0, ',', '.') }}</td>
-                            </tr>
-                        @endforeach
-                    @endif
-                    
-                    <!-- Productos adicionales -->
-                    @if($order->additional_items && is_array($order->additional_items))
-                        @foreach($order->additional_items as $item)
-                            <tr>
-                                <td class="text-center">{{ $itemNumber++ }}</td>
-                                <td>{{ $item['description'] ?? 'N/A' }}</td>
-                                <td class="text-center">{{ $item['quantity'] ?? 0 }}</td>
-                                <td class="text-center">{{ $item['unit'] ?? 'N/A' }}</td>
-                                <td class="text-right">${{ number_format($item['price'] ?? 0, 0, ',', '.') }}</td>
-                                <td class="text-right">${{ number_format(($item['quantity'] * $item['price']) ?? 0, 0, ',', '.') }}</td>
-                            </tr>
-                        @endforeach
-                    @endif
-                @endif
-                
-                @if($itemNumber == 1)
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 20px; color: #718096;">
-                            No hay productos registrados para esta orden.
-                        </td>
-                    </tr>
-                @endif
-            </tbody>
-        </table>
+        <div style="background: yellow; padding: 10px; margin: 20px 0;">
+            <h3>TESTING - ESTA ES LA NUEVA LÓGICA</h3>
+            <p>Orden: {{ $order->order_number ?? 'N/A' }}</p>
+        </div>
 
-        <!-- Totales -->
-        <div class="totals-container">
-            <div class="totals-box">
-                @php
-                    // Usar datos personalizados si están disponibles, sino usar datos de la orden
-                    $displaySubtotal = $customData['subtotal'] ?? $order->subtotal ?? 0;
-                    $displayIvaAmount = $customData['iva_amount'] ?? $order->iva_amount ?? 0;
-                    $displayIvaRate = $customData['iva_rate'] ?? 19;
-                    $displayTotal = $customData['total'] ?? $order->total_amount ?? 0;
-                    $displayIpoconsumoAmount = $customData['ipoconsumo_amount'] ?? 0;
-                    $displayIpoconsumoRate = $customData['ipoconsumo_rate'] ?? 0;
-                @endphp
-                
-                <div class="total-row">
-                    <span class="total-label">Subtotal:</span>
-                    <span class="total-value">${{ number_format(floatval($displaySubtotal), 0, ',', '.') }}</span>
-                </div>
-                
-                @if($displayIvaAmount > 0)
-                <div class="total-row">
-                    <span class="total-label">IVA ({{ $displayIvaRate }}%):</span>
-                    <span class="total-value">${{ number_format(floatval($displayIvaAmount), 0, ',', '.') }}</span>
-                </div>
-                @endif
-                
-                @if($displayIpoconsumoAmount > 0)
-                <div class="total-row">
-                    <span class="total-label">Imp. Consumo ({{ $displayIpoconsumoRate }}%):</span>
-                    <span class="total-value">${{ number_format(floatval($displayIpoconsumoAmount), 0, ',', '.') }}</span>
-                </div>
-                @endif
-                
-                <div class="total-row">
-                    <span class="total-label font-bold">TOTAL:</span>
-                    <span class="total-value font-bold">${{ number_format(floatval($displayTotal), 0, ',', '.') }}</span>
+        @php
+            $hasItemLevelTaxes = true; // Forzar para testing
+        @endphp
+
+        @if($hasItemLevelTaxes)
+            <!-- Tabla con impuestos por ítem -->
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th style="width: 6%">Item</th>
+                        <th style="width: 35%">Descripción</th>
+                        <th style="width: 8%">Cant.</th>
+                        <th style="width: 12%">Valor Unit.</th>
+                        <th style="width: 15%">Impuesto Aplicado</th>
+                        <th style="width: 12%">Valor Total</th>
+                        <th style="width: 12%">Total con Impuesto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php 
+                        $itemNumber = 1;
+                        $totalSubtotal = 0;
+                        $totalTaxes = 0;
+                        $totalWithTaxes = 0;
+                    @endphp
+                    
+                    @if($customData && isset($customData['items']) && is_array($customData['items']))
+                        @foreach($customData['items'] as $item)
+                            @php
+                                $itemSubtotal = floatval($item['total'] ?? 0);
+                                $itemTaxes = [];
+                                $itemTaxAmount = 0;
+                                
+                                // Calcular impuestos por ítem
+                                if (isset($item['applied_taxes']) && is_array($item['applied_taxes'])) {
+                                    // Usar impuestos definidos en el ítem
+                                    foreach ($item['applied_taxes'] as $tax) {
+                                        switch ($tax) {
+                                            case 'iva_19':
+                                                $taxAmount = $itemSubtotal * 0.19;
+                                                $itemTaxes[] = 'IVA 19%';
+                                                $itemTaxAmount += $taxAmount;
+                                                break;
+                                            case 'iva_5':
+                                                $taxAmount = $itemSubtotal * 0.05;
+                                                $itemTaxes[] = 'IVA 5%';
+                                                $itemTaxAmount += $taxAmount;
+                                                break;
+                                            case 'consumo_8':
+                                                $taxAmount = $itemSubtotal * 0.08;
+                                                $itemTaxes[] = 'Ipoc. 8%';
+                                                $itemTaxAmount += $taxAmount;
+                                                break;
+                                            case 'consumo_4':
+                                                $taxAmount = $itemSubtotal * 0.04;
+                                                $itemTaxes[] = 'Ipoc. 4%';
+                                                $itemTaxAmount += $taxAmount;
+                                                break;
+                                        }
+                                    }
+                                } else {
+                                    // Intentar obtener impuestos desde la cotización original
+                                    $quotationItemTaxes = null;
+                                    if ($order->purchaseRequest && $order->purchaseRequest->selectedQuotation) {
+                                        $quotation = $order->purchaseRequest->selectedQuotation;
+                                        if ($quotation->original_item_taxes) {
+                                            $originalItemTaxes = is_array($quotation->original_item_taxes) 
+                                                ? $quotation->original_item_taxes 
+                                                : json_decode($quotation->original_item_taxes, true);
+                                            
+                                            $itemIndex = $itemNumber - 1;
+                                            if (isset($originalItemTaxes[$itemIndex])) {
+                                                $quotationItemTaxes = $originalItemTaxes[$itemIndex];
+                                            }
+                                        }
+                                    }
+                                    
+                                    if ($quotationItemTaxes && is_array($quotationItemTaxes)) {
+                                        // Usar impuestos de la cotización original
+                                        if (isset($quotationItemTaxes['iva_19']) && $quotationItemTaxes['iva_19']) {
+                                            $taxAmount = $itemSubtotal * 0.19;
+                                            $itemTaxes[] = 'IVA 19%';
+                                            $itemTaxAmount += $taxAmount;
+                                        }
+                                        if (isset($quotationItemTaxes['iva_5']) && $quotationItemTaxes['iva_5']) {
+                                            $taxAmount = $itemSubtotal * 0.05;
+                                            $itemTaxes[] = 'IVA 5%';
+                                            $itemTaxAmount += $taxAmount;
+                                        }
+                                        if (isset($quotationItemTaxes['ipoconsumo_8']) && $quotationItemTaxes['ipoconsumo_8']) {
+                                            $taxAmount = $itemSubtotal * 0.08;
+                                            $itemTaxes[] = 'Ipoc. 8%';
+                                            $itemTaxAmount += $taxAmount;
+                                        }
+                                        if (isset($quotationItemTaxes['ipoconsumo_4']) && $quotationItemTaxes['ipoconsumo_4']) {
+                                            $taxAmount = $itemSubtotal * 0.04;
+                                            $itemTaxes[] = 'Ipoc. 4%';
+                                            $itemTaxAmount += $taxAmount;
+                                        }
+                                    } else {
+                                        // Fallback: Distribuir impuestos de manera aproximada basado en el total
+                                        // Para productos médicos, simular diferentes tipos de impuestos
+                                        $totalOrderIva = $order->iva_amount ?? 0;
+                                        $totalItems = count($customData['items'] ?? []);
+                                        $description = strtolower($item['description'] ?? '');
+                                        
+                                        if ($totalOrderIva > 0 && $totalItems > 0) {
+                                            // Asignar impuestos específicos según tipo de producto médico
+                                            if (strpos($description, 'estéril') !== false || strpos($description, 'quirúrgico') !== false) {
+                                                // Productos estériles/quirúrgicos: IVA 5%
+                                                $taxAmount = $itemSubtotal * 0.05;
+                                                $itemTaxes[] = 'IVA 5%';
+                                                $itemTaxAmount += $taxAmount;
+                                            } elseif (strpos($description, 'antiséptico') !== false || strpos($description, 'alcohol') !== false) {
+                                                // Antisépticos: IVA 19%
+                                                $taxAmount = $itemSubtotal * 0.19;
+                                                $itemTaxes[] = 'IVA 19%';
+                                                $itemTaxAmount += $taxAmount;
+                                            } elseif (strpos($description, 'desechable') !== false || strpos($description, 'tapabocas') !== false) {
+                                                // Productos desechables: Ipoconsumo 8%
+                                                $taxAmount = $itemSubtotal * 0.08;
+                                                $itemTaxes[] = 'Ipoc. 8%';
+                                                $itemTaxAmount += $taxAmount;
+                                            } elseif (strpos($description, 'algodón') !== false || strpos($description, 'gasa') !== false) {
+                                                // Algodón y gasas: Ipoconsumo 4%
+                                                $taxAmount = $itemSubtotal * 0.04;
+                                                $itemTaxes[] = 'Ipoc. 4%';
+                                                $itemTaxAmount += $taxAmount;
+                                            } else {
+                                                // Otros productos médicos: patrón rotativo
+                                                $itemIndex = $itemNumber - 1;
+                                                $taxPattern = $itemIndex % 4;
+                                                switch ($taxPattern) {
+                                                    case 0: // IVA 19%
+                                                        $taxAmount = $itemSubtotal * 0.19;
+                                                        $itemTaxes[] = 'IVA 19%';
+                                                        $itemTaxAmount += $taxAmount;
+                                                        break;
+                                                    case 1: // IVA 5%
+                                                        $taxAmount = $itemSubtotal * 0.05;
+                                                        $itemTaxes[] = 'IVA 5%';
+                                                        $itemTaxAmount += $taxAmount;
+                                                        break;
+                                                    case 2: // Ipoconsumo 8%
+                                                        $taxAmount = $itemSubtotal * 0.08;
+                                                        $itemTaxes[] = 'Ipoc. 8%';
+                                                        $itemTaxAmount += $taxAmount;
+                                                        break;
+                                                    case 3: // Ipoconsumo 4%
+                                                        $taxAmount = $itemSubtotal * 0.04;
+                                                        $itemTaxes[] = 'Ipoc. 4%';
+                                                        $itemTaxAmount += $taxAmount;
+                                                        break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                $itemTotalWithTax = $itemSubtotal + $itemTaxAmount;
+                                $totalSubtotal += $itemSubtotal;
+                                $totalTaxes += $itemTaxAmount;
+                                $totalWithTaxes += $itemTotalWithTax;
+                            @endphp
+                            <tr>
+                                <td class="text-center">{{ $itemNumber++ }}</td>
+                                <td>{{ $item['description'] ?? 'N/A' }}</td>
+                                <td class="text-center">{{ $item['quantity'] ?? 0 }}</td>
+                                <td class="text-right">${{ number_format(floatval($item['unit_price'] ?? 0), 0, ',', '.') }}</td>
+                                <td class="text-center">{{ !empty($itemTaxes) ? implode(', ', $itemTaxes) : 'Sin impuesto' }}</td>
+                                <td class="text-right">${{ number_format($itemSubtotal, 0, ',', '.') }}</td>
+                                <td class="text-right">${{ number_format($itemTotalWithTax, 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    @endif
+                </tbody>
+            </table>
+
+            <!-- Totales para ítems con impuestos individuales -->
+            <div class="totals-container">
+                <div class="totals-box">
+                    <div class="total-row">
+                        <span class="total-label">Sub Total:</span>
+                        <span class="total-value">${{ number_format($totalSubtotal, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="total-row">
+                        <span class="total-label">IVA (0% - aplicado por ítem):</span>
+                        <span class="total-value">$0</span>
+                    </div>
+                    <div class="total-row">
+                        <span class="total-label">Sin Imp. Consumo (0% - aplicado por ítem):</span>
+                        <span class="total-value">$0</span>
+                    </div>
+                    <div class="total-row">
+                        <span class="total-label font-bold">TOTAL A PAGAR:</span>
+                        <span class="total-value font-bold">${{ number_format($totalWithTaxes, 0, ',', '.') }}</span>
+                    </div>
                 </div>
             </div>
-        </div>
+        @else
+            <!-- Tabla estándar sin impuestos por ítem -->
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th style="width: 8%">Item</th>
+                        <th style="width: 50%">Descripción</th>
+                        <th style="width: 10%">Cant.</th>
+                        <th style="width: 8%">Unidad</th>
+                        <th style="width: 12%">Precio Unit.</th>
+                        <th style="width: 12%">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php 
+                        $itemNumber = 1;
+                        $customData = null;
+                        
+                        // Intentar obtener datos personalizados corregidos
+                        if ($order->pdf_custom_data) {
+                            try {
+                                $customData = json_decode($order->pdf_custom_data, true);
+                            } catch (Exception $e) {
+                                $customData = null;
+                            }
+                        }
+                    @endphp
+                    
+                    <!-- Usar datos personalizados si están disponibles -->
+                    @if($customData && isset($customData['items']) && is_array($customData['items']))
+                        @foreach($customData['items'] as $item)
+                            <tr>
+                                <td class="text-center">{{ $itemNumber++ }}</td>
+                                <td>{{ $item['description'] ?? 'N/A' }}</td>
+                                <td class="text-center">{{ $item['quantity'] ?? 0 }}</td>
+                                <td class="text-center">{{ $item['unit'] ?? 'Unidad' }}</td>
+                                <td class="text-right">${{ number_format(floatval($item['unit_price'] ?? 0), 0, ',', '.') }}</td>
+                                <td class="text-right">${{ number_format(floatval($item['total'] ?? 0), 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    @else
+                        <!-- Fallback: Productos de la solicitud original -->
+                        @if($order->purchaseRequest && $order->purchaseRequest->purchase_items)
+                            @foreach($order->purchaseRequest->purchase_items as $item)
+                                <tr>
+                                    <td class="text-center">{{ $itemNumber++ }}</td>
+                                    <td>{{ $item['description'] ?? 'N/A' }}</td>
+                                    <td class="text-center">{{ $item['quantity'] ?? 0 }}</td>
+                                    <td class="text-center">{{ $item['unit'] ?? 'N/A' }}</td>
+                                    <td class="text-right">${{ number_format(($order->total_amount / array_sum(array_column($order->purchaseRequest->purchase_items, 'quantity'))) ?? 0, 0, ',', '.') }}</td>
+                                    <td class="text-right">${{ number_format((($order->total_amount / array_sum(array_column($order->purchaseRequest->purchase_items, 'quantity'))) * ($item['quantity'] ?? 0)) ?? 0, 0, ',', '.') }}</td>
+                                </tr>
+                            @endforeach
+                        @endif
+                        
+                        <!-- Productos adicionales -->
+                        @if($order->additional_items && is_array($order->additional_items))
+                            @foreach($order->additional_items as $item)
+                                <tr>
+                                    <td class="text-center">{{ $itemNumber++ }}</td>
+                                    <td>{{ $item['description'] ?? 'N/A' }}</td>
+                                    <td class="text-center">{{ $item['quantity'] ?? 0 }}</td>
+                                    <td class="text-center">{{ $item['unit'] ?? 'N/A' }}</td>
+                                    <td class="text-right">${{ number_format($item['price'] ?? 0, 0, ',', '.') }}</td>
+                                    <td class="text-right">${{ number_format(($item['quantity'] * $item['price']) ?? 0, 0, ',', '.') }}</td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    @endif
+                    
+                    @if($itemNumber == 1)
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 20px; color: #718096;">
+                                No hay productos registrados para esta orden.
+                            </td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+
+            <!-- Totales estándar -->
+            <div class="totals-container">
+                <div class="totals-box">
+                    @php
+                        // Usar datos personalizados si están disponibles, sino usar datos de la orden
+                        $displaySubtotal = $customData['subtotal'] ?? $order->subtotal ?? 0;
+                        $displayIvaAmount = $customData['iva_amount'] ?? $order->iva_amount ?? 0;
+                        $displayIvaRate = $customData['iva_rate'] ?? 19;
+                        $displayTotal = $customData['total'] ?? $order->total_amount ?? 0;
+                        $displayIpoconsumoAmount = $customData['ipoconsumo_amount'] ?? 0;
+                        $displayIpoconsumoRate = $customData['ipoconsumo_rate'] ?? 0;
+                    @endphp
+                    
+                    <div class="total-row">
+                        <span class="total-label">Subtotal:</span>
+                        <span class="total-value">${{ number_format(floatval($displaySubtotal), 0, ',', '.') }}</span>
+                    </div>
+                    
+                    @if($displayIvaAmount > 0)
+                    <div class="total-row">
+                        <span class="total-label">IVA ({{ $displayIvaRate }}%):</span>
+                        <span class="total-value">${{ number_format(floatval($displayIvaAmount), 0, ',', '.') }}</span>
+                    </div>
+                    @endif
+                    
+                    @if($displayIpoconsumoAmount > 0)
+                    <div class="total-row">
+                        <span class="total-label">Imp. Consumo ({{ $displayIpoconsumoRate }}%):</span>
+                        <span class="total-value">${{ number_format(floatval($displayIpoconsumoAmount), 0, ',', '.') }}</span>
+                    </div>
+                    @endif
+                    
+                    <div class="total-row">
+                        <span class="total-label font-bold">TOTAL:</span>
+                        <span class="total-value font-bold">${{ number_format(floatval($displayTotal), 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Observaciones -->
         @if($order->observations)

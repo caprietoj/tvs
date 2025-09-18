@@ -1230,3 +1230,109 @@ Route::middleware(['auth'])->prefix('previsitas')->name('previsitas.')->group(fu
 // Ruta temporal para presupuesto sin autenticación
 Route::get('/presupuesto', [PresupuestoController::class, 'spreadsheet'])->name('presupuesto.public');
 
+// Ruta temporal para verificar cotizaciones con impuestos por ítem
+Route::get('/check-quotations-item-taxes', function () {
+    $quotations = \App\Models\Quotation::whereNotNull('original_item_taxes')
+        ->orWhere('tax_application_mode', 'per_item')
+        ->orderBy('created_at', 'desc')
+        ->limit(10)
+        ->get();
+    
+    $response = [
+        'total_found' => $quotations->count(),
+        'quotations' => []
+    ];
+    
+    foreach ($quotations as $quotation) {
+        $quotationData = [
+            'id' => $quotation->id,
+            'provider_name' => $quotation->provider_name,
+            'tax_application_mode' => $quotation->tax_application_mode,
+            'total_amount' => $quotation->total_amount,
+            'item_taxes' => [],
+            'orders' => []
+        ];
+        
+        if ($quotation->original_item_taxes) {
+            $itemTaxes = is_array($quotation->original_item_taxes) 
+                ? $quotation->original_item_taxes 
+                : json_decode($quotation->original_item_taxes, true);
+            
+            if ($itemTaxes && is_array($itemTaxes)) {
+                foreach ($itemTaxes as $index => $taxes) {
+                    $appliedTaxes = [];
+                    foreach ($taxes as $taxType => $applied) {
+                        if ($applied) {
+                            $appliedTaxes[] = $taxType;
+                        }
+                    }
+                    if (!empty($appliedTaxes)) {
+                        $quotationData['item_taxes'][$index] = $appliedTaxes;
+                    }
+                }
+            }
+        }
+        
+        // Verificar si hay órdenes asociadas
+        $orders = \App\Models\PurchaseOrder::whereHas('purchaseRequest', function($query) use ($quotation) {
+            $query->where('selected_quotation_id', $quotation->id);
+        })->get();
+        
+        foreach ($orders as $order) {
+            $quotationData['orders'][] = [
+                'order_number' => $order->order_number,
+                'total_amount' => $order->total_amount
+            ];
+        }
+        
+        $response['quotations'][] = $quotationData;
+    }
+    
+    return response()->json($response, 200, [], JSON_PRETTY_PRINT);
+});
+
+// Ruta temporal para regenerar PDF de órdenes
+Route::get('/regenerate-pdf/{orderNumber}', function ($orderNumber) {
+    $order = \App\Models\PurchaseOrder::where('order_number', $orderNumber)->first();
+    
+    if (!$order) {
+        return response()->json(['error' => "Orden {$orderNumber} no encontrada"], 404);
+    }
+    
+    // Regenerar PDF
+    $pdfService = app(\App\Services\PurchaseOrderPdfService::class);
+    $pdfPath = $pdfService->generatePdf($order);
+    
+    // Actualizar la ruta del PDF en la orden
+    $order->update(['file_path' => $pdfPath]);
+    
+    $response = [
+        'success' => true,
+        'message' => "PDF regenerado exitosamente",
+        'order_number' => $order->order_number,
+        'pdf_path' => $pdfPath,
+    ];
+    
+    // Mostrar información de debug
+    if ($order->pdf_custom_data) {
+        $customData = json_decode($order->pdf_custom_data, true);
+        $response['items_count'] = count($customData['items'] ?? []);
+        
+        $itemsWithTaxes = [];
+        foreach ($customData['items'] ?? [] as $index => $item) {
+            if (isset($item['applied_taxes']) && !empty($item['applied_taxes'])) {
+                $itemsWithTaxes[] = [
+                    'index' => $index + 1,
+                    'description' => $item['description'],
+                    'taxes' => $item['applied_taxes']
+                ];
+            }
+        }
+        
+        $response['items_with_taxes'] = $itemsWithTaxes;
+        $response['has_item_taxes'] = !empty($itemsWithTaxes);
+    }
+    
+    return response()->json($response);
+});
+
