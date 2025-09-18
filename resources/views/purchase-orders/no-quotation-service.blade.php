@@ -122,6 +122,27 @@
                                     <h6 class="text-primary">Información del Proveedor</h6>
                                     
                                     <div class="form-group">
+                                        <label for="provider_select">Seleccionar Proveedor *</label>
+                                        <select class="form-control @error('provider_name') is-invalid @enderror" 
+                                                id="provider_select" name="provider_select">
+                                            <option value="">-- Seleccione un proveedor --</option>
+                                            @foreach($proveedores as $proveedor)
+                                                <option value="{{ $proveedor->id }}" 
+                                                        data-nombre="{{ $proveedor->nombre }}"
+                                                        data-nit="{{ $proveedor->nit }}"
+                                                        data-direccion="{{ $proveedor->direccion }}"
+                                                        data-telefono="{{ $proveedor->telefono }}"
+                                                        data-email="{{ $proveedor->email }}"
+                                                        data-ciudad="{{ $proveedor->ciudad }}"
+                                                        data-contacto="{{ $proveedor->persona_contacto }}">
+                                                    {{ $proveedor->nombre }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <small class="form-text text-muted">O escriba manualmente en el campo siguiente</small>
+                                    </div>
+
+                                    <div class="form-group">
                                         <label for="provider_name">Nombre del Proveedor *</label>
                                         <input type="text" class="form-control @error('provider_name') is-invalid @enderror" 
                                                id="provider_name" name="provider_name" 
@@ -167,6 +188,26 @@
                                                id="provider_email" name="provider_email" 
                                                value="{{ old('provider_email') }}">
                                         @error('provider_email')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="provider_city">Ciudad</label>
+                                        <input type="text" class="form-control @error('provider_city') is-invalid @enderror" 
+                                               id="provider_city" name="provider_city" 
+                                               value="{{ old('provider_city') }}">
+                                        @error('provider_city')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="provider_contact">Persona de Contacto</label>
+                                        <input type="text" class="form-control @error('provider_contact') is-invalid @enderror" 
+                                               id="provider_contact" name="provider_contact" 
+                                               value="{{ old('provider_contact') }}">
+                                        @error('provider_contact')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -283,6 +324,40 @@
                 var subtotal = value / 1.19;
                 var iva = value - subtotal;
                 console.log('Total: $' + value.toFixed(2) + ' (Subtotal: $' + subtotal.toFixed(2) + ' + IVA: $' + iva.toFixed(2) + ')');
+            }
+        });
+
+        // Manejo del selector de proveedores
+        $('#provider_select').on('change', function() {
+            var selectedOption = $(this).find('option:selected');
+            
+            if (selectedOption.val() !== '') {
+                // Cargar datos del proveedor seleccionado
+                $('#provider_name').val(selectedOption.data('nombre'));
+                $('#provider_nit').val(selectedOption.data('nit'));
+                $('#provider_address').val(selectedOption.data('direccion'));
+                $('#provider_phone').val(selectedOption.data('telefono'));
+                $('#provider_email').val(selectedOption.data('email'));
+                $('#provider_city').val(selectedOption.data('ciudad'));
+                $('#provider_contact').val(selectedOption.data('contacto'));
+                
+                // Deshabilitar campos para evitar edición accidental
+                $('#provider_name, #provider_nit, #provider_address, #provider_phone, #provider_email, #provider_city, #provider_contact')
+                    .attr('readonly', true);
+            } else {
+                // Limpiar y habilitar campos si no hay selección
+                $('#provider_name, #provider_nit, #provider_address, #provider_phone, #provider_email, #provider_city, #provider_contact')
+                    .val('')
+                    .attr('readonly', false);
+            }
+        });
+
+        // Permitir edición manual si se escribe directamente en el campo nombre
+        $('#provider_name').on('input', function() {
+            if ($(this).val() !== $('#provider_select').find('option:selected').data('nombre')) {
+                $('#provider_select').val('');
+                $('#provider_name, #provider_nit, #provider_address, #provider_phone, #provider_email, #provider_city, #provider_contact')
+                    .attr('readonly', false);
             }
         });
     });

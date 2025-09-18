@@ -150,6 +150,7 @@
                                     $shouldShowIva5 = false;
                                     $shouldShowConsumo8 = false;
                                     $shouldShowConsumo4 = false;
+                                    $hasQuotationTaxes = false;
                                     
                                     if ($purchaseOrder->purchaseRequest && $purchaseOrder->purchaseRequest->selectedQuotation) {
                                         // Verificar cotización primero (fuente de verdad)
@@ -158,6 +159,9 @@
                                         $shouldShowIva5 = $quotation->includes_iva_5 && $quotation->iva_5_amount > 0;
                                         $shouldShowConsumo8 = $quotation->includes_ipoconsumo_8 && $quotation->ipoconsumo_8_amount > 0;
                                         $shouldShowConsumo4 = $quotation->includes_ipoconsumo_4 && $quotation->ipoconsumo_4_amount > 0;
+                                        
+                                        // Determinar si hay impuestos configurados en la cotización
+                                        $hasQuotationTaxes = $shouldShowIva19 || $shouldShowIva5 || $shouldShowConsumo8 || $shouldShowConsumo4;
                                         
                                         // Solo mostrar custom data si es consistente con la cotización
                                         if ($customData && isset($customData['iva_amount']) && $customData['iva_amount'] > 0) {
@@ -171,7 +175,7 @@
                                     }
                                 @endphp
                                 
-                                @if($purchaseOrder->subtotal_amount || $shouldShowIva19 || $shouldShowIva5 || $shouldShowConsumo8 || $shouldShowConsumo4)
+                                @if($hasQuotationTaxes)
                                 <dt class="col-sm-5">Subtotal:</dt>
                                 <dd class="col-sm-7">${{ number_format($purchaseOrder->subtotal_amount ?? $purchaseOrder->subtotal, 2, ',', '.') }}</dd>
                                 

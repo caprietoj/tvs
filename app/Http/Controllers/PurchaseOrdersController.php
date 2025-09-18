@@ -2470,6 +2470,9 @@ class PurchaseOrdersController extends Controller
             // Buscar el proveedor
             $provider = \App\Models\Proveedor::where('nombre', $providerName)->first();
             
+            // Obtener todos los proveedores para el dropdown
+            $proveedores = \App\Models\Proveedor::orderBy('nombre')->get();
+            
             Log::info('Mostrando interfaz de cotización única', [
                 'purchase_request_id' => $purchaseRequest->id,
                 'provider_name' => $providerName,
@@ -2480,7 +2483,8 @@ class PurchaseOrdersController extends Controller
                 'purchaseRequest',
                 'quotation',
                 'provider',
-                'providerName'
+                'providerName',
+                'proveedores'
             ));
             
         } elseif ($isNoQuotationService) {
@@ -2489,8 +2493,12 @@ class PurchaseOrdersController extends Controller
                 'purchase_request_id' => $purchaseRequest->id
             ]);
 
+            // Obtener todos los proveedores para el dropdown
+            $proveedores = \App\Models\Proveedor::orderBy('nombre')->get();
+
             return view('purchase-orders.no-quotation-service', compact(
-                'purchaseRequest'
+                'purchaseRequest',
+                'proveedores'
             ));
             
         } else {
@@ -3803,26 +3811,50 @@ class PurchaseOrdersController extends Controller
                 ]
             );
 
-            // Calcular valores basándose en si incluye IVA
+            // Calcular valores basándose en los impuestos configurados en la solicitud
             $inputAmount = $request->total_amount;
+            $appliedTaxes = $purchaseRequest->applied_taxes ?? [];
+            
+            // Verificar si la solicitud tiene impuestos configurados
+            $hasIvaTaxes = in_array('iva_19', $appliedTaxes) || in_array('iva_5', $appliedTaxes);
             $includesIva = $request->boolean('includes_iva');
             
-            if ($includesIva) {
-                // El valor ingresado incluye IVA
+            if ($hasIvaTaxes && $includesIva) {
+                // El valor ingresado incluye IVA y la solicitud tiene impuestos configurados
                 $totalAmount = $inputAmount;
-                $subtotal = round($totalAmount / 1.19, 2);
+                if (in_array('iva_19', $appliedTaxes)) {
+                    $subtotal = round($totalAmount / 1.19, 2);
+                } elseif (in_array('iva_5', $appliedTaxes)) {
+                    $subtotal = round($totalAmount / 1.05, 2);
+                } else {
+                    $subtotal = $totalAmount; // Fallback
+                }
                 $ivaAmount = round($totalAmount - $subtotal, 2);
-            } else {
-                // El valor ingresado no incluye IVA
+            } elseif ($hasIvaTaxes && !$includesIva) {
+                // El valor ingresado no incluye IVA pero la solicitud tiene impuestos configurados
                 $subtotal = $inputAmount;
-                $ivaAmount = round($subtotal * 0.19, 2);
+                if (in_array('iva_19', $appliedTaxes)) {
+                    $ivaAmount = round($subtotal * 0.19, 2);
+                } elseif (in_array('iva_5', $appliedTaxes)) {
+                    $ivaAmount = round($subtotal * 0.05, 2);
+                } else {
+                    $ivaAmount = 0;
+                }
                 $totalAmount = $subtotal + $ivaAmount;
+            } else {
+                // No hay impuestos configurados en la solicitud - valor directo sin IVA
+                $subtotal = $inputAmount;
+                $totalAmount = $inputAmount;
+                $ivaAmount = 0;
+                $includesIva = false; // Forzar a false cuando no hay impuestos
             }
 
             Log::info('Cálculo de IVA para orden sin cotización', [
                 'provider_name' => $request->provider_name,
                 'input_amount' => $inputAmount,
-                'includes_iva' => $includesIva,
+                'applied_taxes_from_request' => $appliedTaxes,
+                'has_iva_taxes' => $hasIvaTaxes,
+                'includes_iva_flag' => $includesIva,
                 'calculated_subtotal' => $subtotal,
                 'calculated_iva' => $ivaAmount,
                 'final_total' => $totalAmount
@@ -3831,8 +3863,7 @@ class PurchaseOrdersController extends Controller
             // Crear la orden de compra
             $orderNumber = $this->generateOrderNumber();
             
-            // Obtener impuestos aplicados de la solicitud de compra
-            $appliedTaxes = $this->getAppliedTaxesFromRequest($purchaseRequest);
+            // Obtener impuestos aplicados de la solicitud de compra (ya los tenemos)
             $taxCalc = $this->calculateTaxes($subtotal, $appliedTaxes);
             
             $purchaseOrder = PurchaseOrder::create([
@@ -3937,11 +3968,14 @@ class PurchaseOrdersController extends Controller
             'provider_phone' => 'nullable|string|max:50',
             'provider_email' => 'nullable|email|max:255',
             'subtotal_amount' => 'required|numeric|min:0.01',
-            'includes_iva' => 'nullable|boolean',
-            'includes_tax' => 'nullable|boolean',
-            'tax_rate' => 'nullable|numeric|min:0|max:100',
-            'iva_amount' => 'nullable|numeric|min:0',
-            'tax_amount' => 'nullable|numeric|min:0',
+            'includes_iva_19' => 'nullable|boolean',
+            'includes_iva_5' => 'nullable|boolean',
+            'includes_ipoconsumo_8' => 'nullable|boolean',
+            'includes_ipoconsumo_4' => 'nullable|boolean',
+            'iva_19_amount' => 'nullable|numeric|min:0',
+            'iva_5_amount' => 'nullable|numeric|min:0',
+            'ipoconsumo_8_amount' => 'nullable|numeric|min:0',
+            'ipoconsumo_4_amount' => 'nullable|numeric|min:0',
             'total_amount' => 'required|numeric|min:0.01',
             'payment_terms' => 'required|string',
             'delivery_date' => 'required|date',
@@ -3992,36 +4026,25 @@ class PurchaseOrdersController extends Controller
             if (empty($appliedTaxes) || !is_array($appliedTaxes)) {
                 $appliedTaxes = [];
                 
-                // Verificar IVA tradicional (19%)
-                if ($request->boolean('includes_iva', false)) {
+                // Verificar IVA 19%
+                if ($request->boolean('includes_iva_19', false)) {
                     $appliedTaxes[] = 'iva_19';
                 }
                 
-                // Verificar impuesto adicional basado en la tasa
-                if ($request->boolean('includes_tax', false) && $request->tax_rate > 0) {
-                    $taxRate = intval($request->tax_rate);
-                    switch ($taxRate) {
-                        case 5:
-                            $appliedTaxes[] = 'iva_5';
-                            break;
-                        case 8:
-                            $appliedTaxes[] = 'consumo_8';
-                            break;
-                        case 4:
-                            $appliedTaxes[] = 'consumo_4';
-                            break;
-                        default:
-                            // CORREGIDO: Para tasas no estándar, NO usar IVA 19% como fallback
-                            // Mantener la tasa original o no aplicar impuesto
-                            Log::warning('Tasa de impuesto no estándar detectada', ['rate' => $rate]);
-                            break;
-                    }
+                // Verificar IVA 5%
+                if ($request->boolean('includes_iva_5', false)) {
+                    $appliedTaxes[] = 'iva_5';
                 }
                 
-                // CORREGIDO: Si no se seleccionó ningún impuesto, NO usar IVA 19% por defecto
-                // if (empty($appliedTaxes)) {
-                //     $appliedTaxes = ['iva_19'];
-                // }
+                // Verificar Ipoconsumo 8%
+                if ($request->boolean('includes_ipoconsumo_8', false)) {
+                    $appliedTaxes[] = 'consumo_8';
+                }
+                
+                // Verificar Ipoconsumo 4%
+                if ($request->boolean('includes_ipoconsumo_4', false)) {
+                    $appliedTaxes[] = 'consumo_4';
+                }
             }
             
             // Calcular impuestos usando el método centralizado
@@ -4107,7 +4130,7 @@ class PurchaseOrdersController extends Controller
                 'delivery_date' => $request->delivery_date,
                 'observations' => $request->observations ?? 'Orden autorizada sin cotización - Creación manual',
                 'items' => $customItems,
-                'includes_iva' => $includesIva,
+                'includes_iva' => !empty($appliedTaxes),
                 'manual_creation' => true,
                 'creation_date' => now()->toDateTimeString(),
                 'created_by' => auth()->user()->name ?? 'Usuario'
@@ -5286,5 +5309,24 @@ class PurchaseOrdersController extends Controller
         }
         
         return $taxRate;
+    }
+
+    /**
+     * Obtener datos del proveedor via AJAX
+     */
+    public function getProviderData(Proveedor $proveedor)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'nombre' => $proveedor->nombre,
+                'nit' => $proveedor->nit,
+                'direccion' => $proveedor->direccion,
+                'telefono' => $proveedor->telefono,
+                'email' => $proveedor->email,
+                'persona_contacto' => $proveedor->persona_contacto,
+                'ciudad' => $proveedor->ciudad
+            ]
+        ]);
     }
 }

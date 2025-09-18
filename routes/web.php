@@ -748,6 +748,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('purchase-orders.create-from-quotation');
     Route::post('purchase-requests/{purchaseRequest}/orders/create-no-quotation', [PurchaseOrdersController::class, 'createNoQuotation'])
         ->name('purchase-orders.create-no-quotation');
+    
+    // Ruta AJAX para obtener datos del proveedor
+    Route::get('proveedores/{proveedor}/datos', [PurchaseOrdersController::class, 'getProviderData'])
+        ->name('purchase-orders.get-provider-data');
     Route::get('purchase-requests/{purchaseRequest}/orders/create-no-quotation-purchase', [PurchaseOrdersController::class, 'showCreateNoQuotationPurchase'])
         ->name('purchase-orders.show-create-no-quotation-purchase');
     Route::post('purchase-requests/{purchaseRequest}/orders/create-no-quotation-purchase', [PurchaseOrdersController::class, 'createNoQuotationPurchase'])
