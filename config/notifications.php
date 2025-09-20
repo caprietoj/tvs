@@ -23,7 +23,7 @@ return [
             'comunicaciones@tvs.edu.co',
         ],
         'aldimark_emails' => [
-            'cafeteria@tvs.edu.co',
+            'cafeteriaaldimark@tvs.edu.co',
         ],
         'metro_junior_emails' => [
             'transporte@tvs.edu.co',

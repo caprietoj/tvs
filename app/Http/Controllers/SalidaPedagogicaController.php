@@ -186,7 +186,7 @@ class SalidaPedagogicaController extends Controller
                     'tipoDestinatario' => 'alimentacion',
                     'token' => $token
                 ], function($message) use ($salida) {
-                    $message->to('cafeteria@tvs.edu.co')
+                    $message->to('cafeteriaaldimark@tvs.edu.co')
                             ->subject('Nueva Salida Pedagógica - Alimentación - ' . $salida->grados);
                 });
             }

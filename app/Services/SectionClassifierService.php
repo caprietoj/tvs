@@ -163,7 +163,8 @@ class SectionClassifierService
             'aprendizsistemas@tvs.edu.co',
             'jefesistemas@tvs.edu.co',
             'administrativedirector@tvs.edu.co',
-            'auxiliarsistemas@tvs.edu.co'
+            'auxiliarsistemas@tvs.edu.co',
+            'contabilidad@tvs.edu.co'
         ];
         
         $filteredEmails = array_diff($emails, $excludedEmails);
