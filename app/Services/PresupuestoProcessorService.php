@@ -24,6 +24,16 @@ class PresupuestoProcessorService
         '15' => 'TECNOLOGIA INSTITUCIONAL',
     ];
 
+    // Mapeo específico para centros de costo que requieren clasificación especial
+    private $specificCenterMapping = [
+        '132001' => 'PREESCOLAR Y PRIMARIA',
+        '132003' => 'PREESCOLAR Y PRIMARIA',
+        '132005' => 'PREESCOLAR Y PRIMARIA',
+        '130403' => 'BIBLIOTECA',
+        '130405' => 'BIBLIOTECA',
+        // Agregar más mapeos específicos según se identifiquen
+    ];
+
     private $rubroMapping = [
         '616005109' => 'Capacitación',
         '616005056' => 'Capacitación',
@@ -50,17 +60,22 @@ class PresupuestoProcessorService
         
         $centroCosto = trim((string)$centroCosto);
         
-        // Intentar buscar en la base de datos primero
+        // Primero: verificar mapeo específico para centros de costo que requieren clasificación especial
+        if (isset($this->specificCenterMapping[$centroCosto])) {
+            return $this->specificCenterMapping[$centroCosto];
+        }
+        
+        // Segundo: intentar buscar en la base de datos
         try {
             $centroCostoModel = \App\Models\CentroCosto::where('codigo', $centroCosto)->first();
             if ($centroCostoModel && $centroCostoModel->seccion) {
                 return $centroCostoModel->seccion->nombre;
             }
         } catch (\Exception $e) {
-            // Si hay error con la BD, usar mapeo estático
+            // Si hay error con la BD, continuar con mapeo estático
         }
         
-        // Fallback: usar mapeo estático
+        // Tercero: usar mapeo estático por prefijo
         if (strlen($centroCosto) < 2) return 'OTROS';
         
         $prefix = substr($centroCosto, 0, 2);

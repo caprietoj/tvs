@@ -183,8 +183,6 @@
                                     <th data-sort="fuente">Fuente</th>
                                     <th data-sort="fecha">Fecha</th>
                                     <th data-sort="valor">Valor</th>
-                                    <th data-sort="valor_moneda">Valor Moneda</th>
-                                    <th data-sort="diferencia">Diferencia</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -214,10 +212,6 @@
                                 title="Clic para ver detalles del gasto">
                                 {{ number_format($item->valor ?? 0, 0, ',', '.') }}
                             </td>
-                                            <td class="number-cell">{{ number_format($item->valor_moneda ?? 0, 0, ',', '.') }}</td>
-                                            <td class="number-cell {{ (($item->valor ?? 0) - ($item->valor_moneda ?? 0)) < 0 ? 'negative' : 'positive' }}">
-                                                {{ number_format(($item->valor ?? 0) - ($item->valor_moneda ?? 0), 0, ',', '.') }}
-                                            </td>
                                             <td>
                                                 <div class="action-buttons-container">
                                                     <button class="btn-edit btn-icon" data-id="{{ $item->id ?? '' }}" title="Editar registro">📝</button>
@@ -227,7 +221,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="9" class="no-data">No hay datos de presupuesto disponibles</td>
+                                        <td colspan="7" class="no-data">No hay datos de presupuesto disponibles</td>
                                     </tr>
                                 @endif
                             </tbody>
@@ -7166,7 +7160,7 @@
 
 /* Celdas numéricas */
 .number-cell {
-    text-align: right;
+    text-align: center;
     font-family: 'Courier New', monospace;
     font-weight: 500;
 }
