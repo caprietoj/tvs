@@ -1217,6 +1217,55 @@
                             $otrosEgresosData = $budgetDataByConcept['otros-egresos'] ?? [];
                             $seccionesAcademiaData = $budgetDataByConcept['secciones-academia-general'] ?? [];
                             $contratosExternosData = $budgetDataByConcept['contratos-externos'] ?? [];
+                            
+                            // CÁLCULO ÚNICO DE TOTAL GASTOS - Se usará en ambas tablas (RESUMEN y RESUMEN GASTOS)
+                            $totalGastosCalculado = 
+                                6600750523 + // SALARIOS ACADEMIA (hardcodeado - pendiente de hacer dinámico)
+                                array_sum($salariosAdminData) + 
+                                array_sum($rubrosData) + 
+                                array_sum($membresiasData) + 
+                                array_sum($serviciosData) + 
+                                array_sum($otrosEgresosData) + 
+                                array_sum($seccionesAcademiaData) + 
+                                array_sum($contratosExternosData);
+                            
+                            // Cálculos para tabla RESUMEN - INGRESOS (reutilizado de RESUMEN INGRESOS)
+                            $presupuestoIngresosEscolares = $budgetData['resumen_ingresos']['ingresos_escolares']['presupuesto_aprobado'] ?? 10487847718;
+                            $presupuestoOtrosEscolares = $budgetData['resumen_ingresos']['ingresos_otros_escolares']['presupuesto_aprobado'] ?? 2369132369;
+                            $ingresosEscolaresData = $budgetData['resumen_ingresos']['ingresos_escolares'] ?? [];
+                            $otrosEscolaresData = $budgetData['resumen_ingresos']['ingresos_otros_escolares'] ?? [];
+                            
+                            // Calcular totales dinámicos por mes - INGRESOS
+                            $meses = ['junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'];
+                            $totalesPorMes = [];
+                            foreach ($meses as $mes) {
+                                $totalesPorMes[$mes] = ($ingresosEscolaresData[$mes] ?? 0) + ($otrosEscolaresData[$mes] ?? 0);
+                            }
+                            
+                            // Cálculos para tabla RESUMEN - GASTOS (reutilizado de RESUMEN GASTOS)
+                            $adminJunio = $salariosAdminData['junio'] ?? 0;
+                            $adminJulio = $salariosAdminData['julio'] ?? 0;
+                            $adminAgosto = $salariosAdminData['agosto'] ?? 0;
+                            $adminSeptiembre = $salariosAdminData['septiembre'] ?? 0;
+                            $adminOctubre = $salariosAdminData['octubre'] ?? 0;
+                            $adminNoviembre = $salariosAdminData['noviembre'] ?? 0;
+                            $adminDiciembre = $salariosAdminData['diciembre'] ?? 0;
+                            $adminEnero = $salariosAdminData['enero'] ?? 0;
+                            $adminFebrero = $salariosAdminData['febrero'] ?? 0;
+                            
+                            // IMPORTANTE: No redefinir $serviciosData para mantener consistencia en cálculos de totales
+                            $serviciosPublicosMeses = $serviciosPublicosData['meses'] ?? [];
+                            
+                            // Calcular totales dinámicos por mes - GASTOS
+                            $totalJunio = ($salariosAcademiaData['junio'] ?? 0) + $adminJunio + ($rubrosData['junio'] ?? 0) + ($seccionesAcademiaData['junio'] ?? 0) + ($serviciosPublicosMeses['junio'] ?? 0) + ($contratosExternosData['junio'] ?? 0);
+                            $totalJulio = ($salariosAcademiaData['julio'] ?? 0) + $adminJulio + ($rubrosData['julio'] ?? 0) + ($seccionesAcademiaData['julio'] ?? 0) + ($serviciosPublicosMeses['julio'] ?? 0) + ($contratosExternosData['julio'] ?? 0);
+                            $totalAgosto = ($salariosAcademiaData['agosto'] ?? 0) + $adminAgosto + ($rubrosData['agosto'] ?? 0) + ($seccionesAcademiaData['agosto'] ?? 0) + ($serviciosPublicosMeses['agosto'] ?? 0) + ($contratosExternosData['agosto'] ?? 0);
+                            $totalSeptiembre = ($salariosAcademiaData['septiembre'] ?? 0) + $adminSeptiembre + ($rubrosData['septiembre'] ?? 0) + ($seccionesAcademiaData['septiembre'] ?? 0) + ($serviciosPublicosMeses['septiembre'] ?? 0) + ($contratosExternosData['septiembre'] ?? 0);
+                            $totalOctubre = ($salariosAcademiaData['octubre'] ?? 0) + $adminOctubre + ($rubrosData['octubre'] ?? 0) + ($seccionesAcademiaData['octubre'] ?? 0) + ($serviciosPublicosMeses['octubre'] ?? 0) + ($contratosExternosData['octubre'] ?? 0);
+                            $totalNoviembre = ($salariosAcademiaData['noviembre'] ?? 0) + $adminNoviembre + ($rubrosData['noviembre'] ?? 0) + ($seccionesAcademiaData['noviembre'] ?? 0) + ($serviciosPublicosMeses['noviembre'] ?? 0) + ($contratosExternosData['noviembre'] ?? 0);
+                            $totalDiciembre = ($salariosAcademiaData['diciembre'] ?? 0) + $adminDiciembre + ($rubrosData['diciembre'] ?? 0) + ($seccionesAcademiaData['diciembre'] ?? 0) + ($serviciosPublicosMeses['diciembre'] ?? 0) + ($contratosExternosData['diciembre'] ?? 0);
+                            $totalEnero = ($salariosAcademiaData['enero'] ?? 0) + $adminEnero + ($rubrosData['enero'] ?? 0) + ($seccionesAcademiaData['enero'] ?? 0) + ($serviciosPublicosMeses['enero'] ?? 0) + ($contratosExternosData['enero'] ?? 0);
+                            $totalFebrero = ($salariosAcademiaData['febrero'] ?? 0) + $adminFebrero + ($rubrosData['febrero'] ?? 0) + ($seccionesAcademiaData['febrero'] ?? 0) + ($serviciosPublicosMeses['febrero'] ?? 0) + ($contratosExternosData['febrero'] ?? 0);
                         @endphp
                         <!-- TABLA 1: RESUMEN -->
                         <div class="budget-section filter-resumen" data-filter-category="resumen">
@@ -1242,41 +1291,66 @@
                                         <tr>
                                             <td><strong>Total Ingresos</strong></td>
                                             <td class="number-cell">${{ number_format($budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'], 0, ',', '.') }}</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['junio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['julio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['agosto'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['septiembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['octubre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['noviembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['diciembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['enero'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['febrero'] ?? 0, 0, ',', '.') }}</td>
                                         </tr>
+                                        @php
+                                            // Obtener valores de Cafeteria desde CONTRATOS EXTERNOS
+                                            $cafeteriaContratosData = $budgetDataByConcept['contratos-externos'] ?? [];
+                                            $cafeteriaJunio = $cafeteriaContratosData['cafeteria-junio'] ?? 0;
+                                            $cafeteriaJulio = $cafeteriaContratosData['cafeteria-julio'] ?? 0;
+                                            $cafeteriaAgosto = $cafeteriaContratosData['cafeteria-agosto'] ?? 0;
+                                            $cafeteriaSeptiembre = $cafeteriaContratosData['cafeteria-septiembre'] ?? 0;
+                                            $cafeteriaOctubre = $cafeteriaContratosData['cafeteria-octubre'] ?? 0;
+                                            $cafeteriaNoviembre = $cafeteriaContratosData['cafeteria-noviembre'] ?? 0;
+                                            $cafeteriaDiciembre = $cafeteriaContratosData['cafeteria-diciembre'] ?? 0;
+                                            $cafeteriaEnero = $cafeteriaContratosData['cafeteria-enero'] ?? 0;
+                                            $cafeteriaFebrero = $cafeteriaContratosData['cafeteria-febrero'] ?? 0;
+                                        @endphp
                                         <tr>
-                                            <td><strong>Proyectado utilidad cafeteria</strong></td>
+                                            <td><strong>Utilidad cafeteria</strong></td>
                                             <td class="number-cell"></td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
+                                            <td class="number-cell calculated">${{ number_format($cafeteriaJunio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($cafeteriaJulio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($cafeteriaAgosto, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($cafeteriaSeptiembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($cafeteriaOctubre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($cafeteriaNoviembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($cafeteriaDiciembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($cafeteriaEnero, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($cafeteriaFebrero, 0, ',', '.') }}</td>
                                         </tr>
+                                        @php
+                                            // Obtener valores de Transporte desde CONTRATOS EXTERNOS
+                                            $transporteJunio = $cafeteriaContratosData['transporte-junio'] ?? 0;
+                                            $transporteJulio = $cafeteriaContratosData['transporte-julio'] ?? 0;
+                                            $transporteAgosto = $cafeteriaContratosData['transporte-agosto'] ?? 0;
+                                            $transporteSeptiembre = $cafeteriaContratosData['transporte-septiembre'] ?? 0;
+                                            $transporteOctubre = $cafeteriaContratosData['transporte-octubre'] ?? 0;
+                                            $transporteNoviembre = $cafeteriaContratosData['transporte-noviembre'] ?? 0;
+                                            $transporteDiciembre = $cafeteriaContratosData['transporte-diciembre'] ?? 0;
+                                            $transporteEnero = $cafeteriaContratosData['transporte-enero'] ?? 0;
+                                            $transporteFebrero = $cafeteriaContratosData['transporte-febrero'] ?? 0;
+                                        @endphp
                                         <tr>
                                             <td><strong>Proyectado utilidad transporte</strong></td>
                                             <td class="number-cell"></td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
+                                            <td class="number-cell calculated">${{ number_format($transporteJunio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($transporteJulio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($transporteAgosto, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($transporteSeptiembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($transporteOctubre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($transporteNoviembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($transporteDiciembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($transporteEnero, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($transporteFebrero, 0, ',', '.') }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Actividades Curriculares</strong></td>
@@ -1293,46 +1367,124 @@
                                             <td class="number-cell editable">$-</td>
                                         </tr>
                                         @php
-                                            // Calcular total de egresos dinámicamente (mismo cálculo que TOTAL GASTOS)
-                                            $totalEgresosPresupuesto = 
-                                                6600750523 + // SALARIOS ACADEMIA (hardcodeado - pendiente de hacer dinámico)
-                                                array_sum($salariosAdminData) + 
-                                                array_sum($rubrosData) + 
-                                                array_sum($membresiasData) + 
-                                                array_sum($serviciosPublicosData['meses']) + 
-                                                array_sum($otrosEgresosData) + 
-                                                array_sum($seccionesAcademiaData) + 
-                                                array_sum($contratosExternosData);
+                                            // VINCULACIÓN DINÁMICA: Obtener valores de TOTAL GASTOS de la tabla RESUMEN GASTOS
+                                            // Calcular valores mensuales de gastos dinámicamente (mismo cálculo que en RESUMEN GASTOS)
+                                            
+                                            // Variables de salarios admin calculadas dinámicamente
+                                            $adminJunio = ($salariosAdminData['transporte-junio'] ?? 0) + ($salariosAdminData['prima-junio'] ?? 0) + ($salariosAdminData['cesantias-junio'] ?? 0);
+                                            $adminJulio = ($salariosAdminData['transporte-julio'] ?? 0) + ($salariosAdminData['prima-julio'] ?? 0) + ($salariosAdminData['cesantias-julio'] ?? 0);
+                                            $adminAgosto = ($salariosAdminData['transporte-agosto'] ?? 0) + ($salariosAdminData['prima-agosto'] ?? 0) + ($salariosAdminData['cesantias-agosto'] ?? 0);
+                                            $adminSeptiembre = ($salariosAdminData['transporte-septiembre'] ?? 0) + ($salariosAdminData['prima-septiembre'] ?? 0) + ($salariosAdminData['cesantias-septiembre'] ?? 0);
+                                            $adminOctubre = ($salariosAdminData['transporte-octubre'] ?? 0) + ($salariosAdminData['prima-octubre'] ?? 0) + ($salariosAdminData['cesantias-octubre'] ?? 0);
+                                            $adminNoviembre = ($salariosAdminData['transporte-noviembre'] ?? 0) + ($salariosAdminData['prima-noviembre'] ?? 0) + ($salariosAdminData['cesantias-noviembre'] ?? 0);
+                                            $adminDiciembre = ($salariosAdminData['transporte-diciembre'] ?? 0) + ($salariosAdminData['prima-diciembre'] ?? 0) + ($salariosAdminData['cesantias-diciembre'] ?? 0);
+                                            $adminEnero = ($salariosAdminData['transporte-enero'] ?? 0) + ($salariosAdminData['prima-enero'] ?? 0) + ($salariosAdminData['cesantias-enero'] ?? 0);
+                                            $adminFebrero = ($salariosAdminData['transporte-febrero'] ?? 0) + ($salariosAdminData['prima-febrero'] ?? 0) + ($salariosAdminData['cesantias-febrero'] ?? 0);
+                                            
+                            // Calcular TOTAL GASTOS por mes (vinculado dinámicamente desde RESUMEN GASTOS)
+                            // IMPORTANTE: Usar $serviciosData original para consistencia con totalGastosCalculado
+                            $totalEgresosJunio = ($salariosAcademiaData['junio'] ?? 0) + $adminJunio + ($rubrosData['junio'] ?? 0) + ($seccionesAcademiaData['junio'] ?? 0) + ($serviciosData['junio'] ?? 0) + ($contratosExternosData['junio'] ?? 0);
+                            $totalEgresosJulio = ($salariosAcademiaData['julio'] ?? 0) + $adminJulio + ($rubrosData['julio'] ?? 0) + ($seccionesAcademiaData['julio'] ?? 0) + ($serviciosData['julio'] ?? 0) + ($contratosExternosData['julio'] ?? 0);
+                            $totalEgresosAgosto = ($salariosAcademiaData['agosto'] ?? 0) + $adminAgosto + ($rubrosData['agosto'] ?? 0) + ($seccionesAcademiaData['agosto'] ?? 0) + ($serviciosData['agosto'] ?? 0) + ($contratosExternosData['agosto'] ?? 0);
+                            $totalEgresosSeptiembre = ($salariosAcademiaData['septiembre'] ?? 0) + $adminSeptiembre + ($rubrosData['septiembre'] ?? 0) + ($seccionesAcademiaData['septiembre'] ?? 0) + ($serviciosData['septiembre'] ?? 0) + ($contratosExternosData['septiembre'] ?? 0);
+                            $totalEgresosOctubre = ($salariosAcademiaData['octubre'] ?? 0) + $adminOctubre + ($rubrosData['octubre'] ?? 0) + ($seccionesAcademiaData['octubre'] ?? 0) + ($serviciosData['octubre'] ?? 0) + ($contratosExternosData['octubre'] ?? 0);
+                            $totalEgresosNoviembre = ($salariosAcademiaData['noviembre'] ?? 0) + $adminNoviembre + ($rubrosData['noviembre'] ?? 0) + ($seccionesAcademiaData['noviembre'] ?? 0) + ($serviciosData['noviembre'] ?? 0) + ($contratosExternosData['noviembre'] ?? 0);
+                            $totalEgresosDiciembre = ($salariosAcademiaData['diciembre'] ?? 0) + $adminDiciembre + ($rubrosData['diciembre'] ?? 0) + ($seccionesAcademiaData['diciembre'] ?? 0) + ($serviciosData['diciembre'] ?? 0) + ($contratosExternosData['diciembre'] ?? 0);
+                            $totalEgresosEnero = ($salariosAcademiaData['enero'] ?? 0) + $adminEnero + ($rubrosData['enero'] ?? 0) + ($seccionesAcademiaData['enero'] ?? 0) + ($serviciosData['enero'] ?? 0) + ($contratosExternosData['enero'] ?? 0);
+                            $totalEgresosFebrero = ($salariosAcademiaData['febrero'] ?? 0) + $adminFebrero + ($rubrosData['febrero'] ?? 0) + ($seccionesAcademiaData['febrero'] ?? 0) + ($serviciosData['febrero'] ?? 0) + ($contratosExternosData['febrero'] ?? 0);
+                                            
+                            // VINCULACIÓN DIRECTA: Usando $totalGastosCalculado definido globalmente
                                         @endphp
+                                        <!-- DEBUG: Valores individuales -->
+                                        <!-- 
+                                        Salarios Admin: {{ array_sum($salariosAdminData) }}
+                                        Rubros: {{ array_sum($rubrosData) }}
+                                        Membresias: {{ array_sum($membresiasData) }}
+                                        Servicios: {{ array_sum($serviciosData) }}
+                                        Otros Egresos: {{ array_sum($otrosEgresosData) }}
+                                        Secciones Academia: {{ array_sum($seccionesAcademiaData) }}
+                                        Contratos Externos: {{ array_sum($contratosExternosData) }}
+                                        Total Calculado: {{ $totalGastosCalculado }}
+                                        -->
                                         <tr>
                                             <td><strong>Total Egresos</strong></td>
-                                            <td class="number-cell"><strong>${{ number_format($totalEgresosPresupuesto, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated">$-</td>
-                                            <td class="number-cell calculated">$-</td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
-                                            <td class="number-cell"></td>
+                                            <td class="number-cell total-egresos-linked" data-linked-to="total-gastos"><strong>${{ number_format($totalGastosCalculado, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated">${{ number_format($totalEgresosJunio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalEgresosJulio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalEgresosAgosto, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalEgresosSeptiembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalEgresosOctubre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalEgresosNoviembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalEgresosDiciembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalEgresosEnero, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated">${{ number_format($totalEgresosFebrero, 0, ',', '.') }}</td>
                                         </tr>
                                         @php
                                             $totalIngresosPresupuesto = $budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'] ?? 0;
-                                            $diferenciaTotalPresupuesto = $totalIngresosPresupuesto - $totalEgresosPresupuesto;
+                                            $utilidadCafeteriaPresupuesto = $gastosContratosData['conceptos']['Utilidad cafeteria']['presupuesto_aprobado'] ?? 0;
+                                            $utilidadTransportePresupuesto = $gastosContratosData['conceptos']['Proyectado utilidad transporte']['presupuesto_aprobado'] ?? 0;
+                                            $actividadesCurricularesPresupuesto = 0; // Valor editable manual
+                                            $diferenciaTotalPresupuesto = $totalIngresosPresupuesto + $utilidadCafeteriaPresupuesto + $utilidadTransportePresupuesto + $actividadesCurricularesPresupuesto - $totalGastosCalculado;
+                                            
+                                            // Calcular diferencias por mes según fórmula Excel: Total Ingresos + Utilidad cafeteria + Proyectado utilidad transporte + Actividades Curriculares - Total Egresos
+                                            
+                                            // DEBUG: Verificar valores que causan negativos
+                                            // echo "<!-- DEBUG JULIO: Ingresos=" . ($totalesPorMes['julio'] ?? 0) . " Gastos=" . ($totalJulio ?? 0) . " -->";
+                                            
+                                            // Usar los valores dinámicos de CONTRATOS EXTERNOS ya calculados arriba
+                                            $utilidadCafeteriaJunio = $cafeteriaJunio;
+                                            $utilidadCafeteriaJulio = $cafeteriaJulio;
+                                            $utilidadCafeteriaAgosto = $cafeteriaAgosto;
+                                            $utilidadCafeteriaSeptiembre = $cafeteriaSeptiembre;
+                                            $utilidadCafeteriaOctubre = $cafeteriaOctubre;
+                                            $utilidadCafeteriaNoviembre = $cafeteriaNoviembre;
+                                            $utilidadCafeteriaDiciembre = $cafeteriaDiciembre;
+                                            $utilidadCafeteriaEnero = $cafeteriaEnero;
+                                            $utilidadCafeteriaFebrero = $cafeteriaFebrero;
+                                            
+                                            $utilidadTransporteJunio = $transporteJunio;
+                                            $utilidadTransporteJulio = $transporteJulio;
+                                            $utilidadTransporteAgosto = $transporteAgosto;
+                                            $utilidadTransporteSeptiembre = $transporteSeptiembre;
+                                            $utilidadTransporteOctubre = $transporteOctubre;
+                                            $utilidadTransporteNoviembre = $transporteNoviembre;
+                                            $utilidadTransporteDiciembre = $transporteDiciembre;
+                                            $utilidadTransporteEnero = $transporteEnero;
+                                            $utilidadTransporteFebrero = $transporteFebrero;
+                                            
+                                            $actividadesCurricularesJunio = 0; // Valor editable manual
+                                            $actividadesCurricularesJulio = 0; // Valor editable manual
+                                            $actividadesCurricularesAgosto = 0; // Valor editable manual
+                                            $actividadesCurricularesSeptiembre = 0; // Valor editable manual
+                                            $actividadesCurricularesOctubre = 0; // Valor editable manual
+                                            $actividadesCurricularesNoviembre = 0; // Valor editable manual
+                                            $actividadesCurricularesDiciembre = 0; // Valor editable manual
+                                            $actividadesCurricularesEnero = 0; // Valor editable manual
+                                            $actividadesCurricularesFebrero = 0; // Valor editable manual
+                                            
+                                            // Aplicar fórmula: +D9+D10+D11+D12-D19 (usando variables dinámicas de Total Egresos)
+                                            $diferenciaJunio = ($totalesPorMes['junio'] ?? 0) + $utilidadCafeteriaJunio + $utilidadTransporteJunio + $actividadesCurricularesJunio - $totalEgresosJunio;
+                                            $diferenciaJulio = ($totalesPorMes['julio'] ?? 0) + $utilidadCafeteriaJulio + $utilidadTransporteJulio + $actividadesCurricularesJulio - $totalEgresosJulio;
+                                            $diferenciaAgosto = ($totalesPorMes['agosto'] ?? 0) + $utilidadCafeteriaAgosto + $utilidadTransporteAgosto + $actividadesCurricularesAgosto - $totalEgresosAgosto;
+                                            $diferenciaSeptiembre = ($totalesPorMes['septiembre'] ?? 0) + $utilidadCafeteriaSeptiembre + $utilidadTransporteSeptiembre + $actividadesCurricularesSeptiembre - $totalEgresosSeptiembre;
+                                            $diferenciaOctubre = ($totalesPorMes['octubre'] ?? 0) + $utilidadCafeteriaOctubre + $utilidadTransporteOctubre + $actividadesCurricularesOctubre - $totalEgresosOctubre;
+                                            $diferenciaNoviembre = ($totalesPorMes['noviembre'] ?? 0) + $utilidadCafeteriaNoviembre + $utilidadTransporteNoviembre + $actividadesCurricularesNoviembre - $totalEgresosNoviembre;
+                                            $diferenciaDiciembre = ($totalesPorMes['diciembre'] ?? 0) + $utilidadCafeteriaDiciembre + $utilidadTransporteDiciembre + $actividadesCurricularesDiciembre - $totalEgresosDiciembre;
+                                            $diferenciaEnero = ($totalesPorMes['enero'] ?? 0) + $utilidadCafeteriaEnero + $utilidadTransporteEnero + $actividadesCurricularesEnero - $totalEgresosEnero;
+                                            $diferenciaFebrero = ($totalesPorMes['febrero'] ?? 0) + $utilidadCafeteriaFebrero + $utilidadTransporteFebrero + $actividadesCurricularesFebrero - $totalEgresosFebrero;
                                         @endphp
                                         <tr class="total-row">
                                             <td><strong>Total Ingresos - Gastos</strong></td>
                                             <td class="number-cell"><strong>${{ number_format($diferenciaTotalPresupuesto, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
-                                            <td class="number-cell calculated"><strong>$-</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diferenciaJunio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diferenciaJulio, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diferenciaAgosto, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diferenciaSeptiembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diferenciaOctubre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diferenciaNoviembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diferenciaDiciembre, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diferenciaEnero, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>${{ number_format($diferenciaFebrero, 0, ',', '.') }}</strong></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1576,20 +1728,22 @@
                                             $totalEnero = ($salariosAcademiaData['enero'] ?? 0) + $adminEnero + ($rubrosData['enero'] ?? 0) + ($seccionesAcademiaData['enero'] ?? 0) + ($serviciosData['enero'] ?? 0) + ($contratosExternosData['enero'] ?? 0);
                                             $totalFebrero = ($salariosAcademiaData['febrero'] ?? 0) + $adminFebrero + ($rubrosData['febrero'] ?? 0) + ($seccionesAcademiaData['febrero'] ?? 0) + ($serviciosData['febrero'] ?? 0) + ($contratosExternosData['febrero'] ?? 0);
                                             
-                                            // Calcular TOTAL GASTOS dinámicamente sumando todas las categorías
-                                            $totalGastosCalculado = 
-                                                6600750523 + // SALARIOS ACADEMIA (hardcodeado - pendiente de hacer dinámico)
-                                                array_sum($salariosAdminData) + 
-                                                array_sum($rubrosData) + 
-                                                array_sum($membresiasData) + 
-                                                array_sum($serviciosPublicosData['meses']) + 
-                                                array_sum($otrosEgresosData) + 
-                                                array_sum($seccionesAcademiaData) + 
-                                                array_sum($contratosExternosData);
+                                            // TOTAL GASTOS: Usando $totalGastosCalculado definido globalmente
                                         @endphp
+                                        <!-- DEBUG RESUMEN GASTOS: Valores individuales -->
+                                        <!-- 
+                                        Salarios Admin: {{ array_sum($salariosAdminData) }}
+                                        Rubros: {{ array_sum($rubrosData) }}
+                                        Membresias: {{ array_sum($membresiasData) }}
+                                        Servicios: {{ array_sum($serviciosData) }}
+                                        Otros Egresos: {{ array_sum($otrosEgresosData) }}
+                                        Secciones Academia: {{ array_sum($seccionesAcademiaData) }}
+                                        Contratos Externos: {{ array_sum($contratosExternosData) }}
+                                        Total Calculado: {{ $totalGastosCalculado }}
+                                        -->
                                         <tr class="total-row">
                                             <td><strong>TOTAL GASTOS</strong></td>
-                                            <td class="number-cell"><strong>${{ number_format($totalGastosCalculado, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell total-gastos-source" id="total-gastos"><strong>${{ number_format($totalGastosCalculado, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($totalAgosto, 0, ',', '.') }}</strong></td>
@@ -2337,9 +2491,6 @@
                                                 $diciembreValue = ($serviciosPublicosData['meses']['diciembre'] ?? 0) / count($serviciosLabels);
                                                 $eneroValue = ($serviciosPublicosData['meses']['enero'] ?? 0) / count($serviciosLabels);
                                                 $febreroValue = ($serviciosPublicosData['meses']['febrero'] ?? 0) / count($serviciosLabels);
-                                                $marzoValue = ($serviciosPublicosData['meses']['marzo'] ?? 0) / count($serviciosLabels);
-                                                $abrilValue = ($serviciosPublicosData['meses']['abril'] ?? 0) / count($serviciosLabels);
-                                                $mayoValue = ($serviciosPublicosData['meses']['mayo'] ?? 0) / count($serviciosLabels);
                                             @endphp
                                             <tr>
                                                 <td><strong>{{ $concepto }}</strong></td>
@@ -2353,9 +2504,6 @@
                                                 <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
                                                 <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
                                                 <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
-                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="marzo" class="number-cell editable">${{ number_format($marzoValue, 0, ',', '.') }}</td>
-                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="abril" class="number-cell editable">${{ number_format($abrilValue, 0, ',', '.') }}</td>
-                                                <td data-section="servicios-publicos" data-concept="{{ $conceptKey }}" data-column="mayo" class="number-cell editable">${{ number_format($mayoValue, 0, ',', '.') }}</td>
                                             </tr>
                                         @endforeach
                                         @php
@@ -2369,9 +2517,6 @@
                                             $diciembreTotal = $serviciosPublicosData['meses']['diciembre'] ?? 0;
                                             $eneroTotal = $serviciosPublicosData['meses']['enero'] ?? 0;
                                             $febreroTotal = $serviciosPublicosData['meses']['febrero'] ?? 0;
-                                            $marzoTotal = $serviciosPublicosData['meses']['marzo'] ?? 0;
-                                            $abrilTotal = $serviciosPublicosData['meses']['abril'] ?? 0;
-                                            $mayoTotal = $serviciosPublicosData['meses']['mayo'] ?? 0;
                                         @endphp
                                         <tr class="total-row">
                                             <td><strong>TOTAL SERVICIOS PUBLICOS</strong></td>
@@ -2385,9 +2530,6 @@
                                             <td class="number-cell calculated"><strong>${{ number_format($diciembreTotal, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($eneroTotal, 0, ',', '.') }}</strong></td>
                                             <td class="number-cell calculated"><strong>${{ number_format($febreroTotal, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($marzoTotal, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($abrilTotal, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($mayoTotal, 0, ',', '.') }}</strong></td>
                                         </tr>
                                         <tr class="percentage-row">
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
@@ -9667,9 +9809,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Funciones para persistencia de datos
     function extractCellData(cell) {
+        console.log('🔍 === INICIO EXTRACTCELLDATA ===');
+        console.log('🔍 Celda recibida:', cell);
+        console.log('🔍 Contenido de celda:', cell.textContent);
+        console.log('🔍 Clases de celda:', cell.className);
+        
         const row = cell.closest('tr');
         const table = cell.closest('table');
         const budgetSection = cell.closest('.budget-section');
+        
+        console.log('🔍 Fila encontrada:', !!row);
+        console.log('🔍 Tabla encontrada:', !!table);
+        console.log('🔍 Sección encontrada:', !!budgetSection);
         
         if (!row || !table) {
             console.error('❌ No se pudo encontrar fila o tabla para la celda');
@@ -9682,23 +9833,31 @@ document.addEventListener('DOMContentLoaded', function() {
         if (budgetSection) {
             const titleElement = budgetSection.querySelector('h5');
             tablaNombre = titleElement ? titleElement.textContent.trim() : 'Presupuesto';
+            console.log('🏷️ Nombre de tabla extraído:', tablaNombre);
+        } else {
+            console.log('⚠️ No se encontró budget-section, usando nombre por defecto');
         }
         
         // Obtener concepto desde la primera celda de la fila
         const firstCell = row.querySelector('td');
         const concepto = firstCell ? firstCell.textContent.trim().replace(/\*\*/g, '') : 'Sin concepto';
+        console.log('📝 Concepto extraído:', concepto);
         
         // Obtener nombre de la columna desde el header
         const cellIndex = getColumnIndex(cell);
+        console.log('📊 Índice de columna:', cellIndex);
         const headerRow = table.querySelector('thead tr');
         const headerCells = headerRow ? headerRow.querySelectorAll('th') : [];
         const columna = headerCells[cellIndex] ? headerCells[cellIndex].textContent.trim() : `Columna_${cellIndex}`;
+        console.log('📋 Columna extraída:', columna);
         
         // Extraer valor numérico
         const valor = extractNumericValue(cell.textContent);
+        console.log('💰 Valor extraído:', valor);
         
         // Determinar si es una fila de total
         const esTotal = row.classList.contains('total-row');
+        console.log('🧮 Es fila total:', esTotal);
         
         const cellData = {
             tabla_nombre: tablaNombre,
@@ -9710,7 +9869,8 @@ document.addEventListener('DOMContentLoaded', function() {
             es_total: esTotal
         };
         
-        console.log('📊 Celda extraída - Concepto:', concepto, 'Columna:', columna, 'Valor:', valor);
+        console.log('✅ Datos de celda completos:', cellData);
+        console.log('🔍 === FIN EXTRACTCELLDATA ===');
         return cellData;
     }
     
@@ -9825,32 +9985,48 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function saveAllData() {
+        console.log('🔥 === INICIO SAVEALLDATA ===');
         const saveButton = document.getElementById('save-data');
         
         // Deshabilitar botón y cambiar texto
         if (saveButton) {
             saveButton.disabled = true;
             saveButton.innerHTML = '⏳ Guardando...';
+            console.log('🎯 Botón deshabilitado y texto cambiado');
+        } else {
+            console.error('❌ No se encontró el botón save-data');
         }
         
         // Buscar todas las celdas editables que no sean totales
         const editableCells = document.querySelectorAll('.number-cell:not(.total-row .number-cell)');
         const dataToSave = [];
         
-        console.log(`📊 Preparando guardado de ${editableCells.length} celdas...`);
+        console.log(`📊 Celdas encontradas: ${editableCells.length}`);
+        console.log('📊 Selector usado: .number-cell:not(.total-row .number-cell)');
         
         // Extraer datos de todas las celdas
         editableCells.forEach((cell, index) => {
+            console.log(`🔍 Procesando celda ${index + 1}/${editableCells.length}:`, cell.textContent);
             const cellData = extractCellData(cell);
-            if (cellData && !cellData.es_total) {
-                dataToSave.push(cellData);
+            
+            if (cellData) {
+                console.log(`📋 Datos extraídos de celda ${index + 1}:`, cellData);
+                if (!cellData.es_total) {
+                    dataToSave.push(cellData);
+                    console.log(`✅ Celda ${index + 1} agregada para guardar`);
+                } else {
+                    console.log(`⚠️ Celda ${index + 1} es total, omitida`);
+                }
+            } else {
+                console.log(`❌ No se pudieron extraer datos de celda ${index + 1}`);
             }
         });
         
-        console.log(`💾 ${dataToSave.length} celdas válidas para guardar`);
+        console.log(`💾 Total celdas válidas para guardar: ${dataToSave.length}`);
+        console.log('💾 Datos completos a guardar:', JSON.stringify(dataToSave, null, 2));
         
         if (dataToSave.length === 0) {
-            console.log('⚠️ No hay datos para guardar');
+            console.log('⚠️ No hay datos para guardar - restaurando botón');
             if (saveButton) {
                 saveButton.disabled = false;
                 saveButton.innerHTML = '💾 Guardar Datos';
@@ -9947,34 +10123,54 @@ document.addEventListener('DOMContentLoaded', function() {
         @if(isset($spreadsheetData))
             const spreadsheetData = @json($spreadsheetData);
             console.log('Datos cargados desde la base de datos:', spreadsheetData);
-            // TEMPORALMENTE DESHABILITADO: populateTableWithData(spreadsheetData);
-            console.log('⚠️ populateTableWithData() deshabilitado temporalmente para probar datos dinámicos');
+            populateTableWithData(spreadsheetData);
+            console.log('✅ populateTableWithData() ejecutado - datos cargados correctamente');
         @else
             console.log('No hay datos guardados para cargar');
         @endif
     }
     
     function populateTableWithData(spreadsheetData) {
+        console.log('📊 === INICIO POPULATETABLEWITHDATA ===');
+        console.log('📊 Datos recibidos:', spreadsheetData);
+        console.log('📊 Tipo de datos:', typeof spreadsheetData);
+        console.log('📊 Número de tablas:', Object.keys(spreadsheetData).length);
+        
         // Iterar sobre todas las tablas y llenar con datos guardados
         Object.keys(spreadsheetData).forEach(tablaNombre => {
+            console.log('🏷️ Procesando tabla:', tablaNombre);
             const tabla = spreadsheetData[tablaNombre];
+            console.log('🏷️ Conceptos en tabla:', Object.keys(tabla));
             
             Object.keys(tabla).forEach(concepto => {
+                console.log('📝 Procesando concepto:', concepto);
                 const conceptoData = tabla[concepto];
                 
                 Object.keys(conceptoData).forEach(columna => {
+                    console.log('📋 Procesando columna:', columna);
                     const cellData = conceptoData[columna];
+                    console.log('💰 Datos de celda:', cellData);
                     
                     // Buscar la celda correspondiente en el DOM
                     const cell = findCellInDOM(tablaNombre, concepto, columna);
+                    console.log('🔍 Celda encontrada en DOM:', !!cell);
+                    
                     if (cell && !cellData.es_total) {
+                        console.log('✅ Llenando celda con valor:', cellData.valor);
                         // Solo llenar celdas no-totales (los totales se calculan)
                         cell.textContent = `$${formatNumber(cellData.valor)}`;
                         cell.style.backgroundColor = '#e8f5e8'; // Indicar que viene de BD
+                        console.log('✅ Celda llenada correctamente');
+                    } else if (cellData.es_total) {
+                        console.log('⚠️ Saltando celda total - se calculará automáticamente');
+                    } else {
+                        console.log('❌ No se encontró la celda en el DOM');
                     }
                 });
             });
         });
+        
+        console.log('📊 === FIN POPULATETABLEWITHDATA ===');
         
         // Recalcular totales después de cargar datos
         setTimeout(() => {
@@ -9983,40 +10179,70 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function findCellInDOM(tablaNombre, concepto, columna) {
+        console.log('🔍 === INICIO FINDCELLINDOM ===');
+        console.log('🔍 Buscando - Tabla:', tablaNombre, 'Concepto:', concepto, 'Columna:', columna);
+        
         // Buscar la sección de presupuesto correspondiente
         const sections = document.querySelectorAll('.budget-section');
+        console.log('🔍 Secciones encontradas:', sections.length);
         
         for (let section of sections) {
             const titleElement = section.querySelector('h5');
+            const sectionTitle = titleElement ? titleElement.textContent.trim() : 'Sin título';
+            console.log('🔍 Revisando sección:', sectionTitle);
+            
             if (titleElement && titleElement.textContent.trim() === tablaNombre) {
+                console.log('✅ Sección coincide con tabla buscada');
                 const table = section.querySelector('table');
                 if (table) {
+                    console.log('✅ Tabla encontrada en sección');
                     // Buscar la fila con el concepto
                     const rows = table.querySelectorAll('tbody tr');
+                    console.log('🔍 Filas en tabla:', rows.length);
+                    
                     for (let row of rows) {
                         const firstCell = row.querySelector('td');
+                        const rowConcepto = firstCell ? firstCell.textContent.trim().replace(/\*\*/g, '') : 'Sin concepto';
+                        console.log('🔍 Revisando fila con concepto:', rowConcepto);
+                        
                         if (firstCell && firstCell.textContent.trim().replace(/\*\*/g, '') === concepto) {
+                            console.log('✅ Fila con concepto encontrada');
                             // Encontrar la columna correspondiente
                             const headerCells = table.querySelectorAll('thead th');
+                            console.log('🔍 Headers en tabla:', Array.from(headerCells).map(h => h.textContent.trim()));
+                            
                             for (let i = 0; i < headerCells.length; i++) {
-                                if (headerCells[i].textContent.trim() === columna) {
+                                const headerText = headerCells[i].textContent.trim();
+                                console.log('🔍 Comparando header:', headerText, 'con columna buscada:', columna);
+                                
+                                if (headerText === columna) {
+                                    console.log('✅ Columna encontrada en índice:', i);
                                     const targetCell = row.querySelectorAll('td')[i];
                                     if (targetCell && targetCell.classList.contains('number-cell')) {
+                                        console.log('✅ Celda objetivo encontrada y es number-cell');
+                                        console.log('🔍 === FIN FINDCELLINDOM - ÉXITO ===');
                                         return targetCell;
+                                    } else {
+                                        console.log('❌ Celda no es number-cell o no existe');
                                     }
                                 }
                             }
+                            console.log('❌ No se encontró la columna:', columna);
                         }
                     }
+                    console.log('❌ No se encontró el concepto:', concepto);
+                } else {
+                    console.log('❌ No se encontró tabla en la sección');
                 }
             }
         }
+        console.log('🔍 === FIN FINDCELLINDOM - NO ENCONTRADO ===');
         return null;
     }
     
     // Cargar datos al inicializar la página
-    // TEMPORALMENTE DESHABILITADO: loadDataFromDatabase();
-    console.log('⚠️ loadDataFromDatabase() deshabilitado temporalmente para probar datos dinámicos');
+    loadDataFromDatabase();
+    console.log('✅ loadDataFromDatabase() habilitado - cargando datos guardados');
     
     // Inicializar sistema completo después de cargar datos
     setTimeout(() => {
@@ -10218,10 +10444,37 @@ document.addEventListener('DOMContentLoaded', function() {
         return new Intl.NumberFormat('es-CO').format(number);
     }
 
+    // Función para sincronizar Total Egresos con TOTAL GASTOS
+    function syncTotalEgresos() {
+        const totalGastosCell = document.getElementById('total-gastos');
+        const totalEgresosCell = document.querySelector('.total-egresos-linked');
+        
+        if (totalGastosCell && totalEgresosCell) {
+            // Copiar el valor exacto de TOTAL GASTOS a Total Egresos
+            totalEgresosCell.innerHTML = totalGastosCell.innerHTML;
+            console.log('Total Egresos sincronizado con TOTAL GASTOS:', totalGastosCell.innerHTML);
+        }
+    }
+    
+    // Ejecutar sincronización después de que se carguen todos los cálculos
+    setTimeout(() => {
+        syncTotalEgresos();
+        // Repetir la sincronización cada vez que se recalcule algo
+        const observer = new MutationObserver(() => {
+            syncTotalEgresos();
+        });
+        
+        const totalGastosCell = document.getElementById('total-gastos');
+        if (totalGastosCell) {
+            observer.observe(totalGastosCell, { childList: true, subtree: true });
+        }
+    }, 1500); // Esperar 1.5 segundos para asegurar que termine todo el JavaScript
+
     // Hacer funciones globales
     window.updateSectionTables = updateSectionTables;
     window.updateSectionTable = updateSectionTable;
     window.formatNumber = formatNumber;
+    window.syncTotalEgresos = syncTotalEgresos;
 });
 </script>
 @stop
