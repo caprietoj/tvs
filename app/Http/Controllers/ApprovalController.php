@@ -104,7 +104,7 @@ class ApprovalController extends Controller
                 // Verificar si tiene cotización pre-aprobada tradicional
                 $hasPreApprovedQuotation = $request->preApprovedQuotation !== null;
                 
-                // Verificar si tiene selección mixta completa
+                // Verificar si tiene selección mixta válida (al menos un item cotizado)
                 $hasMixedSelection = $this->hasMixedSelectionComplete($request);
                 
                 // Verificar si fue pre-aprobada sin cotización (nuevo flujo)
@@ -190,7 +190,7 @@ class ApprovalController extends Controller
                 // Verificar si tiene cotización pre-aprobada tradicional
                 $hasPreApprovedQuotation = $purchaseRequest->preApprovedQuotation !== null;
                 
-                // Verificar si tiene selección mixta completa
+                // Verificar si tiene selección mixta válida (al menos un item cotizado)
                 $hasMixedSelection = $this->hasMixedSelectionComplete($purchaseRequest);
                 
                 // Verificar si fue pre-aprobada sin cotización (nuevo flujo)
@@ -214,7 +214,7 @@ class ApprovalController extends Controller
                     $validForApproval = true;
                 } else {
                     // Verificar si el usuario tiene permisos de administrador para forzar aprobación
-                    $canForceApprove = auth()->user()->hasRole(['Admin']) || auth()->user()->hasPermission('force-approve');
+                    $canForceApprove = auth()->user()->hasRole(['admin']) || auth()->user()->hasPermissionTo('force-approve');
                     
                     if ($canForceApprove && $request->has('force_approve')) {
                         \Log::warning("Aprobación forzada por administrador para solicitud {$purchaseRequest->id}", [
@@ -223,7 +223,7 @@ class ApprovalController extends Controller
                         ]);
                         $validForApproval = true;
                     } else {
-                        $errorMessage = 'La solicitud de compra no tiene una cotización pre-aprobada seleccionada ni una selección mixta completa.';
+                        $errorMessage = 'La solicitud de compra no tiene una cotización pre-aprobada seleccionada ni al menos un item con selección de proveedor mixto.';
                         
                         // Si es admin, agregar opción de forzar
                         if ($canForceApprove) {
@@ -1206,7 +1206,8 @@ class ApprovalController extends Controller
     }
 
     /**
-     * Verificar si la solicitud tiene una selección mixta completa
+     * Verificar si la solicitud tiene una selección mixta válida
+     * CAMBIO: Ahora acepta selecciones incompletas ya que algunos productos pueden no cotizarse
      */
     private function hasMixedSelectionComplete(PurchaseRequest $purchaseRequest)
     {
@@ -1225,16 +1226,19 @@ class ApprovalController extends Controller
         // Contar selecciones existentes
         $selectionsCount = $purchaseRequest->quotationItemSelections()->count();
         
-        // Verificar que hay selección para cada item
-        $isComplete = $selectionsCount === count($purchaseItems);
+        // CAMBIO IMPORTANTE: Ahora considerar válida si hay AL MENOS UNA selección
+        // No requiere que todos los items estén cotizados (algunos productos pueden no existir o no estar disponibles)
+        $hasAnySelection = $selectionsCount > 0;
         
         \Log::info("Verificación selección mixta para solicitud {$purchaseRequest->id}", [
             'items_count' => count($purchaseItems),
             'selections_count' => $selectionsCount,
-            'is_complete' => $isComplete
+            'has_any_selection' => $hasAnySelection,
+            'old_logic_complete' => $selectionsCount === count($purchaseItems),
+            'new_logic_valid' => $hasAnySelection
         ]);
         
-        return $isComplete;
+        return $hasAnySelection;
     }
 
     /**

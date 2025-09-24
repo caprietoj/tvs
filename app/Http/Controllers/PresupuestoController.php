@@ -744,7 +744,14 @@ class PresupuestoController extends Controller
         $budgetData = $this->getBudgetData();
         
         // Actualizar con datos reales de ejecución
+        \Log::info('=== LLAMANDO actualizarBudgetDataConEjecucionReal ===');
         $budgetData = $this->actualizarBudgetDataConEjecucionReal($budgetData);
+        \Log::info('=== actualizarBudgetDataConEjecucionReal COMPLETADO ===');
+        
+        // LOG FINAL: Verificar qué valores se van a enviar a la vista
+        \Log::info('=== VALORES FINALES PARA LA VISTA ===');
+        \Log::info('Octubre final ingresos escolares: ' . ($budgetData['resumen_ingresos']['ingresos_escolares']['octubre'] ?? 'NO_SET'));
+        \Log::info('Octubre final saldo diferencia: ' . ($budgetData['saldo_diferencia']['diferencia']['octubre'] ?? 'NO_SET'));
         
         // Obtener datos reales de ingresos escolares importados
         $ingresosEscolaresReales = $this->getIngresosEscolaresReales();
@@ -4007,6 +4014,12 @@ class PresupuestoController extends Controller
      */
     private function loadSpreadsheetData()
     {
+        // Si la tabla presupuesto_items está vacía, no cargar datos del spreadsheet
+        if (PresupuestoItem::count() === 0) {
+            \Log::info('=== loadSpreadsheetData: presupuesto_items está vacía, retornando array vacío ===');
+            return [];
+        }
+
         // Obtener todos los datos guardados organizados por tabla
         $allData = PresupuestoSpreadsheet::orderBy('tabla_nombre')
                                         ->orderBy('fila_orden')
@@ -5172,6 +5185,37 @@ class PresupuestoController extends Controller
     {
         $meses = ['junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'enero', 'febrero'];
         
+        \Log::info('=== ACTUALIZANDO BUDGET DATA BY CONCEPT CON EJECUCIÓN REAL ===');
+        
+        // NUEVA LÓGICA: Verificar si la tabla está vacía (igual que en el otro método)
+        $totalRegistros = PresupuestoItem::count();
+        \Log::info("Total de registros en PresupuestoItem (ByConcept): $totalRegistros");
+        
+        // Si no hay datos en la tabla, limpiar todos los valores mensuales a 0
+        if ($totalRegistros === 0) {
+            \Log::info('=== TABLA VACÍA: LIMPIANDO BUDGET DATA BY CONCEPT A 0 ===');
+            
+            // Limpiar todas las secciones conocidas
+            $sectionsToClean = [
+                'ingresos-escolares', 'otros-escolares', 'salarios-academia', 'salarios-administracion',
+                'rubros-institucionales', 'membresias-convenios', 'servicios-publicos', 'otros-egresos',
+                'secciones-academia-general', 'contratos-externos'
+            ];
+            
+            foreach ($sectionsToClean as $section) {
+                if (!isset($budgetDataByConcept[$section])) {
+                    $budgetDataByConcept[$section] = [];
+                }
+                
+                foreach ($meses as $mes) {
+                    $budgetDataByConcept[$section][$mes] = 0;
+                }
+            }
+            
+            \Log::info('=== BUDGET DATA BY CONCEPT LIMPIADO COMPLETAMENTE ===');
+            return $budgetDataByConcept;
+        }
+        
         // 0. INGRESOS ESCOLARES (agregar para RESUMEN INGRESOS)
         if (!isset($budgetDataByConcept['ingresos-escolares'])) {
             $budgetDataByConcept['ingresos-escolares'] = [];
@@ -5587,6 +5631,40 @@ class PresupuestoController extends Controller
         
         // Log para debug
         \Log::info('=== ACTUALIZANDO BUDGET DATA CON EJECUCIÓN REAL ===');
+        
+        // NUEVA LÓGICA: Verificar si la tabla está vacía
+        $totalRegistros = PresupuestoItem::count();
+        \Log::info("Total de registros en PresupuestoItem: $totalRegistros");
+        
+        // Si no hay datos en la tabla, limpiar todos los valores mensuales a 0
+        if ($totalRegistros === 0) {
+            \Log::info('=== TABLA VACÍA: LIMPIANDO TODOS LOS VALORES MENSUALES A 0 ===');
+            
+            foreach ($meses as $mes) {
+                // Limpiar ingresos
+                $budgetData['resumen_ingresos']['ingresos_escolares'][$mes] = 0;
+                $budgetData['resumen_ingresos']['ingresos_otros_escolares'][$mes] = 0;
+                $budgetData['resumen_ingresos']['total_ingresos'][$mes] = 0;
+                
+                // Limpiar gastos
+                $budgetData['resumen_gastos']['total_salarios_prestaciones_academia'][$mes] = 0;
+                $budgetData['resumen_gastos']['total_salarios_prestaciones_administrativos_sena'][$mes] = 0;
+                $budgetData['resumen_gastos']['total_rubros_institucionales'][$mes] = 0;
+                $budgetData['resumen_gastos']['total_gastos'][$mes] = 0;
+                
+                // Limpiar saldo/diferencia - ¡IMPORTANTE!
+                if (isset($budgetData['saldo_diferencia']['diferencia'][$mes])) {
+                    $budgetData['saldo_diferencia']['diferencia'][$mes] = 0;
+                }
+            }
+            
+            // LOG ADICIONAL: Verificar específicamente octubre
+            \Log::info('=== VERIFICACIÓN POST-LIMPIEZA ===');
+            \Log::info('Octubre ingresos escolares: ' . ($budgetData['resumen_ingresos']['ingresos_escolares']['octubre'] ?? 'NO_SET'));
+            \Log::info('Octubre saldo diferencia: ' . ($budgetData['saldo_diferencia']['diferencia']['octubre'] ?? 'NO_SET'));
+            \Log::info('=== LIMPIEZA COMPLETADA - TODOS LOS VALORES MENSUALES SETEADOS A 0 ===');
+            return $budgetData;
+        }
         
         // Actualizar ingresos y gastos con datos reales
         foreach ($meses as $mes) {

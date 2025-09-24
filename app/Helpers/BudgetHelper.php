@@ -209,4 +209,26 @@ class BudgetHelper
         
         return $options;
     }
+
+    /**
+     * Get a specific budget item with its parent section
+     * Returns format "Section - Budget Item" for a given budget
+     */
+    public static function getBudgetWithParentSection($budget)
+    {
+        if (!$budget) {
+            return 'N/A';
+        }
+        
+        $hierarchy = self::getBudgetHierarchy();
+        
+        foreach ($hierarchy as $section => $budgets) {
+            if (in_array($budget, $budgets)) {
+                return $section . ' - ' . $budget;
+            }
+        }
+        
+        // Si no se encuentra en la jerarquía, devolver el budget tal como está
+        return $budget;
+    }
 }

@@ -8937,13 +8937,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    console.log('JavaScript cargado correctamente');
+    console.log('=== DEBUG: JavaScript cargado correctamente ===');
     
     // Cargar datos iniciales para las secciones si estamos en la pestaña Secciones
+    console.log('=== DEBUG: Ejecutando loadInitialSectionData() ===');
     loadInitialSectionData();
     
     // Actualizar small boxes al cargar la página
+    console.log('=== DEBUG: Ejecutando actualizarSmallBoxes() ===');
     actualizarSmallBoxes();
+    console.log('=== DEBUG: actualizarSmallBoxes() completada ===');
 });
 
 // Función para cargar datos iniciales de las secciones

@@ -26,12 +26,129 @@ class PresupuestoProcessorService
 
     // Mapeo específico para centros de costo que requieren clasificación especial
     private $specificCenterMapping = [
-        '132001' => 'PREESCOLAR Y PRIMARIA',
-        '132003' => 'PREESCOLAR Y PRIMARIA',
-        '132005' => 'PREESCOLAR Y PRIMARIA',
+        // CAPACITACION BACHILLERATO INTERNACIONAL
+        '130101' => 'CAPACITACION PREESCOLAR',
+        '130102' => 'CAPACITACION PRIMARIA',
+        '130103' => 'CAPACITACION MEDIA',
+        '130104' => 'CAPACITACION ALTA',
+        
+        // CAPACITACIONES OTROS
+        '1302' => 'CAPACITACIONES OTROS',
+        '130201' => 'CAPACITACIONES OTROS PREESCOLAR',
+        '130202' => 'CAPACITACIONES OTROS PRIMARIA',
+        '130203' => 'CAPACITACIONES OTROS MEDIA',
+        '130204' => 'CAPACITACIONES OTROS ALTA',
+        '130205' => 'CAPACITACIONES OTROS PEP',
+        
+        // MATERIAL IMPORTADO
+        '130301' => 'MATERIAL IMPORTADO PREESCOLAR',
+        '130302' => 'MATERIAL IMPORTADO PRIMARIA',
+        '130303' => 'MATERIAL IMPORTADO MEDIA',
+        '130304' => 'MATERIAL IMPORTADO ALTA',
+        '130305' => 'MATERIAL IMPORTADO PEP',
+        
+        // BIBLIOTECA
+        '1304' => 'BIBLIOTECA',
+        '130401' => 'BIBLIOTECA',
+        '130402' => 'BIBLIOTECA',
         '130403' => 'BIBLIOTECA',
+        '130404' => 'BIBLIOTECA',
         '130405' => 'BIBLIOTECA',
-        // Agregar más mapeos específicos según se identifiquen
+        '130406' => 'BIBLIOTECA',
+        
+        // MATERIALES
+        '1305' => 'MATERIALES',
+        '130501' => 'MATERIALES PREESCOLAR',
+        '130502' => 'MATERIALES PRIMARIA',
+        '130503' => 'MATERIALES MEDIA',
+        '130504' => 'MATERIALES ALTA',
+        
+        // DEPORTIVOS/UCB
+        '1306' => 'DEPORTIVOS/UCB',
+        '130601' => 'DEPORTES',
+        '130602' => 'DEPORTES',
+        '130603' => 'DEPORTES',
+        '130604' => 'DEPORTES',
+        '130605' => 'DEPORTES',
+        
+        // MUSICALES
+        '1307' => 'MUSICALES',
+        '130701' => 'MUSICALES PREESCOLAR',
+        '130702' => 'MUSICALES PRIMARIA',
+        '130703' => 'MUSICALES MEDIA',
+        '130704' => 'MUSICALES ALTA',
+        
+        // PART TIME TEACHER/REEMPLAZOS
+        '1308' => 'PART TIME TEACHER/ REEMPLAZOS',
+        '130801' => 'PART TIME PREESCOLAR',
+        '130802' => 'PART TIME PRIMARIA',
+        '130803' => 'PART TIME MEDIA',
+        '130804' => 'PART TIME ALTA',
+        
+        // DOTACION
+        '1309' => 'DOTACION',
+        '130901' => 'DOTACION',
+        '130902' => 'DOTACION',
+        '130903' => 'DOTACION',
+        '130904' => 'DOTACION',
+        
+        // EXHIBITION PEP
+        '1310' => 'EXHIBITION PEP',
+        '131001' => 'EXHIBITION PEP PRIMARIA',
+        
+        // PERSONAL PROYEC PAI
+        '1311' => 'PERSONAL PROYEC PAI',
+        '131101' => 'PROYECTO PERSONAL',
+        
+        // CAS/INTERCAS/PROYECTO COMUNITARIO
+        '131201' => 'CAS',
+        '131202' => 'INTERCAS',
+        '131203' => 'PROYECTO COMUNITARIO',
+        '131204' => 'MONOGRAFIA',
+        
+        // PRAE
+        '1313' => 'PRAE',
+        '131301' => 'BIENESTAR INSTITUCIONAL',
+        
+        // MODELO NACIONES UNIDAS TVS
+        '1314' => 'MODELO NACIONES UNIDAS TVS',
+        '131401' => 'MUN TVS',
+        
+        // MUN OTROS COLEGIOS
+        '1315' => 'MUN OTROS COLEGIOS',
+        '131501' => 'MUN OTROS COLEGIOS',
+        
+        // CONSEJERIA UNIVERSITARIA
+        '1316' => 'CONSEJERIA UNIVERSITARIA',
+        '131601' => 'CONSEJERIA UNIVERSITARIA',
+        
+        // EXHIBITION DE ARTE
+        '1317' => 'EXHIBITION DE ARTE',
+        '131701' => 'EXHIBITION DE ARTE',
+        
+        // PSICOLOGIA INSTITUCIONAL
+        '1318' => 'PSICOLOGIA INSTITUCIONAL',
+        '131801' => 'PSICOLOGIA INSTITUCIONAL',
+        '131802' => 'PSICOLOGIA TUTORIAS',
+        '131803' => 'CONSEJERIA ESTUDIANTIL',
+        
+        // TECNOLOGIA Y AUDIOVISUALES
+        '1319' => 'TECNOLOGIA Y AUDIOVISUALES',
+        '131901' => 'TECNOLOGIA INSTITUCIONAL',
+        '131902' => 'TECNOLOGIA INSTITUCIONAL',
+        '131903' => 'TECNOLOGIA INSTITUCIONAL',
+        '131904' => 'TECNOLOGIA INSTITUCIONAL',
+        
+        // EVENTOS Y AGASAJOS
+        '132001' => 'EVENTOS Y AGASAJOS PREESCOLAR',
+        '132002' => 'EVENTOS Y AGASAJOS PRIMARIA',
+        '132003' => 'EVENTOS Y AGASAJOS MEDIA',
+        '132004' => 'EVENTOS Y AGASAJOS ALTA',
+        '132005' => 'DIRECCION GENERAL',
+        
+        // CURSO PREICFES
+        '1321' => 'CURSO PREICFES',
+        '132101' => 'CURSO PREICFES',
     ];
 
     private $rubroMapping = [
@@ -81,6 +198,15 @@ class PresupuestoProcessorService
         $prefix = substr($centroCosto, 0, 2);
         
         return $this->sectionMapping[$prefix] ?? 'OTROS';
+    }
+
+    /**
+     * Método público para obtener el mapeo específico de centros de costo
+     * Útil para testing y debugging
+     */
+    public function getSpecificCenterMapping()
+    {
+        return $this->specificCenterMapping;
     }
 
     public function determineRubro($cuenta)
