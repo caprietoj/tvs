@@ -258,8 +258,11 @@
                         if (empty($budgetValue)) {
                             $budgetValue = $order->purchaseRequest->budget ?? '';
                         }
+                        
+                        // Formatear el presupuesto con su sección padre: "item padre -> rubro presupuestal"
+                        $budgetWithParent = \App\Helpers\BudgetHelper::getBudgetWithParentSection($budgetValue);
                     @endphp
-                    {{ $budgetValue }}
+                    {{ $budgetWithParent }}
                 </td>
                 <td class="bold">IMPTO AL CONSUMO</td>
                 <td class="right">$0</td>

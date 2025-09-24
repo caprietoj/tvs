@@ -1379,7 +1379,12 @@
             @if($showTaxColumn && $calculatedIndividualTaxes > 0)
             <tr>
                 <td class="label">PRESUPUESTO:</td>
-                <td class="value">{{ $budget ?? 'N/A' }}</td>
+                <td class="value">
+                    @php
+                        $budgetWithParent = \App\Helpers\BudgetHelper::getBudgetWithParentSection($budget ?? '');
+                    @endphp
+                    {{ $budgetWithParent ?: 'N/A' }}
+                </td>
                 <td class="label bold">Imp. Individuales</td>
                 <td class="value bold right">${{ number_format($calculatedIndividualTaxes, 0, ',', '.') }}</td>
             </tr>
@@ -1400,7 +1405,12 @@
             @else
             <tr>
                 <td class="label">PRESUPUESTO:</td>
-                <td class="value">{{ $budget ?? 'N/A' }}</td>
+                <td class="value">
+                    @php
+                        $budgetWithParent = \App\Helpers\BudgetHelper::getBudgetWithParentSection($budget ?? '');
+                    @endphp
+                    {{ $budgetWithParent ?: 'N/A' }}
+                </td>
                 @if($ipoconsumoType && $ipoconsumoLabel && !$hasItemLevelTaxes)
                 <td class="label bold">{{ $ipoconsumoLabel }}</td>
                 <td class="value bold right">${{ number_format($calculatedIpoconsumo, 0, ',', '.') }}</td>

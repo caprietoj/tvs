@@ -406,8 +406,11 @@
                         if (empty($budgetValue)) {
                             $budgetValue = $order->purchaseRequest->budget ?? '';
                         }
+                        
+                        // Formatear el presupuesto con su sección padre: "item padre -> rubro presupuestal"
+                        $budgetWithParent = \App\Helpers\BudgetHelper::getBudgetWithParentSection($budgetValue);
                     @endphp
-                    {{ $budgetValue }}
+                    {{ $budgetWithParent }}
                 </td>
                 @if($selectedQuotation && ($selectedQuotation->includes_ipoconsumo_8 || $selectedQuotation->includes_ipoconsumo_4))
                     <td class="bold">

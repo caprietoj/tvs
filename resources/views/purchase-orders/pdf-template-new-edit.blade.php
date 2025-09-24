@@ -335,7 +335,10 @@
                                                 @foreach($group['options'] as $option)
                                                     <option value="{{ $option }}" 
                                                             {{ ($customData['budget'] ?? '') == $option ? 'selected' : '' }}>
-                                                        {{ $option }}
+                                                        @php
+                                                            $budgetWithParent = \App\Helpers\BudgetHelper::getBudgetWithParentSection($option);
+                                                        @endphp
+                                                        {{ $budgetWithParent }}
                                                     </option>
                                                 @endforeach
                                             </optgroup>

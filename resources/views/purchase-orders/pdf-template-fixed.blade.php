@@ -176,7 +176,13 @@
             <td><strong>NIT:</strong></td>
             <td>{{ $customData['provider_nit'] ?? $order->provider->nit }}</td>
             <td><strong>Presupuesto:</strong></td>
-            <td>{{ $customData['budget'] ?? $order->budget_id ?? 'N/A' }}</td>
+            <td>
+                @php
+                    $budgetValue = $customData['budget'] ?? $order->budget_id ?? '';
+                    $budgetWithParent = \App\Helpers\BudgetHelper::getBudgetWithParentSection($budgetValue);
+                @endphp
+                {{ $budgetWithParent ?: 'N/A' }}
+            </td>
         </tr>
         <tr>
             <td><strong>Email:</strong></td>
