@@ -547,10 +547,11 @@ class QuotationItemSelectionController extends Controller
         try {
             // Usar el servicio de clasificación de secciones
             $sectionClassifier = new \App\Services\SectionClassifierService();
-            $directorEmail = $sectionClassifier->getDirectorEmail($purchaseRequest->section_area);
+            $totalAmount = $sectionClassifier->getTotalAmountFromPurchaseRequest($purchaseRequest);
+            $directorEmail = $sectionClassifier->getDirectorEmail($purchaseRequest->section_area, $totalAmount);
             
             // Obtener emails específicos de la sección
-            $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area);
+            $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area, $totalAmount);
             
             // Crear lista de todos los emails que deben ser notificados
             $allEmails = [];

@@ -961,7 +961,9 @@ class QuotationController extends Controller
             
             if ($quotationCount > 0 && $quotationCount < 3) {
                 // Obtener correos de la sección correspondiente
-                $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
+                $sectionClassifier = new \App\Services\SectionClassifierService();
+                $totalAmount = $sectionClassifier->getTotalAmountFromPurchaseRequest($purchaseRequest);
+                $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area, $totalAmount);
                 
                 if (!empty($sectionEmails)) {
                     // Enviar notificación de cotizaciones incompletas
@@ -1116,7 +1118,9 @@ class QuotationController extends Controller
             }
 
             // Obtener emails de la sección correspondiente
-            $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
+            $sectionClassifier = new \App\Services\SectionClassifierService();
+            $totalAmount = $sectionClassifier->getTotalAmountFromPurchaseRequest($purchaseRequest);
+            $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area, $totalAmount);
             
             // Obtener configuración dinámica
             $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
@@ -1203,7 +1207,9 @@ class QuotationController extends Controller
             ]);
 
             // Obtener emails de la sección correspondiente
-            $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
+            $sectionClassifier = new \App\Services\SectionClassifierService();
+            $totalAmount = $sectionClassifier->getTotalAmountFromPurchaseRequest($purchaseRequest);
+            $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area, $totalAmount);
             
             // Obtener configuración dinámica
             $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();

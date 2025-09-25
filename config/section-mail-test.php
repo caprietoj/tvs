@@ -27,7 +27,7 @@ return [
         'Diploma' => 'dp@test.com',
         'Administracion' => 'administrativedirector@test.com',
         'Administración' => 'administrativedirector@test.com', // Con acento
-        'Dirección General' => 'generaldirector@test.com',
+        'Dirección General' => 'generaldirector@tvs.edu.co',
         'CAS' => 'mpsilva@test.com',
         'Departamento de Apoyo' => 'psicologia2@test.com',
         'Biblioteca' => 'library@test.com',
@@ -100,8 +100,8 @@ return [
 
     // Correos de directores para aprobaciones
     'directors' => [
-        'academic' => 'generaldirector@test.com',
-        'administrative' => 'administrativedirector@test.com',
+        'academic' => 'generaldirector@tvs.edu.co',
+        'administrative' => 'administrativedirector@tvs.edu.co',
     ],
 
     // Correos adicionales que siempre deben ser notificados (independientemente de la sección)

@@ -30,5 +30,6 @@ class DatabaseSeeder extends Seeder
         $this->call(EmcRoleSeeder::class);
         $this->call(SpaceReservationPermissionSeeder::class);
         $this->call(ComprasUserSeeder::class);
+        $this->call(DirectorGeneralRoleSeeder::class);
     }
 }

@@ -40,8 +40,8 @@ class FinalPreApprovalVerification extends Command
         foreach ($problemSections as $section) {
             $this->line("📋 Sección: {$section}");
             
-            $directorEmail = $classifier->getDirectorEmail($section);
-            $sectionEmails = $classifier->getSectionEmails($section);
+            $directorEmail = $classifier->getDirectorEmail($section, null);
+            $sectionEmails = $classifier->getSectionEmails($section, null);
             $classification = $classifier->classifySection($section);
             
             $this->line("   ├─ Director: {$directorEmail}");

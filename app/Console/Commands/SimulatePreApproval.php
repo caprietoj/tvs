@@ -63,8 +63,9 @@ class SimulatePreApproval extends Command
 
         // Simular el proceso de pre-aprobación
         $sectionClassifier = new SectionClassifierService();
-        $directorEmail = $sectionClassifier->getDirectorEmail($purchaseRequest->section_area);
-        $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area);
+        $totalAmount = $sectionClassifier->getTotalAmountFromPurchaseRequest($purchaseRequest);
+        $directorEmail = $sectionClassifier->getDirectorEmail($purchaseRequest->section_area, $totalAmount);
+        $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area, $totalAmount);
         
         // Crear lista de todos los emails que deben ser notificados
         $allEmails = [];

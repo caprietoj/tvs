@@ -243,10 +243,11 @@ class QuotationApprovalController extends Controller
         try {
             // Determinar el tipo de sección y enviar correo al director correspondiente
             $sectionClassifier = new \App\Services\SectionClassifierService();
-            $directorEmail = $sectionClassifier->getDirectorEmail($purchaseRequest->section_area);
+            $totalAmount = $sectionClassifier->getTotalAmountFromPurchaseRequest($purchaseRequest);
+            $directorEmail = $sectionClassifier->getDirectorEmail($purchaseRequest->section_area, $totalAmount);
             
             // Obtener emails específicos de la sección
-            $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area);
+            $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area, $totalAmount);
             
             // Crear lista de todos los emails que deben ser notificados
             $allEmails = [];
@@ -293,7 +294,8 @@ class QuotationApprovalController extends Controller
             
             // CORREGIDO: Enviar notificación SOLO al director de sección (no a coordinadores ni usuario)
             // Solo obtener el email del director específico para la sección
-            $directorEmail = $sectionClassifier->getDirectorEmail($purchaseRequest->section_area);
+            $totalAmount = $sectionClassifier->getTotalAmountFromPurchaseRequest($purchaseRequest);
+            $directorEmail = $sectionClassifier->getDirectorEmail($purchaseRequest->section_area, $totalAmount);
             
             if ($directorEmail) {
                 Notification::route('mail', $directorEmail)
@@ -542,11 +544,11 @@ class QuotationApprovalController extends Controller
             $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
             
             // Obtener emails de la sección para notificación de aprobación final
-            $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
-            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
-            
             // Calcular total de la selección mixta
             $totalAmount = $mixedSelections->sum('total_price');
+            $sectionClassifier = new \App\Services\SectionClassifierService();
+            $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area, $totalAmount);
+            $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
             
             \Log::info('Configuración de emails para notificaciones', [
                 'section_area' => $purchaseRequest->section_area,
@@ -722,7 +724,9 @@ class QuotationApprovalController extends Controller
             
             // Obtener emails del solicitante y de la sección
             $requesterEmail = $purchaseRequest->user->email ?? null;
-            $sectionEmails = $this->getSectionEmails($purchaseRequest->section_area);
+            $sectionClassifier = new \App\Services\SectionClassifierService();
+            $totalAmount = $sectionClassifier->getTotalAmountFromPurchaseRequest($purchaseRequest);
+            $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area, $totalAmount);
             $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
             
             \Log::info('Configuración de emails para notificaciones de rechazo', [

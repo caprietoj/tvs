@@ -45,16 +45,42 @@ class SectionClassifierService
 
     /**
      * Obtener el correo del director correspondiente según la clasificación de la sección
+     * NUEVA FUNCIONALIDAD: Solo incluir generaldirector@tvs.edu.co si el monto es >= $500.000
      *
      * @param string $sectionName Nombre de la sección
+     * @param float $totalAmount Monto total de la solicitud (opcional)
      * @return string Correo electrónico del director
      */
-    public function getDirectorEmail(string $sectionName): string
+    public function getDirectorEmail(string $sectionName, ?float $totalAmount = null): string
     {
+        // EXCEPCIÓN ESPECIAL: CAS siempre va al director administrativo
+        if (strtoupper(trim($sectionName)) === 'CAS') {
+            \Illuminate\Support\Facades\Log::info("Notificación CAS dirigida al director administrativo", [
+                'section' => $sectionName,
+                'director_email' => 'administrativedirector@tvs.edu.co',
+                'reason' => 'CAS_SPECIAL_ROUTING'
+            ]);
+            return DynamicSectionEmailsService::getConfig('directors.administrative');
+        }
+        
         $classification = $this->classifySection($sectionName);
         
         if ($classification == 'academic') {
-            return DynamicSectionEmailsService::getConfig('directors.academic');
+            $directorEmail = DynamicSectionEmailsService::getConfig('directors.academic');
+            
+            // FILTRO POR MONTO: Solo enviar a generaldirector@tvs.edu.co si el monto es >= $500.000
+            if ($directorEmail === 'generaldirector@tvs.edu.co' && $totalAmount !== null && $totalAmount < 500000) {
+                \Illuminate\Support\Facades\Log::info("Notificación a generaldirector@tvs.edu.co omitida - Monto insuficiente", [
+                    'section' => $sectionName,
+                    'amount' => $totalAmount,
+                    'minimum_required' => 500000,
+                    'director_email' => $directorEmail
+                ]);
+                // Retornar email administrativo como alternativa
+                return DynamicSectionEmailsService::getConfig('directors.administrative');
+            }
+            
+            return $directorEmail;
         }
         
         if ($classification == 'administrative') {
@@ -92,12 +118,25 @@ class SectionClassifierService
 
     /**
      * Obtener los correos específicos de una sección para notificaciones de pre-aprobación
+     * NUEVA FUNCIONALIDAD: Solo incluir generaldirector@tvs.edu.co si el monto es >= $500.000
      *
      * @param string $sectionName Nombre de la sección
+     * @param float $totalAmount Monto total de la solicitud (opcional)
      * @return array Lista de correos electrónicos de la sección
      */
-    public function getSectionEmails(string $sectionName): array
+    public function getSectionEmails(string $sectionName, ?float $totalAmount = null): array
     {
+        // EXCEPCIÓN ESPECIAL: CAS siempre envía únicamente al director administrativo
+        if (strtoupper(trim($sectionName)) === 'CAS') {
+            $administrativeDirectorEmail = DynamicSectionEmailsService::getConfig('directors.administrative');
+            \Illuminate\Support\Facades\Log::info("Notificación CAS dirigida únicamente al director administrativo", [
+                'section' => $sectionName,
+                'emails' => [$administrativeDirectorEmail],
+                'reason' => 'CAS_EXCLUSIVE_ROUTING'
+            ]);
+            return [$administrativeDirectorEmail];
+        }
+        
         $sections = DynamicSectionEmailsService::getConfig('sections', []);
         $result = [];
         
@@ -137,6 +176,27 @@ class SectionClassifierService
             }
         }
         
+        // FILTRO POR MONTO: Remover generaldirector@tvs.edu.co si el monto es < $500.000
+        if ($totalAmount !== null && $totalAmount < 500000) {
+            $originalCount = count($result);
+            $result = array_filter($result, function($email) {
+                return $email !== 'generaldirector@tvs.edu.co';
+            });
+            
+            if (count($result) < $originalCount) {
+                \Illuminate\Support\Facades\Log::info("Notificación a generaldirector@tvs.edu.co omitida de lista de sección - Monto insuficiente", [
+                    'section' => $sectionName,
+                    'amount' => $totalAmount,
+                    'minimum_required' => 500000,
+                    'emails_before' => $originalCount,
+                    'emails_after' => count($result)
+                ]);
+            }
+            
+            // Reindexar el array después del filtrado
+            $result = array_values($result);
+        }
+        
         // Asegurarse que el correo de compras esté siempre incluido según la configuración activa
         $alwaysNotify = DynamicSectionEmailsService::getConfig('always_notify', []);
         foreach ($alwaysNotify as $email) {
@@ -172,5 +232,71 @@ class SectionClassifierService
         // \Illuminate\Support\Facades\Log::info("Filtrado de emails para materiales/fotocopias - Originales: " . implode(', ', $emails) . " | Filtrados: " . implode(', ', $filteredEmails) . " | Excluidos: " . implode(', ', $excludedEmails));
         
         return array_values($filteredEmails); // Reindexar el array
+    }
+
+    /**
+     * Obtener el monto total de una solicitud de compra para evaluar si debe notificar al director general
+     *
+     * @param \App\Models\PurchaseRequest $purchaseRequest Solicitud de compra
+     * @return float Monto total de la solicitud
+     */
+    public function getTotalAmountFromPurchaseRequest($purchaseRequest): float
+    {
+        $totalAmount = 0;
+
+        try {
+            // Primero, intentar obtener el monto de la cotización seleccionada
+            if ($purchaseRequest->selectedQuotation) {
+                $totalAmount = floatval($purchaseRequest->selectedQuotation->total_amount ?? 0);
+                \Illuminate\Support\Facades\Log::info("Monto obtenido de cotización seleccionada", [
+                    'request_id' => $purchaseRequest->id,
+                    'quotation_id' => $purchaseRequest->selectedQuotation->id,
+                    'amount' => $totalAmount
+                ]);
+            }
+            
+            // Si no hay cotización seleccionada, buscar en selecciones mixtas
+            if ($totalAmount <= 0) {
+                $mixedSelections = $purchaseRequest->mixedSelections;
+                if ($mixedSelections && $mixedSelections->count() > 0) {
+                    $totalAmount = $mixedSelections->sum('total_price');
+                    \Illuminate\Support\Facades\Log::info("Monto obtenido de selecciones mixtas", [
+                        'request_id' => $purchaseRequest->id,
+                        'selections_count' => $mixedSelections->count(),
+                        'amount' => $totalAmount
+                    ]);
+                }
+            }
+            
+            // Como última opción, usar el monto de la primera cotización disponible
+            if ($totalAmount <= 0) {
+                $firstQuotation = $purchaseRequest->quotations()->first();
+                if ($firstQuotation) {
+                    $totalAmount = floatval($firstQuotation->total_amount ?? 0);
+                    \Illuminate\Support\Facades\Log::info("Monto obtenido de primera cotización disponible", [
+                        'request_id' => $purchaseRequest->id,
+                        'quotation_id' => $firstQuotation->id,
+                        'amount' => $totalAmount
+                    ]);
+                }
+            }
+
+            // Para servicios sin cotización, intentar obtener desde service_budget
+            if ($totalAmount <= 0 && $purchaseRequest->type === 'services' && isset($purchaseRequest->service_budget)) {
+                $totalAmount = floatval($purchaseRequest->service_budget);
+                \Illuminate\Support\Facades\Log::info("Monto obtenido de presupuesto de servicio", [
+                    'request_id' => $purchaseRequest->id,
+                    'amount' => $totalAmount
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Error al obtener monto total de solicitud", [
+                'request_id' => $purchaseRequest->id ?? 'unknown',
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return $totalAmount;
     }
 }
