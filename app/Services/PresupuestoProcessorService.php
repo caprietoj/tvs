@@ -9,146 +9,156 @@ use Maatwebsite\Excel\Facades\Excel;
 class PresupuestoProcessorService
 {
     private $sectionMapping = [
-        '11' => 'PREESCOLAR Y PRIMARIA',
+        '130' => 'PREESCOLAR Y PRIMARIA',  // Corregido: 130 en lugar de 11
         '12' => 'ESCUELA MEDIA', 
-        '13' => 'ALTA',
+        '132' => 'ALTA',  // Más específico: 132xxx para eventos y agasajos de alta
+        '07' => 'PAI',
+        '08' => 'PEP',
+        '1304' => 'BIBLIOTECA',  // Más específico: 1304xxx para biblioteca
+        '05' => 'DEPORTES',
+        '131' => 'CAS',  // 131xxx para CAS/INTERCAS/Proyecto Comunitario
+        '15' => 'TECNOLOGIA INSTITUCIONAL',
         '01' => 'ADMINISTRACION',
         '02' => 'ADMINISTRACION',
         '03' => 'DIRECCION GENERAL',
-        '04' => 'BIBLIOTECA',
-        '05' => 'DEPORTES',
-        '06' => 'CAS',
-        '07' => 'PAI',
-        '08' => 'PEP',
         '09' => 'PSICOLOGIA INSTITUCIONAL',
-        '15' => 'TECNOLOGIA INSTITUCIONAL',
     ];
+
+    // Lista de centros de costo válidos según archivos oficiales
+    private $validCostCenters = [
+        // CAPACITACION BACHILLERATO INTERNACIONAL
+        '130101', '130102', '130103', '130104',
+        // CAPACITACIONES OTROS
+        '1302', '130201', '130202', '130203', '130204', '130205',
+        // MATERIAL IMPORTADO
+        '130301', '130302', '130303', '130304', '130305',
+        // BIBLIOTECA
+        '1304', '130401', '130402', '130403', '130404', '130405', '130406',
+        // MATERIALES
+        '1305', '130501', '130502', '130503', '130504',
+        // DEPORTIVOS/UCB
+        '1306', '130601', '130602', '130603', '130604', '130605',
+        // MUSICALES
+        '1307', '130701', '130702', '130703', '130704',
+        // PART TIME TEACHER/ REEMPLAZOS
+        '1308', '130801', '130802', '130803', '130804',
+        // DOTACION
+        '1309', '130901', '130902', '130903', '130904',
+        // EXHIBITION PEP
+        '1310', '131001',
+        // PERSONAL PROYEC PAI
+        '1311', '131101',
+        // CAS/INTERCAS/PROYECTO COMUNITARIO
+        '131201', '131202', '131203', '131204',
+        // PRAE
+        '1313', '131301',
+        // MODELO NACIONES UNIDAS TVS
+        '1314', '131401',
+        // MUN OTROS COLEGIOS
+        '1315', '131501',
+        // CONSEJERIA UNIVERSITARIA
+        '1316', '131601',
+        // EXHIBITION DE ARTE
+        '1317', '131701',
+        // PSICOLOGIA INSTITUCIONAL
+        '1318', '131801', '131802', '131803',
+        // TECNOLOGIA Y AUDIVISUALES
+        '1319', '131901', '131902', '131903', '131904',
+        // EVENTOS Y AGASAJOS
+        '132001', '132002', '132003', '132004', '132005',
+        // CURSO PREICFES
+        '1321', '132101',
+    ];
+
+    /**
+     * Valida si un centro de costo es válido según los archivos oficiales
+     */
+    public function isValidCostCenter($centroCosto)
+    {
+        return in_array($centroCosto, $this->validCostCenters);
+    }
 
     // Mapeo específico para centros de costo que requieren clasificación especial
     private $specificCenterMapping = [
-        // CAPACITACION BACHILLERATO INTERNACIONAL
-        '130101' => 'CAPACITACION PREESCOLAR',
-        '130102' => 'CAPACITACION PRIMARIA',
-        '130103' => 'CAPACITACION MEDIA',
-        '130104' => 'CAPACITACION ALTA',
+        // CAPACITACION BACHILLERATO INTERNACIONAL - BASADO EN DATOS REALES
+        '130101' => 'PREESCOLAR Y PRIMARIA', // Capacitación
+        '130102' => 'CAPACITACION PRIMARIA', // No encontrado en datos
+        '130103' => 'CAPACITACION MEDIA', // No encontrado en datos
+        '130104' => 'ALTA', // Capacitación
         
-        // CAPACITACIONES OTROS
-        '1302' => 'CAPACITACIONES OTROS',
-        '130201' => 'CAPACITACIONES OTROS PREESCOLAR',
-        '130202' => 'CAPACITACIONES OTROS PRIMARIA',
-        '130203' => 'CAPACITACIONES OTROS MEDIA',
-        '130204' => 'CAPACITACIONES OTROS ALTA',
-        '130205' => 'CAPACITACIONES OTROS PEP',
+        // CAPACITACIONES OTROS - BASADO EN DATOS REALES
+        '130201' => 'PREESCOLAR Y PRIMARIA', // Capacitación
+        '130202' => 'PREESCOLAR Y PRIMARIA', // Capacitación
+        '130203' => 'PAI', // Capacitación
+        '130204' => 'ALTA', // Capacitación
+        '130205' => 'PEP', // Capacitación
         
-        // MATERIAL IMPORTADO
-        '130301' => 'MATERIAL IMPORTADO PREESCOLAR',
-        '130302' => 'MATERIAL IMPORTADO PRIMARIA',
-        '130303' => 'MATERIAL IMPORTADO MEDIA',
-        '130304' => 'MATERIAL IMPORTADO ALTA',
-        '130305' => 'MATERIAL IMPORTADO PEP',
+        // MATERIAL IMPORTADO - BASADO EN DATOS REALES
+        '130301' => 'PREESCOLAR Y PRIMARIA', // Material Importado
+        '130302' => 'PREESCOLAR Y PRIMARIA', // Material Importado
+        '130303' => 'ESCUELA MEDIA', // Material Importado
+        '130304' => 'ALTA', // Material Importado
+        '130305' => 'PEP', // Material Importado
         
-        // BIBLIOTECA
-        '1304' => 'BIBLIOTECA',
-        '130401' => 'BIBLIOTECA',
-        '130402' => 'BIBLIOTECA',
-        '130403' => 'BIBLIOTECA',
-        '130404' => 'BIBLIOTECA',
-        '130405' => 'BIBLIOTECA',
-        '130406' => 'BIBLIOTECA',
+        // BIBLIOTECA - BASADO EN DATOS REALES
+        '130401' => 'PREESCOLAR Y PRIMARIA', // Biblioteca
+        '130403' => 'BIBLIOTECA', // Biblioteca
+        '130404' => 'ALTA', // Biblioteca
+        '130405' => 'BIBLIOTECA', // Biblioteca
         
-        // MATERIALES
-        '1305' => 'MATERIALES',
-        '130501' => 'MATERIALES PREESCOLAR',
-        '130502' => 'MATERIALES PRIMARIA',
-        '130503' => 'MATERIALES MEDIA',
-        '130504' => 'MATERIALES ALTA',
+        // MATERIALES - BASADO EN DATOS REALES
+        '130501' => 'PREESCOLAR Y PRIMARIA', // Materiales
+        '130502' => 'PREESCOLAR Y PRIMARIA', // Materiales
+        '130503' => 'ESCUELA MEDIA', // Materiales
+        '130504' => 'ALTA', // Materiales
         
-        // DEPORTIVOS/UCB
-        '1306' => 'DEPORTIVOS/UCB',
-        '130601' => 'DEPORTES',
-        '130602' => 'DEPORTES',
-        '130603' => 'DEPORTES',
-        '130604' => 'DEPORTES',
-        '130605' => 'DEPORTES',
+        // DEPORTIVOS - BASADO EN DATOS REALES
+        '130605' => 'DEPORTES', // Deportes
         
-        // MUSICALES
-        '1307' => 'MUSICALES',
-        '130701' => 'MUSICALES PREESCOLAR',
-        '130702' => 'MUSICALES PRIMARIA',
-        '130703' => 'MUSICALES MEDIA',
-        '130704' => 'MUSICALES ALTA',
+        // MUSICALES - BASADO EN DATOS REALES
+        '130702' => 'PREESCOLAR Y PRIMARIA', // Musicales
+        '130703' => 'ESCUELA MEDIA', // Musicales
         
-        // PART TIME TEACHER/REEMPLAZOS
-        '1308' => 'PART TIME TEACHER/ REEMPLAZOS',
-        '130801' => 'PART TIME PREESCOLAR',
-        '130802' => 'PART TIME PRIMARIA',
-        '130803' => 'PART TIME MEDIA',
-        '130804' => 'PART TIME ALTA',
+        // PART TIME TEACHER - BASADO EN DATOS REALES
+        '130801' => 'PREESCOLAR Y PRIMARIA', // Part time
+        '130804' => 'ALTA', // Part time
         
-        // DOTACION
-        '1309' => 'DOTACION',
-        '130901' => 'DOTACION',
-        '130902' => 'DOTACION',
-        '130903' => 'DOTACION',
-        '130904' => 'DOTACION',
+        // DOTACION - BASADO EN DATOS REALES (130904 aparece en múltiples secciones)
+        // Se asigna a PREESCOLAR Y PRIMARIA como principal
+        '130904' => 'PREESCOLAR Y PRIMARIA', // Dotación (también ESCUELA MEDIA, ALTA, DEPORTES)
         
-        // EXHIBITION PEP
-        '1310' => 'EXHIBITION PEP',
-        '131001' => 'EXHIBITION PEP PRIMARIA',
+        // EXHIBITION PEP - BASADO EN DATOS REALES
+        '131001' => 'PEP', // Exhibición PEP
         
-        // PERSONAL PROYEC PAI
-        '1311' => 'PERSONAL PROYEC PAI',
-        '131101' => 'PROYECTO PERSONAL',
+        // PERSONAL PROJECT PAI - BASADO EN DATOS REALES
+        '131101' => 'PAI', // Personal Project PAI
         
-        // CAS/INTERCAS/PROYECTO COMUNITARIO
-        '131201' => 'CAS',
-        '131202' => 'INTERCAS',
-        '131203' => 'PROYECTO COMUNITARIO',
-        '131204' => 'MONOGRAFIA',
+        // CAS/INTERCAS/PROYECTO COMUNITARIO - BASADO EN DATOS REALES
+        '131201' => 'CAS', // Confirmado en datos reales
+        '131203' => 'PAI', // Proyecto comunitario
         
-        // PRAE
-        '1313' => 'PRAE',
-        '131301' => 'BIENESTAR INSTITUCIONAL',
+        // MODELO NACIONES UNIDAS - BASADO EN DATOS REALES
+        '131401' => 'MUN', // MUN
         
-        // MODELO NACIONES UNIDAS TVS
-        '1314' => 'MODELO NACIONES UNIDAS TVS',
-        '131401' => 'MUN TVS',
+        // PSICOLOGIA INSTITUCIONAL - BASADO EN DATOS REALES
+        '131801' => 'PSICOLOGIA INSTITUCIONAL', // Confirmado
+        '131803' => 'CONSEJERIA ESTUDIANTIL', // Confirmado
         
-        // MUN OTROS COLEGIOS
-        '1315' => 'MUN OTROS COLEGIOS',
-        '131501' => 'MUN OTROS COLEGIOS',
+        // TECNOLOGIA INSTITUCIONAL - BASADO EN DATOS REALES
+        '131901' => 'TECNOLOGIA INSTITUCIONAL', // Confirmado
+        '131902' => 'TECNOLOGIA INSTITUCIONAL', // Confirmado
+        '131903' => 'TECNOLOGIA INSTITUCIONAL', // Confirmado
+        '131904' => 'TECNOLOGIA INSTITUCIONAL', // Confirmado
         
-        // CONSEJERIA UNIVERSITARIA
-        '1316' => 'CONSEJERIA UNIVERSITARIA',
-        '131601' => 'CONSEJERIA UNIVERSITARIA',
+        // EVENTOS - CORRECCIONES CRÍTICAS BASADAS EN DATOS REALES
+        '132001' => 'PREESCOLAR Y PRIMARIA', // Eventos Preescolar
+        '132002' => 'PREESCOLAR Y PRIMARIA', // Eventos Primaria
+        '132003' => 'ESCUELA MEDIA', // Eventos Media
+        '132004' => 'ALTA', // Eventos Alta
+        '132005' => 'DIRECCION GENERAL', // Dirección General - Confirmado
         
-        // EXHIBITION DE ARTE
-        '1317' => 'EXHIBITION DE ARTE',
-        '131701' => 'EXHIBITION DE ARTE',
-        
-        // PSICOLOGIA INSTITUCIONAL
-        '1318' => 'PSICOLOGIA INSTITUCIONAL',
-        '131801' => 'PSICOLOGIA INSTITUCIONAL',
-        '131802' => 'PSICOLOGIA TUTORIAS',
-        '131803' => 'CONSEJERIA ESTUDIANTIL',
-        
-        // TECNOLOGIA Y AUDIOVISUALES
-        '1319' => 'TECNOLOGIA Y AUDIOVISUALES',
-        '131901' => 'TECNOLOGIA INSTITUCIONAL',
-        '131902' => 'TECNOLOGIA INSTITUCIONAL',
-        '131903' => 'TECNOLOGIA INSTITUCIONAL',
-        '131904' => 'TECNOLOGIA INSTITUCIONAL',
-        
-        // EVENTOS Y AGASAJOS
-        '132001' => 'EVENTOS Y AGASAJOS PREESCOLAR',
-        '132002' => 'EVENTOS Y AGASAJOS PRIMARIA',
-        '132003' => 'EVENTOS Y AGASAJOS MEDIA',
-        '132004' => 'EVENTOS Y AGASAJOS ALTA',
-        '132005' => 'DIRECCION GENERAL',
-        
-        // CURSO PREICFES
-        '1321' => 'CURSO PREICFES',
-        '132101' => 'CURSO PREICFES',
+        // PREPARACIÓN PRUEBAS SABER - BASADO EN DATOS REALES
+        '132101' => 'PREPARACION PRUEBAS SABER', // Nuevo descubrimiento
     ];
 
     private $rubroMapping = [
@@ -169,6 +179,21 @@ class PresupuestoProcessorService
         '6170' => 'Seguros',
         '6175' => 'Servicios',
         '6180' => 'Impuestos',
+    ];
+
+    // Mapeo específico de centros de costo que requieren rubro específico
+    private $centroCostoToRubroMapping = [
+        '132005' => 'EVENTOS', // Centro 132005 (Dirección General) debe ir a rubro EVENTOS
+        '132001' => 'EVENTOS', // Eventos Preescolar
+        '132002' => 'EVENTOS', // Eventos Primaria  
+        '132003' => 'EVENTOS', // Eventos Media
+        '132004' => 'EVENTOS', // Eventos Alta
+        '130405' => 'BIBLIOTECA', // Centro 130405 debe ir específicamente a rubro BIBLIOTECA
+        '130501' => 'MATERIALES', // Centro 130501 debe ir a rubro MATERIALES (Preescolar)
+        '130502' => 'MATERIALES', // Centro 130502 debe ir a rubro MATERIALES (Primaria)
+        '130503' => 'MATERIALES', // Centro 130503 debe ir a rubro MATERIALES (Media)
+        '130504' => 'MATERIALES', // Centro 130504 debe ir a rubro MATERIALES (Alta)
+        '131203' => 'Proyecto comunitario', // Centro 131203 debe ir a rubro Proyecto comunitario
     ];
 
     public function determineSection($centroCosto)
@@ -209,13 +234,18 @@ class PresupuestoProcessorService
         return $this->specificCenterMapping;
     }
 
-    public function determineRubro($cuenta)
+    public function determineRubro($cuenta, $centroCosto = null)
     {
         if (empty($cuenta)) return 'Sin Clasificar';
         
         $cuenta = trim((string)$cuenta);
         
-        // Intentar buscar en la base de datos primero
+        // PRIMERO: Verificar mapeo específico por centro de costo
+        if (!empty($centroCosto) && isset($this->centroCostoToRubroMapping[$centroCosto])) {
+            return $this->centroCostoToRubroMapping[$centroCosto];
+        }
+        
+        // SEGUNDO: Intentar buscar en la base de datos
         try {
             $cuentaModel = \App\Models\Cuenta::where('codigo', $cuenta)->first();
             if ($cuentaModel && $cuentaModel->rubro) {
@@ -225,7 +255,7 @@ class PresupuestoProcessorService
             // Si hay error con la BD, usar mapeo estático
         }
         
-        // Fallback: usar mapeo estático
+        // TERCERO: Fallback usar mapeo estático por cuenta
         // Convertir de hexadecimal si es necesario
         if (preg_match('/[A-Fa-f]/', $cuenta)) {
             try {
@@ -287,9 +317,39 @@ class PresupuestoProcessorService
                     continue;
                 }
                 
-                // Clasificar sección y rubro
-                $item['seccion'] = $this->determineSection($item['centro_costo']);
-                $item['rubro'] = $this->determineRubro($item['cuenta']);
+                // NUEVO: Verificar validez del centro de costo pero CONSERVAR todos los registros
+                $is_valid_center = true;
+                if (!empty($item['centro_costo'])) {
+                    $is_valid_center = $this->isValidCostCenter($item['centro_costo']);
+                    
+                    if (!$is_valid_center) {
+                        error_log("Centro de costo inválido CONSERVADO: {$row[12]} en fila " . ($index + 1));
+                    }
+                }
+
+                // TAMBIÉN: Verificar y marcar registros con datos de prueba
+                $descripcion_lower = strtolower($item['descripcion'] ?? '');
+                $is_test_data = strpos($descripcion_lower, 'revision manual') !== false || 
+                               strpos($descripcion_lower, 'test') !== false ||
+                               strpos($descripcion_lower, 'prueba') !== false;
+                
+                if ($is_test_data) {
+                    $is_valid_center = false;
+                    error_log("Registro de prueba CONSERVADO: {$item['descripcion']} en fila " . ($index + 1));
+                }
+                
+                // Agregar bandera de validez al item
+                $item['is_valid_center'] = $is_valid_center;
+                
+                // Clasificar sección y rubro para TODOS los registros
+                if ($is_valid_center) {
+                    $item['seccion'] = $this->determineSection($item['centro_costo']);
+                    $item['rubro'] = $this->determineRubro($item['cuenta'], $item['centro_costo']);
+                } else {
+                    // Para centros inválidos, usar clasificaciones especiales pero conservar el registro
+                    $item['seccion'] = 'OTROS - REVISION';
+                    $item['rubro'] = 'DATOS NO OFICIALES';
+                }
                 
                 $processedData[] = $item;
                 $processedCount++;

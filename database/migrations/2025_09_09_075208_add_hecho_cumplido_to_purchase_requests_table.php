@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('purchase_requests', function (Blueprint $table) {
-            $table->boolean('hecho_cumplido')->default(false)->after('delivery_notes');
+            $table->boolean('hecho_cumplido')->default(false)->after('observations');
             $table->timestamp('hecho_cumplido_at')->nullable()->after('hecho_cumplido');
             $table->unsignedBigInteger('hecho_cumplido_by')->nullable()->after('hecho_cumplido_at');
             

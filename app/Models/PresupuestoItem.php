@@ -13,7 +13,7 @@ class PresupuestoItem extends Model
         'fuente', 'documento', 'fecha', 'cuenta', 'seccion', 'rubro',
         'descripcion', 'valor', 'valor_moneda', 'cliente_proveedor',
         'nombre_cliente_proveedor', 'tercero', 'nombre_tercero',
-        'auxiliar', 'centro_costo', 'es_total'
+        'auxiliar', 'centro_costo', 'is_valid_center', 'es_total'
     ];
 
     protected $casts = [
@@ -21,6 +21,7 @@ class PresupuestoItem extends Model
         'valor' => 'decimal:2',
         'valor_moneda' => 'decimal:2',
         'es_total' => 'boolean',
+        'is_valid_center' => 'boolean',
     ];
 
     // Scopes para filtrar datos
@@ -47,6 +48,18 @@ class PresupuestoItem extends Model
     public function scopePorFechas($query, $fechaInicio, $fechaFin)
     {
         return $query->whereBetween('fecha', [$fechaInicio, $fechaFin]);
+    }
+
+    // NUEVO: Scope para filtrar solo centros válidos (para Detallado Secciones 1)
+    public function scopeSoloCentrosValidos($query)
+    {
+        return $query->where('is_valid_center', true);
+    }
+
+    // NUEVO: Scope para incluir todos los centros (para otras vistas)
+    public function scopeTodosCentros($query)
+    {
+        return $query; // No aplica filtro
     }
 
     // Relaciones con las tablas de referencia

@@ -1291,15 +1291,15 @@
                                         <tr>
                                             <td><strong>Total Ingresos</strong></td>
                                             <td class="number-cell">${{ number_format($budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'], 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['junio'] ?? 0, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['julio'] ?? 0, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['agosto'] ?? 0, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['septiembre'] ?? 0, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['octubre'] ?? 0, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['noviembre'] ?? 0, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['diciembre'] ?? 0, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['enero'] ?? 0, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalesPorMes['febrero'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Ingresos" data-mes="junio">${{ number_format($totalesPorMes['junio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Ingresos" data-mes="julio">${{ number_format($totalesPorMes['julio'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Ingresos" data-mes="agosto">${{ number_format($totalesPorMes['agosto'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Ingresos" data-mes="septiembre">${{ number_format($totalesPorMes['septiembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Ingresos" data-mes="octubre">${{ number_format($totalesPorMes['octubre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Ingresos" data-mes="noviembre">${{ number_format($totalesPorMes['noviembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Ingresos" data-mes="diciembre">${{ number_format($totalesPorMes['diciembre'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Ingresos" data-mes="enero">${{ number_format($totalesPorMes['enero'] ?? 0, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Ingresos" data-mes="febrero">${{ number_format($totalesPorMes['febrero'] ?? 0, 0, ',', '.') }}</td>
                                         </tr>
                                         @php
                                             // Obtener valores de Cafeteria desde CONTRATOS EXTERNOS
@@ -1317,15 +1317,15 @@
                                         <tr>
                                             <td><strong>Utilidad cafeteria</strong></td>
                                             <td class="number-cell"></td>
-                                            <td class="number-cell calculated">${{ number_format($cafeteriaJunio, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($cafeteriaJulio, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($cafeteriaAgosto, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($cafeteriaSeptiembre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($cafeteriaOctubre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($cafeteriaNoviembre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($cafeteriaDiciembre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($cafeteriaEnero, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($cafeteriaFebrero, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Utilidad cafeteria" data-mes="junio">${{ number_format($cafeteriaJunio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Utilidad cafeteria" data-mes="julio">${{ number_format($cafeteriaJulio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Utilidad cafeteria" data-mes="agosto">${{ number_format($cafeteriaAgosto, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Utilidad cafeteria" data-mes="septiembre">${{ number_format($cafeteriaSeptiembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Utilidad cafeteria" data-mes="octubre">${{ number_format($cafeteriaOctubre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Utilidad cafeteria" data-mes="noviembre">${{ number_format($cafeteriaNoviembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Utilidad cafeteria" data-mes="diciembre">${{ number_format($cafeteriaDiciembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Utilidad cafeteria" data-mes="enero">${{ number_format($cafeteriaEnero, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Utilidad cafeteria" data-mes="febrero">${{ number_format($cafeteriaFebrero, 0, ',', '.') }}</td>
                                         </tr>
                                         @php
                                             // Obtener valores de Transporte desde CONTRATOS EXTERNOS
@@ -1342,29 +1342,28 @@
                                         <tr>
                                             <td><strong>Proyectado utilidad transporte</strong></td>
                                             <td class="number-cell"></td>
-                                            <td class="number-cell calculated">${{ number_format($transporteJunio, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($transporteJulio, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($transporteAgosto, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($transporteSeptiembre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($transporteOctubre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($transporteNoviembre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($transporteDiciembre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($transporteEnero, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($transporteFebrero, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Proyectado utilidad transporte" data-mes="junio">${{ number_format($transporteJunio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Proyectado utilidad transporte" data-mes="julio">${{ number_format($transporteJulio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Proyectado utilidad transporte" data-mes="agosto">${{ number_format($transporteAgosto, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Proyectado utilidad transporte" data-mes="septiembre">${{ number_format($transporteSeptiembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Proyectado utilidad transporte" data-mes="octubre">${{ number_format($transporteOctubre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Proyectado utilidad transporte" data-mes="noviembre">${{ number_format($transporteNoviembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Proyectado utilidad transporte" data-mes="diciembre">${{ number_format($transporteDiciembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Proyectado utilidad transporte" data-mes="enero">${{ number_format($transporteEnero, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Proyectado utilidad transporte" data-mes="febrero">${{ number_format($transporteFebrero, 0, ',', '.') }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Actividades Curriculares</strong></td>
                                             <td class="number-cell"></td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
-                                            <td class="number-cell editable">$-</td>
+                                            <td class="number-cell resumen-clickable" data-concepto="Actividades Curriculares" data-mes="junio">{{ $actividadesCurriculares['junio'] > 0 ? '$'.number_format($actividadesCurriculares['junio'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell resumen-clickable" data-concepto="Actividades Curriculares" data-mes="julio">{{ $actividadesCurriculares['julio'] > 0 ? '$'.number_format($actividadesCurriculares['julio'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell resumen-clickable" data-concepto="Actividades Curriculares" data-mes="agosto">{{ $actividadesCurriculares['agosto'] > 0 ? '$'.number_format($actividadesCurriculares['agosto'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell resumen-clickable" data-concepto="Actividades Curriculares" data-mes="septiembre">{{ $actividadesCurriculares['septiembre'] > 0 ? '$'.number_format($actividadesCurriculares['septiembre'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell resumen-clickable" data-concepto="Actividades Curriculares" data-mes="octubre">{{ $actividadesCurriculares['octubre'] > 0 ? '$'.number_format($actividadesCurriculares['octubre'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell resumen-clickable" data-concepto="Actividades Curriculares" data-mes="noviembre">{{ $actividadesCurriculares['noviembre'] > 0 ? '$'.number_format($actividadesCurriculares['noviembre'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell resumen-clickable" data-concepto="Actividades Curriculares" data-mes="diciembre">{{ $actividadesCurriculares['diciembre'] > 0 ? '$'.number_format($actividadesCurriculares['diciembre'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell resumen-clickable" data-concepto="Actividades Curriculares" data-mes="enero">{{ $actividadesCurriculares['enero'] > 0 ? '$'.number_format($actividadesCurriculares['enero'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell resumen-clickable" data-concepto="Actividades Curriculares" data-mes="febrero">{{ $actividadesCurriculares['febrero'] > 0 ? '$'.number_format($actividadesCurriculares['febrero'], 0, ',', '.') : '$-' }}</td>
                                         </tr>
                                         @php
                                             // VINCULACIÓN DINÁMICA: Obtener valores de TOTAL GASTOS de la tabla RESUMEN GASTOS
@@ -1409,21 +1408,21 @@
                                         <tr>
                                             <td><strong>Total Egresos</strong></td>
                                             <td class="number-cell total-egresos-linked" data-linked-to="total-gastos"><strong>${{ number_format($totalGastosCalculado, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated">${{ number_format($totalEgresosJunio, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalEgresosJulio, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalEgresosAgosto, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalEgresosSeptiembre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalEgresosOctubre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalEgresosNoviembre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalEgresosDiciembre, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalEgresosEnero, 0, ',', '.') }}</td>
-                                            <td class="number-cell calculated">${{ number_format($totalEgresosFebrero, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Egresos" data-mes="junio">${{ number_format($totalEgresosJunio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Egresos" data-mes="julio">${{ number_format($totalEgresosJulio, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Egresos" data-mes="agosto">${{ number_format($totalEgresosAgosto, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Egresos" data-mes="septiembre">${{ number_format($totalEgresosSeptiembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Egresos" data-mes="octubre">${{ number_format($totalEgresosOctubre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Egresos" data-mes="noviembre">${{ number_format($totalEgresosNoviembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Egresos" data-mes="diciembre">${{ number_format($totalEgresosDiciembre, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Egresos" data-mes="enero">${{ number_format($totalEgresosEnero, 0, ',', '.') }}</td>
+                                            <td class="number-cell calculated resumen-clickable" data-concepto="Total Egresos" data-mes="febrero">${{ number_format($totalEgresosFebrero, 0, ',', '.') }}</td>
                                         </tr>
                                         @php
                                             $totalIngresosPresupuesto = $budgetData['resumen_ingresos']['total_ingresos']['presupuesto_aprobado'] ?? 0;
                                             $utilidadCafeteriaPresupuesto = $gastosContratosData['conceptos']['Utilidad cafeteria']['presupuesto_aprobado'] ?? 0;
                                             $utilidadTransportePresupuesto = $gastosContratosData['conceptos']['Proyectado utilidad transporte']['presupuesto_aprobado'] ?? 0;
-                                            $actividadesCurricularesPresupuesto = 0; // Valor editable manual
+                                            $actividadesCurricularesPresupuesto = array_sum($actividadesCurriculares); // Suma total de todos los meses
                                             $diferenciaTotalPresupuesto = $totalIngresosPresupuesto + $utilidadCafeteriaPresupuesto + $utilidadTransportePresupuesto + $actividadesCurricularesPresupuesto - $totalGastosCalculado;
                                             
                                             // Calcular diferencias por mes según fórmula Excel: Total Ingresos + Utilidad cafeteria + Proyectado utilidad transporte + Actividades Curriculares - Total Egresos
@@ -1452,15 +1451,16 @@
                                             $utilidadTransporteEnero = $transporteEnero;
                                             $utilidadTransporteFebrero = $transporteFebrero;
                                             
-                                            $actividadesCurricularesJunio = 0; // Valor editable manual
-                                            $actividadesCurricularesJulio = 0; // Valor editable manual
-                                            $actividadesCurricularesAgosto = 0; // Valor editable manual
-                                            $actividadesCurricularesSeptiembre = 0; // Valor editable manual
-                                            $actividadesCurricularesOctubre = 0; // Valor editable manual
-                                            $actividadesCurricularesNoviembre = 0; // Valor editable manual
-                                            $actividadesCurricularesDiciembre = 0; // Valor editable manual
-                                            $actividadesCurricularesEnero = 0; // Valor editable manual
-                                            $actividadesCurricularesFebrero = 0; // Valor editable manual
+                                            // Obtener valores dinámicos de Actividades Curriculares
+                                            $actividadesCurricularesJunio = $actividadesCurriculares['junio'] ?? 0;
+                                            $actividadesCurricularesJulio = $actividadesCurriculares['julio'] ?? 0;
+                                            $actividadesCurricularesAgosto = $actividadesCurriculares['agosto'] ?? 0;
+                                            $actividadesCurricularesSeptiembre = $actividadesCurriculares['septiembre'] ?? 0;
+                                            $actividadesCurricularesOctubre = $actividadesCurriculares['octubre'] ?? 0;
+                                            $actividadesCurricularesNoviembre = $actividadesCurriculares['noviembre'] ?? 0;
+                                            $actividadesCurricularesDiciembre = $actividadesCurriculares['diciembre'] ?? 0;
+                                            $actividadesCurricularesEnero = $actividadesCurriculares['enero'] ?? 0;
+                                            $actividadesCurricularesFebrero = $actividadesCurriculares['febrero'] ?? 0;
                                             
                                             // Aplicar fórmula: +D9+D10+D11+D12-D19 (usando variables dinámicas de Total Egresos)
                                             $diferenciaJunio = ($totalesPorMes['junio'] ?? 0) + $utilidadCafeteriaJunio + $utilidadTransporteJunio + $actividadesCurricularesJunio - $totalEgresosJunio;
@@ -1782,80 +1782,80 @@
                                         <tr>
                                             <td><strong>Matriculas</strong></td>
                                             <td class="number-cell">$979.804.763</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Matriculas'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Matriculas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Matriculas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Matriculas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Matriculas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Matriculas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Matriculas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Matriculas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Matriculas" data-mes="junio">{{ $ingresosEscolaresReales['junio']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Matriculas'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Matriculas" data-mes="julio">{{ $ingresosEscolaresReales['julio']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Matriculas" data-mes="agosto">{{ $ingresosEscolaresReales['agosto']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Matriculas" data-mes="septiembre">{{ $ingresosEscolaresReales['septiembre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Matriculas" data-mes="octubre">{{ $ingresosEscolaresReales['octubre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Matriculas" data-mes="noviembre">{{ $ingresosEscolaresReales['noviembre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Matriculas" data-mes="diciembre">{{ $ingresosEscolaresReales['diciembre']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Matriculas" data-mes="enero">{{ $ingresosEscolaresReales['enero']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Matriculas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Matriculas" data-mes="febrero">{{ $ingresosEscolaresReales['febrero']['Matriculas'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Matriculas'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Pensiones</strong></td>
                                             <td class="number-cell">$8.816.286.570</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Pensiones'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Pensiones'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Pensiones'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Pensiones'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Pensiones'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Pensiones'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Pensiones'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Pensiones'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Pensiones" data-mes="junio">{{ $ingresosEscolaresReales['junio']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Pensiones'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Pensiones" data-mes="julio">{{ $ingresosEscolaresReales['julio']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Pensiones" data-mes="agosto">{{ $ingresosEscolaresReales['agosto']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Pensiones" data-mes="septiembre">{{ $ingresosEscolaresReales['septiembre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Pensiones" data-mes="octubre">{{ $ingresosEscolaresReales['octubre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Pensiones" data-mes="noviembre">{{ $ingresosEscolaresReales['noviembre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Pensiones" data-mes="diciembre">{{ $ingresosEscolaresReales['diciembre']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Pensiones" data-mes="enero">{{ $ingresosEscolaresReales['enero']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Pensiones'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Pensiones" data-mes="febrero">{{ $ingresosEscolaresReales['febrero']['Pensiones'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Pensiones'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Seguros Estudiantiles</strong></td>
                                             <td class="number-cell">$3.922.844</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Seguros Estudiantiles'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Seguros Estudiantiles" data-mes="junio">{{ $ingresosEscolaresReales['junio']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Seguros Estudiantiles'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Seguros Estudiantiles" data-mes="julio">{{ $ingresosEscolaresReales['julio']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Seguros Estudiantiles" data-mes="agosto">{{ $ingresosEscolaresReales['agosto']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Seguros Estudiantiles" data-mes="septiembre">{{ $ingresosEscolaresReales['septiembre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Seguros Estudiantiles" data-mes="octubre">{{ $ingresosEscolaresReales['octubre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Seguros Estudiantiles" data-mes="noviembre">{{ $ingresosEscolaresReales['noviembre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Seguros Estudiantiles" data-mes="diciembre">{{ $ingresosEscolaresReales['diciembre']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Seguros Estudiantiles" data-mes="enero">{{ $ingresosEscolaresReales['enero']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Seguros Estudiantiles" data-mes="febrero">{{ $ingresosEscolaresReales['febrero']['Seguros Estudiantiles'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Seguros Estudiantiles'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Desarrollo curricular bilingüe / Bibliobanco</strong></td>
                                             <td class="number-cell">$443.751.216</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Desarrollo curricular bilingüe / Bibliobanco" data-mes="junio">{{ $ingresosEscolaresReales['junio']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Desarrollo curricular bilingüe / Bibliobanco" data-mes="julio">{{ $ingresosEscolaresReales['julio']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Desarrollo curricular bilingüe / Bibliobanco" data-mes="agosto">{{ $ingresosEscolaresReales['agosto']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Desarrollo curricular bilingüe / Bibliobanco" data-mes="septiembre">{{ $ingresosEscolaresReales['septiembre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Desarrollo curricular bilingüe / Bibliobanco" data-mes="octubre">{{ $ingresosEscolaresReales['octubre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Desarrollo curricular bilingüe / Bibliobanco" data-mes="noviembre">{{ $ingresosEscolaresReales['noviembre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Desarrollo curricular bilingüe / Bibliobanco" data-mes="diciembre">{{ $ingresosEscolaresReales['diciembre']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Desarrollo curricular bilingüe / Bibliobanco" data-mes="enero">{{ $ingresosEscolaresReales['enero']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Desarrollo curricular bilingüe / Bibliobanco" data-mes="febrero">{{ $ingresosEscolaresReales['febrero']['Desarrollo curricular bilingüe / Bibliobanco'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Desarrollo curricular bilingüe / Bibliobanco'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Sistematización de Notas</strong></td>
                                             <td class="number-cell">$98.984.742</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Sistematización de Notas'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Sistematización de Notas" data-mes="junio">{{ $ingresosEscolaresReales['junio']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Sistematización de Notas'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Sistematización de Notas" data-mes="julio">{{ $ingresosEscolaresReales['julio']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Sistematización de Notas" data-mes="agosto">{{ $ingresosEscolaresReales['agosto']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Sistematización de Notas" data-mes="septiembre">{{ $ingresosEscolaresReales['septiembre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Sistematización de Notas" data-mes="octubre">{{ $ingresosEscolaresReales['octubre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Sistematización de Notas" data-mes="noviembre">{{ $ingresosEscolaresReales['noviembre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Sistematización de Notas" data-mes="diciembre">{{ $ingresosEscolaresReales['diciembre']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Sistematización de Notas" data-mes="enero">{{ $ingresosEscolaresReales['enero']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Sistematización de Notas" data-mes="febrero">{{ $ingresosEscolaresReales['febrero']['Sistematización de Notas'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Sistematización de Notas'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Materiales generales</strong></td>
                                             <td class="number-cell">$115.165.581</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['junio']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Materiales generales'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['julio']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Materiales generales'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['agosto']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Materiales generales'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['septiembre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Materiales generales'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['octubre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Materiales generales'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['noviembre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Materiales generales'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['diciembre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Materiales generales'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['enero']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Materiales generales'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $ingresosEscolaresReales['febrero']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Materiales generales" data-mes="junio">{{ $ingresosEscolaresReales['junio']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['junio']['Materiales generales'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Materiales generales" data-mes="julio">{{ $ingresosEscolaresReales['julio']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['julio']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Materiales generales" data-mes="agosto">{{ $ingresosEscolaresReales['agosto']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['agosto']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Materiales generales" data-mes="septiembre">{{ $ingresosEscolaresReales['septiembre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['septiembre']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Materiales generales" data-mes="octubre">{{ $ingresosEscolaresReales['octubre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['octubre']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Materiales generales" data-mes="noviembre">{{ $ingresosEscolaresReales['noviembre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['noviembre']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Materiales generales" data-mes="diciembre">{{ $ingresosEscolaresReales['diciembre']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['diciembre']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Materiales generales" data-mes="enero">{{ $ingresosEscolaresReales['enero']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['enero']['Materiales generales'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell clickable-ingresos" data-concepto="Materiales generales" data-mes="febrero">{{ $ingresosEscolaresReales['febrero']['Materiales generales'] > 0 ? '$'.number_format($ingresosEscolaresReales['febrero']['Materiales generales'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr class="total-row">
                                             <td><strong>TOTAL INGRESOS ESCOLARES</strong></td>
@@ -1936,17 +1936,17 @@
                                             <td class="number-cell">{{ $otrosEscolaresReales['febrero']['Anuario'] > 0 ? '$'.number_format($otrosEscolaresReales['febrero']['Anuario'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Examenes de Admisión</strong></td>
+                                            <td><strong>Formularios de Ingreso</strong></td>
                                             <td class="number-cell">$38.371.950</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['junio']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Examenes de Admisión'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Examenes de Admisión'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Examenes de Admisión'], 0, ',', '.') : '$-' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['diciembre']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['diciembre']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['enero']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['enero']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
-                                            <td class="number-cell">{{ $otrosEscolaresReales['febrero']['Examenes de Admisión'] > 0 ? '$'.number_format($otrosEscolaresReales['febrero']['Examenes de Admisión'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['junio']['Formularios de Ingreso'] > 0 ? '$'.number_format($otrosEscolaresReales['junio']['Formularios de Ingreso'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['julio']['Formularios de Ingreso'] > 0 ? '$'.number_format($otrosEscolaresReales['julio']['Formularios de Ingreso'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['agosto']['Formularios de Ingreso'] > 0 ? '$'.number_format($otrosEscolaresReales['agosto']['Formularios de Ingreso'], 0, ',', '.') : '$-' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['septiembre']['Formularios de Ingreso'] > 0 ? '$'.number_format($otrosEscolaresReales['septiembre']['Formularios de Ingreso'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['octubre']['Formularios de Ingreso'] > 0 ? '$'.number_format($otrosEscolaresReales['octubre']['Formularios de Ingreso'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['noviembre']['Formularios de Ingreso'] > 0 ? '$'.number_format($otrosEscolaresReales['noviembre']['Formularios de Ingreso'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['diciembre']['Formularios de Ingreso'] > 0 ? '$'.number_format($otrosEscolaresReales['diciembre']['Formularios de Ingreso'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['enero']['Formularios de Ingreso'] > 0 ? '$'.number_format($otrosEscolaresReales['enero']['Formularios de Ingreso'], 0, ',', '.') : '' }}</td>
+                                            <td class="number-cell">{{ $otrosEscolaresReales['febrero']['Formularios de Ingreso'] > 0 ? '$'.number_format($otrosEscolaresReales['febrero']['Formularios de Ingreso'], 0, ',', '.') : '' }}</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Ingresos Por Servicio Cafeteria</strong></td>
@@ -2711,9 +2711,8 @@
                                         @php
                                             $seccionesAcademiaData = $budgetDataByConcept['secciones-academia-general'] ?? [];
                                             $seccionesLabels = [
-                                                'capacitacion' => 'Capacitación',
+                                                'capacitacion' => 'Capacitación y Administraciòn',
                                                 'material-importado' => 'Material Importado',
-                                                'textos-utiles-consumo' => 'Textos y Utiles de Consumo',
                                                 'biblioteca-institucional' => 'Biblioteca institucional',
                                                 'materiales-para-clases' => 'Materiales para clases',
                                                 'material-deportivo' => 'Material Deportivo',
@@ -2731,29 +2730,74 @@
                                         @foreach($seccionesLabels as $conceptKey => $concepto)
                                             @php
                                                 $presupuesto = $seccionesAcademiaData[$conceptKey] ?? 0;
-                                                // Obtener valores mensuales reales
-                                                $junioValue = $seccionesAcademiaData[$conceptKey . '-junio'] ?? 0;
-                                                $julioValue = $seccionesAcademiaData[$conceptKey . '-julio'] ?? 0;
-                                                $agostoValue = $seccionesAcademiaData[$conceptKey . '-agosto'] ?? 0;
-                                                $septiembreValue = $seccionesAcademiaData[$conceptKey . '-septiembre'] ?? 0;
-                                                $octubreValue = $seccionesAcademiaData[$conceptKey . '-octubre'] ?? 0;
-                                                $noviembreValue = $seccionesAcademiaData[$conceptKey . '-noviembre'] ?? 0;
-                                                $diciembreValue = $seccionesAcademiaData[$conceptKey . '-diciembre'] ?? 0;
-                                                $eneroValue = $seccionesAcademiaData[$conceptKey . '-enero'] ?? 0;
-                                                $febreroValue = $seccionesAcademiaData[$conceptKey . '-febrero'] ?? 0;
+                                                // Obtener valores mensuales reales desde los datos calculados
+                                                $junioValue = $egresosAcademiaGeneralReales['junio'][$concepto] ?? 0;
+                                                $julioValue = $egresosAcademiaGeneralReales['julio'][$concepto] ?? 0;
+                                                $agostoValue = $egresosAcademiaGeneralReales['agosto'][$concepto] ?? 0;
+                                                $septiembreValue = $egresosAcademiaGeneralReales['septiembre'][$concepto] ?? 0;
+                                                $octubreValue = $egresosAcademiaGeneralReales['octubre'][$concepto] ?? 0;
+                                                $noviembreValue = $egresosAcademiaGeneralReales['noviembre'][$concepto] ?? 0;
+                                                $diciembreValue = $egresosAcademiaGeneralReales['diciembre'][$concepto] ?? 0;
+                                                $eneroValue = $egresosAcademiaGeneralReales['enero'][$concepto] ?? 0;
+                                                $febreroValue = $egresosAcademiaGeneralReales['febrero'][$concepto] ?? 0;
                                             @endphp
                                             <tr>
                                                 <td><strong>{{ $concepto }}</strong></td>
                                                 <td class="number-cell editable" data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-type="presupuesto">{{ number_format($presupuesto, 0, ',', '.') }}</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="junio" class="number-cell editable">${{ number_format($junioValue, 0, ',', '.') }}</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="julio" class="number-cell editable">${{ number_format($julioValue, 0, ',', '.') }}</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="agosto" class="number-cell editable">${{ number_format($agostoValue, 0, ',', '.') }}</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="septiembre" class="number-cell editable">${{ number_format($septiembreValue, 0, ',', '.') }}</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="octubre" class="number-cell editable">${{ number_format($octubreValue, 0, ',', '.') }}</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="noviembre" class="number-cell editable">${{ number_format($noviembreValue, 0, ',', '.') }}</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="diciembre" class="number-cell editable">${{ number_format($diciembreValue, 0, ',', '.') }}</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="enero" class="number-cell editable">${{ number_format($eneroValue, 0, ',', '.') }}</td>
-                                                <td data-section="secciones-academia-general" data-concept="{{ $conceptKey }}" data-column="febrero" class="number-cell editable">${{ number_format($febreroValue, 0, ',', '.') }}</td>
+                                                <td class="number-cell {{ $junioValue != 0 ? 'egreso-clickable' : '' }}" 
+                                                    @if($junioValue != 0) 
+                                                        data-mes="junio" data-concepto="{{ $concepto }}" style="cursor: pointer; color: #007bff;"
+                                                    @endif>
+                                                    {{ $junioValue != 0 ? '$'.number_format($junioValue, 0, ',', '.') : '' }}
+                                                </td>
+                                                <td class="number-cell {{ $julioValue != 0 ? 'egreso-clickable' : '' }}" 
+                                                    @if($julioValue != 0) 
+                                                        data-mes="julio" data-concepto="{{ $concepto }}" style="cursor: pointer; color: #007bff;"
+                                                    @endif>
+                                                    {{ $julioValue != 0 ? '$'.number_format($julioValue, 0, ',', '.') : '' }}
+                                                </td>
+                                                <td class="number-cell {{ $agostoValue != 0 ? 'egreso-clickable' : '' }}" 
+                                                    @if($agostoValue != 0) 
+                                                        data-mes="agosto" data-concepto="{{ $concepto }}" style="cursor: pointer; color: #007bff;"
+                                                    @endif>
+                                                    {{ $agostoValue != 0 ? '$'.number_format($agostoValue, 0, ',', '.') : '' }}
+                                                </td>
+                                                <td class="number-cell {{ $septiembreValue != 0 ? 'egreso-clickable' : '' }}" 
+                                                    @if($septiembreValue != 0) 
+                                                        data-mes="septiembre" data-concepto="{{ $concepto }}" style="cursor: pointer; color: #007bff;"
+                                                    @endif>
+                                                    {{ $septiembreValue != 0 ? '$'.number_format($septiembreValue, 0, ',', '.') : '' }}
+                                                </td>
+                                                <td class="number-cell {{ $octubreValue != 0 ? 'egreso-clickable' : '' }}" 
+                                                    @if($octubreValue != 0) 
+                                                        data-mes="octubre" data-concepto="{{ $concepto }}" style="cursor: pointer; color: #007bff;"
+                                                    @endif>
+                                                    {{ $octubreValue != 0 ? '$'.number_format($octubreValue, 0, ',', '.') : '' }}
+                                                </td>
+                                                <td class="number-cell {{ $noviembreValue != 0 ? 'egreso-clickable' : '' }}" 
+                                                    @if($noviembreValue != 0) 
+                                                        data-mes="noviembre" data-concepto="{{ $concepto }}" style="cursor: pointer; color: #007bff;"
+                                                    @endif>
+                                                    {{ $noviembreValue != 0 ? '$'.number_format($noviembreValue, 0, ',', '.') : '' }}
+                                                </td>
+                                                <td class="number-cell {{ $diciembreValue != 0 ? 'egreso-clickable' : '' }}" 
+                                                    @if($diciembreValue != 0) 
+                                                        data-mes="diciembre" data-concepto="{{ $concepto }}" style="cursor: pointer; color: #007bff;"
+                                                    @endif>
+                                                    {{ $diciembreValue != 0 ? '$'.number_format($diciembreValue, 0, ',', '.') : '' }}
+                                                </td>
+                                                <td class="number-cell {{ $eneroValue != 0 ? 'egreso-clickable' : '' }}" 
+                                                    @if($eneroValue != 0) 
+                                                        data-mes="enero" data-concepto="{{ $concepto }}" style="cursor: pointer; color: #007bff;"
+                                                    @endif>
+                                                    {{ $eneroValue != 0 ? '$'.number_format($eneroValue, 0, ',', '.') : '' }}
+                                                </td>
+                                                <td class="number-cell {{ $febreroValue != 0 ? 'egreso-clickable' : '' }}" 
+                                                    @if($febreroValue != 0) 
+                                                        data-mes="febrero" data-concepto="{{ $concepto }}" style="cursor: pointer; color: #007bff;"
+                                                    @endif>
+                                                    {{ $febreroValue != 0 ? '$'.number_format($febreroValue, 0, ',', '.') : '' }}
+                                                </td>
                                             </tr>
                                         @endforeach
                                         <tr class="total-row">
@@ -2770,26 +2814,26 @@
                                                 $totalEnero = 0;
                                                 $totalFebrero = 0;
                                                 foreach($seccionesLabels as $conceptKey => $concepto) {
-                                                    $totalJunio += $seccionesAcademiaData[$conceptKey . '-junio'] ?? 0;
-                                                    $totalJulio += $seccionesAcademiaData[$conceptKey . '-julio'] ?? 0;
-                                                    $totalAgosto += $seccionesAcademiaData[$conceptKey . '-agosto'] ?? 0;
-                                                    $totalSeptiembre += $seccionesAcademiaData[$conceptKey . '-septiembre'] ?? 0;
-                                                    $totalOctubre += $seccionesAcademiaData[$conceptKey . '-octubre'] ?? 0;
-                                                    $totalNoviembre += $seccionesAcademiaData[$conceptKey . '-noviembre'] ?? 0;
-                                                    $totalDiciembre += $seccionesAcademiaData[$conceptKey . '-diciembre'] ?? 0;
-                                                    $totalEnero += $seccionesAcademiaData[$conceptKey . '-enero'] ?? 0;
-                                                    $totalFebrero += $seccionesAcademiaData[$conceptKey . '-febrero'] ?? 0;
+                                                    $totalJunio += $egresosAcademiaGeneralReales['junio'][$concepto] ?? 0;
+                                                    $totalJulio += $egresosAcademiaGeneralReales['julio'][$concepto] ?? 0;
+                                                    $totalAgosto += $egresosAcademiaGeneralReales['agosto'][$concepto] ?? 0;
+                                                    $totalSeptiembre += $egresosAcademiaGeneralReales['septiembre'][$concepto] ?? 0;
+                                                    $totalOctubre += $egresosAcademiaGeneralReales['octubre'][$concepto] ?? 0;
+                                                    $totalNoviembre += $egresosAcademiaGeneralReales['noviembre'][$concepto] ?? 0;
+                                                    $totalDiciembre += $egresosAcademiaGeneralReales['diciembre'][$concepto] ?? 0;
+                                                    $totalEnero += $egresosAcademiaGeneralReales['enero'][$concepto] ?? 0;
+                                                    $totalFebrero += $egresosAcademiaGeneralReales['febrero'][$concepto] ?? 0;
                                                 }
                                             @endphp
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalJunio, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalJulio, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalAgosto, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalSeptiembre, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalOctubre, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalNoviembre, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalDiciembre, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalEnero, 0, ',', '.') }}</strong></td>
-                                            <td class="number-cell calculated"><strong>${{ number_format($totalFebrero, 0, ',', '.') }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalJunio > 0 ? '$'.number_format($totalJunio, 0, ',', '.') : '' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalJulio > 0 ? '$'.number_format($totalJulio, 0, ',', '.') : '' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalAgosto > 0 ? '$'.number_format($totalAgosto, 0, ',', '.') : '' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalSeptiembre > 0 ? '$'.number_format($totalSeptiembre, 0, ',', '.') : '' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalOctubre > 0 ? '$'.number_format($totalOctubre, 0, ',', '.') : '' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalNoviembre > 0 ? '$'.number_format($totalNoviembre, 0, ',', '.') : '' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalDiciembre > 0 ? '$'.number_format($totalDiciembre, 0, ',', '.') : '' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalEnero > 0 ? '$'.number_format($totalEnero, 0, ',', '.') : '' }}</strong></td>
+                                            <td class="number-cell calculated"><strong>{{ $totalFebrero > 0 ? '$'.number_format($totalFebrero, 0, ',', '.') : '' }}</strong></td>
                                         </tr>
                                         <tr class="impact-row">
                                             <td><strong>Impacto % frente a ingresos totales</strong></td>
@@ -2820,6 +2864,47 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+
+                        <!-- Modal de Egresos -->
+                        <div id="modal-egresos" class="modal-egresos">
+                            <div class="modal-overlay"></div>
+                            <div class="modal-container">
+                                <div class="modal-header">
+                                    <div>
+                                        <h3 id="modal-title">Detalle de Egresos</h3>
+                                        <p id="modal-subtitle" class="modal-subtitle">Cargando información...</p>
+                                    </div>
+                                    <button class="modal-close" onclick="window.egresosModal.close()">&times;</button>
+                                </div>
+                                <div class="modal-body">
+                                    <div id="modal-loading" class="modal-loading">
+                                        <div class="spinner"></div>
+                                        <p>Cargando detalles...</p>
+                                    </div>
+                                    <div id="modal-content" class="modal-content" style="display: none;">
+                                        <table class="modal-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha</th>
+                                                    <th>Documento</th>
+                                                    <th>Descripción</th>
+                                                    <th>Valor</th>
+                                                    <th>Tipo</th>
+                                                    <th>Centro Costo</th>
+                                                    <th>Cuenta</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="modal-table-body">
+                                                <!-- Contenido dinámico -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div id="modal-error" class="modal-error" style="display: none;">
+                                        <p>Error al cargar los detalles. Intente nuevamente.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -8209,6 +8294,268 @@ tr.editing {
     font-weight: 500;
     font-family: 'Courier New', monospace;
 }
+
+/* Modal de egresos - Estilos CSS puros sin Bootstrap */
+
+.modal-egresos {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    backdrop-filter: blur(2px);
+}
+
+.modal-egresos.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+}
+
+.modal-container {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    max-width: 700px;
+    width: 85%;
+    max-height: 70vh;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    transform: translateY(-20px);
+    transition: transform 0.25s ease-out;
+}
+
+.modal-egresos.show .modal-container {
+    transform: translateY(0);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #233E6C 0%, #1a2f54 100%);
+    color: white;
+    padding: 18px 24px;
+    border-bottom: none;
+    position: relative;
+}
+
+.modal-header h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: white;
+}
+
+.modal-subtitle {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin: 0;
+    font-weight: 400;
+    color: white;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.8rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.15s ease;
+    position: absolute;
+    top: 12px;
+    right: 16px;
+}
+
+.modal-close:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.modal-body {
+    padding: 0;
+    max-height: calc(70vh - 100px);
+    overflow-y: auto;
+    background: #fafafa;
+}
+
+.modal-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #666;
+    background: white;
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 12px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.modal-content {
+    padding: 0;
+    background: white;
+}
+
+.modal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 0;
+}
+
+.modal-table th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f3f4;
+    vertical-align: top;
+}
+
+.modal-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.modal-table tbody tr:nth-child(even) {
+    background-color: #fdfdfd;
+}
+
+.modal-table tbody tr:nth-child(even):hover {
+    background-color: #f8f9fa;
+}
+
+.modal-table td:nth-child(1) {
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+.modal-table td:nth-child(2) {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    color: #6c757d;
+    min-width: 100px;
+}
+
+.modal-table td:nth-child(3) {
+    text-align: right;
+    font-weight: 600;
+    color: #28a745;
+    font-family: 'Segoe UI', sans-serif;
+    min-width: 90px;
+}
+
+.modal-table td:nth-child(4) {
+    text-align: center;
+    color: #6c757d;
+    font-size: 12px;
+    min-width: 80px;
+}
+
+.modal-error {
+    padding: 30px 20px;
+    text-align: center;
+    color: #dc3545;
+    background: white;
+}
+
+.modal-error p {
+    margin: 0;
+    font-size: 15px;
+}
+
+/* Clases auxiliares para hacer clickeables los valores */
+.egreso-clickable {
+    cursor: pointer !important;
+    color: #007bff !important;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+.egreso-clickable:hover {
+    color: #0056b3 !important;
+    background-color: #f8f9fa !important;
+    text-decoration: underline;
+    transform: translateY(-1px);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .modal-container {
+        width: 95%;
+        max-width: none;
+        margin: 10px;
+        max-height: 85vh;
+    }
+    
+    .modal-header {
+        padding: 16px 20px;
+    }
+    
+    .modal-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .modal-subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .modal-table {
+        font-size: 12px;
+    }
+    
+    .modal-table th,
+    .modal-table td {
+        padding: 10px 8px;
+    }
+    
+    .modal-table td:nth-child(1) {
+        max-width: 150px;
+    }
+}
 </style>
 @stop
 
@@ -10473,6 +10820,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 1500); // Esperar 1.5 segundos para asegurar que termine todo el JavaScript
 
+    // Inicializar modal de egresos después de cargar la página
+    setTimeout(() => {
+        if (typeof EgresosModal !== 'undefined') {
+            window.egresosModal = new EgresosModal();
+            console.log('Modal de egresos inicializado correctamente');
+        }
+    }, 2000); // Esperar un poco más para que se cargue el script externo
+
     // Hacer funciones globales
     window.updateSectionTables = updateSectionTables;
     window.updateSectionTable = updateSectionTable;
@@ -10480,4 +10835,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.syncTotalEgresos = syncTotalEgresos;
 });
 </script>
+
+<!-- Script del modal de egresos -->
+<script src="{{ asset('js/modal-egresos.js') }}"></script>
+
 @stop
