@@ -138,6 +138,7 @@ class PrevisitaConsolidadoController extends Controller
             'responsable' => 'required|string|max:255',
             'aprobacion_sitio' => 'required|boolean',
             'observaciones_recomendaciones' => 'nullable|string',
+            'drive_link' => 'nullable|url|max:500',
             'archivos_novedades' => 'nullable|array|max:150', // Máximo 150 archivos
             'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp,doc,docx|max:1048576' // 1GB máximo por archivo, incluye Word
         ], [
@@ -148,6 +149,8 @@ class PrevisitaConsolidadoController extends Controller
             'vencimiento.after_or_equal' => 'El vencimiento debe ser igual o posterior a la fecha de visita.',
             'responsable.required' => 'El responsable es obligatorio.',
             'aprobacion_sitio.required' => 'La aprobación del sitio es obligatoria.',
+            'drive_link.url' => 'El enlace de Drive debe ser una URL válida.',
+            'drive_link.max' => 'El enlace de Drive no debe superar 500 caracteres.',
             'archivos_novedades.max' => 'No se pueden subir más de 150 archivos.',
             'archivos_novedades.*.file' => 'Cada archivo debe ser un archivo válido.',
             'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP, WEBP, DOC y DOCX.',
@@ -166,7 +169,8 @@ class PrevisitaConsolidadoController extends Controller
             'vencimiento',
             'responsable',
             'aprobacion_sitio',
-            'observaciones_recomendaciones'
+            'observaciones_recomendaciones',
+            'drive_link'
         ]);
 
         $data['user_id'] = Auth::id();
@@ -235,6 +239,7 @@ class PrevisitaConsolidadoController extends Controller
             'responsable' => 'required|string|max:255',
             'aprobacion_sitio' => 'required|boolean',
             'observaciones_recomendaciones' => 'nullable|string',
+            'drive_link' => 'nullable|url|max:500',
             'archivos_novedades' => 'nullable|array|max:150', // Máximo 150 archivos
             'archivos_novedades.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,bmp,webp,doc,docx|max:1048576' // 1GB máximo por archivo, incluye Word
         ], [
@@ -245,6 +250,8 @@ class PrevisitaConsolidadoController extends Controller
             'vencimiento.after_or_equal' => 'El vencimiento debe ser igual o posterior a la fecha de visita.',
             'responsable.required' => 'El responsable es obligatorio.',
             'aprobacion_sitio.required' => 'La aprobación del sitio es obligatoria.',
+            'drive_link.url' => 'El enlace de Drive debe ser una URL válida.',
+            'drive_link.max' => 'El enlace de Drive no debe superar 500 caracteres.',
             'archivos_novedades.max' => 'No se pueden subir más de 150 archivos.',
             'archivos_novedades.*.file' => 'Cada archivo debe ser un archivo válido.',
             'archivos_novedades.*.mimes' => 'Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF, BMP, WEBP, DOC y DOCX.',
@@ -263,7 +270,8 @@ class PrevisitaConsolidadoController extends Controller
             'vencimiento',
             'responsable',
             'aprobacion_sitio',
-            'observaciones_recomendaciones'
+            'observaciones_recomendaciones',
+            'drive_link'
         ]);
 
         // Actualizar datos básicos de la previsita

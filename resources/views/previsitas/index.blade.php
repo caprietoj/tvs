@@ -114,7 +114,7 @@
                         <th>Vencimiento</th>
                         <th>Responsable</th>
                         <th>Aprobación del Sitio</th>
-                        <th>Archivo PDF</th>
+                        <th>Link Drive</th>
                         <th>Creado por</th>
                         <th>Acciones</th>
                     </tr>
@@ -142,12 +142,15 @@
                             </span>
                         </td>
                         <td>
-                            @if($previsita->novedades_visita_archivo)
-                                <a href="{{ route('previsitas.download', $previsita) }}" class="btn btn-sm btn-outline-primary" title="Descargar PDF">
-                                    <i class="fas fa-file-pdf"></i>
+                            @if($previsita->drive_link)
+                                <a href="{{ $previsita->drive_link }}" 
+                                   class="btn btn-sm btn-outline-primary" 
+                                   target="_blank" 
+                                   title="Abrir enlace de Drive">
+                                    <i class="fab fa-google-drive"></i>
                                 </a>
                             @else
-                                <span class="text-muted">Sin archivo</span>
+                                <span class="text-muted">Sin enlace</span>
                             @endif
                         </td>
                         <td>{{ $previsita->user->name ?? 'N/A' }}</td>

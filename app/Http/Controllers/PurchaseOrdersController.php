@@ -718,7 +718,7 @@ class PurchaseOrdersController extends Controller
                 ->with('error', 'No se puede editar una orden que ya ha sido procesada o enviada.');
         }
         
-        // Validar datos
+        // Validar datos (incluyendo nuevos campos de impuestos)
         $validated = $request->validate([
             'order_number' => 'required|string|max:50',
             'provider_id' => 'required|exists:proveedors,id',
@@ -727,6 +727,10 @@ class PurchaseOrdersController extends Controller
             'delivery_date' => 'required|date',
             'order_file' => 'nullable|file|mimes:pdf|max:10240',
             'observations' => 'nullable|string',
+            // Nuevos campos de impuestos
+            'iva_rate' => 'nullable|numeric|in:0,5,19',
+            'ipoconsumo_rate' => 'nullable|numeric|in:0,4,8',
+            'force_global_taxes' => 'nullable|boolean',
         ]);
         
         // Actualizar archivo si se ha subido uno nuevo
@@ -739,7 +743,7 @@ class PurchaseOrdersController extends Controller
             $filePath = $request->file('order_file')->store('purchase_orders', 'public');
         }
         
-        // Actualizar la orden
+        // Actualizar la orden (incluyendo nuevos campos de impuestos)
         $purchaseOrder->update([
             'order_number' => $validated['order_number'],
             'provider_id' => $validated['provider_id'],
@@ -748,6 +752,19 @@ class PurchaseOrdersController extends Controller
             'delivery_date' => $validated['delivery_date'],
             'file_path' => $filePath,
             'observations' => $validated['observations'],
+            // Actualizar campos de impuestos si están presentes
+            'iva_rate' => $validated['iva_rate'] ?? $purchaseOrder->iva_rate,
+            'ipoconsumo_rate' => $validated['ipoconsumo_rate'] ?? $purchaseOrder->ipoconsumo_rate,
+            'force_global_taxes' => $request->has('force_global_taxes') ? 1 : 0,
+        ]);
+        
+        \Log::info('=== ORDEN ACTUALIZADA CON NUEVOS IMPUESTOS ===', [
+            'order_id' => $purchaseOrder->id,
+            'iva_rate_old' => $purchaseOrder->getOriginal('iva_rate'),
+            'iva_rate_new' => $validated['iva_rate'] ?? $purchaseOrder->iva_rate,
+            'ipoconsumo_rate_old' => $purchaseOrder->getOriginal('ipoconsumo_rate'), 
+            'ipoconsumo_rate_new' => $validated['ipoconsumo_rate'] ?? $purchaseOrder->ipoconsumo_rate,
+            'force_global_taxes' => $request->has('force_global_taxes') ? 1 : 0
         ]);
         
         // Regenerar PDF automáticamente después de editar (solo si no se subió archivo manual)

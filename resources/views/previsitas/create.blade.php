@@ -195,54 +195,46 @@
                             </div>
                         </div>
 
-                        <!-- Sección 4: Archivos -->
+                        <!-- Sección 4: Enlace de Drive -->
                         <div class="form-section">
                             <div class="section-header">
                                 <h4 class="section-title">
-                                    <i class="fas fa-paperclip text-warning mr-2"></i>
-                                    Archivos de Novedades
+                                    <i class="fab fa-google-drive text-warning mr-2"></i>
+                                    Enlace de Google Drive
                                 </h4>
-                                <p class="section-description">Suba documentos PDF e imágenes relacionadas</p>
+                                <p class="section-description">Proporcione el enlace de Google Drive con los documentos relacionados</p>
                             </div>
                             
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                        <label for="archivos_novedades" class="form-label">
-                                            <i class="fas fa-cloud-upload-alt mr-1"></i>
-                                            Archivos (PDF, Imágenes y Documentos Word)
+                                        <label for="drive_link" class="form-label">
+                                            <i class="fab fa-google-drive mr-1"></i>
+                                            Enlace de Google Drive
                                         </label>
                                         
-                                        <div class="file-upload-area" id="file-upload-area">
-                                            <div class="file-upload-content">
-                                                <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
-                                                <h5>Arrastra archivos aquí o haz clic para seleccionar</h5>
-                                                <p class="text-muted">
-                                                    Formatos permitidos: PDF, JPG, PNG, GIF, BMP, WEBP, DOC, DOCX<br>
-                                                    Tamaño máximo: 1GB por archivo<br>
-                                                    Máximo 150 archivos por previsita
-                                                </p>
-                                                <input type="file" 
-                                                       class="file-input @error('archivos_novedades') is-invalid @enderror" 
-                                                       id="archivos_novedades" 
-                                                       name="archivos_novedades[]"
-                                                       accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.doc,.docx"
-                                                       multiple
-                                                       style="display: none;">
-                                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('archivos_novedades').click()">
-                                                    <i class="fas fa-folder-open mr-1"></i>
-                                                    Seleccionar Archivos
-                                                </button>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">
+                                                    <i class="fas fa-link"></i>
+                                                </span>
                                             </div>
+                                            <input type="url" 
+                                                   class="form-control @error('drive_link') is-invalid @enderror" 
+                                                   id="drive_link" 
+                                                   name="drive_link"
+                                                   value="{{ old('drive_link') }}"
+                                                   placeholder="https://drive.google.com/...">
                                         </div>
                                         
-                                        <div id="archivos-seleccionados" class="selected-files-container mt-3"></div>
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Pegue aquí el enlace de la carpeta o archivo de Google Drive que contiene los documentos relacionados con esta previsita.
+                                            Asegúrese de que el enlace tenga permisos de acceso apropiados.
+                                        </small>
                                         
-                                        @error('archivos_novedades')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                        @error('archivos_novedades.*')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @error('drive_link')
+                                            <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
                                 </div>

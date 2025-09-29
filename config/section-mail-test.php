@@ -100,8 +100,8 @@ return [
 
     // Correos de directores para aprobaciones
     'directors' => [
-        'academic' => 'generaldirector@tvs.edu.co',
-        'administrative' => 'administrativedirector@tvs.edu.co',
+        'academic' => 'generaldirector@test.com',
+        'administrative' => 'administrativedirector@test.com',
     ],
 
     // Correos adicionales que siempre deben ser notificados (independientemente de la sección)

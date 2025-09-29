@@ -715,7 +715,7 @@ class PresupuestoController extends Controller
         // APLICAR FILTRO DE CENTROS VÁLIDOS - Solo mostrar centros oficiales en Detallado Secciones 1
         // Aplicar filtro de cuentas permitidas para el detallado de secciones
         $presupuestoItems = $this->aplicarFiltroCuentas(PresupuestoItem::query())
-            ->soloCentrosValidos() // NUEVO: Filtrar solo centros válidos para esta vista
+            ->soloCentrosValidos() // Filtrar solo centros válidos para esta vista
             ->orderBy('seccion')
             ->orderByRaw("CASE WHEN rubro = 'TOTAL' THEN 1 ELSE 0 END") // TOTAL al final
             ->orderBy('rubro')
@@ -3578,7 +3578,7 @@ class PresupuestoController extends Controller
         }
         
         $presupuestoItems = $this->aplicarFiltroCuentas(PresupuestoItem::query())
-            ->soloCentrosValidos() // NUEVO: Filtrar solo centros válidos para Detallado Secciones 1
+            ->soloCentrosValidos() // Filtrar solo centros válidos para Detallado Secciones 1
             ->orderBy('seccion')
             ->orderByRaw("CASE WHEN rubro = 'TOTAL' THEN 1 ELSE 0 END")
             ->orderBy('rubro')

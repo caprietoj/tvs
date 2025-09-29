@@ -806,6 +806,19 @@
             $calculatedIpoconsumo = 0; // Agregar variable para impuesto al consumo
             $calculatedIndividualTaxes = 0;
             
+            // 🔧 NUEVA FUNCIONALIDAD: Usar valores personalizados de impuestos desde la orden editada
+            $customIvaRate = $order->iva_rate ?? null;
+            $customIpoconsumoRate = $order->ipoconsumo_rate ?? null;
+            $useCustomTaxes = ($customIvaRate !== null || $customIpoconsumoRate !== null);
+            
+            Log::info('🔧 PDF: Verificando impuestos personalizados desde orden', [
+                'order_id' => $order->id,
+                'custom_iva_rate' => $customIvaRate,
+                'custom_ipoconsumo_rate' => $customIpoconsumoRate,
+                'use_custom_taxes' => $useCustomTaxes,
+                'force_global_taxes' => $order->force_global_taxes ?? false
+            ]);
+            
             // Detectar el tipo de IVA e impuestos al consumo desde la cotización seleccionada
             $ivaType = null;
             $ivaLabel = 'IVA';
@@ -1112,6 +1125,40 @@
                 }
             }
             
+            // 🔧 NUEVA FUNCIONALIDAD: Aplicar impuestos personalizados si están definidos en la orden
+            if ($useCustomTaxes && $calculatedSubtotal > 0) {
+                Log::info('🔧 PDF: Aplicando impuestos personalizados desde orden', [
+                    'order_id' => $order->id,
+                    'subtotal' => $calculatedSubtotal,
+                    'original_iva' => $calculatedIva,
+                    'original_ipoconsumo' => $calculatedIpoconsumo
+                ]);
+                
+                // Aplicar IVA personalizado
+                if ($customIvaRate !== null) {
+                    $calculatedIva = round($calculatedSubtotal * ($customIvaRate / 100));
+                    $ivaType = $customIvaRate . '%';
+                    $ivaLabel = 'IVA (' . $customIvaRate . '%)';
+                    
+                    Log::info('🔧 PDF: IVA personalizado aplicado', [
+                        'custom_rate' => $customIvaRate,
+                        'calculated_iva' => $calculatedIva
+                    ]);
+                }
+                
+                // Aplicar Impuesto al Consumo personalizado
+                if ($customIpoconsumoRate !== null) {
+                    $calculatedIpoconsumo = round($calculatedSubtotal * ($customIpoconsumoRate / 100));
+                    $ipoconsumoType = $customIpoconsumoRate . '%';
+                    $ipoconsumoLabel = 'Imp. Consumo (' . $customIpoconsumoRate . '%)';
+                    
+                    Log::info('🔧 PDF: Impuesto al Consumo personalizado aplicado', [
+                        'custom_rate' => $customIpoconsumoRate,
+                        'calculated_ipoconsumo' => $calculatedIpoconsumo
+                    ]);
+                }
+            }
+            
             // 🔧 CORRECCIÓN CRÍTICA: Calcular total según el tipo de aplicación de impuestos
             if ($hasItemLevelTaxes) {
                 // Para impuestos por ítem: el total es la suma de los totales individuales con impuestos
@@ -1150,8 +1197,16 @@
             // ===== CORRECCIÓN CRÍTICA: VERIFICAR MODO DE APLICACIÓN DE IMPUESTOS =====
             $hasItemLevelTaxes = false;
             
+            // PRIORIDAD MÁXIMA: Si el usuario forzó impuestos globales desde edición de orden
+            if (isset($order->force_global_taxes) && $order->force_global_taxes) {
+                $hasItemLevelTaxes = false;
+                Log::info('📋 PDF: FORZADO IMPUESTOS GLOBALES desde edición de orden', [
+                    'order_id' => $order->id,
+                    'force_global_taxes' => true
+                ]);
+            }
             // MÉTODO PRINCIPAL: Verificar el tax_application_mode de las cotizaciones relacionadas
-            if (isset($quotationItemSelections) && $quotationItemSelections->count() > 0) {
+            elseif (isset($quotationItemSelections) && $quotationItemSelections->count() > 0) {
                 foreach ($quotationItemSelections as $selection) {
                     if (isset($selection->quotation) && $selection->quotation && isset($selection->quotation->tax_application_mode) && $selection->quotation->tax_application_mode === 'per_item') {
                         $hasItemLevelTaxes = true;
@@ -1171,15 +1226,15 @@
                 }
             }
             
-            // FALLBACK: Solo si no se encontró información de cotización
+            // FALLBACK CORREGIDO: Si no hay información de cotización, asumir impuestos globales por defecto
             if (!isset($quotationItemSelections) || $quotationItemSelections->count() === 0) {
-                // Método fallback: Si hay muchos ítems (más de 8) asumir impuestos por ítem
-                if (count($itemsToShow) > 8) {
-                    $hasItemLevelTaxes = true;
-                    Log::info('📋 PDF: FALLBACK - Muchos ítems detectados, usando impuestos por ítem', [
-                        'items_count' => count($itemsToShow)
-                    ]);
-                }
+                // CORRECCIÓN CRÍTICA: No asumir impuestos por ítem basado en cantidad
+                // Por defecto, usar impuestos globales a menos que se demuestre lo contrario
+                $hasItemLevelTaxes = false;
+                Log::info('📋 PDF: FALLBACK CORREGIDO - Sin información de cotización, usando impuestos globales por defecto', [
+                    'items_count' => count($itemsToShow),
+                    'hasItemLevelTaxes_forced' => false
+                ]);
             }
             
             // Definir si mostrar columna de impuestos basado en el modo de aplicación

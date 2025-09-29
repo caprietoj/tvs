@@ -30,6 +30,7 @@ class PrevisitaConsolidado extends Model
         'aprobacion_sitio',
         'observaciones_recomendaciones',
         'novedades_visita_archivo',
+        'drive_link',
         'user_id',
     ];
 

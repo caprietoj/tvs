@@ -119,6 +119,7 @@ class SectionClassifierService
     /**
      * Obtener los correos específicos de una sección para notificaciones de pre-aprobación
      * NUEVA FUNCIONALIDAD: Solo incluir generaldirector@tvs.edu.co si el monto es >= $500.000
+     * FLUJO ACADÉMICO ESPECIAL: Para secciones académicas, pre-aprueban coordinadoras y luego director según monto
      *
      * @param string $sectionName Nombre de la sección
      * @param float $totalAmount Monto total de la solicitud (opcional)
@@ -136,7 +137,95 @@ class SectionClassifierService
             ]);
             return [$administrativeDirectorEmail];
         }
+
+        // SECCIONES ACADÉMICAS CON FLUJO ESPECIAL: Pre-aprobación por coordinadoras
+        $academicSectionsWithCoordinators = [
+            'escuela media', 'escuela alta', 'pep', 'pai', 'deportes', 
+            'biblioteca', 'psicologia institucional', 'bachillerato', 
+            'primaria', 'pre escolar', 'preescolar'
+        ];
         
+        $sectionLower = strtolower(trim($sectionName));
+        $isAcademicWithCoordinators = false;
+        
+        // Verificar si es una sección académica con coordinadoras
+        foreach ($academicSectionsWithCoordinators as $academicSection) {
+            if (stripos($sectionLower, $academicSection) !== false || stripos($academicSection, $sectionLower) !== false) {
+                $isAcademicWithCoordinators = true;
+                break;
+            }
+        }
+        
+        if ($isAcademicWithCoordinators && $totalAmount !== null) {
+            // Para secciones académicas, enviar a coordinadoras + director según monto
+            $result = [];
+            
+            // 1. Obtener emails de coordinadoras de la sección
+            $sections = DynamicSectionEmailsService::getConfig('sections', []);
+            
+            // Buscar coincidencia exacta primero
+            if (isset($sections[$sectionName])) {
+                $emails = $sections[$sectionName];
+                if (is_string($emails)) {
+                    $result = [$emails];
+                } elseif (is_array($emails)) {
+                    $result = $emails;
+                }
+            } else {
+                // Buscar coincidencias parciales
+                foreach ($sections as $section => $emails) {
+                    if (stripos($sectionName, $section) !== false || stripos($section, $sectionName) !== false) {
+                        if (is_string($emails)) {
+                            $result = [$emails];
+                        } elseif (is_array($emails)) {
+                            $result = $emails;
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // 2. Agregar director según el monto
+            if ($totalAmount < 500000) {
+                // Monto menor a $500,000: agregar director administrativo
+                $administrativeDirector = DynamicSectionEmailsService::getConfig('directors.administrative');
+                if (!in_array($administrativeDirector, $result)) {
+                    $result[] = $administrativeDirector;
+                }
+                
+                \Illuminate\Support\Facades\Log::info("Flujo académico - Monto < $500,000: Coordinadoras + Director Administrativo", [
+                    'section' => $sectionName,
+                    'amount' => $totalAmount,
+                    'final_emails' => $result,
+                    'reason' => 'ACADEMIC_FLOW_UNDER_THRESHOLD'
+                ]);
+            } else {
+                // Monto >= $500,000: agregar director general
+                $generalDirector = DynamicSectionEmailsService::getConfig('directors.academic');
+                if (!in_array($generalDirector, $result)) {
+                    $result[] = $generalDirector;
+                }
+                
+                // Para montos altos, también incluir compras según configuración
+                $alwaysNotify = DynamicSectionEmailsService::getConfig('always_notify', []);
+                foreach ($alwaysNotify as $email) {
+                    if (!in_array($email, $result)) {
+                        $result[] = $email;
+                    }
+                }
+                
+                \Illuminate\Support\Facades\Log::info("Flujo académico - Monto >= $500,000: Coordinadoras + Director General + Compras", [
+                    'section' => $sectionName,
+                    'amount' => $totalAmount,
+                    'final_emails' => $result,
+                    'reason' => 'ACADEMIC_FLOW_OVER_THRESHOLD'
+                ]);
+            }
+            
+            return array_values($result);
+        }
+        
+        // FLUJO NORMAL: Para secciones administrativas y otras no académicas
         $sections = DynamicSectionEmailsService::getConfig('sections', []);
         $result = [];
         
@@ -176,32 +265,59 @@ class SectionClassifierService
             }
         }
         
-        // FILTRO POR MONTO: Remover generaldirector@tvs.edu.co si el monto es < $500.000
-        if ($totalAmount !== null && $totalAmount < 500000) {
-            $originalCount = count($result);
-            $result = array_filter($result, function($email) {
-                return $email !== 'generaldirector@tvs.edu.co';
-            });
-            
-            if (count($result) < $originalCount) {
-                \Illuminate\Support\Facades\Log::info("Notificación a generaldirector@tvs.edu.co omitida de lista de sección - Monto insuficiente", [
+        // FILTRO POR MONTO: Para secciones no académicas, aplicar lógica original
+        if ($totalAmount !== null) {
+            if ($totalAmount < 500000) {
+                // Para montos menores a $500,000: solo al director administrativo
+                $administrativeDirector = DynamicSectionEmailsService::getConfig('directors.administrative');
+                
+                // Remover generaldirector si está presente
+                $result = array_filter($result, function($email) {
+                    return strpos($email, 'generaldirector@') === false;
+                });
+                
+                // Solo el director administrativo para montos bajos
+                $result = [$administrativeDirector];
+                
+                \Illuminate\Support\Facades\Log::info("Flujo administrativo - Monto < $500,000: Solo director administrativo", [
                     'section' => $sectionName,
                     'amount' => $totalAmount,
-                    'minimum_required' => 500000,
-                    'emails_before' => $originalCount,
-                    'emails_after' => count($result)
+                    'final_emails' => $result,
+                    'reason' => 'ADMINISTRATIVE_FLOW_UNDER_THRESHOLD'
+                ]);
+                
+            } else {
+                // Para montos >= $500,000: incluir generaldirector y otros emails configurados
+                $generalDirector = DynamicSectionEmailsService::getConfig('directors.academic');
+                if (!in_array($generalDirector, $result)) {
+                    $result[] = $generalDirector;
+                }
+                
+                // Para montos altos, sí incluir compras según configuración
+                $alwaysNotify = DynamicSectionEmailsService::getConfig('always_notify', []);
+                foreach ($alwaysNotify as $email) {
+                    if (!in_array($email, $result)) {
+                        $result[] = $email;
+                    }
+                }
+                
+                \Illuminate\Support\Facades\Log::info("Flujo administrativo - Monto >= $500,000: Director General + Compras", [
+                    'section' => $sectionName,
+                    'amount' => $totalAmount,
+                    'final_emails' => $result,
+                    'reason' => 'ADMINISTRATIVE_FLOW_OVER_THRESHOLD'
                 ]);
             }
             
             // Reindexar el array después del filtrado
             $result = array_values($result);
-        }
-        
-        // Asegurarse que el correo de compras esté siempre incluido según la configuración activa
-        $alwaysNotify = DynamicSectionEmailsService::getConfig('always_notify', []);
-        foreach ($alwaysNotify as $email) {
-            if (!in_array($email, $result)) {
-                $result[] = $email;
+        } else {
+            // Si no hay monto definido, usar flujo normal con compras incluido
+            $alwaysNotify = DynamicSectionEmailsService::getConfig('always_notify', []);
+            foreach ($alwaysNotify as $email) {
+                if (!in_array($email, $result)) {
+                    $result[] = $email;
+                }
             }
         }
         

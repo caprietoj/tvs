@@ -48,6 +48,10 @@ class PurchaseOrder extends Model
         'cancellation_reason',
         'approved_at',
         'approved_by',
+        // Nuevos campos de configuración de impuestos
+        'iva_rate',
+        'ipoconsumo_rate',
+        'force_global_taxes',
         'pdf_custom_data',
         'is_viewed',
         'viewed_by',

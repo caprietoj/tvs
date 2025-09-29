@@ -1122,13 +1122,14 @@ class QuotationController extends Controller
             $totalAmount = $sectionClassifier->getTotalAmountFromPurchaseRequest($purchaseRequest);
             $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area, $totalAmount);
             
-            // Obtener configuración dinámica
+            // Obtener configuración dinámica para compras
             $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
             $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
             
-            \Log::info('Enviando email de pre-aprobación manual con flujo diferenciado', [
+            \Log::info('Enviando email de pre-aprobación manual con flujo diferenciado por monto', [
                 'purchase_request' => $purchaseRequest->request_number,
                 'section_area' => $purchaseRequest->section_area,
+                'total_amount' => $totalAmount,
                 'section_emails' => $sectionEmails,
                 'compras_email' => $comprasEmail,
                 'quotations_count' => $purchaseRequest->quotations()->count()
@@ -1143,13 +1144,27 @@ class QuotationController extends Controller
                     ->notify($notificationWithButton);
             }
             
-            // 2. ENVIAR NOTIFICACIÓN INFORMATIVA A COMPRAS (SIN BOTÓN)
-            \Log::info('Enviando notificación INFORMATIVA (manual) a compras: ' . $comprasEmail);
-            $informativeNotification = new \App\Notifications\QuotationsCompletedCompras($purchaseRequest->fresh());
-            Notification::route('mail', $comprasEmail)
-                ->notify($informativeNotification);
+            // 2. ENVIAR NOTIFICACIÓN INFORMATIVA A COMPRAS (SOLO SI EL MONTO ES >= $500,000)
+            $allEmails = $sectionEmails;
             
-            $allEmails = array_merge($sectionEmails, [$comprasEmail]);
+            if ($totalAmount >= 500000) {
+                // Para montos altos, enviar notificación informativa a compras
+                \Log::info('Enviando notificación INFORMATIVA (manual) a compras - Monto >= $500,000: ' . $comprasEmail);
+                $informativeNotification = new \App\Notifications\QuotationsCompletedCompras($purchaseRequest->fresh());
+                Notification::route('mail', $comprasEmail)
+                    ->notify($informativeNotification);
+                    
+                // Solo agregar compras a la lista si no está ya incluido
+                if (!in_array($comprasEmail, $allEmails)) {
+                    $allEmails[] = $comprasEmail;
+                }
+            } else {
+                \Log::info('Notificación a compras omitida - Monto menor a $500,000', [
+                    'amount' => $totalAmount,
+                    'minimum_required' => 500000,
+                    'compras_email' => $comprasEmail
+                ]);
+            }
             
             // Marcar que se envió para pre-aprobación y cambiar estado
             $purchaseRequest->update([
@@ -1211,7 +1226,7 @@ class QuotationController extends Controller
             $totalAmount = $sectionClassifier->getTotalAmountFromPurchaseRequest($purchaseRequest);
             $sectionEmails = $sectionClassifier->getSectionEmails($purchaseRequest->section_area, $totalAmount);
             
-            // Obtener configuración dinámica
+            // Obtener configuración dinámica para compras
             $configSource = \App\Services\DynamicSectionEmailsService::getCurrentConfigSource();
             $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
             
@@ -1224,13 +1239,27 @@ class QuotationController extends Controller
                     ->notify($notificationWithButton);
             }
             
-            // 2. ENVIAR NOTIFICACIÓN INFORMATIVA A COMPRAS (SIN BOTÓN)
-            \Log::info('Enviando notificación INFORMATIVA (hecho cumplido) a compras: ' . $comprasEmail);
-            $informativeNotification = new \App\Notifications\QuotationsCompletedCompras($purchaseRequest->fresh());
-            Notification::route('mail', $comprasEmail)
-                ->notify($informativeNotification);
+            // 2. ENVIAR NOTIFICACIÓN INFORMATIVA A COMPRAS (SOLO SI EL MONTO ES >= $500,000)
+            $allEmails = $sectionEmails;
             
-            $allEmails = array_merge($sectionEmails, [$comprasEmail]);
+            if ($totalAmount >= 500000) {
+                // Para montos altos, enviar notificación informativa a compras
+                \Log::info('Enviando notificación INFORMATIVA (hecho cumplido) a compras - Monto >= $500,000: ' . $comprasEmail);
+                $informativeNotification = new \App\Notifications\QuotationsCompletedCompras($purchaseRequest->fresh());
+                Notification::route('mail', $comprasEmail)
+                    ->notify($informativeNotification);
+                    
+                // Solo agregar compras a la lista si no está ya incluido
+                if (!in_array($comprasEmail, $allEmails)) {
+                    $allEmails[] = $comprasEmail;
+                }
+            } else {
+                \Log::info('Notificación a compras omitida en hecho cumplido - Monto menor a $500,000', [
+                    'amount' => $totalAmount,
+                    'minimum_required' => 500000,
+                    'compras_email' => $comprasEmail
+                ]);
+            }
             
             // Marcar que se envió para pre-aprobación y cambiar estado
             $purchaseRequest->update([

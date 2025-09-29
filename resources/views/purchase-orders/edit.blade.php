@@ -121,6 +121,60 @@
                             </div>
                         </div>
                         
+                        <!-- Sección de Configuración de Impuestos -->
+                        <div class="card mt-4">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-calculator"></i> Configuración de Impuestos
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> 
+                                    <strong>Importante:</strong> Modifique estos valores solo si es necesario corregir el cálculo de impuestos. 
+                                    El PDF se regenerará automáticamente con los nuevos valores.
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="iva_rate">IVA (%)</label>
+                                            <select class="form-control" id="iva_rate" name="iva_rate">
+                                                <option value="0" {{ old('iva_rate', $purchaseOrder->iva_rate ?? 0) == 0 ? 'selected' : '' }}>Sin IVA (0%)</option>
+                                                <option value="5" {{ old('iva_rate', $purchaseOrder->iva_rate ?? 0) == 5 ? 'selected' : '' }}>IVA 5%</option>
+                                                <option value="19" {{ old('iva_rate', $purchaseOrder->iva_rate ?? 0) == 19 ? 'selected' : '' }}>IVA 19%</option>
+                                            </select>
+                                            <small class="text-muted">Seleccione la tasa de IVA a aplicar globalmente.</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="ipoconsumo_rate">Impuesto al Consumo (%)</label>
+                                            <select class="form-control" id="ipoconsumo_rate" name="ipoconsumo_rate">
+                                                <option value="0" {{ old('ipoconsumo_rate', $purchaseOrder->ipoconsumo_rate ?? 0) == 0 ? 'selected' : '' }}>Sin Imp. Consumo (0%)</option>
+                                                <option value="4" {{ old('ipoconsumo_rate', $purchaseOrder->ipoconsumo_rate ?? 0) == 4 ? 'selected' : '' }}>Imp. Consumo 4%</option>
+                                                <option value="8" {{ old('ipoconsumo_rate', $purchaseOrder->ipoconsumo_rate ?? 0) == 8 ? 'selected' : '' }}>Imp. Consumo 8%</option>
+                                            </select>
+                                            <small class="text-muted">Seleccione la tasa de Impuesto al Consumo a aplicar.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="force_global_taxes" name="force_global_taxes" value="1" {{ old('force_global_taxes', $purchaseOrder->force_global_taxes ?? 0) ? 'checked' : '' }}>
+                                        <label class="custom-control-label" for="force_global_taxes">
+                                            <strong>Forzar impuestos globales</strong>
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">
+                                        Marque esta opción para forzar que los impuestos se apliquen globalmente en lugar de por ítem, 
+                                        incluso si el sistema detecta configuración de impuestos individuales.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="form-group">
                             <label for="observations">Observaciones</label>
                             <textarea class="form-control @error('observations') is-invalid @enderror" id="observations" name="observations" rows="3">{{ old('observations', $purchaseOrder->observations) }}</textarea>

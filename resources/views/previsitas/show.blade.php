@@ -133,6 +133,35 @@
             </div>
         </div>
         @endif
+
+        @if($previsita->drive_link)
+        <div class="card custom-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fab fa-google-drive text-primary mr-2"></i>
+                    Enlace de Google Drive
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <i class="fas fa-link"></i>
+                    <div class="mt-2">
+                        <a href="{{ $previsita->drive_link }}" 
+                           target="_blank" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fab fa-google-drive mr-1"></i>
+                            Abrir enlace de Drive
+                            <i class="fas fa-external-link-alt ml-1"></i>
+                        </a>
+                        <br>
+                        <small class="text-muted mt-2 d-block">
+                            {{ $previsita->drive_link }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 
     <div class="col-md-4">
