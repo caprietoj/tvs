@@ -266,9 +266,9 @@
                         <i class="fas fa-edit"></i> Editar Previsita
                     </a>
                     
-                    @if($previsita->novedades_visita_archivo)
-                    <a href="{{ route('previsitas.download', $previsita) }}" class="btn btn-info" target="_blank">
-                        <i class="fas fa-download"></i> Descargar PDF
+                    @if($previsita->drive_link)
+                    <a href="{{ $previsita->drive_link }}" class="btn btn-info" target="_blank">
+                        <i class="fab fa-google-drive"></i> Abrir Drive
                     </a>
                     @endif
                     
