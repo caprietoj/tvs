@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceRecord;
+use App\Exports\AttendanceExport;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AttendanceController extends Controller
 {
@@ -379,5 +381,28 @@ class AttendanceController extends Controller
             'retrasos710720' => $retrasos710720,
             'retrasos720Plus' => $retrasos720Plus
         ];
+    }
+
+    public function exportToExcel($mes = 'actual')
+    {
+        try {
+            if ($mes === 'actual') {
+                $mes = 'Enero';
+            }
+
+            $records = AttendanceRecord::where('mes', $mes)->get();
+            
+            if ($records->isEmpty()) {
+                return redirect()->back()->with('error', 'No hay registros disponibles para exportar en el mes de ' . $mes);
+            }
+
+            $filename = 'asistencia_' . strtolower($mes) . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+            
+            return Excel::download(new AttendanceExport($records, $mes), $filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al exportar asistencia: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar los datos: ' . $e->getMessage());
+        }
     }
 }

@@ -273,8 +273,11 @@
     </div>
 
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h3 class="card-title">Registros de Asistencia</h3>
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarAExcel()">
+                <i class="fas fa-file-excel"></i> Exportar a Excel
+            </button>
         </div>
         <div class="card-body">
             <table id="attendance-table" class="table table-bordered table-striped">
@@ -761,6 +764,36 @@ function renderCharts() {
             }
         });
     }
+}
+
+function exportarAExcel() {
+    // Obtener el mes actual seleccionado
+    const mesSelector = document.getElementById('mes-selector');
+    const mesSeleccionado = mesSelector ? mesSelector.value : 'actual';
+    
+    // Mostrar indicador de carga en el botón
+    const botonExportar = document.querySelector('button[onclick="exportarAExcel()"]');
+    const textoOriginal = botonExportar.innerHTML;
+    
+    botonExportar.disabled = true;
+    botonExportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+    
+    // Construir la URL de exportación
+    const url = '{{ url("attendance/export/excel") }}/' + mesSeleccionado;
+    
+    // Crear un enlace temporal para la descarga
+    const link = document.createElement('a');
+    link.href = url;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Restaurar el botón después de un breve momento
+    setTimeout(() => {
+        botonExportar.disabled = false;
+        botonExportar.innerHTML = textoOriginal;
+    }, 2000);
 }
 </script>
 @stop

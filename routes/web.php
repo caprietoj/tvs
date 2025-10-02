@@ -365,6 +365,9 @@ Route::middleware('auth')->group(function () {
         Route::get('dashboard/{mes?}', [AttendanceController::class, 'dashboard'])
             ->name('attendance.dashboard')
             ->where('mes', 'actual|Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre');
+        Route::get('export/excel/{mes?}', [AttendanceController::class, 'exportToExcel'])
+            ->name('attendance.export.excel')
+            ->where('mes', 'actual|Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre');
     });
 
     Route::get('/ausentismos/upload', [App\Http\Controllers\AusentismoController::class, 'showUploadForm'])->name('ausentismos.upload');
