@@ -322,7 +322,6 @@ return [
         [
             'text' => '📝 Mis Solicitudes',
             'icon' => 'fas fa-clipboard-list',
-            'can'  => 'view.solicitudes',
             'submenu' => [
                 [
                     'text' => '🎫 Help-Desk Sistemas',
