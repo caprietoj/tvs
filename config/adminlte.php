@@ -765,10 +765,9 @@ return [
                 ],
                 [
                     'text' => '💰 Presupuesto',
-                    'url'  => 'contabilidad/presupuesto',
+                    'route'  => 'presupuesto.autologin',
                     'icon' => 'fas fa-calculator',
                     'can'  => 'presupuesto.access',
-                    'active' => ['presupuesto*'],
                 ],
             ],
         ],

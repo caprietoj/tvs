@@ -25,7 +25,6 @@ use App\Http\Controllers\SistemasThresholdController;
 
 // contabilidad
 use App\Http\Controllers\BudgetExecutionController; // Add this line
-use App\Http\Controllers\PresupuestoController;
 use App\Http\Controllers\ParametrizacionController;
 
 // Documentos
@@ -200,48 +199,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/budget', [BudgetExecutionController::class, 'index'])->name('budget.index');
         Route::get('/budget/create', [BudgetExecutionController::class, 'create'])->name('budget.create');
         Route::post('/budget', [BudgetExecutionController::class, 'store'])->name('budget.store');
-    
-        // Presupuesto routes
-        Route::get('/presupuesto', [PresupuestoController::class, 'spreadsheet'])->name('presupuesto.index');
-        Route::get('/presupuesto/old', [PresupuestoController::class, 'index'])->name('presupuesto.old');
-        Route::post('/presupuesto/update', [PresupuestoController::class, 'update'])->name('presupuesto.update');
-        Route::post('/presupuesto/guardar-ejecucion', [PresupuestoController::class, 'guardarEjecucion'])->name('presupuesto.guardar-ejecucion');
-        Route::post('/presupuesto/guardar-celda-masivo', [PresupuestoController::class, 'guardarCeldaMasivo'])->name('presupuesto.guardar-celda-masivo');
-        Route::get('/presupuesto/export', [PresupuestoController::class, 'export'])->name('presupuesto.export');
-        Route::post('/presupuesto/procesar-extracto-contable', [PresupuestoController::class, 'procesarExtractoContable'])->name('presupuesto.procesar-extracto-contable');
-        Route::post('/presupuesto/filter-sections-by-month', [PresupuestoController::class, 'filterSectionsByMonth'])->name('presupuesto.filter-sections-by-month');
         
-        // Ruta para obtener detalles de rubros institucionales por mes
-        Route::get('/presupuesto/rubros-institucionales-detalle/{mes}', [PresupuestoController::class, 'getRubrosInstitucionalesDetalle'])->name('presupuesto.rubros-institucionales-detalle');
-        
-        // Ruta para obtener detalles de egresos de academia general
-        Route::get('/presupuesto/egresos-detalle', [PresupuestoController::class, 'getEgresosDetalle'])->name('presupuesto.egresos-detalle');
-        
-        // Ruta para obtener detalles de ingresos escolares
-        Route::get('/presupuesto/ingresos-escolares-detalle', [PresupuestoController::class, 'getIngresosEscolaresDetalle'])->name('presupuesto.ingresos-escolares-detalle');
-        
-        // Ruta para obtener detalles de tabla RESUMEN
-        Route::get('/presupuesto/resumen-detalle', [PresupuestoController::class, 'getResumenDetalle'])->name('presupuesto.resumen-detalle');
-        
-        // Nuevas rutas para funcionalidad Excel
-        Route::post('/presupuesto/upload-excel', [PresupuestoController::class, 'uploadExcel'])->name('presupuesto.upload-excel');
-        Route::post('/presupuesto/update-excel-data', [PresupuestoController::class, 'updateExcelData'])->name('presupuesto.update-excel-data');
-        Route::get('/presupuesto/download-excel', [PresupuestoController::class, 'downloadExcel'])->name('presupuesto.download-excel');
-
-        // Rutas para procesamiento de items Excel
-        Route::get('/presupuesto/items', [PresupuestoController::class, 'items'])->name('presupuesto.items');
-        Route::post('/presupuesto/upload', [PresupuestoController::class, 'upload'])->name('presupuesto.upload');
-        Route::get('/presupuesto/export-items', [PresupuestoController::class, 'exportItems'])->name('presupuesto.exportItems');
-        Route::delete('/presupuesto/clear-data', [PresupuestoController::class, 'clearData'])->name('presupuesto.clearData');
-        Route::post('/presupuesto/clear-excel', [PresupuestoController::class, 'clearExcel'])->name('presupuesto.clear-excel');
-        Route::get('/presupuesto/load-more-data', [PresupuestoController::class, 'loadMoreData'])->name('presupuesto.load-more-data');
-
-        // Rutas para configuración de presupuesto de secciones
-        Route::get('/presupuesto/configurar-secciones', [PresupuestoController::class, 'configurarSecciones'])->name('presupuesto.configurar-secciones');
-        Route::post('/presupuesto/guardar-presupuesto-secciones', [PresupuestoController::class, 'guardarPresupuestoSecciones'])->name('presupuesto.guardar-presupuesto-secciones');
-        Route::post('/presupuesto/inicializar-presupuestos-defecto', [PresupuestoController::class, 'inicializarPresupuestosDefecto'])->name('presupuesto.inicializar-presupuestos-defecto');
-        Route::post('/presupuesto/update-total', [PresupuestoController::class, 'updateTotal'])->name('presupuesto.update-total');
-        Route::post('/presupuesto/update-cell', [PresupuestoController::class, 'updateCell'])->name('presupuesto.update-cell');
+        // Presupuesto auto-login route
+        Route::get('/presupuesto/autologin', function () {
+            return view('presupuesto.autologin');
+        })->name('presupuesto.autologin')->middleware('can:presupuesto.access');
         
         // Parametrización routes
         Route::get('/parametrizacion', [App\Http\Controllers\ParametrizacionController::class, 'index'])->name('parametrizacion.index');
@@ -1238,9 +1200,6 @@ Route::middleware(['auth'])->prefix('previsitas')->name('previsitas.')->group(fu
     Route::get('/archivos/{archivo}/download', [PrevisitaConsolidadoController::class, 'downloadArchivo'])->name('download-archivo');
     Route::delete('/archivos/{archivo}', [PrevisitaConsolidadoController::class, 'destroyArchivo'])->name('destroy-archivo');
 });
-
-// Ruta temporal para presupuesto sin autenticación
-Route::get('/presupuesto', [PresupuestoController::class, 'spreadsheet'])->name('presupuesto.public');
 
 // Ruta temporal para verificar cotizaciones con impuestos por ítem
 Route::get('/check-quotations-item-taxes', function () {
