@@ -1348,3 +1348,49 @@ Route::get('/regenerate-pdf/{orderNumber}', function ($orderNumber) {
     return response()->json($response);
 });
 
+// === RUTAS DE PORTERÍA ===
+Route::middleware(['auth'])->prefix('porteria')->name('porteria.')->group(function () {
+    // Ruta de prueba (temporal)
+    Route::get('test-verificacion', function () {
+        return view('porteria.test-verificacion');
+    })->name('test.verificacion');
+    
+    // Registro de entrada/salida
+    Route::get('registro', [App\Http\Controllers\PorteriaController::class, 'index'])
+        ->name('registro.index')
+        ->middleware('permission:porteria.registro');
+    
+    Route::post('registro/verificar', [App\Http\Controllers\PorteriaController::class, 'verificar'])
+        ->name('registro.verificar')
+        ->middleware('permission:porteria.registro');
+    
+    Route::post('registro', [App\Http\Controllers\PorteriaController::class, 'store'])
+        ->name('registro.store')
+        ->middleware('permission:porteria.registro.create');
+    
+    Route::get('registro/{id}/edit', [App\Http\Controllers\PorteriaController::class, 'edit'])
+        ->name('registro.edit')
+        ->middleware('permission:admin.personas');
+    
+    Route::put('registro/{id}', [App\Http\Controllers\PorteriaController::class, 'update'])
+        ->name('registro.update')
+        ->middleware('permission:admin.personas');
+    
+    Route::delete('registro/{id}', [App\Http\Controllers\PorteriaController::class, 'destroy'])
+        ->name('registro.destroy')
+        ->middleware('permission:admin.personas');
+    
+    Route::get('registros/hoy', [App\Http\Controllers\PorteriaController::class, 'getRegistrosHoy'])
+        ->name('registro.hoy')
+        ->middleware('permission:porteria.registro.view');
+    
+    // Gestión de personas (solo admin)
+    Route::middleware('permission:admin.personas')->group(function () {
+        Route::get('personas/import', [App\Http\Controllers\PersonasController::class, 'importForm'])
+            ->name('personas.import');
+        Route::post('personas/import', [App\Http\Controllers\PersonasController::class, 'import'])
+            ->name('personas.import.process');
+        Route::resource('personas', App\Http\Controllers\PersonasController::class)
+            ->except(['show']);
+    });
+});

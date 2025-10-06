@@ -322,6 +322,7 @@ return [
         [
             'text' => '📝 Mis Solicitudes',
             'icon' => 'fas fa-clipboard-list',
+            'can'  => 'view.solicitudes',
             'submenu' => [
                 [
                     'text' => '🎫 Help-Desk Sistemas',
@@ -541,6 +542,7 @@ return [
         [
             'text' => '📊 Encuestas',
             'icon' => 'fas fa-poll',
+            'can'  => 'view.encuestas',
             'active' => ['surveys*'],
             'submenu' => [
                 [
@@ -767,6 +769,29 @@ return [
                     'icon' => 'fas fa-calculator',
                     'can'  => 'presupuesto.access',
                     'active' => ['presupuesto*'],
+                ],
+            ],
+        ],
+
+        // === MÓDULO DE PORTERÍA ===
+        [
+            'text' => '🚪 Portería',
+            'icon' => 'fas fa-door-open',
+            'can'  => 'view.porteria',
+            'submenu' => [
+                [
+                    'text' => '📋 Registro de Entrada/Salida',
+                    'url'  => 'porteria/registro',
+                    'icon' => 'fas fa-clipboard-list',
+                    'can'  => 'porteria.registro',
+                    'active' => ['porteria/registro*'],
+                ],
+                [
+                    'text' => '👥 Gestión de Personas',
+                    'url'  => 'porteria/personas',
+                    'icon' => 'fas fa-users-cog',
+                    'can'  => 'admin.personas',
+                    'active' => ['porteria/personas*'],
                 ],
             ],
         ],
