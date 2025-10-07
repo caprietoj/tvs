@@ -272,12 +272,31 @@
         </div>
     </div>
 
+    <!-- Botón de exportación -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <button type="button" class="btn btn-success btn-sm mr-2" onclick="exportarAExcel()">
+                        <i class="fas fa-file-excel mr-1"></i>
+                        Exportar a Excel
+                    </button>
+                    <button type="button" class="btn btn-info btn-sm" onclick="exportarAHTML()">
+                        <i class="fas fa-file-code mr-1"></i>
+                        Exportar a HTML
+                    </button>
+                    <p class="text-muted mt-2">
+                        <i class="fas fa-info-circle"></i>
+                        Descarga un archivo Excel (.xlsx) o HTML con todos los datos, filtros automáticos y columnas calculadas
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header">
             <h3 class="card-title">Registros de Asistencia</h3>
-            <button type="button" class="btn btn-success btn-sm" onclick="exportarAExcel()">
-                <i class="fas fa-file-excel"></i> Exportar a Excel
-            </button>
         </div>
         <div class="card-body">
             <table id="attendance-table" class="table table-bordered table-striped">
@@ -780,6 +799,36 @@ function exportarAExcel() {
     
     // Construir la URL de exportación
     const url = '{{ url("attendance/export/excel") }}/' + mesSeleccionado;
+    
+    // Crear un enlace temporal para la descarga
+    const link = document.createElement('a');
+    link.href = url;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Restaurar el botón después de un breve momento
+    setTimeout(() => {
+        botonExportar.disabled = false;
+        botonExportar.innerHTML = textoOriginal;
+    }, 2000);
+}
+
+function exportarAHTML() {
+    // Obtener el mes actual seleccionado
+    const mesSelector = document.getElementById('mes-selector');
+    const mesSeleccionado = mesSelector ? mesSelector.value : 'actual';
+    
+    // Mostrar indicador de carga en el botón
+    const botonExportar = document.querySelector('button[onclick="exportarAHTML()"]');
+    const textoOriginal = botonExportar.innerHTML;
+    
+    botonExportar.disabled = true;
+    botonExportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+    
+    // Construir la URL de exportación
+    const url = '{{ url("attendance/export/html") }}/' + mesSeleccionado;
     
     // Crear un enlace temporal para la descarga
     const link = document.createElement('a');

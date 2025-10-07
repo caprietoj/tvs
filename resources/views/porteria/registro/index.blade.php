@@ -110,6 +110,20 @@
                             autocomplete="off"
                         >
                     </div>
+                    <div class="form-group-modal">
+                        <label for="visitante-observaciones">
+                            <i class="fas fa-comment-alt"></i> Observaciones
+                        </label>
+                        <textarea 
+                            id="visitante-observaciones" 
+                            name="observaciones" 
+                            class="form-control-modal"
+                            placeholder="Ingrese observaciones sobre la visita (opcional)"
+                            rows="3"
+                            autocomplete="off"
+                            style="resize: vertical;"
+                        ></textarea>
+                    </div>
                     <div class="modal-visitante-footer">
                         <button type="button" class="btn-modal btn-modal-cancel" onclick="cerrarModalVisitante()">
                             <i class="fas fa-times"></i> Cancelar
@@ -225,6 +239,20 @@
                         </div>
                     </div>
 
+                    <div class="form-group-modal">
+                        <label for="editar-observaciones">
+                            <i class="fas fa-comment-alt"></i> Observaciones
+                        </label>
+                        <textarea 
+                            id="editar-observaciones" 
+                            class="form-control-modal"
+                            placeholder="Observaciones sobre el registro (opcional)"
+                            rows="3"
+                            autocomplete="off"
+                            style="resize: vertical;"
+                        ></textarea>
+                    </div>
+
                     <div class="modal-visitante-footer">
                         <button type="button" class="btn-modal btn-modal-cancel" onclick="cerrarModalEditar()">
                             <i class="fas fa-times"></i> Cancelar
@@ -244,12 +272,37 @@
         <div class="col-12">
             <div class="card card-outline card-primary">
                 <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-list"></i> Registros de Hoy</h3>
+                    <h3 class="card-title"><i class="fas fa-list"></i> Registros del Día</h3>
                     <div class="card-tools">
-                        <span class="badge badge-primary" id="total-registros">0 registros</span>
+                        <div class="input-group input-group-sm" style="width: 250px;">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                            </div>
+                            <input type="date" class="form-control" id="filtro-fecha" value="{{ date('Y-m-d') }}">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-default btn-sm" id="btn-hoy" title="Volver a hoy">
+                                    <i class="fas fa-calendar-day"></i> Hoy
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body">
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="text-muted">
+                                    <i class="fas fa-calendar"></i> 
+                                    Mostrando registros del: <strong id="fecha-mostrada">{{ date('d/m/Y') }}</strong>
+                                </h5>
+                            </div>
+                            <div class="col-md-6 text-right">
+                                <span class="badge badge-primary badge-lg" id="total-registros" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                                    0 registros
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table id="tabla-registros" class="table table-striped table-hover table-bordered">
                             <thead class="thead-dark">
@@ -260,6 +313,7 @@
                                     <th>Fecha de Ingreso</th>
                                     <th>Hora de Entrada</th>
                                     <th>Hora de Salida</th>
+                                    <th>Observaciones</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -517,7 +571,10 @@ $(document).ready(function() {
         serverSide: true,
         ajax: {
             url: '{{ route('porteria.registro.index') }}',
-            type: 'GET'
+            type: 'GET',
+            data: function(d) {
+                d.fecha = $('#filtro-fecha').val();
+            }
         },
         columns: [
             { data: 'documento', name: 'documento' },
@@ -526,6 +583,7 @@ $(document).ready(function() {
             { data: 'fecha_formatted', name: 'fecha' },
             { data: 'hora_entrada_formatted', name: 'hora_entrada' },
             { data: 'hora_salida_formatted', name: 'hora_salida' },
+            { data: 'observaciones_formatted', name: 'observaciones', orderable: false },
             { data: 'acciones', name: 'acciones', orderable: false, searchable: false }
         ],
         order: [[4, 'desc']], // Ordenar por hora de entrada descendente
@@ -536,6 +594,25 @@ $(document).ready(function() {
             const api = this.api();
             $('#total-registros').text(api.page.info().recordsTotal + ' registros');
         }
+    });
+
+    // Manejar cambio de fecha
+    $('#filtro-fecha').on('change', function() {
+        const fechaSeleccionada = $(this).val();
+        const fecha = new Date(fechaSeleccionada + 'T00:00:00');
+        const fechaFormateada = fecha.toLocaleDateString('es-ES', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+        });
+        $('#fecha-mostrada').text(fechaFormateada);
+        tabla.ajax.reload();
+    });
+
+    // Botón para volver a hoy
+    $('#btn-hoy').on('click', function() {
+        const hoy = new Date().toISOString().split('T')[0];
+        $('#filtro-fecha').val(hoy).trigger('change');
     });
 
     // Manejar el envío del formulario
@@ -589,11 +666,12 @@ $(document).ready(function() {
     });
 
     // Función para registrar persona
-    function registrarPersona(documento, nombre, apellido) {
+    function registrarPersona(documento, nombre, apellido, observaciones) {
         console.log('🚀 registrarPersona() llamada con:', {
             documento: documento,
             nombre: nombre,
-            apellido: apellido
+            apellido: apellido,
+            observaciones: observaciones
         });
         
         const btnSubmit = $('#form-registro').find('button[type="submit"]');
@@ -607,7 +685,8 @@ $(document).ready(function() {
                 _token: '{{ csrf_token() }}',
                 documento: documento,
                 nombre: nombre,
-                apellido: apellido
+                apellido: apellido,
+                observaciones: observaciones
             },
             success: function(response) {
                 console.log('✅ Respuesta del registro:', response);
@@ -657,6 +736,7 @@ $(document).ready(function() {
         const documento = $('#visitante-documento').val();
         const nombre = $('#visitante-nombre').val().trim();
         const apellido = $('#visitante-apellido').val().trim();
+        const observaciones = $('#visitante-observaciones').val().trim();
         
         if (!nombre || !apellido) {
             alert('Por favor complete todos los campos.');
@@ -664,7 +744,7 @@ $(document).ready(function() {
         }
         
         cerrarModalVisitante();
-        registrarPersona(documento, nombre, apellido);
+        registrarPersona(documento, nombre, apellido, observaciones);
     });
 
     // Función para mostrar mensajes
@@ -707,6 +787,7 @@ function abrirModalVisitante(documento) {
     $('#visitante-documento').val(documento);
     $('#visitante-nombre').val('');
     $('#visitante-apellido').val('');
+    $('#visitante-observaciones').val('');
     $('#modal-visitante').fadeIn(300);
     
     // Enfocar el campo de nombre
@@ -760,6 +841,7 @@ $(document).on('click', '.btn-editar', function() {
                 $('#editar-tipo').val(data.tipo_persona);
                 $('#editar-entrada').val(data.hora_entrada);
                 $('#editar-salida').val(data.hora_salida);
+                $('#editar-observaciones').val(data.observaciones);
                 
                 // Mostrar modal
                 $('#modal-editar').fadeIn(300);
@@ -791,7 +873,8 @@ $('#form-editar').on('submit', function(e) {
         apellido: $('#editar-apellido').val(),
         tipo_persona: $('#editar-tipo').val(),
         hora_entrada: $('#editar-entrada').val(),
-        hora_salida: $('#editar-salida').val()
+        hora_salida: $('#editar-salida').val(),
+        observaciones: $('#editar-observaciones').val()
     };
     
     console.log('💾 Guardando cambios:', formData);

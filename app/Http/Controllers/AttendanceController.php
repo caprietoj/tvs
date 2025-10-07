@@ -117,9 +117,7 @@ class AttendanceController extends Controller
 
     public function dashboard($mes = 'actual')
     {
-        if ($mes === 'actual') {
-            $mes = 'Enero';
-        }
+        $mes = $this->resolveMonth($mes);
 
         try {
             $records = AttendanceRecord::where('mes', $mes)->get();
@@ -386,9 +384,7 @@ class AttendanceController extends Controller
     public function exportToExcel($mes = 'actual')
     {
         try {
-            if ($mes === 'actual') {
-                $mes = 'Enero';
-            }
+            $mes = $this->resolveMonth($mes);
 
             $records = AttendanceRecord::where('mes', $mes)->get();
             
@@ -404,5 +400,100 @@ class AttendanceController extends Controller
             \Log::error('Error al exportar asistencia: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al exportar los datos: ' . $e->getMessage());
         }
+    }
+
+    public function exportHtml($mes = 'actual')
+    {
+        try {
+            $mes = $this->resolveMonth($mes);
+
+            $records = AttendanceRecord::where('mes', $mes)->get();
+            
+            if ($records->isEmpty()) {
+                return redirect()->back()->with('error', 'No hay registros disponibles para exportar en el mes de ' . $mes);
+            }
+
+            // Obtener estadísticas para el informe
+            $totalEmployees = $records->unique('no_id')->count();
+            $totalDays = $records->unique('fecha')->count();
+            
+            // Análisis de llegadas tarde
+            $lateArrivalsData = $this->analyzeLateArrivals($records);
+            $lateArrivalsCount = $lateArrivalsData['total'];
+            
+            // Análisis de ausencias
+            $absencesData = $this->analyzeAbsences($records);
+            $absences = [
+                'total' => $absencesData['total'],
+                'byDepartment' => $absencesData['byDepartment']
+            ];
+            
+            // Calcular promedio de asistencia
+            $totalAsistencias = $records->count();
+            $averageAttendance = $totalAsistencias > 0 
+                ? round((($totalAsistencias - $absences['total']) / $totalAsistencias) * 100, 2)
+                : 0;
+            
+            // Análisis por departamento
+            $departmentStats = $this->analyzeDepartments($records);
+
+            // Calcular estadísticas adicionales
+            $attendanceStats = [
+                'total_registros' => $records->count(),
+                'total_empleados' => $totalEmployees,
+                'total_dias' => $totalDays,
+                'llegadas_tarde' => $lateArrivalsCount,
+                'ausencias_total' => $absences['total'],
+                'promedio_asistencia' => $averageAttendance,
+                'registros_puntuales' => $records->count() - $lateArrivalsCount,
+                'promedio_diario' => $totalDays > 0 ? round($records->count() / $totalDays, 1) : 0
+            ];
+
+            $filename = 'Informe_Asistencia_' . ucfirst($mes) . '_' . date('Y-m-d') . '.html';
+
+            // Generar HTML
+            $html = view('attendance.export-html', [
+                'attendanceStats' => $attendanceStats,
+                'records' => $records,
+                'departmentStats' => $departmentStats,
+                'mes' => $mes,
+                'mesTexto' => ucfirst($mes) . ' ' . date('Y')
+            ])->render();
+
+            return response($html)
+                ->header('Content-Type', 'text/html')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+
+        } catch (\Exception $e) {
+            \Log::error('Error al exportar asistencia HTML: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar los datos: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Convierte 'actual' al mes actual en español
+     */
+    private function resolveMonth($mes)
+    {
+        if ($mes === 'actual') {
+            $mesActual = Carbon::now()->format('F');
+            $mesesEspanol = [
+                'January' => 'Enero',
+                'February' => 'Febrero', 
+                'March' => 'Marzo',
+                'April' => 'Abril',
+                'May' => 'Mayo',
+                'June' => 'Junio',
+                'July' => 'Julio',
+                'August' => 'Agosto',
+                'September' => 'Septiembre',
+                'October' => 'Octubre',
+                'November' => 'Noviembre',
+                'December' => 'Diciembre'
+            ];
+            return $mesesEspanol[$mesActual] ?? 'Enero';
+        }
+        
+        return $mes;
     }
 }

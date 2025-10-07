@@ -18,6 +18,7 @@ class RegistroPorteria extends Model
         'fecha',
         'hora_entrada',
         'hora_salida',
+        'observaciones',
         'user_id',
     ];
 

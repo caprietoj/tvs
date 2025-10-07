@@ -47,6 +47,7 @@ use App\Http\Controllers\SatisfactionSurveyController; // Add this line
 use App\Http\Controllers\Surveys\ComplementaryServices\TransportController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\WeeklyBiometricController;
+use App\Http\Controllers\PorteriaDashboardController;
 use App\Http\Controllers\SalidaPedagogicaController;
 use App\Http\Controllers\ImpersonateController;
 use App\Http\Controllers\PurchaseRequestController;
@@ -329,6 +330,9 @@ Route::middleware('auth')->group(function () {
             ->where('mes', 'actual|Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre');
         Route::get('export/excel/{mes?}', [AttendanceController::class, 'exportToExcel'])
             ->name('attendance.export.excel')
+            ->where('mes', 'actual|Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre');
+        Route::get('export/html/{mes?}', [AttendanceController::class, 'exportHtml'])
+            ->name('attendance.export.html')
             ->where('mes', 'actual|Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre');
     });
 
@@ -1342,6 +1346,19 @@ Route::middleware(['auth'])->prefix('porteria')->name('porteria.')->group(functi
     Route::get('registros/hoy', [App\Http\Controllers\PorteriaController::class, 'getRegistrosHoy'])
         ->name('registro.hoy')
         ->middleware('permission:porteria.registro.view');
+    
+    // Dashboard de portería
+    Route::get('dashboard', [App\Http\Controllers\PorteriaDashboardController::class, 'index'])
+        ->name('dashboard')
+        ->middleware('permission:view.reports');
+    
+    Route::get('dashboard/export', [App\Http\Controllers\PorteriaDashboardController::class, 'export'])
+        ->name('dashboard.export')
+        ->middleware('permission:view.reports');
+    
+    Route::get('dashboard/export-html', [App\Http\Controllers\PorteriaDashboardController::class, 'exportHtml'])
+        ->name('dashboard.export-html')
+        ->middleware('permission:view.reports');
     
     // Gestión de personas (solo admin)
     Route::middleware('permission:admin.personas')->group(function () {

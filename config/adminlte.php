@@ -419,7 +419,7 @@ return [
                 [
                     'text' => '📅 Eventos Institucionales',
                     'icon' => 'fas fa-calendar-alt',
-                    'active' => ['events*'],
+                    'active' => ['events', 'events/create', 'events/calendar'],
                     'submenu' => [
                         [
                             'text' => 'Nuevo Evento',
@@ -813,7 +813,7 @@ return [
                     'active' => ['maintenance/dashboard*'],
                 ],
                 [
-                    'text' => '⏰ Biométrico',
+                    'text' => '⏰ Biométrico Mensual',
                     'url'  => 'attendance/dashboard/actual',
                     'icon' => 'fas fa-clock',
                     'active' => ['attendance/dashboard*'],
@@ -823,6 +823,12 @@ return [
                     'url'  => 'weekly-biometric/dashboard',
                     'icon' => 'fas fa-chart-pie',
                     'active' => ['weekly-biometric/dashboard*'],
+                ],
+                [
+                    'text' => 'Biométrico Portería',
+                    'url'  => 'porteria/dashboard',
+                    'icon' => 'fas fa-door-open',
+                    'active' => ['porteria/dashboard*'],
                 ],
                 [
                     'text' => '😷 Ausentismos',
@@ -894,7 +900,7 @@ return [
                     'can' => 'view.upload',
                     'submenu' => [
                         [
-                            'text' => 'Biométrico Diario',
+                            'text' => 'Biométrico Mensual',
                             'url'  => 'attendance/upload',
                             'icon' => 'fas fa-clock',
                             'active' => ['attendance/upload*'],
@@ -903,7 +909,7 @@ return [
                             'text' => 'Biométrico Semanal',
                             'url'  => 'weekly-biometric',
                             'icon' => 'fas fa-calendar-week',
-                            'active' => ['weekly-biometric*'],
+                            'active' => ['weekly-biometric', 'weekly-biometric/index', 'weekly-biometric/process'],
                         ],
                         [
                             'text' => 'Ausentismos',
@@ -982,7 +988,7 @@ return [
                             'text' => 'Gestionar Equipos',
                             'url'  => 'equipment',
                             'icon' => 'fas fa-boxes',
-                            'active' => ['equipment*'],
+                            'active' => ['equipment', 'equipment/create', 'equipment/edit*', 'equipment/show*'],
                         ],
                     ],
                 ],

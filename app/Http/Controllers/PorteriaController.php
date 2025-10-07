@@ -25,8 +25,11 @@ class PorteriaController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
+            // Obtener la fecha del filtro o usar hoy como predeterminado
+            $fecha = $request->input('fecha', Carbon::today()->format('Y-m-d'));
+            
             $registros = RegistroPorteria::with('usuario')
-                ->whereDate('fecha', Carbon::today())
+                ->whereDate('fecha', $fecha)
                 ->orderBy('created_at', 'desc')
                 ->get();
 
@@ -58,6 +61,16 @@ class PorteriaController extends Controller
                 ->addColumn('fecha_formatted', function ($registro) {
                     return Carbon::parse($registro->fecha)->format('d/m/Y');
                 })
+                ->addColumn('observaciones_formatted', function ($registro) {
+                    if ($registro->observaciones) {
+                        $observaciones = htmlspecialchars($registro->observaciones);
+                        if (strlen($observaciones) > 50) {
+                            return '<span title="' . $observaciones . '">' . substr($observaciones, 0, 50) . '...</span>';
+                        }
+                        return $observaciones;
+                    }
+                    return '<span class="text-muted">-</span>';
+                })
                 ->addColumn('acciones', function ($registro) {
                     // Solo mostrar botones si el usuario es admin
                     if (auth()->user()->hasRole('admin')) {
@@ -72,7 +85,7 @@ class PorteriaController extends Controller
                     }
                     return '<span class="text-muted">-</span>';
                 })
-                ->rawColumns(['estatus_badge', 'hora_salida_formatted', 'acciones'])
+                ->rawColumns(['estatus_badge', 'hora_salida_formatted', 'observaciones_formatted', 'acciones'])
                 ->make(true);
         }
 
@@ -211,6 +224,7 @@ class PorteriaController extends Controller
                 'tipo_persona' => $tipo,
                 'fecha' => $hoy,
                 'hora_entrada' => $horaActual,
+                'observaciones' => $request->input('observaciones'),
                 'user_id' => auth()->id(),
             ]);
 
@@ -339,6 +353,7 @@ class PorteriaController extends Controller
                     'tipo_persona' => $registro->tipo_persona,
                     'hora_entrada' => Carbon::parse($registro->hora_entrada)->format('H:i'),
                     'hora_salida' => $registro->hora_salida ? Carbon::parse($registro->hora_salida)->format('H:i') : '',
+                    'observaciones' => $registro->observaciones ?? '',
                 ],
             ]);
         } catch (\Exception $e) {
@@ -369,6 +384,7 @@ class PorteriaController extends Controller
             'tipo_persona' => 'required|in:empleado,estudiante,externo',
             'hora_entrada' => 'required|date_format:H:i',
             'hora_salida' => 'nullable|date_format:H:i',
+            'observaciones' => 'nullable|string',
         ]);
 
         try {
@@ -381,6 +397,7 @@ class PorteriaController extends Controller
                 'tipo_persona' => $request->tipo_persona,
                 'hora_entrada' => $request->hora_entrada,
                 'hora_salida' => $request->hora_salida,
+                'observaciones' => $request->observaciones,
             ]);
 
             return response()->json([
