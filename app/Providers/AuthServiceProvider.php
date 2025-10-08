@@ -86,6 +86,28 @@ class AuthServiceProvider extends ServiceProvider
             return in_array($user->name, $allowedUsers);
         });
 
+        // Gate para verificar acceso al módulo de enfermería
+        Gate::define('view.enfermeria', function ($user) {
+            // Administradores tienen acceso completo
+            if ($user->hasRole('admin')) {
+                return true;
+            }
+            
+            // También usuarios con el permiso específico de enfermería
+            return $user->can('enfermeria.access');
+        });
+
+        // Gate para verificar acceso específico a ingreso de estudiantes
+        Gate::define('enfermeria.ingreso_estudiantes', function ($user) {
+            // Administradores tienen acceso completo
+            if ($user->hasRole('admin')) {
+                return true;
+            }
+            
+            // También usuarios con el permiso específico
+            return $user->can('enfermeria.ingreso_estudiantes.access');
+        });
+
         // ... existing code ...
     }
 }

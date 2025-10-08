@@ -1,0 +1,95 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\MotivoEnfermeria;
+use App\Models\IngresoEstudiante;
+
+class EnfermeriaController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
+     * Display the main page for student admission.
+     */
+    public function ingresoEstudiantes()
+    {
+        $ingresos = IngresoEstudiante::with('user')->recientes()->paginate(15);
+        
+        // Estadísticas
+        $totalAtenciones = IngresoEstudiante::count();
+        $atencionesHoy = IngresoEstudiante::whereDate('fecha', today())->count();
+        $atencionesEstaSemana = IngresoEstudiante::whereBetween('fecha', [
+            now()->startOfWeek(),
+            now()->endOfWeek()
+        ])->count();
+        $emergencias = IngresoEstudiante::where('motivo', 'like', '%emergencia%')
+                                      ->orWhere('motivo', 'like', '%Emergencia%')
+                                      ->count();
+        $derivaciones = IngresoEstudiante::whereNotNull('derivacion_estudiante')
+                                        ->where('derivacion_estudiante', '!=', '')
+                                        ->count();
+        
+        return view('enfermeria.ingreso-estudiantes.index', compact(
+            'ingresos', 
+            'totalAtenciones', 
+            'atencionesHoy', 
+            'atencionesEstaSemana',
+            'emergencias', 
+            'derivaciones'
+        ));
+    }
+
+    /**
+     * Show the form for creating a new student admission record.
+     */
+    public function createIngresoEstudiante()
+    {
+        $motivos = MotivoEnfermeria::paraSelect();
+        
+        return view('enfermeria.ingreso-estudiantes.create', compact('motivos'));
+    }
+
+    /**
+     * Store a newly created student admission record in storage.
+     */
+    public function storeIngresoEstudiante(Request $request)
+    {
+        // Validación de datos
+        $validatedData = $request->validate([
+            'fecha' => 'required|date',
+            'hora' => 'required|date_format:H:i',
+            'estudiante' => 'required|string|max:255',
+            'codigo_estudiante' => 'nullable|string|max:50',
+            'documento_estudiante' => 'nullable|string|max:50',
+            'apellidos_estudiante' => 'nullable|string|max:500',
+            'eps_estudiante' => 'nullable|string|max:255',
+            'sexo_estudiante' => 'nullable|in:M,F',
+            'tipo_sangre_estudiante' => 'nullable|string|max:10',
+            'estudiante_id' => 'nullable|exists:estudiantes,id',
+            'curso' => 'required|string|max:50',
+            'motivo' => 'required|string|max:500',
+            'descripcion_evento' => 'required|string|max:1000',
+            'accion_enfermeria' => 'required|string|max:1000',
+            'seguimiento' => 'nullable|string|max:1000',
+            'derivacion_estudiante' => 'nullable|string|max:500',
+            'encuesta' => 'nullable|string|max:500',
+            'encuesta_observaciones' => 'nullable|string|max:1000',
+        ]);
+
+        // Agregar el usuario que registra
+        $validatedData['user_id'] = Auth::id();
+
+        // Crear el registro en la base de datos
+        IngresoEstudiante::create($validatedData);
+        
+        return redirect()
+            ->route('enfermeria.ingreso_estudiantes.index')
+            ->with('success', 'Registro de ingreso de estudiante creado exitosamente.');
+    }
+}

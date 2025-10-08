@@ -794,6 +794,43 @@ return [
             ],
         ],
 
+        // === MÓDULO DE ENFERMERÍA ===
+        [
+            'text' => '❤️ Enfermería',
+            'icon' => 'fas fa-heartbeat',
+            'can'  => 'view.enfermeria',
+            'submenu' => [
+                [
+                    'text' => '👨‍🎓 Ingreso Estudiantes',
+                    'url'  => 'enfermeria/ingreso-estudiantes',
+                    'icon' => 'fas fa-user-plus',
+                    'can'  => 'enfermeria.ingreso_estudiantes',
+                    'active' => ['enfermeria/ingreso-estudiantes*'],
+                ],
+                [
+                    'text' => '⚙️ Parametrización',
+                    'icon' => 'fas fa-cogs',
+                    'can'  => 'view.enfermeria',
+                    'submenu' => [
+                        [
+                            'text' => 'Motivos de Enfermería',
+                            'url'  => 'parametrizacion/motivos-enfermeria',
+                            'icon' => 'fas fa-list-ul',
+                            'can'  => 'view.enfermeria',
+                            'active' => ['parametrizacion/motivos-enfermeria*'],
+                        ],
+                        [
+                            'text' => 'Información Estudiantes',
+                            'url'  => 'parametrizacion/estudiantes',
+                            'icon' => 'fas fa-users',
+                            'can'  => 'view.enfermeria',
+                            'active' => ['parametrizacion/estudiantes*'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+
         // === MÓDULO DE INFORMES ===
         [
             'text' => '📊 Informes y Reportes',

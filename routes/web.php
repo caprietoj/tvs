@@ -10,6 +10,7 @@ use App\Http\Controllers\TestPhotocopiesDashboardController;
 // Enfermería
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\ThresholdController;
+use App\Http\Controllers\MotivosEnfermeriaController;
 
 // Compras
 use App\Http\Controllers\KpiComprasController;
@@ -76,6 +77,10 @@ Route::get('/dashboard', function () {
     return redirect('/home');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// API para búsqueda de estudiantes (sin middleware para AJAX)
+Route::get('api/estudiantes/buscar', [App\Http\Controllers\EstudiantesController::class, 'buscarEstudiantes'])
+    ->name('api.estudiantes.buscar');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -104,8 +109,36 @@ Route::middleware('auth')->group(function () {
 
         // Nueva ruta para editar el umbral en Enfermería.
         Route::get('umbral/{id}/edit', [ThresholdController::class, 'editEnfermeria'])->name('umbral.enfermeria.edit');
+
+        // Rutas para Ingreso de Estudiantes
+        Route::get('ingreso-estudiantes', [App\Http\Controllers\EnfermeriaController::class, 'ingresoEstudiantes'])
+            ->name('enfermeria.ingreso_estudiantes.index')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::get('ingreso-estudiantes/create', [App\Http\Controllers\EnfermeriaController::class, 'createIngresoEstudiante'])
+            ->name('enfermeria.ingreso_estudiantes.create')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::post('ingreso-estudiantes', [App\Http\Controllers\EnfermeriaController::class, 'storeIngresoEstudiante'])
+            ->name('enfermeria.ingreso_estudiantes.store')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
     });
 
+    // Parametrización de Enfermería
+    Route::group(['prefix' => 'parametrizacion', 'middleware' => ['auth', 'can:view.enfermeria']], function () {
+        Route::resource('motivos-enfermeria', App\Http\Controllers\MotivosEnfermeriaController::class)
+            ->parameters(['motivos-enfermeria' => 'motivoEnfermeria']);
+        Route::patch('motivos-enfermeria/{motivoEnfermeria}/toggle-active', [App\Http\Controllers\MotivosEnfermeriaController::class, 'toggleActive'])
+            ->name('motivos-enfermeria.toggle-active');
+        Route::post('motivos-enfermeria/import', [App\Http\Controllers\MotivosEnfermeriaController::class, 'import'])
+            ->name('motivos-enfermeria.import');
+            
+        // Gestión de Estudiantes
+        Route::resource('estudiantes', App\Http\Controllers\EstudiantesController::class);
+        Route::patch('estudiantes/{estudiante}/toggle-active', [App\Http\Controllers\EstudiantesController::class, 'toggleActive'])
+            ->name('estudiantes.toggle-active');
+        Route::post('estudiantes/import', [App\Http\Controllers\EstudiantesController::class, 'import'])
+            ->name('estudiantes.import');
+    });
+    
     // Enfermería Document Management
     Route::group(['prefix' => 'enfermeria', 'middleware' => ['auth']], function () {
         Route::get('/documents', [App\Http\Controllers\EnfermeriaDocumentController::class, 'index'])
