@@ -808,6 +808,13 @@ return [
                     'active' => ['enfermeria/ingreso-estudiantes*'],
                 ],
                 [
+                    'text' => '👔 Ingreso Colaboradores',
+                    'url'  => 'enfermeria/ingreso-colaboradores',
+                    'icon' => 'fas fa-user-tie',
+                    'can'  => 'enfermeria.ingreso_estudiantes',
+                    'active' => ['enfermeria/ingreso-colaboradores*'],
+                ],
+                [
                     'text' => '⚙️ Parametrización',
                     'icon' => 'fas fa-cogs',
                     'can'  => 'view.enfermeria',
@@ -825,6 +832,13 @@ return [
                             'icon' => 'fas fa-users',
                             'can'  => 'view.enfermeria',
                             'active' => ['parametrizacion/estudiantes*'],
+                        ],
+                        [
+                            'text' => 'Información Empleados',
+                            'url'  => 'parametrizacion/empleados',
+                            'icon' => 'fas fa-user-tie',
+                            'can'  => 'view.enfermeria',
+                            'active' => ['parametrizacion/empleados*'],
                         ],
                     ],
                 ],

@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\MotivoEnfermeria;
 use App\Models\IngresoEstudiante;
+use App\Models\IngresoColaborador;
+use App\Models\Empleado;
 
 class EnfermeriaController extends Controller
 {
@@ -91,5 +93,80 @@ class EnfermeriaController extends Controller
         return redirect()
             ->route('enfermeria.ingreso_estudiantes.index')
             ->with('success', 'Registro de ingreso de estudiante creado exitosamente.');
+    }
+
+    /**
+     * Display the main page for employee/collaborator admission.
+     */
+    public function ingresoColaboradores()
+    {
+        $ingresos = IngresoColaborador::with(['empleado', 'usuario'])
+            ->orderBy('fecha', 'desc')
+            ->orderBy('hora', 'desc')
+            ->paginate(15);
+        
+        // Estadísticas
+        $totalAtenciones = IngresoColaborador::count();
+        $atencionesHoy = IngresoColaborador::whereDate('fecha', today())->count();
+        $atencionesEstaSemana = IngresoColaborador::whereBetween('fecha', [
+            now()->startOfWeek(),
+            now()->endOfWeek()
+        ])->count();
+        
+        return view('enfermeria.ingreso-colaboradores.index', compact(
+            'ingresos',
+            'totalAtenciones',
+            'atencionesHoy',
+            'atencionesEstaSemana'
+        ));
+    }
+
+    /**
+     * Show the form for creating a new collaborator admission.
+     */
+    public function createIngresoColaborador()
+    {
+        $motivos = MotivoEnfermeria::where('activo', true)
+            ->orderBy('orden')
+            ->get();
+        
+        return view('enfermeria.ingreso-colaboradores.create', compact('motivos'));
+    }
+
+    /**
+     * Store a newly created collaborator admission in storage.
+     */
+    public function storeIngresoColaborador(Request $request)
+    {
+        // Validación de datos
+        $validatedData = $request->validate([
+            'empleado_id' => 'nullable|exists:empleados,id',
+            'fecha' => 'required|date',
+            'hora' => 'required|date_format:H:i',
+            'nombre_completo' => 'required|string|max:255',
+            'documento_colaborador' => 'required|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'area_colaborador' => 'required|in:DOCENTE,ADMINISTRATIVO,SERV. GENS. Y MTO.,TRANSPORTE,OTRO',
+            'eps_colaborador' => 'nullable|string|max:255',
+            'sexo_colaborador' => 'nullable|in:M,F',
+            'tipo_sangre_colaborador' => 'nullable|string|max:10',
+            'motivo' => 'required|string|max:500',
+            'descripcion_evento' => 'required|string|max:1000',
+            'accion_enfermeria' => 'required|string|max:1000',
+            'seguimiento' => 'nullable|string|max:1000',
+            'derivacion_colaborador' => 'nullable|string|max:500',
+            'encuesta' => 'nullable|string|max:500',
+            'encuesta_observaciones' => 'nullable|string|max:1000',
+        ]);
+
+        // Agregar el usuario que registra
+        $validatedData['user_id'] = Auth::id();
+
+        // Crear el registro en la base de datos
+        IngresoColaborador::create($validatedData);
+        
+        return redirect()
+            ->route('enfermeria.ingreso_colaboradores.index')
+            ->with('success', 'Registro de ingreso de colaborador creado exitosamente.');
     }
 }

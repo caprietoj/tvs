@@ -81,6 +81,10 @@ Route::get('/dashboard', function () {
 Route::get('api/estudiantes/buscar', [App\Http\Controllers\EstudiantesController::class, 'buscarEstudiantes'])
     ->name('api.estudiantes.buscar');
 
+// API para búsqueda de empleados (sin middleware para AJAX)
+Route::get('api/empleados/buscar', [App\Http\Controllers\EmpleadosController::class, 'buscarEmpleados'])
+    ->name('api.empleados.buscar');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -120,6 +124,17 @@ Route::middleware('auth')->group(function () {
         Route::post('ingreso-estudiantes', [App\Http\Controllers\EnfermeriaController::class, 'storeIngresoEstudiante'])
             ->name('enfermeria.ingreso_estudiantes.store')
             ->middleware('can:enfermeria.ingreso_estudiantes');
+            
+        // Rutas para Ingreso de Colaboradores
+        Route::get('ingreso-colaboradores', [App\Http\Controllers\EnfermeriaController::class, 'ingresoColaboradores'])
+            ->name('enfermeria.ingreso_colaboradores.index')
+            ->middleware('can:enfermeria.ingreso_estudiantes'); // Usa el mismo permiso de enfermería
+        Route::get('ingreso-colaboradores/create', [App\Http\Controllers\EnfermeriaController::class, 'createIngresoColaborador'])
+            ->name('enfermeria.ingreso_colaboradores.create')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::post('ingreso-colaboradores', [App\Http\Controllers\EnfermeriaController::class, 'storeIngresoColaborador'])
+            ->name('enfermeria.ingreso_colaboradores.store')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
     });
 
     // Parametrización de Enfermería
@@ -137,6 +152,11 @@ Route::middleware('auth')->group(function () {
             ->name('estudiantes.toggle-active');
         Route::post('estudiantes/import', [App\Http\Controllers\EstudiantesController::class, 'import'])
             ->name('estudiantes.import');
+            
+        // Gestión de Empleados
+        Route::resource('empleados', App\Http\Controllers\EmpleadosController::class);
+        Route::post('empleados/import', [App\Http\Controllers\EmpleadosController::class, 'storeMultiple'])
+            ->name('empleados.import');
     });
     
     // Enfermería Document Management
