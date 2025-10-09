@@ -273,23 +273,13 @@
         });
 
         function verDetalle(id) {
-            // Implementar vista de detalle
-            Swal.fire({
-                title: 'Ver Detalle',
-                text: 'Funcionalidad de detalle en desarrollo',
-                icon: 'info',
-                confirmButtonText: 'Entendido'
-            });
+            // Redirigir a la ruta de show (o abrir modal)
+            window.location.href = '/enfermeria/ingreso-estudiantes/' + id;
         }
 
         function editarIngreso(id) {
-            // Implementar edición
-            Swal.fire({
-                title: 'Editar Registro',
-                text: 'Funcionalidad de edición en desarrollo',
-                icon: 'info',
-                confirmButtonText: 'Entendido'
-            });
+            // Redirigir a la página de edición
+            window.location.href = '/enfermeria/ingreso-estudiantes/' + id + '/edit';
         }
 
         function eliminarIngreso(id) {

@@ -107,69 +107,28 @@
                                         <span class="badge badge-warning">{{ Str::limit($ingreso->motivo, 50) }}</span>
                                     </td>
                                     <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <button type="button" class="btn btn-info" data-toggle="modal" data-target="#modalVer{{ $ingreso->id }}">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" 
+                                                    class="btn btn-info" 
+                                                    onclick="verDetalle({{ $ingreso->id }})"
+                                                    title="Ver Detalle">
                                                 <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-warning" 
+                                                    onclick="editarIngreso({{ $ingreso->id }})"
+                                                    title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-danger" 
+                                                    onclick="eliminarIngreso({{ $ingreso->id }})"
+                                                    title="Eliminar">
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-
-                                <!-- Modal Ver Detalles -->
-                                <div class="modal fade" id="modalVer{{ $ingreso->id }}" tabindex="-1" role="dialog">
-                                    <div class="modal-dialog modal-lg" role="document">
-                                        <div class="modal-content">
-                                            <div class="modal-header bg-info">
-                                                <h5 class="modal-title">
-                                                    <i class="fas fa-info-circle mr-2"></i>Detalles de Atención
-                                                </h5>
-                                                <button type="button" class="close text-white" data-dismiss="modal">
-                                                    <span>&times;</span>
-                                                </button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="row">
-                                                    <div class="col-md-6">
-                                                        <p><strong>Fecha:</strong> {{ \Carbon\Carbon::parse($ingreso->fecha)->format('d/m/Y') }}</p>
-                                                        <p><strong>Hora:</strong> {{ \Carbon\Carbon::parse($ingreso->hora)->format('H:i') }}</p>
-                                                        <p><strong>Colaborador:</strong> {{ $ingreso->nombre_completo }}</p>
-                                                        <p><strong>Documento:</strong> {{ $ingreso->documento_colaborador }}</p>
-                                                        <p><strong>Email:</strong> {{ $ingreso->email ?? 'N/A' }}</p>
-                                                        <p><strong>Área:</strong> 
-                                                            @if($ingreso->area_colaborador)
-                                                                <span class="badge badge-info">{{ $ingreso->area_colaborador }}</span>
-                                                            @else
-                                                                <span class="badge badge-secondary">No registrado</span>
-                                                            @endif
-                                                        </p>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <p><strong>EPS:</strong> {{ $ingreso->eps_colaborador ?? 'N/A' }}</p>
-                                                        <p><strong>Sexo:</strong> {{ $ingreso->sexo_colaborador ?? 'N/A' }}</p>
-                                                        <p><strong>Tipo de Sangre:</strong> {{ $ingreso->tipo_sangre_colaborador ?? 'N/A' }}</p>
-                                                        <p><strong>Registrado por:</strong> {{ $ingreso->usuario->name ?? 'N/A' }}</p>
-                                                    </div>
-                                                </div>
-                                                <hr>
-                                                <p><strong>Motivo:</strong> {{ $ingreso->motivo }}</p>
-                                                <p><strong>Descripción del Evento:</strong><br>{{ $ingreso->descripcion_evento }}</p>
-                                                <p><strong>Acción de Enfermería:</strong><br>{{ $ingreso->accion_enfermeria }}</p>
-                                                @if($ingreso->seguimiento)
-                                                    <p><strong>Seguimiento:</strong><br>{{ $ingreso->seguimiento }}</p>
-                                                @endif
-                                                @if($ingreso->encuesta)
-                                                    <p><strong>Encuesta de Satisfacción:</strong> {{ $ingreso->encuesta }}</p>
-                                                @endif
-                                                @if($ingreso->encuesta_observaciones)
-                                                    <p><strong>Observaciones de Encuesta:</strong><br>{{ $ingreso->encuesta_observaciones }}</p>
-                                                @endif
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             @empty
                                 <tr>
                                     <td colspan="7" class="text-center text-muted py-4">
@@ -233,5 +192,51 @@
                 $('.alert').fadeOut('slow');
             }, 5000);
         });
+
+        // Función para ver detalle
+        function verDetalle(id) {
+            window.location.href = '/enfermeria/ingreso-colaboradores/' + id;
+        }
+
+        // Función para editar
+        function editarIngreso(id) {
+            window.location.href = '/enfermeria/ingreso-colaboradores/' + id + '/edit';
+        }
+
+        // Función para eliminar
+        function eliminarIngreso(id) {
+            Swal.fire({
+                title: '¿Está seguro?',
+                text: "Esta acción no se puede revertir",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Crear formulario dinámico para DELETE
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '/enfermeria/ingreso-colaboradores/' + id;
+                    
+                    const csrfToken = document.createElement('input');
+                    csrfToken.type = 'hidden';
+                    csrfToken.name = '_token';
+                    csrfToken.value = '{{ csrf_token() }}';
+                    
+                    const methodField = document.createElement('input');
+                    methodField.type = 'hidden';
+                    methodField.name = '_method';
+                    methodField.value = 'DELETE';
+                    
+                    form.appendChild(csrfToken);
+                    form.appendChild(methodField);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
     </script>
 @stop

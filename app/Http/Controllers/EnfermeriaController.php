@@ -96,11 +96,69 @@ class EnfermeriaController extends Controller
     }
 
     /**
+     * Display the specified student admission record.
+     */
+    public function showIngresoEstudiante($id)
+    {
+        $ingreso = IngresoEstudiante::with('user')->findOrFail($id);
+        
+        return view('enfermeria.ingreso-estudiantes.show', compact('ingreso'));
+    }
+
+    /**
+     * Show the form for editing the specified student admission record.
+     */
+    public function editIngresoEstudiante($id)
+    {
+        $ingreso = IngresoEstudiante::findOrFail($id);
+        $motivos = MotivoEnfermeria::paraSelect();
+        
+        return view('enfermeria.ingreso-estudiantes.edit', compact('ingreso', 'motivos'));
+    }
+
+    /**
+     * Update the specified student admission record in storage.
+     */
+    public function updateIngresoEstudiante(Request $request, $id)
+    {
+        $ingreso = IngresoEstudiante::findOrFail($id);
+        
+        // Validación de datos
+        $validatedData = $request->validate([
+            'fecha' => 'required|date',
+            'hora' => 'required|date_format:H:i',
+            'estudiante' => 'required|string|max:255',
+            'codigo_estudiante' => 'nullable|string|max:50',
+            'documento_estudiante' => 'nullable|string|max:50',
+            'apellidos_estudiante' => 'nullable|string|max:500',
+            'eps_estudiante' => 'nullable|string|max:255',
+            'sexo_estudiante' => 'nullable|in:M,F',
+            'tipo_sangre_estudiante' => 'nullable|string|max:10',
+            'estudiante_id' => 'nullable|exists:estudiantes,id',
+            'curso' => 'required|string|max:50',
+            'motivo' => 'required|string|max:500',
+            'descripcion_evento' => 'required|string|max:1000',
+            'accion_enfermeria' => 'required|string|max:1000',
+            'seguimiento' => 'nullable|string|max:1000',
+            'derivacion_estudiante' => 'nullable|string|max:500',
+            'encuesta' => 'nullable|string|max:500',
+            'encuesta_observaciones' => 'nullable|string|max:1000',
+        ]);
+
+        // Actualizar el registro
+        $ingreso->update($validatedData);
+        
+        return redirect()
+            ->route('enfermeria.ingreso_estudiantes.index')
+            ->with('success', 'Registro de ingreso de estudiante actualizado exitosamente.');
+    }
+
+    /**
      * Display the main page for employee/collaborator admission.
      */
     public function ingresoColaboradores()
     {
-        $ingresos = IngresoColaborador::with(['empleado', 'usuario'])
+        $ingresos = IngresoColaborador::with(['empleado', 'user'])
             ->orderBy('fecha', 'desc')
             ->orderBy('hora', 'desc')
             ->paginate(15);
@@ -168,5 +226,75 @@ class EnfermeriaController extends Controller
         return redirect()
             ->route('enfermeria.ingreso_colaboradores.index')
             ->with('success', 'Registro de ingreso de colaborador creado exitosamente.');
+    }
+
+    /**
+     * Display the specified colaborador admission record.
+     */
+    public function showIngresoColaborador($id)
+    {
+        $ingreso = IngresoColaborador::with('user')->findOrFail($id);
+        
+        return view('enfermeria.ingreso-colaboradores.show', compact('ingreso'));
+    }
+
+    /**
+     * Show the form for editing the specified colaborador admission record.
+     */
+    public function editIngresoColaborador($id)
+    {
+        $ingreso = IngresoColaborador::findOrFail($id);
+        $motivos = MotivoEnfermeria::paraSelect();
+        
+        return view('enfermeria.ingreso-colaboradores.edit', compact('ingreso', 'motivos'));
+    }
+
+    /**
+     * Update the specified colaborador admission record in storage.
+     */
+    public function updateIngresoColaborador(Request $request, $id)
+    {
+        $ingreso = IngresoColaborador::findOrFail($id);
+        
+        // Validación de datos
+        $validatedData = $request->validate([
+            'empleado_id' => 'nullable|exists:empleados,id',
+            'fecha' => 'required|date',
+            'hora' => 'required|date_format:H:i',
+            'nombre_completo' => 'required|string|max:255',
+            'documento_colaborador' => 'required|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'area_colaborador' => 'required|in:DOCENTE,ADMINISTRATIVO,SERV. GENS. Y MTO.,TRANSPORTE,OTRO',
+            'eps_colaborador' => 'nullable|string|max:255',
+            'sexo_colaborador' => 'nullable|in:M,F',
+            'tipo_sangre_colaborador' => 'nullable|string|max:10',
+            'motivo' => 'required|string|max:500',
+            'descripcion_evento' => 'required|string|max:1000',
+            'accion_enfermeria' => 'required|string|max:1000',
+            'seguimiento' => 'nullable|string|max:1000',
+            'derivacion_colaborador' => 'nullable|string|max:500',
+            'encuesta' => 'nullable|string|max:500',
+            'encuesta_observaciones' => 'nullable|string|max:1000',
+        ]);
+
+        // Actualizar el registro
+        $ingreso->update($validatedData);
+        
+        return redirect()
+            ->route('enfermeria.ingreso_colaboradores.index')
+            ->with('success', 'Registro de ingreso de colaborador actualizado exitosamente.');
+    }
+
+    /**
+     * Remove the specified colaborador admission record from storage.
+     */
+    public function destroyIngresoColaborador($id)
+    {
+        $ingreso = IngresoColaborador::findOrFail($id);
+        $ingreso->delete();
+        
+        return redirect()
+            ->route('enfermeria.ingreso_colaboradores.index')
+            ->with('success', 'Registro de ingreso de colaborador eliminado exitosamente.');
     }
 }

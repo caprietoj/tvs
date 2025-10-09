@@ -41,7 +41,7 @@ class IngresoColaborador extends Model
     }
 
     // Relación con usuario que registra
-    public function usuario()
+    public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }

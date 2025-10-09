@@ -124,6 +124,15 @@ Route::middleware('auth')->group(function () {
         Route::post('ingreso-estudiantes', [App\Http\Controllers\EnfermeriaController::class, 'storeIngresoEstudiante'])
             ->name('enfermeria.ingreso_estudiantes.store')
             ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::get('ingreso-estudiantes/{id}', [App\Http\Controllers\EnfermeriaController::class, 'showIngresoEstudiante'])
+            ->name('enfermeria.ingreso_estudiantes.show')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::get('ingreso-estudiantes/{id}/edit', [App\Http\Controllers\EnfermeriaController::class, 'editIngresoEstudiante'])
+            ->name('enfermeria.ingreso_estudiantes.edit')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::put('ingreso-estudiantes/{id}', [App\Http\Controllers\EnfermeriaController::class, 'updateIngresoEstudiante'])
+            ->name('enfermeria.ingreso_estudiantes.update')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
             
         // Rutas para Ingreso de Colaboradores
         Route::get('ingreso-colaboradores', [App\Http\Controllers\EnfermeriaController::class, 'ingresoColaboradores'])
@@ -134,6 +143,18 @@ Route::middleware('auth')->group(function () {
             ->middleware('can:enfermeria.ingreso_estudiantes');
         Route::post('ingreso-colaboradores', [App\Http\Controllers\EnfermeriaController::class, 'storeIngresoColaborador'])
             ->name('enfermeria.ingreso_colaboradores.store')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::get('ingreso-colaboradores/{id}', [App\Http\Controllers\EnfermeriaController::class, 'showIngresoColaborador'])
+            ->name('enfermeria.ingreso_colaboradores.show')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::get('ingreso-colaboradores/{id}/edit', [App\Http\Controllers\EnfermeriaController::class, 'editIngresoColaborador'])
+            ->name('enfermeria.ingreso_colaboradores.edit')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::put('ingreso-colaboradores/{id}', [App\Http\Controllers\EnfermeriaController::class, 'updateIngresoColaborador'])
+            ->name('enfermeria.ingreso_colaboradores.update')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::delete('ingreso-colaboradores/{id}', [App\Http\Controllers\EnfermeriaController::class, 'destroyIngresoColaborador'])
+            ->name('enfermeria.ingreso_colaboradores.destroy')
             ->middleware('can:enfermeria.ingreso_estudiantes');
     });
 
