@@ -118,6 +118,9 @@ Route::middleware('auth')->group(function () {
         Route::get('ingreso-estudiantes', [App\Http\Controllers\EnfermeriaController::class, 'ingresoEstudiantes'])
             ->name('enfermeria.ingreso_estudiantes.index')
             ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::get('reporte-estudiantes', [App\Http\Controllers\EnfermeriaController::class, 'reporteEstudiantes'])
+            ->name('enfermeria.reporte_estudiantes')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
         Route::get('ingreso-estudiantes/create', [App\Http\Controllers\EnfermeriaController::class, 'createIngresoEstudiante'])
             ->name('enfermeria.ingreso_estudiantes.create')
             ->middleware('can:enfermeria.ingreso_estudiantes');
@@ -138,6 +141,9 @@ Route::middleware('auth')->group(function () {
         Route::get('ingreso-colaboradores', [App\Http\Controllers\EnfermeriaController::class, 'ingresoColaboradores'])
             ->name('enfermeria.ingreso_colaboradores.index')
             ->middleware('can:enfermeria.ingreso_estudiantes'); // Usa el mismo permiso de enfermería
+        Route::get('reporte-colaboradores', [App\Http\Controllers\EnfermeriaController::class, 'reporteColaboradores'])
+            ->name('enfermeria.reporte_colaboradores')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
         Route::get('ingreso-colaboradores/create', [App\Http\Controllers\EnfermeriaController::class, 'createIngresoColaborador'])
             ->name('enfermeria.ingreso_colaboradores.create')
             ->middleware('can:enfermeria.ingreso_estudiantes');

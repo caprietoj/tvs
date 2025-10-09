@@ -801,18 +801,18 @@ return [
             'can'  => 'view.enfermeria',
             'submenu' => [
                 [
-                    'text' => '👨‍🎓 Ingreso Estudiantes',
+                    'text' => '🎓 Ingreso Estudiantes',
                     'url'  => 'enfermeria/ingreso-estudiantes',
                     'icon' => 'fas fa-user-plus',
                     'can'  => 'enfermeria.ingreso_estudiantes',
-                    'active' => ['enfermeria/ingreso-estudiantes*'],
+                    'active' => ['enfermeria/ingreso-estudiantes*', 'enfermeria/reporte-estudiantes*'],
                 ],
                 [
                     'text' => '👔 Ingreso Colaboradores',
                     'url'  => 'enfermeria/ingreso-colaboradores',
                     'icon' => 'fas fa-user-tie',
                     'can'  => 'enfermeria.ingreso_estudiantes',
-                    'active' => ['enfermeria/ingreso-colaboradores*'],
+                    'active' => ['enfermeria/ingreso-colaboradores*', 'enfermeria/reporte-colaboradores*'],
                 ],
                 [
                     'text' => '⚙️ Parametrización',

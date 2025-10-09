@@ -8,6 +8,9 @@
             <i class="fas fa-user-tie mr-2"></i>Atención de Colaboradores
         </h1>
         <div>
+            <a href="{{ route('enfermeria.reporte_colaboradores') }}" class="btn btn-success mr-2">
+                <i class="fas fa-file-excel mr-1"></i>Reporte
+            </a>
             <a href="{{ route('enfermeria.ingreso_colaboradores.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus mr-1"></i>Nueva Atención
             </a>

@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('previsita_consolidados', function (Blueprint $table) {
-            $table->string('drive_link')->nullable()->after('novedades_visita_archivo');
-        });
+        if (Schema::hasTable('previsita_consolidados')) {
+            Schema::table('previsita_consolidados', function (Blueprint $table) {
+                if (!Schema::hasColumn('previsita_consolidados', 'drive_link')) {
+                    $table->string('drive_link')->nullable()->after('novedades_visita_archivo');
+                }
+            });
+        }
     }
 
     /**
@@ -21,8 +25,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('previsita_consolidados', function (Blueprint $table) {
-            $table->dropColumn('drive_link');
-        });
+        if (Schema::hasTable('previsita_consolidados')) {
+            Schema::table('previsita_consolidados', function (Blueprint $table) {
+                if (Schema::hasColumn('previsita_consolidados', 'drive_link')) {
+                    $table->dropColumn('drive_link');
+                }
+            });
+        }
     }
 };

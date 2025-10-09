@@ -11,24 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('personas', function (Blueprint $table) {
-            $table->id();
-            $table->string('documento', 50)->unique()->index();
-            $table->string('nombre', 100);
-            $table->string('apellido', 100);
-            $table->enum('tipo_persona', ['empleado', 'estudiante'])->default('estudiante');
-            $table->string('email', 150)->nullable();
-            $table->string('telefono', 20)->nullable();
-            $table->string('grado', 50)->nullable()->comment('Grado o cargo');
-            $table->text('observaciones')->nullable();
-            $table->boolean('activo')->default(true);
-            $table->timestamps();
-            
-            // Índices para búsquedas rápidas
-            $table->index(['tipo_persona', 'activo']);
-            $table->index('nombre');
-            $table->index('apellido');
-        });
+        // Verificar si la tabla ya existe antes de crearla
+        if (!Schema::hasTable('personas')) {
+            Schema::create('personas', function (Blueprint $table) {
+                $table->id();
+                $table->string('documento', 50)->unique()->index();
+                $table->string('nombre', 100);
+                $table->string('apellido', 100);
+                $table->enum('tipo_persona', ['empleado', 'estudiante'])->default('estudiante');
+                $table->string('email', 150)->nullable();
+                $table->string('telefono', 20)->nullable();
+                $table->string('grado', 50)->nullable()->comment('Grado o cargo');
+                $table->text('observaciones')->nullable();
+                $table->boolean('activo')->default(true);
+                $table->timestamps();
+                
+                // Índices para búsquedas rápidas
+                $table->index(['tipo_persona', 'activo']);
+                $table->index('nombre');
+                $table->index('apellido');
+            });
+        }
     }
 
     /**

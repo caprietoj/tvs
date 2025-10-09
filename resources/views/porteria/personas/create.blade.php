@@ -43,20 +43,57 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="form-group">
-                            <label for="nombre">Nombre Completo <span class="text-danger">*</span></label>
+                            <label for="nombre">Nombre <span class="text-danger">*</span></label>
                             <input type="text" name="nombre" id="nombre" 
                                    class="form-control @error('nombre') is-invalid @enderror" 
                                    value="{{ old('nombre') }}" 
-                                   placeholder="Ingrese el nombre completo"
+                                   placeholder="Ingrese el nombre"
                                    required>
                             @error('nombre')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
-                            <small class="form-text text-muted">
-                                <i class="fas fa-info-circle"></i> Ingrese el nombre completo de la persona
-                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="apellido">Apellido <span class="text-danger">*</span></label>
+                            <input type="text" name="apellido" id="apellido" 
+                                   class="form-control @error('apellido') is-invalid @enderror" 
+                                   value="{{ old('apellido') }}" 
+                                   placeholder="Ingrese el apellido"
+                                   required>
+                            @error('apellido')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" name="email" id="email" 
+                                   class="form-control @error('email') is-invalid @enderror" 
+                                   value="{{ old('email') }}" 
+                                   placeholder="correo@ejemplo.com">
+                            @error('email')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="telefono">Teléfono</label>
+                            <input type="text" name="telefono" id="telefono" 
+                                   class="form-control @error('telefono') is-invalid @enderror" 
+                                   value="{{ old('telefono') }}" 
+                                   placeholder="Ej: 3001234567">
+                            @error('telefono')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -120,4 +157,40 @@
             border-color: var(--color-institucional) !important;
         }
     </style>
+@stop
+
+@section('js')
+    <script>
+        $(document).ready(function() {
+            // Validación del formulario
+            $('form').on('submit', function(e) {
+                let valid = true;
+                
+                // Validar campos requeridos
+                if (!$('#documento').val()) {
+                    valid = false;
+                    alert('El documento es obligatorio');
+                }
+                if (!$('#nombre').val()) {
+                    valid = false;
+                    alert('El nombre es obligatorio');
+                }
+                if (!$('#apellido').val()) {
+                    valid = false;
+                    alert('El apellido es obligatorio');
+                }
+                if (!$('#tipo_persona').val()) {
+                    valid = false;
+                    alert('Debe seleccionar el tipo de persona');
+                }
+                
+                if (!valid) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                console.log('Formulario enviado correctamente');
+            });
+        });
+    </script>
 @stop

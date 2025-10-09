@@ -154,6 +154,50 @@ class EnfermeriaController extends Controller
     }
 
     /**
+     * Display report for student admissions grouped by date and area.
+     */
+    public function reporteEstudiantes()
+    {
+        // Obtener todos los ingresos agrupados por fecha
+        $reporteData = IngresoEstudiante::selectRaw('
+                DATE(fecha) as fecha,
+                COUNT(CASE WHEN curso LIKE "%PREESCOLAR%" THEN 1 END) as preescolar,
+                COUNT(CASE WHEN curso LIKE "%PRIMARIA%" OR curso LIKE "%PRIMERO%" OR curso LIKE "%SEGUNDO%" OR curso LIKE "%TERCERO%" OR curso LIKE "%CUARTO%" OR curso LIKE "%QUINTO%" THEN 1 END) as primaria,
+                COUNT(CASE WHEN curso LIKE "%BACHILLERATO%" OR curso LIKE "%SEXTO%" OR curso LIKE "%SEPTIMO%" OR curso LIKE "%OCTAVO%" OR curso LIKE "%NOVENO%" OR curso LIKE "%DECIMO%" OR curso LIKE "%ONCE%" THEN 1 END) as bachillerato,
+                COUNT(CASE WHEN curso LIKE "%DEPORTIV%" OR curso LIKE "%DEPORT%" THEN 1 END) as deportivas,
+                COUNT(CASE WHEN curso LIKE "%ESPECIAL%" OR curso LIKE "%CASOS%" THEN 1 END) as casos_especiales,
+                COUNT(CASE WHEN derivacion_estudiante = "Salida al medico" OR derivacion_estudiante = "Salida a Casa" THEN 1 END) as salidas,
+                GROUP_CONCAT(DISTINCT CASE WHEN seguimiento IS NOT NULL AND seguimiento != "" THEN seguimiento END SEPARATOR " | ") as observaciones,
+                GROUP_CONCAT(DISTINCT CASE WHEN motivo LIKE "%Emergencia%" OR motivo LIKE "%Accidente%" THEN CONCAT(motivo, ": ", descripcion_evento) END SEPARATOR " | ") as novedades
+            ')
+            ->groupBy('fecha')
+            ->orderBy('fecha', 'desc')
+            ->get();
+
+        return view('enfermeria.reporte-estudiantes', compact('reporteData'));
+    }
+
+    /**
+     * Display report for collaborator admissions grouped by date and area.
+     */
+    public function reporteColaboradores()
+    {
+        // Obtener todos los ingresos de colaboradores agrupados por fecha
+        $reporteData = IngresoColaborador::selectRaw('
+                DATE(fecha) as fecha,
+                COUNT(CASE WHEN area_colaborador LIKE "%Docente%" OR area_colaborador LIKE "%Profesor%" THEN 1 END) as profesores,
+                COUNT(CASE WHEN area_colaborador LIKE "%Administrativo%" OR area_colaborador LIKE "%Admin%" OR area_colaborador NOT LIKE "%Docente%" AND area_colaborador NOT LIKE "%Profesor%" THEN 1 END) as administrativos,
+                GROUP_CONCAT(DISTINCT CASE WHEN seguimiento IS NOT NULL AND seguimiento != "" THEN seguimiento END SEPARATOR " | ") as observaciones,
+                GROUP_CONCAT(DISTINCT CASE WHEN motivo LIKE "%Emergencia%" OR motivo LIKE "%Accidente%" THEN CONCAT(motivo, ": ", descripcion_evento) END SEPARATOR " | ") as novedades
+            ')
+            ->groupBy('fecha')
+            ->orderBy('fecha', 'desc')
+            ->get();
+
+        return view('enfermeria.reporte-colaboradores', compact('reporteData'));
+    }
+
+    /**
      * Display the main page for employee/collaborator admission.
      */
     public function ingresoColaboradores()
