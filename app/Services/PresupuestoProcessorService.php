@@ -18,8 +18,8 @@ class PresupuestoProcessorService
         '05' => 'DEPORTES',
         '131' => 'CAS',  // 131xxx para CAS/INTERCAS/Proyecto Comunitario
         '15' => 'TECNOLOGIA INSTITUCIONAL',
-        '01' => 'ADMINISTRACION',
-        '02' => 'ADMINISTRACION',
+        '01' => 'GASTOS INSTITUCIONALES',
+        '02' => 'GASTOS ADMINISTRATIVOS',
         '03' => 'DIRECCION GENERAL',
         '09' => 'PSICOLOGIA INSTITUCIONAL',
     ];

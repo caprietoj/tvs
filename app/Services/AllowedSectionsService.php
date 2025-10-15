@@ -12,7 +12,8 @@ class AllowedSectionsService
     public static function getAllowedSections(): array
     {
         return [
-            'Administracion',
+            'Gastos Institucionales',
+            'Gastos Administrativos',
             'Direccion General',
             'Escuela Alta / DP',
             'Escuela Media',

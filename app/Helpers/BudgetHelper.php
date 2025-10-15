@@ -12,7 +12,8 @@ class BudgetHelper
         return [
             'Capacitación',
             'Academia',
-            'Administración',
+            'Gastos Institucionales',
+            'Gastos Administrativos',
             'Material Importado',
             'Material deportivo',
             'Musicales',
@@ -31,6 +32,7 @@ class BudgetHelper
             'Personal Project PAI',
             'Exhibición PEP',
             'CAS / Intercas',
+            'Consejo Estudiantil',
             'Biblioteca institucional',
             'SST',
         ];
@@ -48,7 +50,6 @@ class BudgetHelper
                 'Material deportivo',
                 'Musicales',
                 'Part time teacher- reemplazos',
-                'Proyecto Comunitario',
                 'Apoyo Institucional',
                 'Eventos Académicos y Sociales',
                 'Insumos tecnológicos',
@@ -63,7 +64,6 @@ class BudgetHelper
                 'Material deportivo',
                 'Musicales',
                 'Part time teacher- reemplazos',
-                'Proyecto Comunitario',
                 'MUN TVS-Otros Colegios- GLY',
                 'Preparación Pruebas saber',
                 'Apoyo Institucional',
@@ -122,7 +122,7 @@ class BudgetHelper
                 'Salidas Académicas',
                 'Eventos Institucionales'
             ],
-            'Administración' => [
+            'Gastos Institucionales' => [
                 'Capacitación Admin',
                 'Capacitación EMC/Docentes',
                 'Capacitación COPASST (brigadas Cruz Roja, Bomberos)',
@@ -150,6 +150,9 @@ class BudgetHelper
                 'Alimentación',
                 'Transporte',
                 'Honorarios',
+                'Consejo Estudiantil'
+            ],
+            'Gastos Administrativos' => [
                 'Gastos Administrativos'
             ],
             'Tecnología Institucional' => [
