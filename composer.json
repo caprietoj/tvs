@@ -15,6 +15,7 @@
         "google/apiclient": "^2.18",
         "jeroennoten/laravel-adminlte": "*",
         "laravel/framework": "^11.31",
+        "laravel/socialite": "^5.23",
         "laravel/tinker": "^2.9",
         "laravel/ui": "^4.6",
         "maatwebsite/excel": "^3.1",

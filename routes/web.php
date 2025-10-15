@@ -1075,6 +1075,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/test/emc-functionality', [App\Http\Controllers\EmcTestController::class, 'verifyEmcFunctionality'])->name('test.emc-functionality');
 });
 
+// Rutas de autenticación con Google
+Route::get('auth/google', [App\Http\Controllers\Auth\GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('auth/google/callback', [App\Http\Controllers\Auth\GoogleAuthController::class, 'handleGoogleCallback']);
+
 require __DIR__.'/auth.php';
 
 // Ruta de prueba pública sin middleware de autenticación
