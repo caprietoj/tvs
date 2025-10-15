@@ -3,7 +3,8 @@
 return [
     'events' => [
         'emails' => [
-        'jefesistemas@tvs.edu.co',
+            'jefesistemas@tvs.edu.co',
+            'supervsergenerales@tvs.edu.co',
             // Agrega aquí otros correos que deban recibir notificaciones de eventos
         ],
         // Correos específicos para cada departamento/servicio
@@ -18,6 +19,7 @@ return [
         ],
         'general_services_emails' => [
             'serviciosgenerales@tvs.edu.co',
+            'supervsergenerales@tvs.edu.co',
         ],
         'communications_emails' => [
             'comunicaciones@tvs.edu.co',
