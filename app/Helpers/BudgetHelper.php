@@ -35,6 +35,7 @@ class BudgetHelper
             'Consejo Estudiantil',
             'Biblioteca institucional',
             'SST',
+            'Convivencias',
         ];
     }
 
@@ -150,7 +151,8 @@ class BudgetHelper
                 'Alimentación',
                 'Transporte',
                 'Honorarios',
-                'Consejo Estudiantil'
+                'Consejo Estudiantil',
+                'Convivencias'
             ],
             'Gastos Administrativos' => [
                 'Gastos Administrativos'
