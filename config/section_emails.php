@@ -27,7 +27,6 @@ return [
         'Diploma' => 'dp@tvs.edu.co',
         'Administracion' => 'administrativedirector@tvs.edu.co',
         'Administración' => 'administrativedirector@tvs.edu.co', // Con acento
-        'Dirección General' => 'generaldirector@tvs.edu.co',
         'CAS' => 'mpsilva@tvs.edu.co',
         'Departamento de Apoyo' => 'psicologia2@tvs.edu.co',
         'Biblioteca' => 'library@tvs.edu.co',
@@ -45,7 +44,7 @@ return [
         'Psicología' => 'psicologia@tvs.edu.co',
         'Coordinación Académica' => 'coordinacion.academica@tvs.edu.co',
         'Coordinación Disciplinaria' => 'coordinacion.disciplinaria@tvs.edu.co',
-        'Rectoría' => 'rectoria@tvs.edu.co',
+        'Rectoría' => 'ejemplo@tvs.edu.co',
         'Auxiliar Almacén' => 'auxiliaralmacen@tvs.edu.co',
     ],
 
@@ -98,7 +97,6 @@ return [
 
     // Correos de directores para aprobaciones
     'directors' => [
-        'academic' => 'generaldirector@tvs.edu.co',
         'administrative' => 'administrativedirector@tvs.edu.co',
     ],
 

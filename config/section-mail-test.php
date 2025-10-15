@@ -27,7 +27,6 @@ return [
         'Diploma' => 'dp@test.com',
         'Administracion' => 'administrativedirector@test.com',
         'Administración' => 'administrativedirector@test.com', // Con acento
-        'Dirección General' => 'generaldirector@tvs.edu.co',
         'CAS' => 'mpsilva@test.com',
         'Departamento de Apoyo' => 'psicologia2@test.com',
         'Biblioteca' => 'library@test.com',
@@ -45,7 +44,7 @@ return [
         'Psicología' => 'psicologia@test.com',
         'Coordinación Académica' => 'coordinacion.academica@test.com',
         'Coordinación Disciplinaria' => 'coordinacion.disciplinaria@test.com',
-        'Rectoría' => 'rectoria@test.com',
+        'Rectoría' => 'ejemplo@test.com',
         'Tesorería' => 'tesoreria@test.com',
         'Auxiliar Almacén' => 'auxiliaralmacen@test.com',
     ],
@@ -100,7 +99,6 @@ return [
 
     // Correos de directores para aprobaciones
     'directors' => [
-        'academic' => 'generaldirector@test.com',
         'administrative' => 'administrativedirector@test.com',
     ],
 
