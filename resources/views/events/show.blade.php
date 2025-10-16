@@ -146,7 +146,7 @@
                                 @if($event->metro_junior_confirmed)
                                     <span class="badge badge-success badge-lg">Confirmado</span>
                                 @else
-                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-metro-junior']) || (auth()->user()->hasRole('profesor') && auth()->user()->can('confirm.events')))
+                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-metro-junior']) || auth()->user()->can('confirm.events'))
                                         <button type="button" class="btn btn-warning btn-sm confirm-service" 
                                                 data-service="metro_junior" 
                                                 data-event="{{ $event->id }}"
@@ -181,7 +181,7 @@
                                 @if($event->maintenance_confirmed)
                                     <span class="badge badge-success badge-lg">Confirmado</span>
                                 @else
-                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-mantenimiento']) || (auth()->user()->hasRole('profesor') && auth()->user()->can('confirm.events')))
+                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-mantenimiento']) || auth()->user()->can('confirm.events'))
                                         <button type="button" class="btn btn-warning btn-sm confirm-service" 
                                                 data-service="maintenance" 
                                                 data-event="{{ $event->id }}"
@@ -219,7 +219,7 @@
                                 @if($event->systems_confirmed)
                                     <span class="badge badge-success badge-lg">Confirmado</span>
                                 @else
-                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-sistemas']) || (auth()->user()->hasRole('profesor') && auth()->user()->can('confirm.events')))
+                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-sistemas']) || auth()->user()->can('confirm.events'))
                                         <button type="button" class="btn btn-warning btn-sm confirm-service" 
                                                 data-service="systems" 
                                                 data-event="{{ $event->id }}"
@@ -254,7 +254,7 @@
                                 @if($event->general_services_confirmed)
                                     <span class="badge badge-success badge-lg">Confirmado</span>
                                 @else
-                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-servicios-generales']) || (auth()->user()->hasRole('profesor') && auth()->user()->can('confirm.events')))
+                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-servicios-generales']) || auth()->user()->can('confirm.events'))
                                         <button type="button" class="btn btn-warning btn-sm confirm-service" 
                                                 data-service="general_services" 
                                                 data-event="{{ $event->id }}"
@@ -289,7 +289,7 @@
                                 @if($event->aldimark_confirmed)
                                     <span class="badge badge-success badge-lg">Confirmado</span>
                                 @else
-                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-aldimark']) || (auth()->user()->hasRole('profesor') && auth()->user()->can('confirm.events')))
+                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-aldimark']) || auth()->user()->can('confirm.events'))
                                         <button type="button" class="btn btn-warning btn-sm confirm-service" 
                                                 data-service="aldimark" 
                                                 data-event="{{ $event->id }}"
@@ -321,7 +321,7 @@
                                 @if($event->purchases_confirmed)
                                     <span class="badge badge-success badge-lg">Confirmado</span>
                                 @else
-                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-compras']) || (auth()->user()->hasRole('profesor') && auth()->user()->can('confirm.events')))
+                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-compras']) || auth()->user()->can('confirm.events'))
                                         <button type="button" class="btn btn-warning btn-sm confirm-service" 
                                                 data-service="purchases" 
                                                 data-event="{{ $event->id }}"
@@ -353,7 +353,7 @@
                                 @if($event->communications_confirmed)
                                     <span class="badge badge-success badge-lg">Confirmado</span>
                                 @else
-                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-comunicaciones']) || (auth()->user()->hasRole('profesor') && auth()->user()->can('confirm.events')))
+                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-comunicaciones']) || auth()->user()->can('confirm.events'))
                                         <button type="button" class="btn btn-warning btn-sm confirm-service" 
                                                 data-service="communications" 
                                                 data-event="{{ $event->id }}"

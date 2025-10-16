@@ -469,8 +469,13 @@ class EventController extends Controller
         
         // Verificar que el usuario tiene permiso para confirmar este servicio
         $permissionRole = 'confirmacion-' . str_replace('_', '-', $service);
+        
+        // Permitir confirmación si:
+        // 1. Es admin
+        // 2. Tiene el rol específico de confirmación del servicio (ej: confirmacion-general-services)
+        // 3. Tiene el permiso general confirm.events
         $canConfirm = auth()->user()->hasAnyRole(['admin', 'Admin', $permissionRole]) || 
-                     (auth()->user()->hasRole('profesor') && auth()->user()->can('confirm.events'));
+                     auth()->user()->can('confirm.events');
         
         if (!$canConfirm) {
             return response()->json([
