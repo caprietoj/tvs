@@ -1231,34 +1231,43 @@ class QuotationController extends Controller
             $comprasEmail = config($configSource . '.sections.Compras', config($configSource . '.default'));
             
             // 1. ENVIAR NOTIFICACIÓN CON BOTÓN A DIRECTORES/COORDINADORES
-            $notificationWithButton = new QuotationsUploaded($purchaseRequest->fresh());
-            
-            foreach ($sectionEmails as $email) {
-                \Log::info('Enviando notificación CON BOTÓN (hecho cumplido) a director/coordinador: ' . $email);
-                Notification::route('mail', $email)
-                    ->notify($notificationWithButton);
-            }
-            
-            // 2. ENVIAR NOTIFICACIÓN INFORMATIVA A COMPRAS (SOLO SI EL MONTO ES >= $500,000)
+            $emailsSent = true;
+            $emailError = null;
             $allEmails = $sectionEmails;
             
-            if ($totalAmount >= 500000) {
-                // Para montos altos, enviar notificación informativa a compras
-                \Log::info('Enviando notificación INFORMATIVA (hecho cumplido) a compras - Monto >= $500,000: ' . $comprasEmail);
-                $informativeNotification = new \App\Notifications\QuotationsCompletedCompras($purchaseRequest->fresh());
-                Notification::route('mail', $comprasEmail)
-                    ->notify($informativeNotification);
-                    
-                // Solo agregar compras a la lista si no está ya incluido
-                if (!in_array($comprasEmail, $allEmails)) {
-                    $allEmails[] = $comprasEmail;
+            try {
+                $notificationWithButton = new QuotationsUploaded($purchaseRequest->fresh());
+                
+                foreach ($sectionEmails as $email) {
+                    \Log::info('Enviando notificación CON BOTÓN (hecho cumplido) a director/coordinador: ' . $email);
+                    Notification::route('mail', $email)
+                        ->notify($notificationWithButton);
                 }
-            } else {
-                \Log::info('Notificación a compras omitida en hecho cumplido - Monto menor a $500,000', [
-                    'amount' => $totalAmount,
-                    'minimum_required' => 500000,
-                    'compras_email' => $comprasEmail
-                ]);
+                
+                // 2. ENVIAR NOTIFICACIÓN INFORMATIVA A COMPRAS (SOLO SI EL MONTO ES >= $500,000)
+                if ($totalAmount >= 500000) {
+                    // Para montos altos, enviar notificación informativa a compras
+                    \Log::info('Enviando notificación INFORMATIVA (hecho cumplido) a compras - Monto >= $500,000: ' . $comprasEmail);
+                    $informativeNotification = new \App\Notifications\QuotationsCompletedCompras($purchaseRequest->fresh());
+                    Notification::route('mail', $comprasEmail)
+                        ->notify($informativeNotification);
+                        
+                    // Solo agregar compras a la lista si no está ya incluido
+                    if (!in_array($comprasEmail, $allEmails)) {
+                        $allEmails[] = $comprasEmail;
+                    }
+                } else {
+                    \Log::info('Notificación a compras omitida en hecho cumplido - Monto menor a $500,000', [
+                        'amount' => $totalAmount,
+                        'minimum_required' => 500000,
+                        'compras_email' => $comprasEmail
+                    ]);
+                }
+            } catch (\Exception $emailException) {
+                // Si falla el envío de correos, registrarlo pero continuar
+                $emailsSent = false;
+                $emailError = $emailException->getMessage();
+                \Log::error('Error al enviar correos de hecho cumplido (continuando con el proceso): ' . $emailError);
             }
             
             // Marcar que se envió para pre-aprobación y cambiar estado
@@ -1282,18 +1291,27 @@ class QuotationController extends Controller
                            ' sin cotizaciones. Emails enviados a: ' . implode(', ', $allEmails))
             ]);
             
-            \Log::info('Solicitud marcada como completada y enviada a preaprobación exitosamente', [
+            \Log::info('Solicitud marcada como completada y enviada a preaprobación', [
                 'purchase_request' => $purchaseRequest->request_number,
                 'emails' => $allEmails,
-                'had_quotations' => $purchaseRequest->quotations()->count() > 0
+                'had_quotations' => $purchaseRequest->quotations()->count() > 0,
+                'emails_sent' => $emailsSent
             ]);
             
             $successMessage = 'Solicitud marcada como completada exitosamente.';
-            if (count($allEmails) > 0) {
+            
+            if ($emailsSent && count($allEmails) > 0) {
                 $successMessage .= ' Se han enviado las notificaciones de preaprobación a: ' . implode(', ', $allEmails);
+            } elseif (!$emailsSent) {
+                // Si falla el envío de correos, agregar advertencia pero confirmar que se guardó
+                if (str_contains($emailError, '550 5.4.5') || str_contains($emailError, 'Daily user sending limit exceeded')) {
+                    $successMessage .= ' ADVERTENCIA: Se ha excedido el límite diario de envío de correos de Gmail. Los correos NO fueron enviados, pero la solicitud se ha marcado correctamente como completada y está en estado "En pre-aprobación". Deberá notificar manualmente a los aprobadores o esperar a que se restablezca el límite diario de Gmail.';
+                } else {
+                    $successMessage .= ' ADVERTENCIA: Hubo un error al enviar los correos de notificación (' . $emailError . '), pero la solicitud se ha marcado correctamente como completada y está en estado "En pre-aprobación".';
+                }
             }
             
-            return redirect()->route('quotations.index')->with('success', $successMessage);
+            return redirect()->route('quotations.index')->with($emailsSent ? 'success' : 'warning', $successMessage);
             
         } catch (\Exception $e) {
             \Log::error('Error al marcar solicitud como completada: ' . $e->getMessage(), [

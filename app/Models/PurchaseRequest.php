@@ -258,7 +258,14 @@ class PurchaseRequest extends Model
         $this->delivery_marked_by = $userId;
         $this->delivery_notes = $notes;
         
-        return $this->save();
+        try {
+            return $this->save();
+        } catch (\Exception $e) {
+            // Log el error pero permite que continúe el proceso
+            \Log::error('Error al marcar estado de entrega: ' . $e->getMessage());
+            // Re-lanzar la excepción para que el controlador la maneje
+            throw $e;
+        }
     }
 
     /**

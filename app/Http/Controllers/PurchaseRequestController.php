@@ -1728,17 +1728,29 @@ class PurchaseRequestController extends Controller
         }
 
         // Marcar el estado de entrega
-        $success = $purchaseRequest->markDeliveryStatus(
-            $request->delivery_status,
-            Auth::id(),
-            $request->delivery_notes
-        );
+        try {
+            $success = $purchaseRequest->markDeliveryStatus(
+                $request->delivery_status,
+                Auth::id(),
+                $request->delivery_notes
+            );
 
-        if ($success) {
-            $statusText = $request->delivery_status === 'delivered' ? 'entregada' : 'no entregada';
-            return redirect()->back()->with('success', "Fotocopia marcada como {$statusText} exitosamente.");
-        } else {
-            return redirect()->back()->with('error', 'Error al actualizar el estado de entrega.');
+            if ($success) {
+                $statusText = $request->delivery_status === 'delivered' ? 'entregada' : 'no entregada';
+                return redirect()->back()->with('success', "Fotocopia marcada como {$statusText} exitosamente.");
+            } else {
+                return redirect()->back()->with('error', 'Error al actualizar el estado de entrega.');
+            }
+        } catch (\Exception $e) {
+            // Si el error es por límite de Gmail, mostrar mensaje específico
+            if (str_contains($e->getMessage(), '550 5.4.5') || str_contains($e->getMessage(), 'Daily user sending limit exceeded')) {
+                \Log::warning('Límite diario de correo excedido al marcar como cumplido: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Error al marcar la solicitud como completada: Se ha excedido el límite diario de envío de correos de Gmail. El estado de la solicitud NO se pudo actualizar. Por favor, inténtelo más tarde o contacte al administrador del sistema.');
+            }
+            
+            // Para otros errores, mostrar mensaje genérico
+            \Log::error('Error al marcar estado de entrega: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al actualizar el estado de entrega: ' . $e->getMessage());
         }
     }
 
