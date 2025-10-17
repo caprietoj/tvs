@@ -84,28 +84,14 @@
                     <input type="hidden" id="visitante-documento">
                     <div class="form-group-modal">
                         <label for="visitante-nombre">
-                            <i class="fas fa-user"></i> Nombre <span class="text-danger">*</span>
+                            <i class="fas fa-user"></i> Nombre Completo <span class="text-danger">*</span>
                         </label>
                         <input 
                             type="text" 
                             id="visitante-nombre" 
                             name="nombre" 
                             class="form-control-modal"
-                            placeholder="Ingrese el nombre del visitante"
-                            required
-                            autocomplete="off"
-                        >
-                    </div>
-                    <div class="form-group-modal">
-                        <label for="visitante-apellido">
-                            <i class="fas fa-user"></i> Apellido <span class="text-danger">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            id="visitante-apellido" 
-                            name="apellido" 
-                            class="form-control-modal"
-                            placeholder="Ingrese el apellido del visitante"
+                            placeholder="Ingrese el nombre completo del visitante"
                             required
                             autocomplete="off"
                         >
@@ -182,29 +168,16 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="form-group-modal">
                                 <label for="editar-nombre">
-                                    <i class="fas fa-user"></i> Nombre <span class="text-danger">*</span>
+                                    <i class="fas fa-user"></i> Nombre Completo <span class="text-danger">*</span>
                                 </label>
                                 <input 
                                     type="text" 
                                     id="editar-nombre" 
                                     class="form-control-modal"
                                     required
-                                    autocomplete="off"
-                                >
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group-modal">
-                                <label for="editar-apellido">
-                                    <i class="fas fa-user"></i> Apellido
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="editar-apellido" 
-                                    class="form-control-modal"
                                     autocomplete="off"
                                 >
                             </div>
@@ -652,7 +625,7 @@ $(document).ready(function() {
                 } else {
                     // No es visitante, registrar normalmente
                     console.log('✅ PERSONA REGISTRADA - Tipo:', response.tipo_persona || response.tipo);
-                    console.log('📝 Llamando a registrarPersona() sin nombre/apellido');
+                    console.log('📝 Llamando a registrarPersona() sin nombre');
                     registrarPersona(documento, null, null);
                 }
             },
@@ -666,11 +639,10 @@ $(document).ready(function() {
     });
 
     // Función para registrar persona
-    function registrarPersona(documento, nombre, apellido, observaciones) {
+    function registrarPersona(documento, nombre, observaciones) {
         console.log('🚀 registrarPersona() llamada con:', {
             documento: documento,
             nombre: nombre,
-            apellido: apellido,
             observaciones: observaciones
         });
         
@@ -685,7 +657,6 @@ $(document).ready(function() {
                 _token: '{{ csrf_token() }}',
                 documento: documento,
                 nombre: nombre,
-                apellido: apellido,
                 observaciones: observaciones
             },
             success: function(response) {
@@ -735,16 +706,15 @@ $(document).ready(function() {
         
         const documento = $('#visitante-documento').val();
         const nombre = $('#visitante-nombre').val().trim();
-        const apellido = $('#visitante-apellido').val().trim();
         const observaciones = $('#visitante-observaciones').val().trim();
         
-        if (!nombre || !apellido) {
-            alert('Por favor complete todos los campos.');
+        if (!nombre) {
+            alert('Por favor ingrese el nombre completo del visitante.');
             return;
         }
         
         cerrarModalVisitante();
-        registrarPersona(documento, nombre, apellido, observaciones);
+        registrarPersona(documento, nombre, observaciones);
     });
 
     // Función para mostrar mensajes
@@ -786,7 +756,6 @@ $(document).ready(function() {
 function abrirModalVisitante(documento) {
     $('#visitante-documento').val(documento);
     $('#visitante-nombre').val('');
-    $('#visitante-apellido').val('');
     $('#visitante-observaciones').val('');
     $('#modal-visitante').fadeIn(300);
     
@@ -837,7 +806,6 @@ $(document).on('click', '.btn-editar', function() {
                 $('#editar-id').val(data.id);
                 $('#editar-documento').val(data.documento);
                 $('#editar-nombre').val(data.nombre);
-                $('#editar-apellido').val(data.apellido);
                 $('#editar-tipo').val(data.tipo_persona);
                 $('#editar-entrada').val(data.hora_entrada);
                 $('#editar-salida').val(data.hora_salida);
@@ -870,7 +838,6 @@ $('#form-editar').on('submit', function(e) {
     const formData = {
         documento: $('#editar-documento').val(),
         nombre: $('#editar-nombre').val(),
-        apellido: $('#editar-apellido').val(),
         tipo_persona: $('#editar-tipo').val(),
         hora_entrada: $('#editar-entrada').val(),
         hora_salida: $('#editar-salida').val(),

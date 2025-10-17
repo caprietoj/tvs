@@ -35,12 +35,8 @@ class PorteriaController extends Controller
 
             return DataTables::of($registros)
                 ->addColumn('nombre_completo', function ($registro) {
-                    // Concatenar nombre y apellido
-                    $nombreCompleto = trim($registro->nombre);
-                    if (!empty($registro->apellido)) {
-                        $nombreCompleto .= ' ' . trim($registro->apellido);
-                    }
-                    return $nombreCompleto;
+                    // El nombre ya contiene el nombre completo
+                    return trim($registro->nombre);
                 })
                 ->addColumn('estatus_badge', function ($registro) {
                     $badges = [
@@ -188,12 +184,10 @@ class PorteriaController extends Controller
                 \Log::info('No existe registro previo hoy para: ' . $documento . '. Creando primera entrada.');
             }
 
-            // Si se proporcionan nombre y apellido (visitante), usarlos
-            // Usar filled() en lugar de has() para verificar que NO sean null o vacíos
-            if ($request->filled('nombre') && $request->filled('apellido')) {
-                \Log::info('Visitante detectado en store() - Nombre y apellido proporcionados');
+            // Si se proporciona nombre (visitante), usarlo
+            if ($request->filled('nombre')) {
+                \Log::info('Visitante detectado en store() - Nombre proporcionado');
                 $nombre = trim($request->nombre);
-                $apellido = trim($request->apellido);
                 $tipo = 'externo';
             } else {
                 \Log::info('Persona registrada en store() - Buscando en BD: ' . $documento);
@@ -212,7 +206,6 @@ class PorteriaController extends Controller
                 
                 \Log::info('Persona encontrada: ' . $persona['nombre'] . ' - Tipo: ' . $persona['tipo']);
                 $nombre = $persona['nombre'];
-                $apellido = $persona['apellido'];
                 $tipo = $persona['tipo'];
             }
 
@@ -220,7 +213,6 @@ class PorteriaController extends Controller
             $registro = RegistroPorteria::create([
                 'documento' => $documento,
                 'nombre' => $nombre,
-                'apellido' => $apellido,
                 'tipo_persona' => $tipo,
                 'fecha' => $hoy,
                 'hora_entrada' => $horaActual,
@@ -258,17 +250,12 @@ class PorteriaController extends Controller
             ->first();
 
         if ($persona) {
-            // El nombre completo está SIEMPRE en el campo 'nombre'
-            // El apellido debe estar VACÍO (ya que el nombre contiene nombre completo)
-            
+            // El nombre completo está en el campo 'nombre'
             // DETERMINAR EL TIPO AUTOMÁTICAMENTE basado en el grado
-            // Si tiene grado con cargos administrativos/docentes = empleado
-            // Si el grado es un grado escolar (ejemplo: "11", "10-A", etc) = estudiante
             $tipo = $this->determinarTipoPersona($persona);
             
             return [
                 'nombre' => trim($persona->nombre),
-                'apellido' => '', // SIEMPRE vacío porque el nombre ya es completo
                 'tipo' => $tipo,
                 'grado' => $persona->grado,
             ];
@@ -277,7 +264,6 @@ class PorteriaController extends Controller
         // Si no se encuentra, retornar null para indicar que es visitante
         return [
             'nombre' => null,
-            'apellido' => null,
             'tipo' => 'externo',
             'grado' => null,
         ];
@@ -349,7 +335,6 @@ class PorteriaController extends Controller
                     'id' => $registro->id,
                     'documento' => $registro->documento,
                     'nombre' => $registro->nombre,
-                    'apellido' => $registro->apellido,
                     'tipo_persona' => $registro->tipo_persona,
                     'hora_entrada' => Carbon::parse($registro->hora_entrada)->format('H:i'),
                     'hora_salida' => $registro->hora_salida ? Carbon::parse($registro->hora_salida)->format('H:i') : '',
@@ -380,7 +365,6 @@ class PorteriaController extends Controller
         $request->validate([
             'documento' => 'required|string|max:50',
             'nombre' => 'required|string|max:100',
-            'apellido' => 'nullable|string|max:100',
             'tipo_persona' => 'required|in:empleado,estudiante,externo',
             'hora_entrada' => 'required|date_format:H:i',
             'hora_salida' => 'nullable|date_format:H:i',
@@ -393,7 +377,6 @@ class PorteriaController extends Controller
             $registro->update([
                 'documento' => $request->documento,
                 'nombre' => $request->nombre,
-                'apellido' => $request->apellido,
                 'tipo_persona' => $request->tipo_persona,
                 'hora_entrada' => $request->hora_entrada,
                 'hora_salida' => $request->hora_salida,

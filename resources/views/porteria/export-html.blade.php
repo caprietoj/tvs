@@ -599,7 +599,7 @@
                                         <tr>
                                             <td>{{ \Carbon\Carbon::parse($registro->fecha)->format('d/m/Y') }}</td>
                                             <td>{{ $registro->documento }}</td>
-                                            <td>{{ $registro->nombre }} {{ $registro->apellido }}</td>
+                                            <td>{{ $registro->nombre }}</td>
                                             <td>
                                                 <span class="badge badge-{{ $registro->tipo_persona == 'Empleado' ? 'primary' : ($registro->tipo_persona == 'Visitante' ? 'warning' : 'info') }}">
                                                     {{ $registro->tipo_persona ?? 'No especificado' }}

@@ -13,7 +13,6 @@ class RegistroPorteria extends Model
     protected $fillable = [
         'documento',
         'nombre',
-        'apellido',
         'tipo_persona',
         'fecha',
         'hora_entrada',
@@ -41,7 +40,8 @@ class RegistroPorteria extends Model
      */
     public function getNombreCompletoAttribute(): string
     {
-        return "{$this->nombre} {$this->apellido}";
+        // El nombre ya contiene el nombre completo
+        return $this->nombre;
     }
 
     /**

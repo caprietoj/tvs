@@ -265,7 +265,7 @@
                                 @foreach($patronesComportamiento['frecuencia_visitas'] as $index => $persona)
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
-                                        <td>{{ $persona->nombre }} {{ $persona->apellido }}</td>
+                                        <td>{{ $persona->nombre }}</td>
                                         <td>{{ $persona->documento }}</td>
                                         <td>
                                             <span class="badge badge-{{ $persona->tipo_persona == 'Empleado' ? 'primary' : 'warning' }}">
@@ -356,7 +356,7 @@
                                         <tr>
                                             <td>{{ \Carbon\Carbon::parse($registro->fecha)->format('d/m/Y') }}</td>
                                             <td>{{ $registro->documento }}</td>
-                                            <td>{{ $registro->nombre }} {{ $registro->apellido }}</td>
+                                            <td>{{ $registro->nombre }}</td>
                                             <td>
                                                 <span class="badge badge-{{ $registro->tipo_persona == 'Empleado' ? 'primary' : ($registro->tipo_persona == 'Visitante' ? 'warning' : 'info') }}">
                                                     {{ $registro->tipo_persona ?? 'No especificado' }}
