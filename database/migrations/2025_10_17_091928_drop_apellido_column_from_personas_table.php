@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('personas', function (Blueprint $table) {
-            // Eliminar la columna apellido completamente
-            $table->dropColumn('apellido');
-        });
+        // Verificar si la columna existe antes de eliminarla
+        if (Schema::hasColumn('personas', 'apellido')) {
+            Schema::table('personas', function (Blueprint $table) {
+                $table->dropColumn('apellido');
+            });
+        }
     }
 
     /**
@@ -22,9 +24,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('personas', function (Blueprint $table) {
-            // Restaurar la columna apellido
-            $table->string('apellido', 100)->after('nombre');
-        });
+        // Solo restaurar si la columna no existe
+        if (!Schema::hasColumn('personas', 'apellido')) {
+            Schema::table('personas', function (Blueprint $table) {
+                $table->string('apellido', 100)->nullable()->after('nombre');
+            });
+        }
     }
 };
