@@ -20,7 +20,6 @@ class Persona extends Model
     protected $fillable = [
         'documento',
         'nombre',
-        'apellido',
         'tipo_persona',
         'email',
         'telefono',
@@ -39,23 +38,10 @@ class Persona extends Model
     ];
 
     /**
-     * Accessor para grado - Corrige automáticamente si está en apellido
+     * Accessor para grado
      */
     public function getGradoAttribute($value)
     {
-        // Si grado está vacío pero apellido tiene un cargo, usar apellido como grado
-        if (empty($value) && !empty($this->attributes['apellido'])) {
-            $apellido = $this->attributes['apellido'];
-            $cargos = ['Administracion', 'Docente', 'Coordinacion', 'Asistente', 'Servicios', 
-                       'Biblioteca', 'Enfermeria', 'Mantenimiento', 'Sistemas', 'Contabilidad'];
-            
-            foreach ($cargos as $cargo) {
-                if (stripos($apellido, $cargo) !== false) {
-                    return $apellido;
-                }
-            }
-        }
-        
         return $value;
     }
 
@@ -92,25 +78,8 @@ class Persona extends Model
      */
     public function getNombreCompletoAttribute(): string
     {
-        // Solo usar nombre, ignorar apellido si parece un cargo
-        $apellido = $this->attributes['apellido'] ?? '';
-        $cargos = ['Administracion', 'Docente', 'Coordinacion', 'Asistente', 'Servicios', 
-                   'Biblioteca', 'Enfermeria', 'Mantenimiento', 'Sistemas', 'Contabilidad'];
-        
-        $esCargo = false;
-        foreach ($cargos as $cargo) {
-            if (stripos($apellido, $cargo) !== false) {
-                $esCargo = true;
-                break;
-            }
-        }
-        
-        // Si apellido es un cargo, no concatenarlo
-        if ($esCargo || empty($apellido)) {
-            return trim($this->nombre);
-        }
-        
-        return trim("{$this->nombre} {$apellido}");
+        // El nombre ya contiene el nombre completo
+        return trim($this->nombre);
     }
 
     /**

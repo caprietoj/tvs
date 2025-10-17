@@ -48,8 +48,8 @@
                                 <li>Pegue los datos (Ctrl + V)</li>
                                 <li>Haga clic en "Importar Datos"</li>
                             </ol>
-                            <p class="mb-0"><strong>Formato esperado (7 columnas separadas automáticamente por Excel):</strong><br>
-                            <code>Documento | Nombre | Apellido | Tipo | Email | Teléfono | Grado</code></p>
+                            <p class="mb-0"><strong>Formato esperado (3 columnas separadas automáticamente por Excel):</strong><br>
+                            <code>Documento | Nombre | Tipo/Cargo</code></p>
                             <p class="text-sm mb-0 mt-2">
                                 <i class="fas fa-exclamation-triangle text-warning"></i> 
                                 <strong>Importante:</strong> NO escriba manualmente. Debe copiar directamente desde Excel para que los tabuladores se mantengan.
@@ -65,21 +65,22 @@
                                 class="form-control @error('data') is-invalid @enderror" 
                                 placeholder="Pegue aquí los datos copiados de Excel...
 Ejemplo:
-1234567890	Juan	Pérez	estudiante	juan@email.com	3001234567	5°A
-0987654321	María	López	empleado	maria@email.com	3009876543	Coordinadora"
+1234567890	Juan Pérez	Primero 1A
+0987654321	María López	Docentes Bachillerato
+1122334455	Carlos Gómez	Administracion"
                                 required
                             >{{ old('data') }}</textarea>
                             @error('data')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
                             <small class="form-text text-muted">
-                                <strong>Tipo:</strong> Use "estudiante" o "empleado" (si no especifica, será "estudiante" por defecto)
+                                <strong>Columna Tipo/Cargo:</strong> Puede ser un grado (ej: "Primero 1A", "Sexto 6B") o un cargo (ej: "Docentes Bachillerato", "Administracion", "EMC"). El sistema detectará automáticamente si es estudiante o empleado.
                             </small>
                         </div>
 
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Importante:</strong> Los documentos duplicados serán omitidos automáticamente.
+                            <strong>Importante:</strong> Los registros existentes serán actualizados automáticamente. No se crearán duplicados.
                         </div>
                     </div>
 
@@ -120,47 +121,24 @@ Ejemplo:
                             </tr>
                             <tr>
                                 <td>2</td>
-                                <td>Nombre</td>
+                                <td>Nombre Completo</td>
                                 <td><small>100</small></td>
                                 <td><span class="badge badge-danger">Sí</span></td>
                             </tr>
                             <tr>
                                 <td>3</td>
-                                <td>Apellido</td>
+                                <td>Tipo/Cargo</td>
                                 <td><small>100</small></td>
                                 <td><span class="badge badge-danger">Sí</span></td>
                             </tr>
-                            <tr>
-                                <td>4</td>
-                                <td>Tipo</td>
-                                <td><small>-</small></td>
-                                <td><span class="badge badge-secondary">No</span></td>
-                            </tr>
-                            <tr>
-                                <td>5</td>
-                                <td>Email</td>
-                                <td><small>150</small></td>
-                                <td><span class="badge badge-secondary">No</span></td>
-                            </tr>
-                            <tr>
-                                <td>6</td>
-                                <td>Teléfono</td>
-                                <td><small class="text-danger">20</small></td>
-                                <td><span class="badge badge-secondary">No</span></td>
-                            </tr>
-                            <tr>
-                                <td>7</td>
-                                <td>Grado/Cargo</td>
-                                <td><small>50</small></td>
-                                <td><span class="badge badge-secondary">No</span></td>
-                            </tr>
                         </tbody>
                     </table>
-                    <div class="alert alert-warning alert-sm">
+                    <div class="alert alert-info alert-sm">
                         <small>
                             <i class="fas fa-info-circle"></i> 
-                            <strong>Máx:</strong> Número máximo de caracteres.<br>
-                            Los datos que excedan se truncarán automáticamente.
+                            <strong>Ejemplos de Tipo/Cargo:</strong><br>
+                            • <strong>Estudiantes:</strong> "Primero 1A", "Sexto 6B", "Undécimo 11A", etc.<br>
+                            • <strong>Empleados:</strong> "Docentes Bachillerato", "Administracion", "EMC", "Servicios Generales", etc.
                         </small>
                     </div>
 
@@ -188,13 +166,13 @@ Ejemplo:
                             <strong>NO escriba manualmente</strong> - debe copiar desde Excel
                         </li>
                         <li><span class="fa-li"><i class="fas fa-check text-success"></i></span>
-                            Asegúrese de que su Excel tenga <strong>7 columnas</strong>
+                            Asegúrese de que su Excel tenga <strong>3 columnas</strong>: Documento, Nombre, Tipo/Cargo
                         </li>
                         <li><span class="fa-li"><i class="fas fa-check text-success"></i></span>
-                            El <strong>teléfono</strong> debe tener máximo <span class="badge badge-warning">20 caracteres</span>
+                            Los <strong>registros existentes</strong> se actualizarán automáticamente
                         </li>
                         <li><span class="fa-li"><i class="fas fa-check text-success"></i></span>
-                            Los <strong>documentos duplicados</strong> se omitirán
+                            El sistema detectará automáticamente si es <strong>estudiante o empleado</strong> según el cargo
                         </li>
                         <li><span class="fa-li"><i class="fas fa-check text-success"></i></span>
                             Verá un <strong>reporte detallado</strong> al finalizar

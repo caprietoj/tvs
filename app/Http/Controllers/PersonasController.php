@@ -82,7 +82,6 @@ class PersonasController extends Controller
         $validated = $request->validate([
             'documento' => 'required|string|max:50|unique:personas,documento',
             'nombre' => 'required|string|max:100',
-            'apellido' => 'required|string|max:100',
             'tipo_persona' => 'required|in:empleado,estudiante',
             'email' => 'nullable|email|max:150',
             'telefono' => 'nullable|string|max:20',
@@ -92,8 +91,7 @@ class PersonasController extends Controller
         ], [
             'documento.required' => 'El documento es obligatorio',
             'documento.unique' => 'Este documento ya está registrado',
-            'nombre.required' => 'El nombre es obligatorio',
-            'apellido.required' => 'El apellido es obligatorio',
+            'nombre.required' => 'El nombre completo es obligatorio',
             'tipo_persona.required' => 'Debe seleccionar el tipo de persona',
             'email.email' => 'Debe ingresar un email válido',
         ]);
@@ -125,7 +123,6 @@ class PersonasController extends Controller
         $validated = $request->validate([
             'documento' => 'required|string|max:50|unique:personas,documento,' . $persona->id,
             'nombre' => 'required|string|max:100',
-            'apellido' => 'required|string|max:100',
             'tipo_persona' => 'required|in:empleado,estudiante',
             'email' => 'nullable|email|max:150',
             'telefono' => 'nullable|string|max:20',
@@ -174,6 +171,42 @@ class PersonasController extends Controller
     }
 
     /**
+     * Determinar tipo de persona según el cargo
+     */
+    private function determinarTipoPersona($cargo)
+    {
+        // Lista de tipos de empleados
+        $tiposEmpleado = [
+            'Administracion',
+            'Docentes Bachillerato',
+            'Docentes Preescolar y Primaria',
+            'EMC',
+            'Depto de Apoyo',
+            'Mantenimiento',
+            'Servicios Generales',
+            'PRACTICANTE',
+            'Coordinacion',
+            'Rectoria',
+            'Secretaria',
+            'Biblioteca',
+            'Enfermeria',
+            'Sistemas',
+            'Contabilidad',
+            'Pastoral'
+        ];
+
+        // Verificar si es empleado
+        foreach ($tiposEmpleado as $tipo) {
+            if (stripos($cargo, $tipo) !== false) {
+                return 'empleado';
+            }
+        }
+
+        // Si no es empleado, es estudiante (incluye grados como "Primero 1A", "Sexto 6B", etc.)
+        return 'estudiante';
+    }
+
+    /**
      * Procesar importación desde Excel (copiar/pegar)
      */
     public function import(Request $request)
@@ -189,8 +222,8 @@ class PersonasController extends Controller
 
             $lineas = explode("\n", trim($request->data));
             $importados = 0;
+            $actualizados = 0;
             $errores = [];
-            $duplicados = 0;
 
             foreach ($lineas as $index => $linea) {
                 $linea = trim($linea);
@@ -209,27 +242,19 @@ class PersonasController extends Controller
                 $columnas = array_map('trim', $columnas);
 
                 if (count($columnas) < 3) {
-                    $errores[] = "Línea " . ($index + 1) . ": Se requieren al menos 3 columnas (Documento, Nombre, Apellido)";
+                    $errores[] = "Línea " . ($index + 1) . ": Se requieren al menos 3 columnas (Documento, Nombre, Tipo/Cargo)";
                     continue;
                 }
 
-                // Formato esperado: Documento | Nombre | Apellido | Tipo | Email | Teléfono | Grado
+                // Formato esperado: Documento | Nombre | Tipo/Cargo
+                // La columna 3 (Tipo/Cargo) ahora va a tipo_persona
                 $documento = substr($columnas[0] ?? '', 0, 50); // Max 50
                 $nombre = substr($columnas[1] ?? '', 0, 100);   // Max 100
-                $apellido = substr($columnas[2] ?? '', 0, 100); // Max 100
-                $tipo = strtolower($columnas[3] ?? 'estudiante');
-                $email = substr($columnas[4] ?? '', 0, 150);    // Max 150
-                $telefono = substr($columnas[5] ?? '', 0, 20);  // Max 20
-                $grado = substr($columnas[6] ?? '', 0, 50);     // Max 50
-
-                // Validar tipo
-                if (!in_array($tipo, ['empleado', 'estudiante'])) {
-                    $tipo = 'estudiante';
-                }
-
+                $tipoCargo = trim($columnas[2] ?? '');          // Tipo de persona o cargo
+                
                 // Validar datos mínimos
-                if (empty($documento) || empty($nombre) || empty($apellido)) {
-                    $errores[] = "Línea " . ($index + 1) . ": Faltan datos obligatorios (Documento: '{$documento}', Nombre: '{$nombre}', Apellido: '{$apellido}')";
+                if (empty($documento) || empty($nombre)) {
+                    $errores[] = "Línea " . ($index + 1) . ": Faltan datos obligatorios (Documento: '{$documento}', Nombre: '{$nombre}')";
                     continue;
                 }
 
@@ -239,45 +264,46 @@ class PersonasController extends Controller
                     continue;
                 }
 
-                // Verificar si ya existe
-                $existe = Persona::where('documento', $documento)->exists();
-                if ($existe) {
-                    $duplicados++;
-                    continue;
+                // Validar longitud del tipo/cargo
+                if (strlen($tipoCargo) > 50) {
+                    $tipoCargo = substr($tipoCargo, 0, 50);
                 }
 
-                // Validar email si se proporciona
-                if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    $email = null; // Si el email no es válido, se guarda como null
-                }
+                // Determinar tipo de persona automáticamente según el cargo
+                $tipoPersona = $this->determinarTipoPersona($tipoCargo);
 
-                // Crear persona
-                Persona::create([
-                    'documento' => $documento,
+                // Preparar datos para insertar/actualizar
+                $datos = [
                     'nombre' => $nombre,
-                    'apellido' => $apellido,
-                    'tipo_persona' => $tipo,
-                    'email' => $email ?: null,
-                    'telefono' => $telefono ?: null,
-                    'grado' => $grado ?: null,
+                    'tipo_persona' => $tipoPersona, // 'empleado' o 'estudiante'
+                    'grado' => $tipoCargo, // Guardar el cargo completo en grado
                     'activo' => true,
-                ]);
+                ];
 
-                $importados++;
+                // Buscar si ya existe la persona
+                $persona = Persona::where('documento', $documento)->first();
+
+                if ($persona) {
+                    // Actualizar registro existente
+                    $persona->update($datos);
+                    $actualizados++;
+                } else {
+                    // Crear nuevo registro
+                    Persona::create(array_merge(['documento' => $documento], $datos));
+                    $importados++;
+                }
             }
 
             DB::commit();
 
             // Preparar mensaje de resultado
-            if ($importados === 0 && count($errores) === 0 && $duplicados === 0) {
+            if ($importados === 0 && $actualizados === 0 && count($errores) === 0) {
                 return back()->withInput()
-                    ->with('error', '❌ No se importó ningún registro. Verifique el formato de los datos.');
+                    ->with('error', '❌ No se procesó ningún registro. Verifique el formato de los datos.');
             }
 
-            $mensaje = "✓ Importación completada: {$importados} personas registradas";
-            if ($duplicados > 0) {
-                $mensaje .= ", {$duplicados} duplicados omitidos";
-            }
+            $mensaje = "✓ Importación completada: {$importados} personas creadas, {$actualizados} actualizadas";
+            
             
             if (count($errores) > 0) {
                 $listaErrores = implode('<br>• ', array_slice($errores, 0, 5)); // Mostrar máximo 5 errores
