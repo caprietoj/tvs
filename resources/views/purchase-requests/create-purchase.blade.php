@@ -568,6 +568,36 @@
         let formIsValidated = false;
         let formIsSubmitting = false;
         
+        // Función para convertir purchase_items a JSON antes de enviar
+        function convertPurchaseItemsToJson() {
+            const purchaseItems = [];
+            
+            $('#purchaseItemsBody tr').each(function(index) {
+                const item = {
+                    item: $(this).find('input[name*="[item]"]').val(),
+                    quantity: $(this).find('input[name*="[quantity]"]').val(),
+                    description: $(this).find('input[name*="[description]"]').val(),
+                    unit: $(this).find('input[name*="[unit]"]').val(),
+                    observations: $(this).find('input[name*="[observations]"]').val()
+                };
+                purchaseItems.push(item);
+            });
+            
+            // Remover todos los campos purchase_items del formulario
+            $('input[name*="purchase_items"]').remove();
+            
+            // Agregar el JSON como un campo oculto
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'purchase_items_json',
+                value: JSON.stringify(purchaseItems)
+            }).appendTo('#purchaseForm');
+            
+            console.log('✅ Items convertidos a JSON:', purchaseItems.length, 'items');
+            
+            return purchaseItems.length;
+        }
+        
         // Prevenir envíos múltiples
         $('#purchaseForm').on('submit', function(e) {
             if (formIsSubmitting) {
@@ -642,14 +672,16 @@
             console.log('✅ All validations passed, submitting form...');
             
             // DIAGNÓSTICO ESPECIAL PARA FORMULARIOS GRANDES
-            const formData = new FormData(this);
             const itemCount = $('input[name*="[description]"]').length;
             const totalInputs = $('input, select, textarea').length;
             
             console.log('🔍 DIAGNÓSTICO DE ENVÍO:');
             console.log('- Cantidad de ítems:', itemCount);
             console.log('- Total de inputs:', totalInputs);
-            console.log('- Tamaño estimado del formulario:', new Blob([new URLSearchParams(formData).toString()]).size + ' bytes');
+            
+            // SOLUCIÓN: Siempre convertir a JSON para evitar problemas con max_input_vars
+            console.log('🔄 Convirtiendo items a JSON...');
+            convertPurchaseItemsToJson();
             
             // Si tiene más de 20 ítems, mostrar modal de advertencia
             if (itemCount > 20) {
@@ -947,14 +979,43 @@
                     console.log('📤 Enviando formulario grande via AJAX...');
                     console.log('- Total de campos FormData:', Array.from(formData.entries()).length);
                     
-                    // Log de debugging para items
-                    let itemCount = 0;
-                    for (let [key, value] of formData.entries()) {
-                        if (key.includes('purchase_items')) {
-                            itemCount++;
+                    // Verificar si ya está en formato JSON
+                    if (!formData.has('purchase_items_json')) {
+                        console.log('⚠️ Items aún no convertidos a JSON, convirtiendo ahora...');
+                        
+                        // SOLUCIÓN: Convertir purchase_items a JSON para evitar max_input_vars
+                        const purchaseItems = [];
+                        
+                        // Extraer los items del FormData
+                        $('#purchaseItemsBody tr').each(function(index) {
+                            const item = {
+                                item: $(this).find('input[name*="[item]"]').val(),
+                                quantity: $(this).find('input[name*="[quantity]"]').val(),
+                                description: $(this).find('input[name*="[description]"]').val(),
+                                unit: $(this).find('input[name*="[unit]"]').val(),
+                                observations: $(this).find('input[name*="[observations]"]').val()
+                            };
+                            purchaseItems.push(item);
+                        });
+                        
+                        // Eliminar todos los campos purchase_items del FormData
+                        const keysToDelete = [];
+                        for (let key of formData.keys()) {
+                            if (key.includes('purchase_items')) {
+                                keysToDelete.push(key);
+                            }
                         }
+                        keysToDelete.forEach(key => formData.delete(key));
+                        
+                        // Agregar los items como JSON
+                        formData.append('purchase_items_json', JSON.stringify(purchaseItems));
+                        
+                        console.log('✅ Items convertidos a JSON:', purchaseItems.length, 'items');
+                    } else {
+                        console.log('✅ Items ya están en formato JSON');
                     }
-                    console.log('- Campos de purchase_items encontrados:', itemCount);
+                    
+                    console.log('- Nuevo total de campos FormData:', Array.from(formData.entries()).length);
                     
                     $.ajax({
                         url: $(form).attr('action'),

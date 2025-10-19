@@ -493,8 +493,35 @@ class PurchaseRequestController extends Controller
                 'memory_limit' => ini_get('memory_limit'),
                 'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown',
                 'php_version' => phpversion(),
-                'request_size_estimate' => strlen(serialize($request->all())) . ' bytes'
+                'request_size_estimate' => strlen(serialize($request->all())) . ' bytes',
+                'has_purchase_items_json' => $request->has('purchase_items_json')
             ]);
+            
+            // SOLUCIÓN: Si viene purchase_items_json, convertirlo a array y reemplazar purchase_items
+            if ($request->has('purchase_items_json')) {
+                $purchaseItemsJson = $request->input('purchase_items_json');
+                \Log::info('PROCESANDO PURCHASE_ITEMS_JSON', [
+                    'json_length' => strlen($purchaseItemsJson),
+                    'json_sample' => substr($purchaseItemsJson, 0, 200)
+                ]);
+                
+                $purchaseItems = json_decode($purchaseItemsJson, true);
+                
+                if (json_last_error() === JSON_ERROR_NONE && is_array($purchaseItems)) {
+                    // Reemplazar purchase_items con el array decodificado
+                    $request->merge(['purchase_items' => $purchaseItems]);
+                    
+                    \Log::info('✅ ITEMS CONVERTIDOS DESDE JSON', [
+                        'items_count' => count($purchaseItems),
+                        'first_item' => $purchaseItems[0] ?? 'null',
+                        'last_item' => end($purchaseItems)
+                    ]);
+                } else {
+                    \Log::error('❌ ERROR AL DECODIFICAR JSON', [
+                        'json_error' => json_last_error_msg()
+                    ]);
+                }
+            }
             
             // Verificar si se están recibiendo todos los items
             $purchaseItems = $request->input('purchase_items', []);
