@@ -60,13 +60,13 @@ class SectionClassifierService
                 'director_email' => 'administrativedirector@tvs.edu.co',
                 'reason' => 'CAS_SPECIAL_ROUTING'
             ]);
-            return DynamicSectionEmailsService::getConfig('directors.administrative');
+            return DynamicSectionEmailsService::getConfig('directors.administrative') ?? 'administrativedirector@tvs.edu.co';
         }
         
         $classification = $this->classifySection($sectionName);
         
         if ($classification == 'academic') {
-            $directorEmail = DynamicSectionEmailsService::getConfig('directors.academic');
+            $directorEmail = DynamicSectionEmailsService::getConfig('directors.academic') ?? 'generaldirector@tvs.edu.co';
             
             // FILTRO POR MONTO: Solo enviar a generaldirector@tvs.edu.co si el monto es >= $500.000
             if ($directorEmail === 'generaldirector@tvs.edu.co' && $totalAmount !== null && $totalAmount < 500000) {
@@ -77,18 +77,18 @@ class SectionClassifierService
                     'director_email' => $directorEmail
                 ]);
                 // Retornar email administrativo como alternativa
-                return DynamicSectionEmailsService::getConfig('directors.administrative');
+                return DynamicSectionEmailsService::getConfig('directors.administrative') ?? 'administrativedirector@tvs.edu.co';
             }
             
             return $directorEmail;
         }
         
         if ($classification == 'administrative') {
-            return DynamicSectionEmailsService::getConfig('directors.administrative');
+            return DynamicSectionEmailsService::getConfig('directors.administrative') ?? 'administrativedirector@tvs.edu.co';
         }
         
         // Si no se pudo clasificar, usar el correo administrativo por defecto
-        return DynamicSectionEmailsService::getConfig('directors.administrative');
+        return DynamicSectionEmailsService::getConfig('directors.administrative') ?? 'administrativedirector@tvs.edu.co';
     }
 
     /**
@@ -129,7 +129,7 @@ class SectionClassifierService
     {
         // EXCEPCIÓN ESPECIAL: CAS siempre envía únicamente al director administrativo
         if (strtoupper(trim($sectionName)) === 'CAS') {
-            $administrativeDirectorEmail = DynamicSectionEmailsService::getConfig('directors.administrative');
+            $administrativeDirectorEmail = DynamicSectionEmailsService::getConfig('directors.administrative') ?? 'administrativedirector@tvs.edu.co';
             \Illuminate\Support\Facades\Log::info("Notificación CAS dirigida únicamente al director administrativo", [
                 'section' => $sectionName,
                 'emails' => [$administrativeDirectorEmail],
@@ -188,7 +188,7 @@ class SectionClassifierService
             // 2. Agregar director según el monto
             if ($totalAmount < 500000) {
                 // Monto menor a $500,000: agregar director administrativo
-                $administrativeDirector = DynamicSectionEmailsService::getConfig('directors.administrative');
+                $administrativeDirector = DynamicSectionEmailsService::getConfig('directors.administrative') ?? 'administrativedirector@tvs.edu.co';
                 if (!in_array($administrativeDirector, $result)) {
                     $result[] = $administrativeDirector;
                 }
@@ -201,7 +201,7 @@ class SectionClassifierService
                 ]);
             } else {
                 // Monto >= $500,000: agregar director general
-                $generalDirector = DynamicSectionEmailsService::getConfig('directors.academic');
+                $generalDirector = DynamicSectionEmailsService::getConfig('directors.academic') ?? 'generaldirector@tvs.edu.co';
                 if (!in_array($generalDirector, $result)) {
                     $result[] = $generalDirector;
                 }
@@ -259,7 +259,7 @@ class SectionClassifierService
         
         // Si no se encuentra configuración específica, usar el valor por defecto
         if (empty($result)) {
-            $default = DynamicSectionEmailsService::getConfig('default');
+            $default = DynamicSectionEmailsService::getConfig('default') ?? 'compras@tvs.edu.co';
             if ($default) {
                 $result = is_array($default) ? $default : [$default];
             }
@@ -269,7 +269,7 @@ class SectionClassifierService
         if ($totalAmount !== null) {
             if ($totalAmount < 500000) {
                 // Para montos menores a $500,000: solo al director administrativo
-                $administrativeDirector = DynamicSectionEmailsService::getConfig('directors.administrative');
+                $administrativeDirector = DynamicSectionEmailsService::getConfig('directors.administrative') ?? 'administrativedirector@tvs.edu.co';
                 
                 // Remover generaldirector si está presente
                 $result = array_filter($result, function($email) {
@@ -288,7 +288,7 @@ class SectionClassifierService
                 
             } else {
                 // Para montos >= $500,000: incluir generaldirector y otros emails configurados
-                $generalDirector = DynamicSectionEmailsService::getConfig('directors.academic');
+                $generalDirector = DynamicSectionEmailsService::getConfig('directors.academic') ?? 'generaldirector@tvs.edu.co';
                 if (!in_array($generalDirector, $result)) {
                     $result[] = $generalDirector;
                 }
