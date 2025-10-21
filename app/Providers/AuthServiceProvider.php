@@ -83,7 +83,12 @@ class AuthServiceProvider extends ServiceProvider
                 'Johanna Gavidia Barbosa'
             ];
             
-            return in_array($user->name, $allowedUsers);
+            // También permitir por email (para casos específicos como Director General)
+            $allowedEmails = [
+                'generaldirector@tvs.edu.co'
+            ];
+            
+            return in_array($user->name, $allowedUsers) || in_array($user->email, $allowedEmails);
         });
 
         // Gate para verificar acceso al módulo de enfermería

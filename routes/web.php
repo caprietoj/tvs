@@ -882,7 +882,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Rutas para las preaprobaciones de solicitudes de compra
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'can:preaprobaciones'])->group(function () {
     Route::get('quotation-approvals/search', [QuotationApprovalController::class, 'searchAjax'])
         ->name('quotation-approvals.search');
     Route::get('quotation-approvals', [QuotationApprovalController::class, 'index'])
@@ -904,7 +904,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Rutas para las aprobaciones finales de solicitudes de compra
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'can:aprobaciones'])->group(function () {
     Route::get('approvals', [ApprovalController::class, 'index'])->name('approvals.index');
     Route::get('approvals/{id}', [ApprovalController::class, 'show'])->name('approvals.show');
     Route::post('approvals/{id}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');

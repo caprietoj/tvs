@@ -40,11 +40,11 @@ class DirectorGeneralRoleSeeder extends Seeder
         ];
 
         // Permisos específicos para el módulo de Almacén y Compras
-        // SOLO para Aprobaciones (Preaprobaciones y Aprobaciones Finales)
+        // SOLO para Aprobaciones Finales (SIN acceso a Preaprobaciones)
         $comprasPermissions = [
-            'almacen',  // Permiso necesario para ver el módulo principal
-            'preaprobaciones',  // Acceso a Preaprobaciones
-            'aprobaciones',     // Acceso a Aprobaciones Finales
+            'almacen',      // Permiso necesario para ver el módulo principal
+            'aprobaciones', // SOLO Acceso a Aprobaciones Finales
+            // 'preaprobaciones' - REMOVIDO: No debe tener acceso a Preaprobaciones
         ];
 
         // Permisos específicos para previsitas (ya tiene acceso de solo lectura)
