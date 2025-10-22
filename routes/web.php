@@ -794,6 +794,8 @@ Route::middleware(['auth'])->group(function () {
     // Órdenes de compra
     Route::get('purchase-orders', [PurchaseOrdersController::class, 'index'])
         ->name('purchase-orders.index');
+    Route::get('purchase-orders/export', [PurchaseOrdersController::class, 'exportExcel'])
+        ->name('purchase-orders.export');
     Route::get('purchase-requests/{purchaseRequest}/orders/create', [PurchaseOrdersController::class, 'create'])
         ->name('purchase-orders.create');
     Route::post('purchase-requests/{purchaseRequest}/orders', [PurchaseOrdersController::class, 'store'])

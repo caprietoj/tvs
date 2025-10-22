@@ -164,16 +164,20 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Lista de Órdenes de Compra</h3>
-            @if(auth()->user()->can('admin'))
-                <div class="card-tools">
-                    <form action="{{ route('purchases.orders.repair-all') }}" method="POST" style="display: inline;">
+            <div class="card-tools">
+                <!-- Botón de Exportar a Excel -->
+                <a href="{{ route('purchase-orders.export') }}" class="btn btn-sm btn-success" title="Descargar informe en Excel">
+                    <i class="fas fa-file-excel"></i> Exportar a Excel
+                </a>
+                @if(auth()->user()->can('admin'))
+                    <form action="{{ route('purchases.orders.repair-all') }}" method="POST" style="display: inline; margin-left: 5px;">
                         @csrf
                         <button type="submit" class="btn btn-sm btn-warning" title="Validar y reparar todas las órdenes con problemas" onclick="return confirm('¿Estás seguro de que deseas reparar todas las órdenes? Esto puede tomar algunos minutos.')">
                             <i class="fas fa-tools"></i> Reparar Todas las Órdenes
                         </button>
                     </form>
-                </div>
-            @endif
+                @endif
+            </div>
         </div>
         <!-- /.card-header -->
         <div class="card-body">

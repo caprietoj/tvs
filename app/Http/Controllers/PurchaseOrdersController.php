@@ -5447,4 +5447,26 @@ class PurchaseOrdersController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Exportar órdenes de compra a Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        // Obtener filtros de la request
+        $filters = [
+            'order_number' => $request->get('order_number'),
+            'request_number' => $request->get('request_number'),
+            'provider_name' => $request->get('provider_name'),
+            'date_from' => $request->get('date_from'),
+            'date_to' => $request->get('date_to'),
+        ];
+
+        $filename = 'ordenes-compra-' . date('Y-m-d-His') . '.xlsx';
+        
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\PurchaseOrdersExport($filters),
+            $filename
+        );
+    }
 }
