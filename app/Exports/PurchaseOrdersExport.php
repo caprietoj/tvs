@@ -80,6 +80,7 @@ class PurchaseOrdersExport implements FromQuery, WithHeadings, WithMapping, With
         return [
             'Número de Orden',
             'Solicitud',
+            'Producto/Servicio Solicitado',
             'Proveedor',
             'Monto',
             'Fecha de Entrega',
@@ -93,14 +94,94 @@ class PurchaseOrdersExport implements FromQuery, WithHeadings, WithMapping, With
      */
     public function map($order): array
     {
+        // Obtener el concepto/descripción de la solicitud
+        $concept = $this->getRequestConcept($order->purchaseRequest);
+        
         return [
             $order->order_number,
             $order->purchaseRequest ? $order->purchaseRequest->request_number : 'N/A',
+            $concept,
             $order->provider ? $order->provider->nombre : 'N/A',
             '$' . number_format($order->total_amount, 2, ',', '.'),
             $order->delivery_date ? $order->delivery_date->format('d/m/Y') : 'N/A',
             $order->created_at->format('d/m/Y H:i'),
         ];
+    }
+
+    /**
+     * Obtener el concepto o descripción de la solicitud
+     */
+    private function getRequestConcept($purchaseRequest)
+    {
+        if (!$purchaseRequest) {
+            return 'N/A';
+        }
+
+        // Para solicitudes de compra (purchase)
+        if ($purchaseRequest->type === 'purchase') {
+            if ($purchaseRequest->purchase_justification) {
+                return \Illuminate\Support\Str::limit($purchaseRequest->purchase_justification, 100);
+            }
+            // Si no hay justificación, intentar obtener de los items
+            if ($purchaseRequest->purchase_items) {
+                $items = is_string($purchaseRequest->purchase_items) 
+                    ? json_decode($purchaseRequest->purchase_items, true) 
+                    : $purchaseRequest->purchase_items;
+                
+                if (is_array($items) && count($items) > 0) {
+                    $descriptions = array_column($items, 'description');
+                    return \Illuminate\Support\Str::limit(implode(', ', array_filter($descriptions)), 100);
+                }
+            }
+        }
+
+        // Para solicitudes de servicios (services)
+        if ($purchaseRequest->type === 'services') {
+            if ($purchaseRequest->service_justification) {
+                return \Illuminate\Support\Str::limit($purchaseRequest->service_justification, 100);
+            }
+            // Si no hay justificación, intentar obtener de los items
+            if ($purchaseRequest->service_items) {
+                $items = is_string($purchaseRequest->service_items) 
+                    ? json_decode($purchaseRequest->service_items, true) 
+                    : $purchaseRequest->service_items;
+                
+                if (is_array($items) && count($items) > 0) {
+                    $descriptions = array_column($items, 'description');
+                    return \Illuminate\Support\Str::limit(implode(', ', array_filter($descriptions)), 100);
+                }
+            }
+        }
+
+        // Para solicitudes de materiales o fotocopias
+        if ($purchaseRequest->type === 'materials') {
+            $descriptions = [];
+            
+            // Fotocopias
+            if ($purchaseRequest->copy_items) {
+                $items = is_string($purchaseRequest->copy_items) 
+                    ? json_decode($purchaseRequest->copy_items, true) 
+                    : $purchaseRequest->copy_items;
+                
+                if (is_array($items) && count($items) > 0) {
+                    return 'Fotocopias (' . count($items) . ' documentos)';
+                }
+            }
+            
+            // Materiales
+            if ($purchaseRequest->material_items) {
+                $items = is_string($purchaseRequest->material_items) 
+                    ? json_decode($purchaseRequest->material_items, true) 
+                    : $purchaseRequest->material_items;
+                
+                if (is_array($items) && count($items) > 0) {
+                    $itemDescriptions = array_column($items, 'description');
+                    return \Illuminate\Support\Str::limit(implode(', ', array_filter($itemDescriptions)), 100);
+                }
+            }
+        }
+
+        return 'Sin descripción';
     }
 
     /**
@@ -143,10 +224,11 @@ class PurchaseOrdersExport implements FromQuery, WithHeadings, WithMapping, With
         return [
             'A' => 20,  // Número de Orden
             'B' => 18,  // Solicitud
-            'C' => 35,  // Proveedor
-            'D' => 18,  // Monto
-            'E' => 18,  // Fecha de Entrega
-            'F' => 20,  // Creado
+            'C' => 50,  // Producto/Servicio Solicitado
+            'D' => 35,  // Proveedor
+            'E' => 18,  // Monto
+            'F' => 18,  // Fecha de Entrega
+            'G' => 20,  // Creado
         ];
     }
 
@@ -163,7 +245,7 @@ class PurchaseOrdersExport implements FromQuery, WithHeadings, WithMapping, With
                 $highestRow = $sheet->getHighestRow();
                 
                 // Aplicar bordes a todas las celdas con datos
-                $sheet->getStyle('A1:F' . $highestRow)->applyFromArray([
+                $sheet->getStyle('A1:G' . $highestRow)->applyFromArray([
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
@@ -172,17 +254,17 @@ class PurchaseOrdersExport implements FromQuery, WithHeadings, WithMapping, With
                     ],
                 ]);
                 
-                // Alineación central para todas las celdas excepto proveedor
+                // Alineación central para todas las celdas excepto descripción y proveedor
                 $sheet->getStyle('A2:B' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle('D2:F' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('E2:G' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 
-                // Alineación izquierda para proveedor
-                $sheet->getStyle('C2:C' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                // Alineación izquierda para descripción y proveedor
+                $sheet->getStyle('C2:D' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
                 
                 // Aplicar color de fondo alternado a las filas
                 for ($row = 2; $row <= $highestRow; $row++) {
                     if ($row % 2 == 0) {
-                        $sheet->getStyle('A' . $row . ':F' . $row)->applyFromArray([
+                        $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
                             'fill' => [
                                 'fillType' => Fill::FILL_SOLID,
                                 'startColor' => ['rgb' => 'F8F9FA'],
