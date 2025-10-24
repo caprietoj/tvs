@@ -142,33 +142,28 @@ class EquipmentController extends Controller
         try {
             Log::info('Iniciando solicitud de préstamo', $request->all());
             
-            // Obtener la fecha de mañana
-            $tomorrow = now()->addDay()->format('Y-m-d');
+            // Calcular fecha máxima permitida según el día actual
+            $today = now()->startOfDay();
+            $dayOfWeek = $today->dayOfWeek; // 0=domingo, 5=viernes, 6=sábado
             
-            // Determinar la fecha máxima permitida según el día de la semana
-            $today = now();
-            if ($today->dayOfWeek === 5 || $today->dayOfWeek === 6 || $today->dayOfWeek === 0) { 
-                // Si hoy es viernes (5), sábado (6) o domingo (0)
-                // Permitir reservar para toda la próxima semana (hasta el domingo siguiente)
-                if ($today->dayOfWeek === 5) {
-                    // Viernes: +9 días = domingo de la próxima semana
-                    $endOfWeek = $today->copy()->addDays(9)->format('Y-m-d');
-                } else if ($today->dayOfWeek === 6) {
-                    // Sábado: +8 días = domingo de la próxima semana
-                    $endOfWeek = $today->copy()->addDays(8)->format('Y-m-d');
-                } else {
-                    // Domingo: +7 días = domingo de la próxima semana
-                    $endOfWeek = $today->copy()->addDays(7)->format('Y-m-d');
-                }
+            if ($dayOfWeek === 5) {
+                // Viernes: hasta domingo de la próxima semana (+9 días)
+                $maxDate = $today->copy()->addDays(9)->format('Y-m-d');
+            } elseif ($dayOfWeek === 6 || $dayOfWeek === 0) {
+                // Sábado o domingo: hasta domingo de la próxima semana
+                $daysUntilNextSunday = $dayOfWeek === 6 ? 8 : 7;
+                $maxDate = $today->copy()->addDays($daysUntilNextSunday)->format('Y-m-d');
             } else {
-                $endOfWeek = $today->copy()->endOfWeek()->format('Y-m-d'); // Domingo de esta semana
+                // Lunes a jueves: hasta domingo de esta semana
+                $daysUntilSunday = 7 - $dayOfWeek;
+                $maxDate = $today->copy()->addDays($daysUntilSunday)->format('Y-m-d');
             }
             
             $validated = $request->validate([
                 'equipment_id' => 'required|exists:equipment,id',
                 'section' => 'required',
                 'grade' => 'required',
-                'loan_date' => 'required|date|after_or_equal:' . $tomorrow . '|before_or_equal:' . $endOfWeek,
+                'loan_date' => 'required|date|after_or_equal:today|before_or_equal:' . $maxDate,
                 'start_time' => 'required|date_format:H:i',
                 'end_time' => 'required|date_format:H:i|after:start_time',
                 'units_requested' => 'required|integer|min:1',
@@ -179,8 +174,11 @@ class EquipmentController extends Controller
                 'section.required' => 'Debe seleccionar una sección.',
                 'grade.required' => 'Debe ingresar el salón o ubicación.',
                 'loan_date.required' => 'Debe seleccionar una fecha para el préstamo.',
-                'loan_date.after_or_equal' => 'La fecha de préstamo debe ser mínimo para mañana.',
-                'loan_date.before_or_equal' => 'La fecha de préstamo está fuera del rango permitido. Los viernes puede reservar para toda la semana siguiente.',
+                'loan_date.date' => 'La fecha seleccionada no es válida.',
+                'loan_date.after_or_equal' => 'La fecha del préstamo no puede ser anterior a hoy.',
+                'loan_date.before_or_equal' => $dayOfWeek === 5 
+                    ? 'Los viernes puede reservar solo hasta el domingo de la próxima semana.' 
+                    : 'Solo puede reservar hasta el domingo de ' . ($dayOfWeek === 6 || $dayOfWeek === 0 ? 'la próxima semana' : 'esta semana') . '.',
                 'start_time.required' => 'Debe seleccionar una hora de inicio.',
                 'start_time.date_format' => 'El formato de la hora de inicio no es válido.',
                 'end_time.required' => 'Debe seleccionar una hora de finalización.',
@@ -581,38 +579,13 @@ class EquipmentController extends Controller
             ]);
         }
 
-        // Obtener la fecha de mañana
-        $tomorrow = now()->addDay()->format('Y-m-d');
-        
-        // Determinar la fecha máxima permitida según el día de la semana
-        $today = now();
-        if ($today->dayOfWeek === 5 || $today->dayOfWeek === 6 || $today->dayOfWeek === 0) { 
-            // Si hoy es viernes (5), sábado (6) o domingo (0)
-            // Permitir reservar para toda la próxima semana (hasta el domingo siguiente)
-            if ($today->dayOfWeek === 5) {
-                // Viernes: +9 días = domingo de la próxima semana
-                $endOfWeek = $today->copy()->addDays(9)->format('Y-m-d');
-            } else if ($today->dayOfWeek === 6) {
-                // Sábado: +8 días = domingo de la próxima semana
-                $endOfWeek = $today->copy()->addDays(8)->format('Y-m-d');
-            } else {
-                // Domingo: +7 días = domingo de la próxima semana
-                $endOfWeek = $today->copy()->addDays(7)->format('Y-m-d');
-            }
-        } else {
-            $endOfWeek = $today->copy()->endOfWeek()->format('Y-m-d'); // Domingo de esta semana
-        }
-        
         // Validación completa para la planificación de préstamos
         $validated = $request->validate([
             'equipment_id' => 'required|exists:equipment,id',
-            'loan_date' => 'required|date|after_or_equal:' . $tomorrow . '|before_or_equal:' . $endOfWeek,
+            'loan_date' => 'required|date',
             'section' => 'required',
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i'
-        ], [
-            'loan_date.after_or_equal' => 'La fecha de préstamo debe ser mínimo para mañana.',
-            'loan_date.before_or_equal' => 'La fecha de préstamo está fuera del rango permitido. Los viernes puede reservar para toda la semana siguiente.'
         ]);
 
         $equipment = Equipment::findOrFail($validated['equipment_id']);

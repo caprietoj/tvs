@@ -4,14 +4,14 @@
 
 @section('content_header')
     <h1 class="text-primary">Solicitud de Préstamo de Equipo</h1>
-    <p class="text-muted">Complete todos los campos para solicitar un préstamo de equipo. <strong>Las reservas solo pueden realizarse para días de mañana en adelante, y los viernes, sábados y domingos puede reservar para toda la próxima semana.</strong></p>
+    <p class="text-muted">Complete todos los campos para solicitar un préstamo de equipo.</p>
 @stop
 
 @section('content')
 <div class="alert alert-info alert-dismissible">
     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
     <h5><i class="icon fas fa-info"></i> Información importante</h5>
-    <p>Los días viernes, sábados y domingos puede reservar equipos para toda la semana siguiente. Los demás días solo hasta el domingo de la semana actual.</p>
+    <p>Puede reservar equipos para cualquier fecha disponible.</p>
 </div>
 <div class="row">
     <div class="col-md-7">
@@ -101,15 +101,26 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label><i class="fas fa-calendar-alt"></i> Fecha del Préstamo</label>
-                                <input type="date" name="loan_date" class="form-control @error('loan_date') is-invalid @enderror" required 
-                                       min="{{ date('Y-m-d', strtotime('+1 day')) }}" 
-                                       max="{{ date('Y-m-d', (date('w') == 5 || date('w') == 6 || date('w') == 0) ? (date('w') == 5 ? strtotime('+9 day') : (date('w') == 6 ? strtotime('+8 day') : strtotime('+7 day'))) : strtotime('next sunday')) }}"
-                                       value="{{ old('loan_date', date('Y-m-d', strtotime('+1 day'))) }}"
+                                <input type="date" 
+                                       name="loan_date" 
+                                       class="form-control @error('loan_date') is-invalid @enderror" 
+                                       required 
+                                       value="{{ old('loan_date', date('Y-m-d')) }}"
+                                       min="{{ date('Y-m-d', strtotime('today')) }}"
+                                       max="{{ date('l') === 'Friday' ? date('Y-m-d', strtotime('+9 days')) : (in_array(date('l'), ['Saturday', 'Sunday']) ? date('Y-m-d', strtotime('next Sunday +7 days')) : date('Y-m-d', strtotime('next Sunday'))) }}"
                                        id="loan-date-input">
                                 @error('loan_date')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <small class="form-text text-muted">Los viernes, sábados y domingos puede reservar para toda la próxima semana, otros días solo hasta el domingo actual</small>
+                                <small class="form-text text-muted">
+                                    @if(date('l') === 'Friday')
+                                        Los viernes puede reservar hasta el {{ date('d/m/Y', strtotime('+9 days')) }} (próximo domingo)
+                                    @elseif(in_array(date('l'), ['Saturday', 'Sunday']))
+                                        Puede reservar hasta el {{ date('d/m/Y', strtotime('next Sunday +7 days')) }} (domingo de la próxima semana)
+                                    @else
+                                        Puede reservar hasta el {{ date('d/m/Y', strtotime('next Sunday')) }} (este domingo)
+                                    @endif
+                                </small>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -830,7 +841,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-<script src="{{ asset('js/equipment-request.js') }}"></script>
+<script src="{{ asset('js/equipment-request.js') }}?v={{ time() }}"></script>
 <!-- Script de depuración para verificar disponibilidad -->
 <script src="{{ asset('js/debug-equipment-availability.js') }}"></script>
 <!-- Script de correcciones para disponibilidad -->

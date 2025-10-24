@@ -42,61 +42,46 @@ window.initializeEquipmentRequest = function(elements) {
     elements.equipmentSelect.addEventListener('change', handleEquipmentChange);
     
     // Configurar el rango de fechas permitido al cargar la página
+    // ACTUALIZADO: Viernes hasta próximo domingo, otros días hasta este domingo
     function setupDateConstraints() {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalizar a inicio del día
+        today.setHours(0, 0, 0, 0);
         
-        // Mañana como fecha mínima
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
+        const dayOfWeek = today.getDay(); // 0=domingo, 5=viernes, 6=sábado
         
-        // Calcular el fin de semana y activar la semana siguiente los viernes, sábados y domingos
-        const endOfWeek = new Date(today);
-        const dayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
+        // Fecha mínima: hoy
+        const minDate = today.toISOString().split('T')[0];
         
-        if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) { 
-            // Si es viernes (5), sábado (6) o domingo (0), permitir reservar para toda la próxima semana
-            if (dayOfWeek === 5) {
-                // Viernes: +9 días = domingo de la próxima semana
-                endOfWeek.setDate(today.getDate() + 9);
-            } else if (dayOfWeek === 6) {
-                // Sábado: +8 días = domingo de la próxima semana
-                endOfWeek.setDate(today.getDate() + 8);
-            } else {
-                // Domingo: +7 días = domingo de la próxima semana
-                endOfWeek.setDate(today.getDate() + 7);
-            }
+        // Calcular fecha máxima según el día
+        let maxDate;
+        if (dayOfWeek === 5) {
+            // Viernes: hasta domingo de la próxima semana (+9 días)
+            const nextWeekSunday = new Date(today);
+            nextWeekSunday.setDate(today.getDate() + 9);
+            maxDate = nextWeekSunday.toISOString().split('T')[0];
+        } else if (dayOfWeek === 6 || dayOfWeek === 0) {
+            // Sábado o domingo: hasta domingo de la próxima semana
+            const daysUntilNextSunday = dayOfWeek === 6 ? 8 : 7;
+            const nextWeekSunday = new Date(today);
+            nextWeekSunday.setDate(today.getDate() + daysUntilNextSunday);
+            maxDate = nextWeekSunday.toISOString().split('T')[0];
         } else {
-            endOfWeek.setDate(today.getDate() + (7 - dayOfWeek)); // Domingo de esta semana
+            // Lunes a jueves: hasta domingo de esta semana
+            const daysUntilSunday = 7 - dayOfWeek;
+            const thisSunday = new Date(today);
+            thisSunday.setDate(today.getDate() + daysUntilSunday);
+            maxDate = thisSunday.toISOString().split('T')[0];
         }
         
-        // Formatear fechas para el input date
-        const tomorrowFormatted = tomorrow.toISOString().split('T')[0];
-        const endOfWeekFormatted = endOfWeek.toISOString().split('T')[0];
+        // Aplicar restricciones al input
+        elements.loanDateInput.min = minDate;
+        elements.loanDateInput.max = maxDate;
         
-        // Mostrar información de depuración en consola
-        console.log("Configurando fechas:");
-        console.log("Fecha mínima (mañana):", tomorrowFormatted);
-        console.log("Fecha máxima (fin de semana):", endOfWeekFormatted);
-        
-        // Establecer valores min, max y default
-        elements.loanDateInput.min = tomorrowFormatted;
-        elements.loanDateInput.max = endOfWeekFormatted;
-        
-        // Si el valor actual está fuera de rango, establecerlo al valor predeterminado (mañana)
-        const currentValue = elements.loanDateInput.value ? new Date(elements.loanDateInput.value + "T00:00:00") : null;
-        if (!currentValue || isNaN(currentValue.getTime()) || currentValue < tomorrow || currentValue > endOfWeek) {
-            elements.loanDateInput.value = tomorrowFormatted;
-        }
-        
-        // Ya no mostraremos un mensaje adicional sobre las fechas límite
-        
-        // Limpiar cualquier mensaje previo si existe
-        const dateInputContainer = elements.loanDateInput.parentElement;
-        const existingInfo = dateInputContainer.querySelector('.alert-info');
-        if (existingInfo) {
-            dateInputContainer.removeChild(existingInfo);
-        }
+        console.log("Restricciones de fecha configuradas:", {
+            today: minDate,
+            maxDate: maxDate,
+            dayOfWeek: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][dayOfWeek]
+        });
     }
     
     // Función auxiliar para formatear fecha como DD/MM/YYYY
@@ -396,7 +381,6 @@ window.initializeEquipmentRequest = function(elements) {
     // Función para manejar el cambio de fecha
     function handleDateChange() {
         // Si hay una sección seleccionada, recargar los períodos
-        // También se incluye la sección administrativa
         const selectedSection = elements.sectionSelect.value;
         if (selectedSection) {
             loadClassPeriods();
@@ -407,52 +391,7 @@ window.initializeEquipmentRequest = function(elements) {
             checkAvailability();
         }
         
-        // Verificar que la fecha seleccionada esté dentro del rango permitido
-        const selectedDate = new Date(elements.loanDateInput.value + "T00:00:00");
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalizar a inicio del día
-        
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0); // Normalizar a inicio del día
-        
-        // Calcular el fin de semana y activar la semana siguiente los viernes, sábados y domingos
-        const endOfWeek = new Date(today);
-        const dayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
-        
-        if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) { 
-            // Si es viernes (5), sábado (6) o domingo (0), permitir reservar para toda la próxima semana
-            if (dayOfWeek === 5) {
-                // Viernes: +9 días = domingo de la próxima semana
-                endOfWeek.setDate(today.getDate() + 9);
-            } else if (dayOfWeek === 6) {
-                // Sábado: +8 días = domingo de la próxima semana
-                endOfWeek.setDate(today.getDate() + 8);
-            } else {
-                // Domingo: +7 días = domingo de la próxima semana
-                endOfWeek.setDate(today.getDate() + 7);
-            }
-        } else {
-            endOfWeek.setDate(today.getDate() + (7 - dayOfWeek)); // Domingo de esta semana
-        }
-        endOfWeek.setHours(23, 59, 59, 999); // Establecer al final del día
-        
-        // Si la fecha seleccionada está fuera de rango, mostrar una alerta
-        if (selectedDate < tomorrow || selectedDate > endOfWeek) {
-            Swal.fire({
-                title: 'Fecha no disponible',
-                html: `
-                    <p>Solo puede reservar equipos para días de la semana actual (excepto hoy).</p>
-                    <p>Rango permitido: desde <strong>${formatFecha(tomorrow.toISOString().split('T')[0])}</strong> 
-                    hasta <strong>${formatFecha(endOfWeek.toISOString().split('T')[0])}</strong></p>
-                `,
-                icon: 'warning'
-            }).then(() => {
-                // Establecer la fecha a mañana si está fuera de rango
-                elements.loanDateInput.value = tomorrow.toISOString().split('T')[0];
-                handleDateChange(); // Llamar recursivamente para actualizar todo
-            });
-        }
+        // RESTRICCIONES DE FECHA ELIMINADAS - Se permite cualquier fecha
     }
 
     // Función para manejar el cambio de equipo
@@ -489,58 +428,7 @@ window.initializeEquipmentRequest = function(elements) {
             return;
         }
         
-        // Verificar que la fecha esté dentro del rango permitido (semana actual, excluyendo hoy)
-        const selectedDateObj = new Date(selectedDate + "T00:00:00"); // Añadir hora para normalizar
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalizar a inicio del día
-        
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0); // Normalizar a inicio del día
-        
-        // Calcular el fin de semana y activar la semana siguiente los viernes, sábados y domingos
-        const endOfWeek = new Date(today);
-        const dayOfWeek = today.getDay();
-        
-        if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) { 
-            // Si es viernes (5), sábado (6) o domingo (0), permitir reservar para toda la próxima semana
-            if (dayOfWeek === 5) {
-                // Viernes: +9 días = domingo de la próxima semana
-                endOfWeek.setDate(today.getDate() + 9);
-            } else if (dayOfWeek === 6) {
-                // Sábado: +8 días = domingo de la próxima semana
-                endOfWeek.setDate(today.getDate() + 8);
-            } else {
-                // Domingo: +7 días = domingo de la próxima semana
-                endOfWeek.setDate(today.getDate() + 7);
-            }
-        } else {
-            endOfWeek.setDate(today.getDate() + (7 - dayOfWeek)); // Domingo de esta semana
-        }
-        endOfWeek.setHours(23, 59, 59, 999); // Establecer al final del día
-        
-        // Para depuración en consola
-        console.log("Fecha seleccionada:", selectedDateObj.toISOString().split('T')[0]);
-        console.log("Fecha mínima (mañana):", tomorrow.toISOString().split('T')[0]);
-        console.log("Fecha máxima (fin de semana):", endOfWeek.toISOString().split('T')[0]);
-        
-        // Si está fuera de rango, mostrar mensaje y no continuar con la carga
-        if (selectedDateObj < tomorrow || selectedDateObj > endOfWeek) {
-            Swal.fire({
-                title: 'Fecha no disponible',
-                html: `
-                    <p>Solo puede reservar equipos para días dentro de la semana actual (excepto hoy).</p>
-                    <p>Rango permitido: desde <strong>${formatFecha(tomorrow.toISOString().split('T')[0])}</strong> 
-                    hasta <strong>${formatFecha(endOfWeek.toISOString().split('T')[0])}</strong></p>
-                `,
-                icon: 'warning'
-            }).then(() => {
-                // Establecer a mañana si está fuera de rango
-                elements.loanDateInput.value = tomorrow.toISOString().split('T')[0];
-                setupDateConstraints(); // Actualizar restricciones
-            });
-            return;
-        }
+        // RESTRICCIONES DE FECHA ELIMINADAS - Se permite cualquier fecha
 
         // Mostrar el contenedor de períodos para cualquier sección, incluida administrativo
         classPeriods.container.style.display = 'block';
