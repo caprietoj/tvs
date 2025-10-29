@@ -49,8 +49,10 @@ window.initializeEquipmentRequest = function(elements) {
         
         const dayOfWeek = today.getDay(); // 0=domingo, 5=viernes, 6=sábado
         
-        // Fecha mínima: hoy
-        const minDate = today.toISOString().split('T')[0];
+        // Fecha mínima: mañana (no se permite préstamo para el mismo día)
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        const minDate = tomorrow.toISOString().split('T')[0];
         
         // Calcular fecha máxima según el día
         let maxDate;

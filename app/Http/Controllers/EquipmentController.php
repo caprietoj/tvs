@@ -163,7 +163,7 @@ class EquipmentController extends Controller
                 'equipment_id' => 'required|exists:equipment,id',
                 'section' => 'required',
                 'grade' => 'required',
-                'loan_date' => 'required|date|after_or_equal:today|before_or_equal:' . $maxDate,
+                'loan_date' => 'required|date|after:today|before_or_equal:' . $maxDate,
                 'start_time' => 'required|date_format:H:i',
                 'end_time' => 'required|date_format:H:i|after:start_time',
                 'units_requested' => 'required|integer|min:1',
@@ -175,7 +175,7 @@ class EquipmentController extends Controller
                 'grade.required' => 'Debe ingresar el salón o ubicación.',
                 'loan_date.required' => 'Debe seleccionar una fecha para el préstamo.',
                 'loan_date.date' => 'La fecha seleccionada no es válida.',
-                'loan_date.after_or_equal' => 'La fecha del préstamo no puede ser anterior a hoy.',
+                'loan_date.after' => 'Los préstamos deben solicitarse con al menos un día de anticipación.',
                 'loan_date.before_or_equal' => $dayOfWeek === 5 
                     ? 'Los viernes puede reservar solo hasta el domingo de la próxima semana.' 
                     : 'Solo puede reservar hasta el domingo de ' . ($dayOfWeek === 6 || $dayOfWeek === 0 ? 'la próxima semana' : 'esta semana') . '.',

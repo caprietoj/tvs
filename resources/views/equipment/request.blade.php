@@ -105,8 +105,8 @@
                                        name="loan_date" 
                                        class="form-control @error('loan_date') is-invalid @enderror" 
                                        required 
-                                       value="{{ old('loan_date', date('Y-m-d')) }}"
-                                       min="{{ date('Y-m-d', strtotime('today')) }}"
+                                       value="{{ old('loan_date', date('Y-m-d', strtotime('tomorrow'))) }}"
+                                       min="{{ date('Y-m-d', strtotime('tomorrow')) }}"
                                        max="{{ date('l') === 'Friday' ? date('Y-m-d', strtotime('+9 days')) : (in_array(date('l'), ['Saturday', 'Sunday']) ? date('Y-m-d', strtotime('next Sunday +7 days')) : date('Y-m-d', strtotime('next Sunday'))) }}"
                                        id="loan-date-input">
                                 @error('loan_date')
