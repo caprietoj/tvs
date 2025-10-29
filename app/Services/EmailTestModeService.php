@@ -49,6 +49,8 @@ class EmailTestModeService
             'tesoreria' => 'test-tesoreria@tvs.edu.co',
             'auxiliar' => 'test-auxiliar@tvs.edu.co',
             'administracion' => 'test-admin@tvs.edu.co',
+            'administrativedirector' => 'administrativedirector@test.com',
+            'generaldirector' => 'generaldirector@test.com',
             'general' => 'test-general@tvs.edu.co',
         ];
 
@@ -81,8 +83,10 @@ class EmailTestModeService
             $section = 'tesoreria';
         } elseif (strpos($originalEmail, 'auxiliar') !== false) {
             $section = 'auxiliar';
-        } elseif (strpos($originalEmail, 'admin') !== false) {
-            $section = 'administracion';
+        } elseif (strpos($originalEmail, 'generaldirector') !== false) {
+            $section = 'generaldirector';
+        } elseif (strpos($originalEmail, 'administrativedirector') !== false || strpos($originalEmail, 'admin') !== false) {
+            $section = 'administrativedirector';
         }
 
         $testEmail = self::getTestEmail($section);

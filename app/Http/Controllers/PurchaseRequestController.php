@@ -203,8 +203,8 @@ class PurchaseRequestController extends Controller
                 if ($academicDirector) {
                     $approvalEmails[] = $academicDirector;
                 } else {
-                    // Fallback a la sección de Dirección General
-                    $approvalEmails[] = config($configSource . '.sections.Dirección General', 'generaldirector@tvs.edu.co');
+                    // Fallback al director administrativo (NO generaldirector@tvs.edu.co)
+                    $approvalEmails[] = config($configSource . '.directors.administrative', 'administrativedirector@tvs.edu.co');
                 }
                 break;
             

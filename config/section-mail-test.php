@@ -100,6 +100,7 @@ return [
     // Correos de directores para aprobaciones
     'directors' => [
         'administrative' => 'administrativedirector@test.com',
+        'academic' => 'generaldirector@test.com',
     ],
 
     // Correos adicionales que siempre deben ser notificados (independientemente de la sección)
