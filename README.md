@@ -1,11 +1,11 @@
-# 🏫 Sistema de Gestión TVS (Teresiano Vida y Santidad)
+# 🏫 Sistema de Gestión TVS (The Victoria School)
 
 [![Laravel](https://img.shields.io/badge/Laravel-10.x-FF2D20?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.1+-777BB4?style=flat&logo=php)](https://php.net)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?style=flat&logo=mysql)](https://www.mysql.com)
 [![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 
-Sistema integral de gestión escolar para el colegio Teresiano Vida y Santidad, desarrollado con Laravel 10, que incluye módulos de préstamos de equipos, enfermería, compras, servicios generales y más.
+Sistema integral de gestión escolar para The Victoria School (TVS), desarrollado con Laravel 10, que incluye módulos de préstamos de equipos, enfermería, compras, servicios generales y más.
 
 ---
 
@@ -487,7 +487,7 @@ php artisan test --coverage
 
 ## 🤝 Contribución
 
-Este es un proyecto privado del Colegio Teresiano Vida y Santidad. Para contribuir:
+Este es un proyecto privado de The Victoria School (TVS). Para contribuir:
 
 1. Crea una rama con el formato: `feature/nombre-funcionalidad`
 2. Realiza tus cambios
@@ -517,14 +517,14 @@ Este es un proyecto privado del Colegio Teresiano Vida y Santidad. Para contribu
 
 ## 📄 Licencia
 
-Este software es propiedad del **Colegio Teresiano Vida y Santidad**. Todos los derechos reservados.
+Este software es propiedad de **The Victoria School (TVS)**. Todos los derechos reservados.
 
 ---
 
 ## 👥 Equipo de Desarrollo
 
 **Desarrollador Principal**: Carlos Prieto  
-**Institución**: Teresiano Vida y Santidad  
+**Institución**: The Victoria School (TVS)  
 **GitHub**: [@caprietoj](https://github.com/caprietoj)
 
 ---
@@ -539,14 +539,14 @@ Para soporte técnico o consultas:
 
 ## 🙏 Agradecimientos
 
-- Equipo administrativo del Colegio Teresiano Vida y Santidad
+- Equipo administrativo de The Victoria School (TVS)
 - Comunidad Laravel
 - Contribuidores de librerías de código abierto
 
 ---
 
 <p align="center">
-  <strong>Desarrollado con ❤️ para el Colegio Teresiano Vida y Santidad</strong>
+  <strong>Desarrollado con ❤️ para The Victoria School (TVS)</strong>
 </p>
 
 <p align="center">

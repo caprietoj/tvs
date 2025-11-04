@@ -4,7 +4,7 @@ layout: default
 
 # 📚 Documentación del Sistema TVS
 
-Bienvenido a la documentación oficial del Sistema de Gestión TVS (Teresiano Vida y Santidad).
+Bienvenido a la documentación oficial del Sistema de Gestión TVS (The Victoria School).
 
 ## 🚀 Inicio Rápido
 
@@ -151,5 +151,5 @@ Si encuentras un bug, [crea un issue](https://github.com/caprietoj/tvs/issues/ne
 </p>
 
 <p align="center">
-  Desarrollado con ❤️ para el Colegio Teresiano Vida y Santidad
+  Desarrollado con ❤️ para The Victoria School (TVS)
 </p>
