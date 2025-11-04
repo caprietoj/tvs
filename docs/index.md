@@ -26,51 +26,55 @@ Bienvenido a la documentación oficial del Sistema de Gestión TVS (The Victoria
 - [Licencia](LICENSE) - Términos de uso
 
 ### Técnica
-- [Documentación de API](API.md) - Endpoints y ejemplos
-- [Guía de Contribución](CONTRIBUTING.md) - Cómo contribuir
-- [Estructura del Proyecto](README.md#-estructura-del-proyecto)
+- [Documentación de API](../API.md) - Endpoints y ejemplos
+- [Guía de Contribución](../CONTRIBUTING.md) - Cómo contribuir
+- [Estructura del Proyecto](../README.md#-estructura-del-proyecto)
 
 ### Por Módulo
 
 #### 🏥 Enfermería
-- [Sistema de Reconocimiento de Voz](docs/voice-recognition.md)
-- [Filtros y Exportación Excel](docs/reports-filtering.md)
-- [Gestión de Ingresos](docs/enfermeria-management.md)
+- [Sistema de Reconocimiento de Voz](voice-recognition.md)
+- Filtros y Exportación Excel (próximamente)
+- Gestión de Ingresos (próximamente)
 
 #### 🎯 Préstamos de Equipos
-- [Restricciones de Fecha](docs/equipment-restrictions.md)
-- [Sistema de Notificaciones](docs/notifications.md)
+- Restricciones de Fecha (próximamente)
+- Sistema de Notificaciones (próximamente)
 
 #### 🛒 Compras y Servicios
-- [Solicitudes de Compra](CONTEXTO_MODULO_COMPRAS.md)
-- [Control Presupuestal](CONFIGURACION_PRESUPUESTO.md)
+- [Contexto Módulo de Compras](../CONTEXTO_MODULO_COMPRAS.md)
+- [Control Presupuestal](../CONFIGURACION_PRESUPUESTO.md)
+- [Arquitectura Técnica](../ARQUITECTURA_TECNICA_COMPRAS.md)
 
 #### 👥 Colaboradores
-- [Gestión de Empleados](MODULO_COLABORADORES_README.md)
-- [Importación Masiva](docs/import-colaboradores.md)
+- [Gestión de Empleados](../MODULO_COLABORADORES_README.md)
+- Importación Masiva (próximamente)
 
 #### 🚪 Portería
-- [Sistema Completo](Contextos/porteria-sistema-completo.md)
-- [Gestión de Visitantes](Contextos/porteria-modal-visitantes.md)
+> **Nota**: Documentación disponible solo en entorno local (carpeta excluida del repositorio)
 
 ## 🔧 Configuración
 
 ### Configuraciones Especiales
-- [Google OAuth](CONFIGURACION_GOOGLE_OAUTH.md)
-- [Email y Notificaciones](docs/email-config.md)
-- [Permisos y Roles](docs/permissions.md)
+- [Google OAuth](../CONFIGURACION_GOOGLE_OAUTH.md)
+- [Configuración de Presupuestos](../CONFIGURACION_PRESUPUESTO.md)
+- [Formulario Externo](../IMPLEMENTACION_FORMULARIO_EXTERNO.md)
 
 ## 🚀 Despliegue
 
 ### Migración y Producción
-- [Checklist de Migración](CHECKLIST_MIGRACION.md)
-- [Migración a Producción](MIGRACION_PRODUCCION.md)
-- [Despliegue Final](DESPLIEGUE_PRODUCCION_FINAL.md)
+- [Checklist de Migración](../CHECKLIST_MIGRACION.md)
+- [Migración a Producción](../MIGRACION_PRODUCCION.md)
+- [Despliegue Final](../DESPLIEGUE_PRODUCCION_FINAL.md)
+- [Resumen de Migración](../RESUMEN_MIGRACION.md)
 
 ### Solución de Problemas
-- [FAQ Migraciones](FAQ_MIGRACIONES.md)
-- [Errores Comunes](docs/troubleshooting.md)
-- [Solución Error Migración](SOLUCION_ERROR_MIGRACION_PRODUCCION.md)
+- [FAQ Migraciones](../FAQ_MIGRACIONES.md)
+- [Solución Error Migración](../SOLUCION_ERROR_MIGRACION_PRODUCCION.md)
+- [Solución Acceso No Autorizado](../SOLUCION_ACCESO_NO_AUTORIZADO.md)
+- [Solución Importación Personas](../SOLUCION_IMPORTACION_PERSONAS.md)
+- [Solución Límite Gmail](../SOLUCION_LIMITE_GMAIL.md)
+- [Solución Max Input Vars](../SOLUCION_MAX_INPUT_VARS.md)
 
 ## 🎓 Tutoriales
 

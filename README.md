@@ -395,30 +395,34 @@ tvs/
 ## 📖 Documentación Adicional
 
 ### Documentos Técnicos
-- [Configuración de Google OAuth](CONFIGURACION_GOOGLE_OAUTH.md)
-- [Configuración de Presupuestos](CONFIGURACION_PRESUPUESTO.md)
-- [Módulo de Colaboradores](MODULO_COLABORADORES_README.md)
-- [Contexto Módulo de Compras](CONTEXTO_MODULO_COMPRAS.md)
-- [Implementación Formulario Externo](IMPLEMENTACION_FORMULARIO_EXTERNO.md)
+- [Configuración de Google OAuth](./CONFIGURACION_GOOGLE_OAUTH.md)
+- [Configuración de Presupuestos](./CONFIGURACION_PRESUPUESTO.md)
+- [Módulo de Colaboradores](./MODULO_COLABORADORES_README.md)
+- [Contexto Módulo de Compras](./CONTEXTO_MODULO_COMPRAS.md)
+- [Implementación Formulario Externo](./IMPLEMENTACION_FORMULARIO_EXTERNO.md)
+- [Arquitectura Técnica Compras](./ARQUITECTURA_TECNICA_COMPRAS.md)
+- [Implementación Export Purchase Orders](./IMPLEMENTACION_EXPORT_PURCHASE_ORDERS.md)
 
 ### Guías de Migración
-- [Checklist de Migración](CHECKLIST_MIGRACION.md)
-- [Migración a Producción](MIGRACION_PRODUCCION.md)
-- [Resumen de Migración](RESUMEN_MIGRACION.md)
-- [Despliegue Producción Final](DESPLIEGUE_PRODUCCION_FINAL.md)
+- [Checklist de Migración](./CHECKLIST_MIGRACION.md)
+- [Migración a Producción](./MIGRACION_PRODUCCION.md)
+- [Resumen de Migración](./RESUMEN_MIGRACION.md)
+- [Despliegue Producción Final](./DESPLIEGUE_PRODUCCION_FINAL.md)
+- [Notas Migraciones Datos Portería](./NOTAS_MIGRACIONES_DATOS_PORTERIA.md)
 
 ### Solución de Problemas
-- [FAQ Migraciones](FAQ_MIGRACIONES.md)
-- [Solución Error Migración Producción](SOLUCION_ERROR_MIGRACION_PRODUCCION.md)
-- [Solución Acceso No Autorizado](SOLUCION_ACCESO_NO_AUTORIZADO.md)
-- [Solución Importación Personas](SOLUCION_IMPORTACION_PERSONAS.md)
-- [Solución Límite Gmail](SOLUCION_LIMITE_GMAIL.md)
+- [FAQ Migraciones](./FAQ_MIGRACIONES.md)
+- [Solución Error Migración Producción](./SOLUCION_ERROR_MIGRACION_PRODUCCION.md)
+- [Solución Acceso No Autorizado](./SOLUCION_ACCESO_NO_AUTORIZADO.md)
+- [Solución Importación Personas](./SOLUCION_IMPORTACION_PERSONAS.md)
+- [Solución Límite Gmail](./SOLUCION_LIMITE_GMAIL.md)
+- [Solución Max Input Vars](./SOLUCION_MAX_INPUT_VARS.md)
+- [Solución Servicios Generales](./SOLUCION_SERVICIOS_GENERALES.md)
+- [Solución Migración README](./SOLUCION_MIGRACION_README.md)
 
 ### Documentación de Portería
-- [Sistema Completo Portería](Contextos/porteria-sistema-completo.md)
-- [Gestión de Personas](Contextos/porteria-gestion-personas.md)
-- [Modal de Visitantes](Contextos/porteria-modal-visitantes.md)
-- [Plantilla de Importación](Contextos/porteria-plantilla-importacion.md)
+> **Nota**: La carpeta `Contextos/` está excluida del repositorio por .gitignore. 
+> Estos documentos están disponibles solo en el entorno local de desarrollo.
 
 ---
 
