@@ -1,15 +1,13 @@
 ---
 ---
 
-@import "jekyll-theme-cayman";
+@import "{{ site.theme }}";
 
 /* Colores Institucionales The Victoria School (TVS) */
-:root {
-  --tvs-primary: #314569;
-  --tvs-secondary: #FEFEFE;
-  --tvs-primary-light: #4a6491;
-  --tvs-primary-dark: #2c3e61;
-}
+$tvs-primary: #314569;
+$tvs-secondary: #FEFEFE;
+$tvs-primary-light: #4a6491;
+$tvs-primary-dark: #2c3e61;
 
 /* Personalización del tema Cayman con colores TVS */
 body {
@@ -19,13 +17,13 @@ body {
 
 /* Header principal */
 .page-header {
-  background: linear-gradient(135deg, var(--tvs-primary) 0%, var(--tvs-primary-light) 100%) !important;
-  color: var(--tvs-secondary) !important;
+  background: linear-gradient(135deg, $tvs-primary 0%, $tvs-primary-light 100%) !important;
+  color: $tvs-secondary !important;
   padding: 5rem 6rem;
 }
 
 .project-name {
-  color: var(--tvs-secondary) !important;
+  color: $tvs-secondary !important;
   font-weight: 700;
   font-size: 3.25rem;
   margin-top: 0;
@@ -43,9 +41,9 @@ body {
 .btn {
   display: inline-block;
   margin-bottom: 1rem;
-  color: var(--tvs-secondary) !important;
+  color: $tvs-secondary !important;
   background-color: rgba(255, 255, 255, 0.08);
-  border: solid 1px var(--tvs-secondary);
+  border: solid 1px $tvs-secondary;
   border-radius: 0.3rem;
   padding: 0.75rem 1rem;
   text-decoration: none;
@@ -54,7 +52,7 @@ body {
 
 .btn:hover {
   background-color: rgba(255, 255, 255, 0.2);
-  border-color: var(--tvs-secondary);
+  border-color: $tvs-secondary;
   text-decoration: none;
 }
 
@@ -73,7 +71,7 @@ body {
 .main-content h4,
 .main-content h5,
 .main-content h6 {
-  color: var(--tvs-primary) !important;
+  color: $tvs-primary !important;
   font-weight: 700;
   margin-top: 2rem;
   margin-bottom: 1rem;
@@ -81,7 +79,7 @@ body {
 
 .main-content h1 {
   font-size: 2.5rem;
-  border-bottom: 3px solid var(--tvs-primary);
+  border-bottom: 3px solid $tvs-primary;
   padding-bottom: 0.5rem;
 }
 
@@ -97,14 +95,14 @@ body {
 
 /* Enlaces */
 .main-content a {
-  color: var(--tvs-primary) !important;
+  color: $tvs-primary !important;
   text-decoration: none;
   font-weight: 500;
   transition: all 0.2s ease;
 }
 
 .main-content a:hover {
-  color: var(--tvs-primary-light) !important;
+  color: $tvs-primary-light !important;
   text-decoration: underline;
 }
 
@@ -124,8 +122,8 @@ body {
   margin-bottom: 1rem;
   font-size: 0.9rem;
   line-height: 1.45;
-  background-color: var(--tvs-primary) !important;
-  border: 1px solid var(--tvs-primary) !important;
+  background-color: $tvs-primary !important;
+  border: 1px solid $tvs-primary !important;
   border-radius: 0.3rem;
   overflow: auto;
 }
@@ -140,7 +138,7 @@ body {
   white-space: pre;
   background-color: transparent !important;
   border: none !important;
-  color: var(--tvs-secondary) !important;
+  color: $tvs-secondary !important;
 }
 
 /* Blockquotes */
@@ -148,7 +146,7 @@ body {
   padding: 0 1rem;
   margin-left: 0;
   color: #555;
-  border-left: 4px solid var(--tvs-primary) !important;
+  border-left: 4px solid $tvs-primary !important;
   background-color: rgba(49, 69, 105, 0.05) !important;
   border-radius: 3px;
 }
@@ -165,8 +163,8 @@ body {
 }
 
 .main-content table thead tr {
-  background-color: var(--tvs-primary) !important;
-  color: var(--tvs-secondary) !important;
+  background-color: $tvs-primary !important;
+  color: $tvs-secondary !important;
 }
 
 .main-content table thead th {
@@ -217,7 +215,7 @@ img[src*="shields.io"] {
 .site-footer {
   padding-top: 2rem;
   margin-top: 2rem;
-  border-top: 2px solid var(--tvs-primary) !important;
+  border-top: 2px solid $tvs-primary !important;
   text-align: center;
   color: #666;
 }
@@ -225,7 +223,7 @@ img[src*="shields.io"] {
 .site-footer-owner {
   display: block;
   font-weight: 600;
-  color: var(--tvs-primary) !important;
+  color: $tvs-primary !important;
 }
 
 /* Scrollbar personalizado */
@@ -235,29 +233,29 @@ img[src*="shields.io"] {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--tvs-secondary);
+  background: $tvs-secondary;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--tvs-primary);
+  background: $tvs-primary;
   border-radius: 10px;
-  border: 2px solid var(--tvs-secondary);
+  border: 2px solid $tvs-secondary;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--tvs-primary-light);
+  background: $tvs-primary-light;
 }
 
 /* Selección de texto */
 ::selection {
-  background-color: var(--tvs-primary);
-  color: var(--tvs-secondary);
+  background-color: $tvs-primary;
+  color: $tvs-secondary;
 }
 
 ::-moz-selection {
-  background-color: var(--tvs-primary);
-  color: var(--tvs-secondary);
+  background-color: $tvs-primary;
+  color: $tvs-secondary;
 }
 
 /* Responsive */
@@ -322,7 +320,7 @@ img[src*="shields.io"] {
 .main-content p code,
 .main-content li code {
   background-color: rgba(49, 69, 105, 0.08);
-  color: var(--tvs-primary-dark);
+  color: $tvs-primary-dark;
   font-weight: 500;
 }
 
@@ -338,6 +336,6 @@ img[src*="shields.io"] {
 
 /* Alertas y notas personalizadas */
 .main-content blockquote p:first-child strong {
-  color: var(--tvs-primary);
+  color: $tvs-primary;
   font-size: 1.1em;
 }
