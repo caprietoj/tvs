@@ -302,14 +302,24 @@
                                     <label for="descripcion_evento" class="font-weight-bold">
                                         <i class="fas fa-file-alt mr-1"></i>Descripción del Evento <span class="text-danger">*</span>
                                     </label>
-                                    <textarea class="form-control @error('descripcion_evento') is-invalid @enderror" 
-                                              id="descripcion_evento" 
-                                              name="descripcion_evento" 
-                                              rows="5" 
-                                              placeholder="Describa detalladamente lo que sucedió, síntomas presentados, circunstancias del evento..."
-                                              required>{{ old('descripcion_evento') }}</textarea>
+                                    <div class="input-group">
+                                        <textarea class="form-control @error('descripcion_evento') is-invalid @enderror" 
+                                                  id="descripcion_evento" 
+                                                  name="descripcion_evento" 
+                                                  rows="5" 
+                                                  placeholder="Describa detalladamente lo que sucedió, síntomas presentados, circunstancias del evento..."
+                                                  required>{{ old('descripcion_evento') }}</textarea>
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-primary voice-btn" 
+                                                    type="button" 
+                                                    onclick="toggleVoiceRecognition('descripcion_evento')"
+                                                    title="Activar reconocimiento de voz">
+                                                <i class="fas fa-microphone"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                     @error('descripcion_evento')
-                                        <span class="invalid-feedback">{{ $message }}</span>
+                                        <span class="invalid-feedback d-block">{{ $message }}</span>
                                     @enderror
                                 </div>
                             </div>
@@ -331,14 +341,24 @@
                                     <label for="accion_enfermeria" class="font-weight-bold">
                                         <i class="fas fa-notes-medical mr-1"></i>Acción de Enfermería <span class="text-danger">*</span>
                                     </label>
-                                    <textarea class="form-control @error('accion_enfermeria') is-invalid @enderror" 
-                                              id="accion_enfermeria" 
-                                              name="accion_enfermeria" 
-                                              rows="6" 
-                                              placeholder="Describa las acciones realizadas: medicamentos administrados, procedimientos aplicados, primeros auxilios, observaciones clínicas, etc..."
-                                              required>{{ old('accion_enfermeria') }}</textarea>
+                                    <div class="input-group">
+                                        <textarea class="form-control @error('accion_enfermeria') is-invalid @enderror" 
+                                                  id="accion_enfermeria" 
+                                                  name="accion_enfermeria" 
+                                                  rows="6" 
+                                                  placeholder="Describa las acciones realizadas: medicamentos administrados, procedimientos aplicados, primeros auxilios, observaciones clínicas, etc..."
+                                                  required>{{ old('accion_enfermeria') }}</textarea>
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-primary voice-btn" 
+                                                    type="button" 
+                                                    onclick="toggleVoiceRecognition('accion_enfermeria')"
+                                                    title="Activar reconocimiento de voz">
+                                                <i class="fas fa-microphone"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                     @error('accion_enfermeria')
-                                        <span class="invalid-feedback">{{ $message }}</span>
+                                        <span class="invalid-feedback d-block">{{ $message }}</span>
                                     @enderror
                                 </div>
                             </div>
@@ -1074,6 +1094,83 @@
         #mensaje-seleccionar {
             border-left: 4px solid var(--tvs-primary);
         }
+        
+        /* ============================================
+           ESTILOS PARA RECONOCIMIENTO DE VOZ
+           ============================================ */
+        
+        /* Botón de micrófono */
+        .voice-btn {
+            border: 2px solid var(--tvs-accent) !important;
+            color: var(--tvs-accent) !important;
+            background-color: var(--tvs-white) !important;
+            transition: all 0.3s ease;
+            min-width: 50px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .voice-btn:hover {
+            background-color: var(--tvs-accent) !important;
+            color: var(--tvs-white) !important;
+            transform: scale(1.05);
+        }
+        
+        .voice-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Estado de grabación activa */
+        .voice-btn.recording {
+            background-color: var(--tvs-danger) !important;
+            color: var(--tvs-white) !important;
+            border-color: var(--tvs-danger) !important;
+            animation: pulse-recording 1.5s ease-in-out infinite;
+        }
+        
+        .voice-btn.recording i {
+            animation: microphone-pulse 0.5s ease-in-out infinite;
+        }
+        
+        /* Animación de pulso para el botón */
+        @keyframes pulse-recording {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
+            }
+        }
+        
+        /* Animación del icono del micrófono */
+        @keyframes microphone-pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+        
+        /* Ajustes para el input-group con botón de voz */
+        .input-group-append .voice-btn {
+            border-radius: 0 0.25rem 0.25rem 0 !important;
+            border-left: none !important;
+        }
+        
+        /* Textarea con reconocimiento de voz activo */
+        textarea.recording-active {
+            border-color: var(--tvs-danger) !important;
+            box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25) !important;
+        }
+        
+        /* Indicador de transcripción en tiempo real */
+        .transcribing {
+            border-color: var(--tvs-accent) !important;
+            background-color: rgba(52, 152, 219, 0.05) !important;
+        }
     </style>
 @stop
 
@@ -1481,5 +1578,179 @@
                 document.getElementById('encuesta_observaciones').value = '';
             }
         }
+        
+        // ============================================
+        // RECONOCIMIENTO DE VOZ
+        // ============================================
+        
+        let recognition = null;
+        let isRecording = false;
+        let currentFieldId = null;
+        
+        // Verificar compatibilidad del navegador
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-CO'; // Español de Colombia
+            recognition.continuous = true; // Continuar escuchando
+            recognition.interimResults = true; // Mostrar resultados intermedios
+            recognition.maxAlternatives = 1;
+            
+            // Cuando se recibe un resultado
+            recognition.onresult = function(event) {
+                let interimTranscript = '';
+                let finalTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                // Actualizar el textarea con el texto transcrito
+                if (currentFieldId) {
+                    const textarea = document.getElementById(currentFieldId);
+                    if (finalTranscript) {
+                        // Si hay texto previo, agregar un espacio
+                        const currentValue = textarea.value;
+                        textarea.value = currentValue + (currentValue ? ' ' : '') + finalTranscript;
+                        
+                        // Hacer scroll al final del textarea
+                        textarea.scrollTop = textarea.scrollHeight;
+                    }
+                    
+                    // Agregar clase visual cuando está transcribiendo
+                    if (interimTranscript) {
+                        textarea.classList.add('transcribing');
+                    } else {
+                        textarea.classList.remove('transcribing');
+                    }
+                }
+            };
+            
+            // Cuando hay un error
+            recognition.onerror = function(event) {
+                console.error('Error en reconocimiento de voz:', event.error);
+                
+                let errorMessage = 'Error en el reconocimiento de voz';
+                
+                switch(event.error) {
+                    case 'no-speech':
+                        errorMessage = 'No se detectó ningún audio. Intenta hablar más cerca del micrófono.';
+                        break;
+                    case 'audio-capture':
+                        errorMessage = 'No se pudo acceder al micrófono. Verifica los permisos.';
+                        break;
+                    case 'not-allowed':
+                        errorMessage = 'Permiso de micrófono denegado. Por favor, permite el acceso al micrófono.';
+                        break;
+                    case 'network':
+                        errorMessage = 'Error de red. Verifica tu conexión a internet.';
+                        break;
+                }
+                
+                toastr.error(errorMessage);
+                stopRecording();
+            };
+            
+            // Cuando se detiene el reconocimiento
+            recognition.onend = function() {
+                if (isRecording) {
+                    // Si todavía debería estar grabando, reiniciar
+                    recognition.start();
+                } else {
+                    stopRecording();
+                }
+            };
+        }
+        
+        function toggleVoiceRecognition(fieldId) {
+            if (!SpeechRecognition) {
+                toastr.error('Tu navegador no soporta reconocimiento de voz. Usa Chrome, Edge o Safari.');
+                return;
+            }
+            
+            if (isRecording && currentFieldId === fieldId) {
+                // Si está grabando en este campo, detener
+                stopRecording();
+            } else {
+                // Si está grabando en otro campo, detener primero
+                if (isRecording) {
+                    stopRecording();
+                }
+                // Iniciar grabación en el nuevo campo
+                startRecording(fieldId);
+            }
+        }
+        
+        function startRecording(fieldId) {
+            currentFieldId = fieldId;
+            isRecording = true;
+            
+            try {
+                recognition.start();
+                
+                // Actualizar UI
+                const btn = document.querySelector(`button[onclick*="${fieldId}"]`);
+                const textarea = document.getElementById(fieldId);
+                
+                if (btn) {
+                    btn.classList.add('recording');
+                    btn.title = 'Detener grabación';
+                }
+                
+                if (textarea) {
+                    textarea.classList.add('recording-active');
+                }
+                
+                toastr.success('Reconocimiento de voz activado. Habla claramente.', '', {
+                    timeOut: 2000
+                });
+            } catch (error) {
+                console.error('Error al iniciar reconocimiento:', error);
+                toastr.error('No se pudo iniciar el reconocimiento de voz');
+                stopRecording();
+            }
+        }
+        
+        function stopRecording() {
+            isRecording = false;
+            
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (error) {
+                    console.error('Error al detener reconocimiento:', error);
+                }
+            }
+            
+            // Actualizar UI
+            if (currentFieldId) {
+                const btn = document.querySelector(`button[onclick*="${currentFieldId}"]`);
+                const textarea = document.getElementById(currentFieldId);
+                
+                if (btn) {
+                    btn.classList.remove('recording');
+                    btn.title = 'Activar reconocimiento de voz';
+                }
+                
+                if (textarea) {
+                    textarea.classList.remove('recording-active', 'transcribing');
+                }
+            }
+            
+            currentFieldId = null;
+        }
+        
+        // Detener grabación al enviar el formulario
+        document.querySelector('form').addEventListener('submit', function() {
+            if (isRecording) {
+                stopRecording();
+            }
+        });
     </script>
 @stop

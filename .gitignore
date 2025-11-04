@@ -88,9 +88,9 @@ complete_rrhh_permissions.php
 update_rrhh_permissions.php
 
 
-# Documentation files generated during development
-*.md
-docs
+# Documentation files generated during development (excluded)
+# NOTE: Main documentation files are tracked (README.md, CONTRIBUTING.md, etc.)
+# Only ignore context files
 Contextos
 
 # Routes files
