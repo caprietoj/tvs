@@ -1,0 +1,134 @@
+---
+layout: default
+---
+
+<style>
+:root {
+  --tvs-primary: #314569;
+  --tvs-secondary: #FEFEFE;
+}
+
+/* Sobrescribir colores del tema Cayman */
+.page-header {
+  background: linear-gradient(135deg, #314569 0%, #4a6491 100%) !important;
+  color: #FEFEFE !important;
+}
+
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.main-content h4,
+.main-content h5,
+.main-content h6 {
+  color: #314569 !important;
+}
+
+.main-content a {
+  color: #314569 !important;
+}
+
+.main-content a:hover {
+  color: #4a6491 !important;
+}
+
+.main-content code {
+  background-color: rgba(49, 69, 105, 0.05) !important;
+  border: 1px solid rgba(49, 69, 105, 0.1) !important;
+}
+
+.main-content pre {
+  background-color: #314569 !important;
+  border: 1px solid #314569 !important;
+}
+
+.main-content pre code {
+  background-color: transparent !important;
+  border: none !important;
+  color: #FEFEFE !important;
+}
+
+.main-content blockquote {
+  border-left: 4px solid #314569 !important;
+  background-color: rgba(49, 69, 105, 0.05) !important;
+}
+
+.main-content table thead tr {
+  background-color: #314569 !important;
+  color: #FEFEFE !important;
+}
+
+.main-content table tbody tr:nth-child(2n) {
+  background-color: rgba(49, 69, 105, 0.05) !important;
+}
+
+/* Badges y etiquetas */
+.badge,
+img[src*="shields.io"] {
+  border: 1px solid #314569 !important;
+}
+
+/* Botones */
+button,
+.btn,
+input[type="submit"] {
+  background-color: #314569 !important;
+  color: #FEFEFE !important;
+  border-color: #314569 !important;
+}
+
+button:hover,
+.btn:hover,
+input[type="submit"]:hover {
+  background-color: #4a6491 !important;
+  border-color: #4a6491 !important;
+}
+
+/* Navegación */
+.site-nav {
+  background-color: #314569 !important;
+  color: #FEFEFE !important;
+}
+
+/* Footer */
+.site-footer {
+  border-top: 2px solid #314569 !important;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FEFEFE;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #314569;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a6491;
+}
+
+/* Resaltado de selección */
+::selection {
+  background-color: #314569;
+  color: #FEFEFE;
+}
+
+::-moz-selection {
+  background-color: #314569;
+  color: #FEFEFE;
+}
+
+/* Iconos y emojis en headers */
+.main-content h1::before,
+.main-content h2::before {
+  color: #314569 !important;
+}
+</style>
+
+{{ content }}

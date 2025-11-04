@@ -8,6 +8,11 @@ plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
 
+# Colores institucionales The Victoria School
+colors:
+  primary: '#314569'
+  secondary: '#FEFEFE'
+
 # SEO
 title: Sistema TVS - Documentación
 tagline: Sistema de Gestión Escolar
