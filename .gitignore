@@ -260,5 +260,5 @@ complete_rrhh_permissions.php
 update_rrhh_permissions.php
 
 # Documentation files generated during development
-*.md
+# NOTE: Markdown files are now tracked for documentation
 *.txt
