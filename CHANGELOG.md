@@ -14,6 +14,73 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.1.0] - 2025-11-07
+
+### 🎉 Agregado
+
+#### Módulo de Enfermería - Sistema de Envío de Reportes
+- **Funcionalidad de Envío por Email**: Sistema completo de envío automático de reportes
+  - Botón "Enviar Reporte" en vista de reportes de estudiantes
+  - Modal de selección de destinatarios predefinidos (9 contactos institucionales)
+  - Generación automática de Excel profesional con filtros aplicados
+  - Envío de correo con adjunto Excel
+  - Template de correo profesional con colores institucionales TVS
+  - Aplicación automática de filtros activos al reporte enviado
+
+- **Destinatarios Predefinidos**:
+  - María del Pilar Robles (Dirección General)
+  - Juliana Pérez López (Dirección Administrativa)
+  - Ana María Grisales (Preescolar)
+  - Helena Ortiz (Coordinación PEP)
+  - Gina Lorena Hurtado
+  - Andrea Carolina Flórez
+  - María Constanza Bernal (Dirección de Programa)
+  - Johanna Gavidia (Psicología)
+  - Sistemas
+
+- **Clase EnfermeriaEstudiantesExport**: Exportación profesional para email
+  - Headers con colores institucionales (#314569)
+  - Información de filtros en primeras filas del Excel
+  - Fila de totales con fórmulas automáticas
+  - Formato profesional con bordes y alineación
+  - Anchos de columna optimizados
+  - Estilo condicional por tipo de datos
+
+- **Clase EnfermeriaReporteSent**: Mailable personalizado
+  - Template HTML responsive
+  - Colores institucionales TVS
+  - Información detallada del reporte
+  - Adjunto automático del Excel generado
+  - Diseño profesional para impresión
+
+- **Ruta y Endpoint**:
+  - `POST /enfermeria/reporte-estudiantes/enviar`
+  - Validación de destinatario obligatorio
+  - Aplicación de filtros opcionales
+  - Respuesta JSON con success/error
+
+### 🔧 Mejorado
+- **Modal de Envío**: Cierre automático después de envío exitoso
+- **Event Listeners**: Envueltos en `document.ready()` para asegurar carga del DOM
+- **Manejo de Errores**: Validación de respuestas HTTP y manejo de excepciones
+- **Limpieza de Recursos**: Eliminación automática de archivos temporales
+- **UX**: Indicador de carga durante envío ("Enviando...")
+- **Notificaciones**: Toastr con mensajes personalizados y barra de progreso
+
+### 🐛 Corregido
+- Event listeners se ejecutaban antes de que el DOM estuviera listo
+- Modal no se cerraba correctamente después de envío
+- Backdrop de Bootstrap no se eliminaba completamente
+- Botón de envío no se restauraba correctamente
+
+### 📝 Documentación
+- Creado `MODULO_ENFERMERIA_README.md` con documentación completa
+- Agregadas instrucciones de uso del sistema de envío de reportes
+- Documentados destinatarios predefinidos y sus emails
+- Agregada sección de troubleshooting para problemas comunes
+
+---
+
 ## [2.0.0] - 2025-11-04
 
 ### 🎉 Agregado

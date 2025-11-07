@@ -45,8 +45,17 @@ Sistema integral de gestión escolar para The Victoria School (TVS), desarrollad
   - Filtros por fecha, sección/tipo, cantidad mínima
   - Filtros rápidos (Hoy, Esta Semana, Este Mes)
   - Recalculación dinámica de totales
+- **🆕 Sistema de Envío Automático de Reportes** ⭐
+  - Envío por correo electrónico con un solo clic
+  - 9 destinatarios predefinidos (directivos y coordinadores)
+  - Adjunto Excel profesional generado automáticamente
+  - Aplicación de filtros activos al reporte
+  - Template de correo con colores institucionales TVS
+  - Modal intuitivo de selección de destinatarios
 - Seguimiento de incidencias médicas
 - Sistema de encuestas y observaciones
+
+> 📖 **Documentación completa**: Ver [MODULO_ENFERMERIA_README.md](./MODULO_ENFERMERIA_README.md)
 
 ### 📧 Sistema de Notificaciones
 - Notificaciones por email con configuración dinámica
@@ -398,6 +407,7 @@ tvs/
 - [Configuración de Google OAuth](./CONFIGURACION_GOOGLE_OAUTH.md)
 - [Configuración de Presupuestos](./CONFIGURACION_PRESUPUESTO.md)
 - [Módulo de Colaboradores](./MODULO_COLABORADORES_README.md)
+- [🏥 **Módulo de Enfermería** ⭐](./MODULO_ENFERMERIA_README.md) - **¡Nuevo!** Sistema completo con envío de reportes
 - [Contexto Módulo de Compras](./CONTEXTO_MODULO_COMPRAS.md)
 - [Implementación Formulario Externo](./IMPLEMENTACION_FORMULARIO_EXTERNO.md)
 - [Arquitectura Técnica Compras](./ARQUITECTURA_TECNICA_COMPRAS.md)
