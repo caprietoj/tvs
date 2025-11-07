@@ -4,10 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use App\Models\MotivoEnfermeria;
 use App\Models\IngresoEstudiante;
 use App\Models\IngresoColaborador;
 use App\Models\Empleado;
+use App\Exports\EnfermeriaEstudiantesExport;
+use App\Mail\EnfermeriaReporteSent;
+use Maatwebsite\Excel\Facades\Excel;
 
 class EnfermeriaController extends Controller
 {
@@ -340,5 +345,96 @@ class EnfermeriaController extends Controller
         return redirect()
             ->route('enfermeria.ingreso_colaboradores.index')
             ->with('success', 'Registro de ingreso de colaborador eliminado exitosamente.');
+    }
+
+    /**
+     * Send nursing report via email
+     */
+    public function enviarReporteEstudiantes(Request $request)
+    {
+        $validated = $request->validate([
+            'destinatario_email' => 'required|email',
+            'destinatario_nombre' => 'required|string',
+            'filtros' => 'nullable|array',
+        ]);
+
+        try {
+            // Obtener los datos del reporte con los mismos filtros que la vista
+            $query = IngresoEstudiante::selectRaw('
+                DATE(fecha) as fecha,
+                COUNT(CASE WHEN curso LIKE "%PREESCOLAR%" THEN 1 END) as preescolar,
+                COUNT(CASE WHEN curso LIKE "%PRIMARIA%" OR curso LIKE "%PRIMERO%" OR curso LIKE "%SEGUNDO%" OR curso LIKE "%TERCERO%" OR curso LIKE "%CUARTO%" OR curso LIKE "%QUINTO%" THEN 1 END) as primaria,
+                COUNT(CASE WHEN curso LIKE "%BACHILLERATO%" OR curso LIKE "%SEXTO%" OR curso LIKE "%SEPTIMO%" OR curso LIKE "%OCTAVO%" OR curso LIKE "%NOVENO%" OR curso LIKE "%DECIMO%" OR curso LIKE "%ONCE%" THEN 1 END) as bachillerato,
+                COUNT(CASE WHEN curso LIKE "%DEPORTIV%" OR curso LIKE "%DEPORT%" THEN 1 END) as deportivas,
+                COUNT(CASE WHEN curso LIKE "%ESPECIAL%" OR curso LIKE "%CASOS%" THEN 1 END) as casos_especiales,
+                COUNT(CASE WHEN derivacion_estudiante = "Salida al medico" OR derivacion_estudiante = "Salida a Casa" THEN 1 END) as salidas,
+                GROUP_CONCAT(DISTINCT CASE WHEN seguimiento IS NOT NULL AND seguimiento != "" THEN seguimiento END SEPARATOR " | ") as observaciones,
+                GROUP_CONCAT(DISTINCT CASE WHEN motivo LIKE "%Emergencia%" OR motivo LIKE "%Accidente%" THEN CONCAT(motivo, ": ", descripcion_evento) END SEPARATOR " | ") as novedades
+            ');
+
+            // Aplicar filtros si existen
+            $filtros = $request->input('filtros', []);
+            
+            if (!empty($filtros['fecha_desde'])) {
+                $query->whereDate('fecha', '>=', $filtros['fecha_desde']);
+            }
+            
+            if (!empty($filtros['fecha_hasta'])) {
+                $query->whereDate('fecha', '<=', $filtros['fecha_hasta']);
+            }
+
+            $reporteData = $query->groupBy('fecha')
+                                ->orderBy('fecha', 'desc')
+                                ->get();
+
+            // Generar el archivo Excel
+            $fileName = 'Reporte_Enfermeria_Estudiantes_' . date('Y-m-d_His') . '.xlsx';
+            $filePath = storage_path('app/temp/' . $fileName);
+
+            // Asegurar que existe el directorio temp
+            if (!file_exists(storage_path('app/temp'))) {
+                mkdir(storage_path('app/temp'), 0755, true);
+            }
+
+            Excel::store(new EnfermeriaEstudiantesExport($reporteData, $filtros), 'temp/' . $fileName);
+
+            // Preparar información para el correo
+            $dateRange = 'Todos los registros';
+            if (!empty($filtros['fecha_desde']) && !empty($filtros['fecha_hasta'])) {
+                $dateRange = date('d/m/Y', strtotime($filtros['fecha_desde'])) . ' - ' . date('d/m/Y', strtotime($filtros['fecha_hasta']));
+            } elseif (!empty($filtros['fecha_desde'])) {
+                $dateRange = 'Desde ' . date('d/m/Y', strtotime($filtros['fecha_desde']));
+            } elseif (!empty($filtros['fecha_hasta'])) {
+                $dateRange = 'Hasta ' . date('d/m/Y', strtotime($filtros['fecha_hasta']));
+            }
+
+            $totalRecords = $reporteData->count();
+
+            // Enviar el correo
+            Mail::to($validated['destinatario_email'])
+                ->send(new EnfermeriaReporteSent(
+                    $validated['destinatario_nombre'],
+                    'Ingresos de Estudiantes',
+                    $dateRange,
+                    $totalRecords,
+                    $filePath
+                ));
+
+            // Eliminar el archivo temporal después de enviarlo
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reporte enviado exitosamente a ' . $validated['destinatario_email']
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al enviar el reporte: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

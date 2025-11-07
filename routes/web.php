@@ -121,6 +121,9 @@ Route::middleware('auth')->group(function () {
         Route::get('reporte-estudiantes', [App\Http\Controllers\EnfermeriaController::class, 'reporteEstudiantes'])
             ->name('enfermeria.reporte_estudiantes')
             ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::post('reporte-estudiantes/enviar', [App\Http\Controllers\EnfermeriaController::class, 'enviarReporteEstudiantes'])
+            ->name('enfermeria.reporte_estudiantes.enviar')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
         Route::get('ingreso-estudiantes/create', [App\Http\Controllers\EnfermeriaController::class, 'createIngresoEstudiante'])
             ->name('enfermeria.ingreso_estudiantes.create')
             ->middleware('can:enfermeria.ingreso_estudiantes');

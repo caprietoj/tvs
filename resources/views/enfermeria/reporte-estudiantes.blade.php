@@ -109,6 +109,9 @@
                 </span>
             </h3>
             <div class="card-tools">
+                <button type="button" class="btn btn-primary btn-sm mr-2" onclick="abrirModalEnviarReporte()">
+                    <i class="fas fa-paper-plane"></i> Enviar Reporte
+                </button>
                 <button type="button" class="btn btn-success btn-sm" onclick="exportTableToExcel('reportTable', 'Reporte_Ingresos_Estudiantes')">
                     <i class="fas fa-file-excel"></i> Exportar a Excel
                 </button>
@@ -198,6 +201,83 @@
                         </tfoot>
                     @endif
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Enviar Reporte -->
+    <div class="modal fade" id="modalEnviarReporte" tabindex="-1" role="dialog" aria-labelledby="modalEnviarReporteLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalEnviarReporteLabel">
+                        <i class="fas fa-paper-plane"></i> Enviar Reporte por Correo Electrónico
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEnviarReporte">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Información:</strong> El reporte se generará en formato Excel y se enviará al correo electrónico del destinatario seleccionado, 
+                            aplicando los filtros actualmente configurados (si los hay).
+                        </div>
+
+                        <div class="form-group">
+                            <label for="destinatario_select">
+                                <i class="fas fa-user"></i> Seleccione el Destinatario <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-control" id="destinatario_select" required>
+                                <option value="">-- Seleccione un destinatario --</option>
+                                <option value="María del Pilar Robles|generaldirector@tvs.edu.co">María del Pilar Robles (Dirección General)</option>
+                                <option value="Juliana Pérez López|administrativedirector@tvs.edu.co">Juliana Pérez López (Dirección Administrativa)</option>
+                                <option value="Ana María Grisales|preschool@tvs.edu.co">Ana María Grisales (Preescolar)</option>
+                                <option value="Helena Ortiz|coordpep@tvs.edu.co">Helena Ortiz (Coordinación PEP)</option>
+                                <option value="Gina Lorena Hurtado|glhurtadog@tvs.edu.co">Gina Lorena Hurtado</option>
+                                <option value="Andrea Carolina Flórez|aflorez@tvs.edu.co">Andrea Carolina Flórez</option>
+                                <option value="María Constanza Bernal|dp@tvs.edu.co">María Constanza Bernal (Dirección de Programa)</option>
+                                <option value="Johanna Gavidia|psicologia2@tvs.edu.co">Johanna Gavidia (Psicología)</option>
+                                <option value="Sistemas|sistemas@tvs.edu.co">Sistemas</option>
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label><i class="fas fa-user-tag"></i> Nombre del Destinatario</label>
+                                    <input type="text" class="form-control" id="destinatario_nombre" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label><i class="fas fa-envelope"></i> Correo Electrónico</label>
+                                    <input type="email" class="form-control" id="destinatario_email" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-filter"></i> Filtros que se Aplicarán:</h6>
+                                <div id="resumen_filtros">
+                                    <p class="mb-0 text-muted">
+                                        <i class="fas fa-check-circle text-success"></i> Se exportará el reporte con los filtros actualmente aplicados en la tabla.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="enviarReporte()">
+                        <i class="fas fa-paper-plane"></i> Enviar Reporte
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -824,6 +904,123 @@
                     celdas[6].innerHTML = `<strong class="text-info">${totales.salidas}</strong>`;
                 }
             }
+        }
+
+        // ========================================
+        // SISTEMA DE ENVÍO DE REPORTES POR EMAIL
+        // ========================================
+
+        // Actualizar campos cuando se selecciona un destinatario
+        document.getElementById('destinatario_select').addEventListener('change', function() {
+            const value = this.value;
+            if (value) {
+                const [nombre, email] = value.split('|');
+                document.getElementById('destinatario_nombre').value = nombre;
+                document.getElementById('destinatario_email').value = email;
+            } else {
+                document.getElementById('destinatario_nombre').value = '';
+                document.getElementById('destinatario_email').value = '';
+            }
+        });
+
+        // Función para abrir el modal de enviar reporte
+        function abrirModalEnviarReporte() {
+            // Construir resumen de filtros
+            const fechaDesde = document.getElementById('fecha_desde').value;
+            const fechaHasta = document.getElementById('fecha_hasta').value;
+            const seccion = document.getElementById('filtro_seccion').value;
+            const cantidadMin = document.getElementById('filtro_cantidad').value;
+
+            let resumenHTML = '';
+            
+            if (fechaDesde || fechaHasta || seccion || cantidadMin) {
+                resumenHTML = '<ul class="mb-0">';
+                
+                if (fechaDesde) {
+                    resumenHTML += `<li><strong>Fecha Desde:</strong> ${fechaDesde}</li>`;
+                }
+                if (fechaHasta) {
+                    resumenHTML += `<li><strong>Fecha Hasta:</strong> ${fechaHasta}</li>`;
+                }
+                if (seccion) {
+                    const seccionTexto = seccion.charAt(0).toUpperCase() + seccion.slice(1);
+                    resumenHTML += `<li><strong>Sección:</strong> ${seccionTexto}</li>`;
+                }
+                if (cantidadMin) {
+                    resumenHTML += `<li><strong>Cantidad Mínima:</strong> ${cantidadMin}</li>`;
+                }
+                
+                resumenHTML += '</ul>';
+            } else {
+                resumenHTML = '<p class="mb-0 text-muted"><i class="fas fa-info-circle"></i> Se enviará el reporte completo (sin filtros aplicados)</p>';
+            }
+
+            document.getElementById('resumen_filtros').innerHTML = resumenHTML;
+
+            // Limpiar selección previa
+            document.getElementById('destinatario_select').value = '';
+            document.getElementById('destinatario_nombre').value = '';
+            document.getElementById('destinatario_email').value = '';
+
+            // Abrir modal
+            $('#modalEnviarReporte').modal('show');
+        }
+
+        // Función para enviar el reporte
+        function enviarReporte() {
+            const destinatarioEmail = document.getElementById('destinatario_email').value;
+            const destinatarioNombre = document.getElementById('destinatario_nombre').value;
+
+            if (!destinatarioEmail || !destinatarioNombre) {
+                toastr.error('Por favor seleccione un destinatario');
+                return;
+            }
+
+            // Recopilar filtros actuales
+            const filtros = {
+                fecha_desde: document.getElementById('fecha_desde').value,
+                fecha_hasta: document.getElementById('fecha_hasta').value,
+                seccion: document.getElementById('filtro_seccion').value,
+                cantidad: document.getElementById('filtro_cantidad').value
+            };
+
+            // Mostrar indicador de carga
+            const btnEnviar = event.target;
+            const textoOriginal = btnEnviar.innerHTML;
+            btnEnviar.disabled = true;
+            btnEnviar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+            // Enviar solicitud AJAX
+            fetch('{{ route("enfermeria.reporte_estudiantes.enviar") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    destinatario_email: destinatarioEmail,
+                    destinatario_nombre: destinatarioNombre,
+                    filtros: filtros
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.success(data.message);
+                    $('#modalEnviarReporte').modal('hide');
+                } else {
+                    toastr.error(data.message || 'Error al enviar el reporte');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                toastr.error('Error al enviar el reporte. Por favor intente nuevamente.');
+            })
+            .finally(() => {
+                // Restaurar botón
+                btnEnviar.disabled = false;
+                btnEnviar.innerHTML = textoOriginal;
+            });
         }
     </script>
 @stop
