@@ -1003,24 +1003,40 @@
                     filtros: filtros
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                // Verificar si la respuesta es exitosa (status 200-299)
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.json();
+            })
             .then(data => {
-                if (data.success) {
-                    // Cerrar el modal
-                    $('#modalEnviarReporte').modal('hide');
-                    
-                    // Mostrar mensaje de éxito después de cerrar el modal
-                    setTimeout(() => {
-                        toastr.success(data.message, 'Reporte Enviado', {
-                            timeOut: 5000,
-                            progressBar: true
-                        });
-                    }, 300);
-                    
-                    // Limpiar formulario
+                console.log('Respuesta del servidor:', data); // Para debugging
+                
+                if (data.success === true) {
+                    // Limpiar formulario primero
                     document.getElementById('destinatario_select').value = '';
                     document.getElementById('destinatario_nombre').value = '';
                     document.getElementById('destinatario_email').value = '';
+                    
+                    // Cerrar el modal usando JavaScript nativo también
+                    const modal = document.getElementById('modalEnviarReporte');
+                    $('#modalEnviarReporte').modal('hide');
+                    
+                    // Forzar el cierre del backdrop si existe
+                    setTimeout(() => {
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open');
+                        $('body').css('padding-right', '');
+                    }, 100);
+                    
+                    // Mostrar mensaje de éxito
+                    setTimeout(() => {
+                        toastr.success(data.message || 'Reporte enviado exitosamente', 'Reporte Enviado', {
+                            timeOut: 5000,
+                            progressBar: true
+                        });
+                    }, 400);
                 } else {
                     toastr.error(data.message || 'Error al enviar el reporte');
                     // Restaurar botón solo si hay error
@@ -1040,8 +1056,10 @@
         // Restaurar el botón cuando se cierra el modal (para la próxima vez)
         $('#modalEnviarReporte').on('hidden.bs.modal', function () {
             const btnEnviar = document.querySelector('#modalEnviarReporte .btn-primary');
-            btnEnviar.disabled = false;
-            btnEnviar.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Reporte';
+            if (btnEnviar) {
+                btnEnviar.disabled = false;
+                btnEnviar.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Reporte';
+            }
         });
         }
     </script>
