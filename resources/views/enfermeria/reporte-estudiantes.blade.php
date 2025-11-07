@@ -910,17 +910,32 @@
         // SISTEMA DE ENVÍO DE REPORTES POR EMAIL
         // ========================================
 
-        // Actualizar campos cuando se selecciona un destinatario
-        document.getElementById('destinatario_select').addEventListener('change', function() {
-            const value = this.value;
-            if (value) {
-                const [nombre, email] = value.split('|');
-                document.getElementById('destinatario_nombre').value = nombre;
-                document.getElementById('destinatario_email').value = email;
-            } else {
-                document.getElementById('destinatario_nombre').value = '';
-                document.getElementById('destinatario_email').value = '';
+        // Esperar a que el DOM esté listo antes de agregar event listeners
+        $(document).ready(function() {
+            // Actualizar campos cuando se selecciona un destinatario
+            const destinatarioSelect = document.getElementById('destinatario_select');
+            if (destinatarioSelect) {
+                destinatarioSelect.addEventListener('change', function() {
+                    const value = this.value;
+                    if (value) {
+                        const [nombre, email] = value.split('|');
+                        document.getElementById('destinatario_nombre').value = nombre;
+                        document.getElementById('destinatario_email').value = email;
+                    } else {
+                        document.getElementById('destinatario_nombre').value = '';
+                        document.getElementById('destinatario_email').value = '';
+                    }
+                });
             }
+
+            // Restaurar el botón cuando se cierra el modal
+            $('#modalEnviarReporte').on('hidden.bs.modal', function () {
+                const btnEnviar = document.querySelector('#modalEnviarReporte .btn-primary');
+                if (btnEnviar) {
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Reporte';
+                }
+            });
         });
 
         // Función para abrir el modal de enviar reporte
@@ -1051,16 +1066,6 @@
                 btnEnviar.disabled = false;
                 btnEnviar.innerHTML = textoOriginal;
             });
-        }
-
-        // Restaurar el botón cuando se cierra el modal (para la próxima vez)
-        $('#modalEnviarReporte').on('hidden.bs.modal', function () {
-            const btnEnviar = document.querySelector('#modalEnviarReporte .btn-primary');
-            if (btnEnviar) {
-                btnEnviar.disabled = false;
-                btnEnviar.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Reporte';
-            }
-        });
         }
     </script>
 @stop
