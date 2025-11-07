@@ -984,8 +984,8 @@
                 cantidad: document.getElementById('filtro_cantidad').value
             };
 
-            // Mostrar indicador de carga
-            const btnEnviar = event.target;
+            // Obtener el botón de enviar
+            const btnEnviar = document.querySelector('#modalEnviarReporte .btn-primary');
             const textoOriginal = btnEnviar.innerHTML;
             btnEnviar.disabled = true;
             btnEnviar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
@@ -1006,21 +1006,43 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    toastr.success(data.message);
+                    // Cerrar el modal
                     $('#modalEnviarReporte').modal('hide');
+                    
+                    // Mostrar mensaje de éxito después de cerrar el modal
+                    setTimeout(() => {
+                        toastr.success(data.message, 'Reporte Enviado', {
+                            timeOut: 5000,
+                            progressBar: true
+                        });
+                    }, 300);
+                    
+                    // Limpiar formulario
+                    document.getElementById('destinatario_select').value = '';
+                    document.getElementById('destinatario_nombre').value = '';
+                    document.getElementById('destinatario_email').value = '';
                 } else {
                     toastr.error(data.message || 'Error al enviar el reporte');
+                    // Restaurar botón solo si hay error
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerHTML = textoOriginal;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 toastr.error('Error al enviar el reporte. Por favor intente nuevamente.');
-            })
-            .finally(() => {
-                // Restaurar botón
+                // Restaurar botón solo si hay error
                 btnEnviar.disabled = false;
                 btnEnviar.innerHTML = textoOriginal;
             });
+        }
+
+        // Restaurar el botón cuando se cierra el modal (para la próxima vez)
+        $('#modalEnviarReporte').on('hidden.bs.modal', function () {
+            const btnEnviar = document.querySelector('#modalEnviarReporte .btn-primary');
+            btnEnviar.disabled = false;
+            btnEnviar.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Reporte';
+        });
         }
     </script>
 @stop
