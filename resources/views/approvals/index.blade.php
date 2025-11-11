@@ -130,7 +130,16 @@
                             </td>
                             <td>
                                 @if($request->type === 'services' && $request->service_type === 'no_quotation')
-                                    <span class="text-info">Servicio sin cotización</span>
+                                    @if($request->quotation_file_path)
+                                        <a href="{{ asset('storage/' . $request->quotation_file_path) }}" 
+                                           target="_blank" 
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Ver cotización/orden de renovación adjunta">
+                                            <i class="fas fa-file-pdf"></i> Ver archivo adjunto
+                                        </a>
+                                    @else
+                                        <span class="text-info">Servicio sin cotización</span>
+                                    @endif
                                 @elseif($request->hasMixedSelection())
                                     <span class="badge badge-warning">Mixta</span>
                                 @elseif($request->preApprovedQuotation)
