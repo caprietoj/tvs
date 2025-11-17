@@ -29,6 +29,7 @@ class IngresoEstudiante extends Model
         'derivacion_estudiante',
         'encuesta',
         'encuesta_observaciones',
+        'reporte_direccion_educacion',
         'user_id'
     ];
 

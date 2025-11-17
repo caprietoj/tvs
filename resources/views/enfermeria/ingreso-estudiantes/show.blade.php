@@ -212,6 +212,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
+                        <!-- Columna Izquierda -->
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="font-weight-bold">
@@ -221,7 +222,17 @@
                                     {{ $ingreso->seguimiento ?: 'No registrado' }}
                                 </p>
                             </div>
+                            <div class="form-group">
+                                <label class="font-weight-bold">
+                                    <i class="fas fa-poll mr-1"></i>Encuesta
+                                </label>
+                                <p class="form-control-plaintext border rounded p-2 bg-light">
+                                    {{ $ingreso->encuesta ?: 'No registrado' }}
+                                </p>
+                            </div>
                         </div>
+                        
+                        <!-- Columna Derecha -->
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="font-weight-bold">
@@ -231,8 +242,29 @@
                                     {{ $ingreso->derivacion_estudiante ?: 'No registrada' }}
                                 </p>
                             </div>
+                            <div class="form-group">
+                                <label class="font-weight-bold">
+                                    <i class="fas fa-file-alt mr-1"></i>Reporte de caso a dirección local de educación
+                                </label>
+                                <p class="form-control-plaintext border rounded p-2 bg-light">
+                                    {{ $ingreso->reporte_direccion_educacion ?: 'No registrado' }}
+                                </p>
+                            </div>
                         </div>
                     </div>
+                    
+                    @if($ingreso->encuesta_observaciones)
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="font-weight-bold">
+                                    <i class="fas fa-comment mr-1"></i>Observaciones de la Encuesta
+                                </label>
+                                <p class="form-control-plaintext border rounded p-2 bg-light" style="min-height: 80px; white-space: pre-wrap;">{{ $ingreso->encuesta_observaciones }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
 

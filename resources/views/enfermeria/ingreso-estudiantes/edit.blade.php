@@ -368,7 +368,9 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
+                            <!-- Columna Izquierda -->
                             <div class="col-md-6">
+                                <!-- Fila 1: Seguimiento -->
                                 <div class="form-group">
                                     <label for="seguimiento" class="font-weight-bold">
                                         <i class="fas fa-eye mr-1"></i>Seguimiento
@@ -385,30 +387,8 @@
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="derivacion_estudiante" class="font-weight-bold">
-                                        <i class="fas fa-directions mr-1"></i>Derivación del Estudiante
-                                    </label>
-                                    <select class="form-control form-control-lg @error('derivacion_estudiante') is-invalid @enderror" 
-                                            id="derivacion_estudiante" 
-                                            name="derivacion_estudiante">
-                                        <option value="">Seleccione una opción</option>
-                                        <option value="Salida al medico" {{ old('derivacion_estudiante', $ingreso->derivacion_estudiante) == 'Salida al medico' ? 'selected' : '' }}>Salida al medico</option>
-                                        <option value="Retorna al Salon" {{ old('derivacion_estudiante', $ingreso->derivacion_estudiante) == 'Retorna al Salon' ? 'selected' : '' }}>Retorna al Salon</option>
-                                        <option value="Salida a Casa" {{ old('derivacion_estudiante', $ingreso->derivacion_estudiante) == 'Salida a Casa' ? 'selected' : '' }}>Salida a Casa</option>
-                                        <option value="Seguimiento" {{ old('derivacion_estudiante', $ingreso->derivacion_estudiante) == 'Seguimiento' ? 'selected' : '' }}>Seguimiento</option>
-                                    </select>
-                                    @error('derivacion_estudiante')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
+                                
+                                <!-- Fila 2: Encuesta -->
                                 <div class="form-group">
                                     <label for="encuesta" class="font-weight-bold">
                                         <i class="fas fa-poll mr-1"></i>Encuesta
@@ -426,7 +406,51 @@
                                     @enderror
                                 </div>
                             </div>
+                            
+                            <!-- Columna Derecha -->
                             <div class="col-md-6">
+                                <!-- Fila 1: Derivación del Estudiante -->
+                                <div class="form-group">
+                                    <label for="derivacion_estudiante" class="font-weight-bold">
+                                        <i class="fas fa-directions mr-1"></i>Derivación del Estudiante
+                                    </label>
+                                    <select class="form-control form-control-lg @error('derivacion_estudiante') is-invalid @enderror" 
+                                            id="derivacion_estudiante" 
+                                            name="derivacion_estudiante">
+                                        <option value="">Seleccione una opción</option>
+                                        <option value="Salida al medico" {{ old('derivacion_estudiante', $ingreso->derivacion_estudiante) == 'Salida al medico' ? 'selected' : '' }}>Salida al medico</option>
+                                        <option value="Retorna al Salon" {{ old('derivacion_estudiante', $ingreso->derivacion_estudiante) == 'Retorna al Salon' ? 'selected' : '' }}>Retorna al Salon</option>
+                                        <option value="Salida a Casa" {{ old('derivacion_estudiante', $ingreso->derivacion_estudiante) == 'Salida a Casa' ? 'selected' : '' }}>Salida a Casa</option>
+                                        <option value="Seguimiento" {{ old('derivacion_estudiante', $ingreso->derivacion_estudiante) == 'Seguimiento' ? 'selected' : '' }}>Seguimiento</option>
+                                        <option value="Remisión a psicología" {{ old('derivacion_estudiante', $ingreso->derivacion_estudiante) == 'Remisión a psicología' ? 'selected' : '' }}>Remisión a psicología</option>
+                                    </select>
+                                    @error('derivacion_estudiante')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                
+                                <!-- Fila 2: Reporte de caso a dirección local de educación -->
+                                <div class="form-group">
+                                    <label for="reporte_direccion_educacion" class="font-weight-bold">
+                                        <i class="fas fa-file-alt mr-1"></i>Reporte de caso a dirección local de educación ?
+                                    </label>
+                                    <select class="form-control form-control-lg @error('reporte_direccion_educacion') is-invalid @enderror" 
+                                            id="reporte_direccion_educacion" 
+                                            name="reporte_direccion_educacion">
+                                        <option value="">Seleccione una opción</option>
+                                        <option value="Si" {{ old('reporte_direccion_educacion', $ingreso->reporte_direccion_educacion) == 'Si' ? 'selected' : '' }}>Sí</option>
+                                        <option value="No" {{ old('reporte_direccion_educacion', $ingreso->reporte_direccion_educacion) == 'No' ? 'selected' : '' }}>No</option>
+                                    </select>
+                                    @error('reporte_direccion_educacion')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Observaciones de Encuesta (aparece condicionalmente) -->
+                        <div class="row">
+                            <div class="col-md-12">
                                 <div class="form-group" id="encuesta-observaciones" style="display: none;">
                                     <label for="encuesta_observaciones" class="font-weight-bold">
                                         <i class="fas fa-comment mr-1"></i>¿Por qué no se realiza la encuesta?

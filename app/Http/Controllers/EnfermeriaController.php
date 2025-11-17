@@ -12,6 +12,8 @@ use App\Models\IngresoColaborador;
 use App\Models\Empleado;
 use App\Exports\EnfermeriaEstudiantesExport;
 use App\Mail\EnfermeriaReporteSent;
+use App\Mail\EstudianteSinRutaNotification;
+use App\Mail\EstudianteSinRutaBasico;
 use Maatwebsite\Excel\Facades\Excel;
 
 class EnfermeriaController extends Controller
@@ -87,13 +89,84 @@ class EnfermeriaController extends Controller
             'derivacion_estudiante' => 'nullable|string|max:500',
             'encuesta' => 'nullable|string|max:500',
             'encuesta_observaciones' => 'nullable|string|max:1000',
+            'reporte_direccion_educacion' => 'nullable|string|max:10',
         ]);
 
         // Agregar el usuario que registra
         $validatedData['user_id'] = Auth::id();
 
         // Crear el registro en la base de datos
-        IngresoEstudiante::create($validatedData);
+        $ingreso = IngresoEstudiante::create($validatedData);
+        
+        // DEBUG: Log para ver qué valor llega
+        \Log::info('DEBUG - Valor de derivacion_estudiante recibido', [
+            'derivacion' => $validatedData['derivacion_estudiante'],
+            'tipo' => gettype($validatedData['derivacion_estudiante']),
+            'isset' => isset($validatedData['derivacion_estudiante']),
+            'empty' => empty($validatedData['derivacion_estudiante'])
+        ]);
+        
+        // Verificar si el estudiante no tomará ruta (Salida a Casa o Salida al medico)
+        if (isset($validatedData['derivacion_estudiante']) && 
+            in_array($validatedData['derivacion_estudiante'], ['Salida a Casa', 'Salida al medico'])) {
+            
+            \Log::info('DEBUG - Condición cumplida, preparando envío de correo');
+            
+            try {
+                $emailTestService = new \App\Services\EmailTestModeService();
+                
+                // Destinatarios para la notificación completa (asistentes)
+                $asistenteBachillerato = $emailTestService->interceptEmail('asistentebachillerato@tvs.edu.co');
+                $asistentePyP = $emailTestService->interceptEmail('asistentepyp@tvs.edu.co');
+                
+                // Destinatario para la notificación básica (transporte)
+                $transporte = $emailTestService->interceptEmail('transporte@tvs.edu.co');
+                
+                \Log::info('Enviando notificación de estudiante sin ruta', [
+                    'estudiante' => $ingreso->estudiante,
+                    'derivacion' => $validatedData['derivacion_estudiante'],
+                    'destinatarios_completos' => [$asistenteBachillerato, $asistentePyP],
+                    'destinatario_basico' => $transporte
+                ]);
+                
+                // Enviar notificación COMPLETA a los asistentes
+                Mail::to($asistenteBachillerato)->send(
+                    new EstudianteSinRutaNotification($ingreso, $validatedData['derivacion_estudiante'])
+                );
+                
+                Mail::to($asistentePyP)->send(
+                    new EstudianteSinRutaNotification($ingreso, $validatedData['derivacion_estudiante'])
+                );
+                
+                // Enviar notificación BÁSICA a transporte
+                Mail::to($transporte)->send(
+                    new EstudianteSinRutaBasico($ingreso, $validatedData['derivacion_estudiante'])
+                );
+                
+                \Log::info('✅ Notificaciones de ruta enviadas EXITOSAMENTE', [
+                    'asistentes' => [$asistenteBachillerato, $asistentePyP],
+                    'transporte' => $transporte
+                ]);
+                
+            } catch (\Swift_TransportException $e) {
+                \Log::error('❌ Error de transporte SMTP al enviar notificación de ruta', [
+                    'error' => $e->getMessage(),
+                    'estudiante' => $ingreso->estudiante,
+                    'tipo_error' => 'SMTP Transport Error'
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('❌ Error general enviando notificación de ruta', [
+                    'error' => $e->getMessage(),
+                    'estudiante' => $ingreso->estudiante,
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]);
+            }
+        } else {
+            \Log::info('DEBUG - Condición NO cumplida para envío de correo', [
+                'derivacion_recibida' => $validatedData['derivacion_estudiante'] ?? 'NULL'
+            ]);
+        }
         
         return redirect()
             ->route('enfermeria.ingreso_estudiantes.index')
@@ -148,10 +221,86 @@ class EnfermeriaController extends Controller
             'derivacion_estudiante' => 'nullable|string|max:500',
             'encuesta' => 'nullable|string|max:500',
             'encuesta_observaciones' => 'nullable|string|max:1000',
+            'reporte_direccion_educacion' => 'nullable|string|max:10',
         ]);
+
+        // Guardar el valor anterior de derivación para comparar
+        $derivacionAnterior = $ingreso->derivacion_estudiante;
 
         // Actualizar el registro
         $ingreso->update($validatedData);
+        
+        // DEBUG: Log para ver qué valor llega
+        \Log::info('DEBUG - Actualización - Valor de derivacion_estudiante', [
+            'derivacion_anterior' => $derivacionAnterior,
+            'derivacion_nueva' => $validatedData['derivacion_estudiante'],
+            'cambiaron' => ($validatedData['derivacion_estudiante'] != $derivacionAnterior)
+        ]);
+        
+        // Verificar si cambió la derivación y ahora es Salida a Casa o Salida al medico
+        if ($validatedData['derivacion_estudiante'] != $derivacionAnterior && 
+            isset($validatedData['derivacion_estudiante']) &&
+            in_array($validatedData['derivacion_estudiante'], ['Salida a Casa', 'Salida al medico'])) {
+            
+            \Log::info('DEBUG - Condición de actualización cumplida, preparando envío de correo');
+            
+            try {
+                $emailTestService = new \App\Services\EmailTestModeService();
+                
+                // Destinatarios para la notificación completa (asistentes)
+                $asistenteBachillerato = $emailTestService->interceptEmail('asistentebachillerato@tvs.edu.co');
+                $asistentePyP = $emailTestService->interceptEmail('asistentepyp@tvs.edu.co');
+                
+                // Destinatario para la notificación básica (transporte)
+                $transporte = $emailTestService->interceptEmail('transporte@tvs.edu.co');
+                
+                \Log::info('Enviando notificación de estudiante sin ruta (actualización)', [
+                    'estudiante' => $ingreso->estudiante,
+                    'derivacion_anterior' => $derivacionAnterior,
+                    'derivacion_nueva' => $validatedData['derivacion_estudiante'],
+                    'destinatarios_completos' => [$asistenteBachillerato, $asistentePyP],
+                    'destinatario_basico' => $transporte
+                ]);
+                
+                // Enviar notificación COMPLETA a los asistentes
+                Mail::to($asistenteBachillerato)->send(
+                    new EstudianteSinRutaNotification($ingreso->fresh(), $validatedData['derivacion_estudiante'])
+                );
+                
+                Mail::to($asistentePyP)->send(
+                    new EstudianteSinRutaNotification($ingreso->fresh(), $validatedData['derivacion_estudiante'])
+                );
+                
+                // Enviar notificación BÁSICA a transporte
+                Mail::to($transporte)->send(
+                    new EstudianteSinRutaBasico($ingreso->fresh(), $validatedData['derivacion_estudiante'])
+                );
+                
+                \Log::info('✅ Notificaciones de ruta enviadas EXITOSAMENTE', [
+                    'asistentes' => [$asistenteBachillerato, $asistentePyP],
+                    'transporte' => $transporte
+                ]);
+                
+            } catch (\Swift_TransportException $e) {
+                \Log::error('❌ Error de transporte SMTP al enviar notificación de ruta (actualización)', [
+                    'error' => $e->getMessage(),
+                    'estudiante' => $ingreso->estudiante,
+                    'tipo_error' => 'SMTP Transport Error'
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('❌ Error general enviando notificación de ruta (actualización)', [
+                    'error' => $e->getMessage(),
+                    'estudiante' => $ingreso->estudiante,
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]);
+            }
+        } else {
+            \Log::info('DEBUG - Condición de actualización NO cumplida para envío de correo', [
+                'derivacion_anterior' => $derivacionAnterior,
+                'derivacion_nueva' => $validatedData['derivacion_estudiante'] ?? 'NULL'
+            ]);
+        }
         
         return redirect()
             ->route('enfermeria.ingreso_estudiantes.index')
