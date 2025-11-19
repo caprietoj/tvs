@@ -119,6 +119,18 @@
                                 </p>
                             </div>
                         </div>
+                        @if($ingreso->viene_de)
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold">
+                                    <i class="fas fa-map-marker-alt mr-1"></i>Viene de
+                                </label>
+                                <p class="form-control-plaintext border rounded p-2 bg-light">
+                                    <span class="badge badge-success">{{ $ingreso->viene_de }}</span>
+                                </p>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     <div class="row">
                         <div class="col-md-4">

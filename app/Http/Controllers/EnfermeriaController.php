@@ -601,14 +601,6 @@ class EnfermeriaController extends Controller
         try {
             // Buscar el ingreso del estudiante
             $ingreso = IngresoEstudiante::findOrFail($id);
-            
-            // Verificar que la derivación sea una que requiere notificación
-            if (!in_array($ingreso->derivacion_estudiante, ['Salida a Casa', 'Salida al medico'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Este registro no requiere notificación de ruta'
-                ], 400);
-            }
 
             $destinatarioEmail = $validated['destinatario_email'];
             $destinatarioNombre = $validated['destinatario_nombre'];
@@ -642,5 +634,129 @@ class EnfermeriaController extends Controller
                 'message' => 'Error al enviar la notificación: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Mostrar informe estadístico de enfermería
+     */
+    public function informe(Request $request)
+    {
+        $fechaInicio = $request->input('fecha_inicio', now()->startOfMonth()->format('Y-m-d'));
+        $fechaFin = $request->input('fecha_fin', now()->format('Y-m-d'));
+        $tipo = $request->input('tipo', 'ambos'); // estudiantes, colaboradores o ambos
+
+        // Estadísticas Estudiantes
+        $estadisticasEstudiantes = $this->getEstadisticasEstudiantes($fechaInicio, $fechaFin);
+        
+        // Estadísticas Colaboradores
+        $estadisticasColaboradores = $this->getEstadisticasColaboradores($fechaInicio, $fechaFin);
+
+        return view('enfermeria.informe', compact(
+            'estadisticasEstudiantes',
+            'estadisticasColaboradores',
+            'fechaInicio',
+            'fechaFin',
+            'tipo'
+        ));
+    }
+
+    /**
+     * Obtener estadísticas de estudiantes
+     */
+    private function getEstadisticasEstudiantes($fechaInicio, $fechaFin)
+    {
+        $query = IngresoEstudiante::whereBetween('fecha', [$fechaInicio, $fechaFin]);
+
+        $data = [
+            'total' => $query->count(),
+            'por_motivo' => IngresoEstudiante::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->selectRaw('motivo, COUNT(*) as total')
+                ->groupBy('motivo')
+                ->orderBy('total', 'desc')
+                ->get(),
+            'por_curso' => IngresoEstudiante::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->selectRaw('curso, COUNT(*) as total')
+                ->groupBy('curso')
+                ->orderBy('total', 'desc')
+                ->limit(10)
+                ->get(),
+            'por_derivacion' => IngresoEstudiante::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->whereNotNull('derivacion_estudiante')
+                ->where('derivacion_estudiante', '!=', '')
+                ->selectRaw('derivacion_estudiante as derivacion, COUNT(*) as total')
+                ->groupBy('derivacion_estudiante')
+                ->orderBy('total', 'desc')
+                ->get(),
+            'por_viene_de' => IngresoEstudiante::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->whereNotNull('viene_de')
+                ->where('viene_de', '!=', '')
+                ->selectRaw('viene_de, COUNT(*) as total')
+                ->groupBy('viene_de')
+                ->orderBy('total', 'desc')
+                ->get(),
+            'derivacion_medico' => IngresoEstudiante::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->where('derivacion_estudiante', 'Salida al medico')
+                ->count(),
+            'retorno_salon' => IngresoEstudiante::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->where('derivacion_estudiante', 'Retorno al salón')
+                ->count(),
+            'salida_casa' => IngresoEstudiante::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->where('derivacion_estudiante', 'Salida a Casa')
+                ->count(),
+            'seguimiento' => IngresoEstudiante::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->whereNotNull('seguimiento')
+                ->where('seguimiento', '!=', '')
+                ->count(),
+            'psicologia' => IngresoEstudiante::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->where('derivacion_estudiante', 'Remisión a psicología')
+                ->count(),
+            'por_dia' => IngresoEstudiante::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->selectRaw('DATE(fecha) as dia, COUNT(*) as total')
+                ->groupBy('dia')
+                ->orderBy('dia', 'asc')
+                ->get(),
+        ];
+
+        return $data;
+    }
+
+    /**
+     * Obtener estadísticas de colaboradores
+     */
+    private function getEstadisticasColaboradores($fechaInicio, $fechaFin)
+    {
+        $query = IngresoColaborador::whereBetween('fecha', [$fechaInicio, $fechaFin]);
+
+        $data = [
+            'total' => $query->count(),
+            'por_motivo' => IngresoColaborador::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->selectRaw('motivo, COUNT(*) as total')
+                ->groupBy('motivo')
+                ->orderBy('total', 'desc')
+                ->get(),
+            'por_seguimiento' => IngresoColaborador::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->whereNotNull('seguimiento')
+                ->where('seguimiento', '!=', '')
+                ->selectRaw('seguimiento, COUNT(*) as total')
+                ->groupBy('seguimiento')
+                ->orderBy('total', 'desc')
+                ->get(),
+            'en_observacion' => IngresoColaborador::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->where('seguimiento', 'En observación')
+                ->count(),
+            'alta' => IngresoColaborador::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->where('seguimiento', 'Alta')
+                ->count(),
+            'requiere_seguimiento' => IngresoColaborador::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->where('seguimiento', 'Requiere seguimiento')
+                ->count(),
+            'por_dia' => IngresoColaborador::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                ->selectRaw('DATE(fecha) as dia, COUNT(*) as total')
+                ->groupBy('dia')
+                ->orderBy('dia', 'asc')
+                ->get(),
+        ];
+
+        return $data;
     }
 }

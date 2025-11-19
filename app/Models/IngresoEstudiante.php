@@ -22,6 +22,7 @@ class IngresoEstudiante extends Model
         'tipo_sangre_estudiante',
         'estudiante_id',
         'curso',
+        'viene_de',
         'motivo',
         'descripcion_evento',
         'accion_enfermeria',

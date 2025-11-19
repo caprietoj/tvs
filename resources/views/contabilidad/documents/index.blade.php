@@ -74,6 +74,10 @@
                             <td>{{ $document->created_at->format('d/m/Y H:i') }}</td>
                             <td>
                                 <div class="btn-group" role="group">
+                                    <a href="{{ route('contabilidad.documents.preview', $document->id) }}" 
+                                       class="btn btn-sm btn-primary" title="Previsualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                     @if($document->isFolder())
                                         <a href="{{ route('contabilidad.documents.structure', $document->id) }}" 
                                            class="btn btn-sm btn-warning" title="Ver estructura">

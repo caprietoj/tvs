@@ -204,6 +204,12 @@
                         <div class="info-label">Curso:</div>
                         <div class="info-value"><span class="badge badge-info">{{ $ingreso->curso }}</span></div>
                     </div>
+                    @if($ingreso->viene_de)
+                    <div class="info-row">
+                        <div class="info-label">Viene de:</div>
+                        <div class="info-value"><span class="badge badge-info">{{ $ingreso->viene_de }}</span></div>
+                    </div>
+                    @endif
                 </div>
             </div>
 

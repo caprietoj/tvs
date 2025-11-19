@@ -259,6 +259,51 @@
                     </div>
                 </div>
 
+                <!-- Card Nueva: El estudiante viene de -->
+                <div class="card card-outline card-success mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-map-marker-alt mr-2"></i>El estudiante viene de
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="viene_de" class="font-weight-bold">
+                                        <i class="fas fa-location-arrow mr-1"></i>Procedencia <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-control form-control-lg @error('viene_de') is-invalid @enderror" 
+                                            id="viene_de" 
+                                            name="viene_de" 
+                                            required>
+                                        <option value="">-- Seleccione de dónde viene el estudiante --</option>
+                                        <option value="Clase Magistral" {{ old('viene_de') == 'Clase Magistral' ? 'selected' : '' }}>
+                                            📚 Clase Magistral
+                                        </option>
+                                        <option value="Educacion Fisica" {{ old('viene_de') == 'Educacion Fisica' ? 'selected' : '' }}>
+                                            ⚽ Educación Física
+                                        </option>
+                                        <option value="Extracurricular" {{ old('viene_de') == 'Extracurricular' ? 'selected' : '' }}>
+                                            🎨 Extracurricular
+                                        </option>
+                                        <option value="Descanso" {{ old('viene_de') == 'Descanso' ? 'selected' : '' }}>
+                                            ☕ Descanso
+                                        </option>
+                                    </select>
+                                    @error('viene_de')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Indique de qué actividad o lugar viene el estudiante al momento de la atención.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Card 3: Motivo de la Consulta -->
                 <div class="card card-outline card-warning mb-3">
                     <div class="card-header">

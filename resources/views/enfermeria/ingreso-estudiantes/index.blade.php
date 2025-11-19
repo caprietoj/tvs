@@ -157,13 +157,11 @@
                                                         title="Editar">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                @if(in_array($ingreso->derivacion_estudiante, ['Salida a Casa', 'Salida al medico']))
-                                                    <button type="button" class="btn btn-primary btn-sm" 
-                                                            onclick="abrirModalEnviarNotificacion({{ $ingreso->id }}, '{{ $ingreso->estudiante }}', '{{ $ingreso->derivacion_estudiante }}')" 
-                                                            title="Enviar reporte de atención">
-                                                        <i class="fas fa-envelope"></i>
-                                                    </button>
-                                                @endif
+                                                <button type="button" class="btn btn-primary btn-sm" 
+                                                        onclick="abrirModalEnviarNotificacion({{ $ingreso->id }}, '{{ $ingreso->estudiante }}', '{{ $ingreso->derivacion_estudiante }}')" 
+                                                        title="Enviar reporte de atención">
+                                                    <i class="fas fa-envelope"></i>
+                                                </button>
                                                 <button type="button" class="btn btn-danger btn-sm" 
                                                         onclick="eliminarIngreso({{ $ingreso->id }})" 
                                                         title="Eliminar">

@@ -118,6 +118,9 @@ Route::middleware('auth')->group(function () {
         Route::get('ingreso-estudiantes', [App\Http\Controllers\EnfermeriaController::class, 'ingresoEstudiantes'])
             ->name('enfermeria.ingreso_estudiantes.index')
             ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::get('informe', [App\Http\Controllers\EnfermeriaController::class, 'informe'])
+            ->name('enfermeria.informe')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
         Route::get('reporte-estudiantes', [App\Http\Controllers\EnfermeriaController::class, 'reporteEstudiantes'])
             ->name('enfermeria.reporte_estudiantes')
             ->middleware('can:enfermeria.ingreso_estudiantes');
@@ -200,6 +203,8 @@ Route::middleware('auth')->group(function () {
             ->name('enfermeria.documents.create');
         Route::post('/documents', [App\Http\Controllers\EnfermeriaDocumentController::class, 'store'])
             ->name('enfermeria.documents.store');
+        Route::get('/documents/{document}/preview', [App\Http\Controllers\EnfermeriaDocumentController::class, 'preview'])
+            ->name('enfermeria.documents.preview');
         Route::get('/documents/{document}/structure', [App\Http\Controllers\EnfermeriaDocumentController::class, 'showStructure'])
             ->name('enfermeria.documents.structure');
         Route::get('/documents/{document}/download', [App\Http\Controllers\EnfermeriaDocumentController::class, 'download'])
@@ -238,6 +243,8 @@ Route::middleware('auth')->group(function () {
             ->name('compras.documents.create');
         Route::post('/documents', [App\Http\Controllers\ComprasDocumentController::class, 'store'])
             ->name('compras.documents.store');
+        Route::get('/documents/{document}/preview', [App\Http\Controllers\ComprasDocumentController::class, 'preview'])
+            ->name('compras.documents.preview');
         Route::get('/documents/{document}/structure', [App\Http\Controllers\ComprasDocumentController::class, 'showStructure'])
             ->name('compras.documents.structure');
         Route::get('/documents/{document}/download', [App\Http\Controllers\ComprasDocumentController::class, 'download'])
@@ -272,6 +279,8 @@ Route::middleware('auth')->group(function () {
                 ->name('rrhh.documents.create');
             Route::post('/documents', [App\Http\Controllers\RrhhDocumentController::class, 'store'])
                 ->name('rrhh.documents.store');
+            Route::get('/documents/{document}/preview', [App\Http\Controllers\RrhhDocumentController::class, 'preview'])
+                ->name('rrhh.documents.preview');
             Route::get('/documents/{document}/download', [App\Http\Controllers\RrhhDocumentController::class, 'download'])
                 ->name('rrhh.documents.download');
             Route::get('/documents/{document}/structure', [App\Http\Controllers\RrhhDocumentController::class, 'showStructure'])
@@ -305,6 +314,8 @@ Route::middleware('auth')->group(function () {
                 ->name('contabilidad.documents.create');
             Route::post('/documents', [App\Http\Controllers\ContabilidadDocumentController::class, 'store'])
                 ->name('contabilidad.documents.store');
+            Route::get('/documents/{document}/preview', [App\Http\Controllers\ContabilidadDocumentController::class, 'preview'])
+                ->name('contabilidad.documents.preview');
             Route::get('/documents/{document}/download', [App\Http\Controllers\ContabilidadDocumentController::class, 'download'])
                 ->name('contabilidad.documents.download');
             Route::get('/documents/{document}/structure', [App\Http\Controllers\ContabilidadDocumentController::class, 'showStructure'])
@@ -348,6 +359,8 @@ Route::middleware('auth')->group(function () {
                 ->name('sistemas.documents.create');
             Route::post('/documents', [App\Http\Controllers\SistemasDocumentController::class, 'store'])
                 ->name('sistemas.documents.store');
+            Route::get('/documents/{document}/preview', [App\Http\Controllers\SistemasDocumentController::class, 'preview'])
+                ->name('sistemas.documents.preview');
             Route::get('/documents/{document}/structure', [App\Http\Controllers\SistemasDocumentController::class, 'showStructure'])
                 ->name('sistemas.documents.structure');
             Route::get('/documents/{document}/download', [App\Http\Controllers\SistemasDocumentController::class, 'download'])

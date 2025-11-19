@@ -347,6 +347,90 @@ class ContabilidadDocumentController extends Controller
     }
 
     /**
+     * Preview a document or folder structure
+     */
+    public function preview($id)
+    {
+        $document = ContabilidadDocument::with('user')->findOrFail($id);
+        
+        if ($document->isFile()) {
+            // Para archivos individuales, mostrar PDF en viewer
+            $filePath = Storage::url($document->file_path);
+            return view('contabilidad.documents.preview', compact('document', 'filePath'));
+        } else {
+            // Para carpetas, mostrar estructura de archivos
+            $structure = $this->buildFolderStructure($document->file_path);
+            return view('contabilidad.documents.folder-preview', compact('document', 'structure'));
+        }
+    }
+
+    /**
+     * Build folder structure for preview
+     */
+    private function buildFolderStructure($basePath, $relativePath = '')
+    {
+        $structure = [
+            'folders' => [],
+            'files' => [],
+            'allFiles' => [] // Array plano con todos los archivos recursivamente
+        ];
+        
+        $currentPath = $relativePath ? $basePath . '/' . $relativePath : $basePath;
+        $directories = Storage::directories($currentPath);
+        $files = Storage::files($currentPath);
+        
+        // Procesar carpetas recursivamente
+        foreach ($directories as $directory) {
+            $folderName = basename($directory);
+            $folderRelativePath = $relativePath ? $relativePath . '/' . $folderName : $folderName;
+            
+            $subStructure = $this->buildFolderStructure($basePath, $folderRelativePath);
+            $structure['folders'][$folderName] = $subStructure;
+            
+            // Agregar archivos de subcarpetas al array plano
+            $structure['allFiles'] = array_merge($structure['allFiles'], $subStructure['allFiles']);
+        }
+        
+        // Procesar archivos del nivel actual
+        foreach ($files as $file) {
+            $fileName = basename($file);
+            $fileSize = Storage::size($file);
+            $fileUrl = Storage::url($file);
+            $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            
+            $fileData = [
+                'name' => $fileName,
+                'size' => $this->formatBytes($fileSize),
+                'sizeBytes' => $fileSize,
+                'url' => $fileUrl,
+                'path' => $file,
+                'relativePath' => str_replace($basePath . '/', '', $file),
+                'extension' => $extension,
+                'folder' => $relativePath ?: 'Raíz'
+            ];
+            
+            $structure['files'][] = $fileData;
+            $structure['allFiles'][] = $fileData;
+        }
+        
+        return $structure;
+    }
+
+    /**
+     * Format bytes to human readable format
+     */
+    private function formatBytes($bytes, $precision = 2)
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        
+        for ($i = 0; $bytes > 1024; $i++) {
+            $bytes /= 1024;
+        }
+        
+        return round($bytes, $precision) . ' ' . $units[$i];
+    }
+
+    /**
      * Show folder structure
      */
     public function showStructure($id)
