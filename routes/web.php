@@ -139,6 +139,9 @@ Route::middleware('auth')->group(function () {
         Route::put('ingreso-estudiantes/{id}', [App\Http\Controllers\EnfermeriaController::class, 'updateIngresoEstudiante'])
             ->name('enfermeria.ingreso_estudiantes.update')
             ->middleware('can:enfermeria.ingreso_estudiantes');
+        Route::post('ingreso-estudiantes/{id}/enviar-notificacion', [App\Http\Controllers\EnfermeriaController::class, 'enviarNotificacionManual'])
+            ->name('enfermeria.ingreso_estudiantes.enviar_notificacion')
+            ->middleware('can:enfermeria.ingreso_estudiantes');
             
         // Rutas para Ingreso de Colaboradores
         Route::get('ingreso-colaboradores', [App\Http\Controllers\EnfermeriaController::class, 'ingresoColaboradores'])

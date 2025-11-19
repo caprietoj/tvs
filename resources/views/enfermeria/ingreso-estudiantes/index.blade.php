@@ -157,6 +157,13 @@
                                                         title="Editar">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
+                                                @if(in_array($ingreso->derivacion_estudiante, ['Salida a Casa', 'Salida al medico']))
+                                                    <button type="button" class="btn btn-primary btn-sm" 
+                                                            onclick="abrirModalEnviarNotificacion({{ $ingreso->id }}, '{{ $ingreso->estudiante }}', '{{ $ingreso->derivacion_estudiante }}')" 
+                                                            title="Enviar reporte de atención">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </button>
+                                                @endif
                                                 <button type="button" class="btn btn-danger btn-sm" 
                                                         onclick="eliminarIngreso({{ $ingreso->id }})" 
                                                         title="Eliminar">
@@ -182,6 +189,77 @@
                             {{ $ingresos->links() }}
                         </div>
                     @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Enviar Notificación -->
+    <div class="modal fade" id="modalEnviarNotificacion" tabindex="-1" role="dialog" aria-labelledby="modalEnviarNotificacionLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalEnviarNotificacionLabel">
+                        <i class="fas fa-envelope"></i> Enviar Reporte de Atención en Enfermería
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEnviarNotificacion">
+                        <input type="hidden" id="ingreso_id" name="ingreso_id">
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Información:</strong> Se enviará un reporte de atención en enfermería del estudiante <strong id="estudiante_nombre"></strong> 
+                            con derivación "<strong id="derivacion_tipo"></strong>".
+                        </div>
+
+                        <div class="form-group">
+                            <label for="destinatario_select">
+                                <i class="fas fa-user"></i> Seleccione el Destinatario <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-control" id="destinatario_select" required>
+                                <option value="">-- Seleccione un destinatario --</option>
+                                <option value="María del Pilar Robles|generaldirector@tvs.edu.co">María del Pilar Robles (Dirección General)</option>
+                                <option value="Juliana Pérez López|administrativedirector@tvs.edu.co">Juliana Pérez López (Dirección Administrativa)</option>
+                                <option value="Ana María Grisales|preschool@tvs.edu.co">Ana María Grisales (Preescolar)</option>
+                                <option value="Helena Ortiz|coordpep@tvs.edu.co">Helena Ortiz (Coordinación PEP)</option>
+                                <option value="Gina Lorena Hurtado|glhurtadog@tvs.edu.co">Gina Lorena Hurtado</option>
+                                <option value="Andrea Carolina Flórez|aflorez@tvs.edu.co">Andrea Carolina Flórez</option>
+                                <option value="María Constanza Bernal|dp@tvs.edu.co">María Constanza Bernal (Dirección de Programa)</option>
+                                <option value="Johanna Gavidia|psicologia2@tvs.edu.co">Johanna Gavidia (Psicología)</option>
+                                <option value="Asistente Bachillerato|asistentebachillerato@tvs.edu.co">Asistente Bachillerato</option>
+                                <option value="Asistente PYP|asistentepyp@tvs.edu.co">Asistente PYP</option>
+                                <option value="Transporte|transporte@tvs.edu.co">Transporte</option>
+                                <option value="Sistemas|sistemas@tvs.edu.co">Sistemas</option>
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label><i class="fas fa-user-tag"></i> Nombre del Destinatario</label>
+                                    <input type="text" class="form-control" id="destinatario_nombre" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label><i class="fas fa-envelope"></i> Correo Electrónico</label>
+                                    <input type="email" class="form-control" id="destinatario_email" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="enviarNotificacion()">
+                        <i class="fas fa-paper-plane"></i> Enviar Reporte
+                    </button>
                 </div>
             </div>
         </div>
@@ -273,6 +351,29 @@
                     { orderable: false, targets: [7] } // Deshabilitar ordenamiento en la columna de acciones
                 ]
             });
+
+            // Event listener para el select de destinatario
+            const destinatarioSelect = document.getElementById('destinatario_select');
+            if (destinatarioSelect) {
+                destinatarioSelect.addEventListener('change', function() {
+                    const value = this.value;
+                    if (value) {
+                        const [nombre, email] = value.split('|');
+                        document.getElementById('destinatario_nombre').value = nombre;
+                        document.getElementById('destinatario_email').value = email;
+                    } else {
+                        document.getElementById('destinatario_nombre').value = '';
+                        document.getElementById('destinatario_email').value = '';
+                    }
+                });
+            }
+
+            // Limpiar el modal cuando se cierre
+            $('#modalEnviarNotificacion').on('hidden.bs.modal', function () {
+                $('#destinatario_select').val('');
+                $('#destinatario_nombre').val('');
+                $('#destinatario_email').val('');
+            });
         });
 
         function verDetalle(id) {
@@ -302,6 +403,86 @@
                         title: 'Eliminado',
                         text: 'Funcionalidad de eliminación en desarrollo',
                         icon: 'success'
+                    });
+                }
+            });
+        }
+
+        function abrirModalEnviarNotificacion(ingresoId, estudiante, derivacion) {
+            // Configurar los datos del modal
+            $('#ingreso_id').val(ingresoId);
+            $('#estudiante_nombre').text(estudiante);
+            $('#derivacion_tipo').text(derivacion);
+            
+            // Limpiar la selección
+            $('#destinatario_select').val('');
+            $('#destinatario_nombre').val('');
+            $('#destinatario_email').val('');
+            
+            // Abrir el modal
+            $('#modalEnviarNotificacion').modal('show');
+        }
+
+        function enviarNotificacion() {
+            // Validar que se haya seleccionado un destinatario
+            const destinatarioEmail = $('#destinatario_email').val();
+            const destinatarioNombre = $('#destinatario_nombre').val();
+            
+            if (!destinatarioEmail || !destinatarioNombre) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atención',
+                    text: 'Debe seleccionar un destinatario'
+                });
+                return;
+            }
+
+            // Obtener el ID del ingreso
+            const ingresoId = $('#ingreso_id').val();
+
+            // Mostrar indicador de carga
+            Swal.fire({
+                title: 'Enviando reporte...',
+                html: 'Por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Enviar la solicitud
+            $.ajax({
+                url: '/enfermeria/ingreso-estudiantes/' + ingresoId + '/enviar-notificacion',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    destinatario_email: destinatarioEmail,
+                    destinatario_nombre: destinatarioNombre
+                },
+                success: function(response) {
+                    Swal.close();
+                    $('#modalEnviarNotificacion').modal('hide');
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: response.message || 'Reporte de atención enviado exitosamente',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                },
+                error: function(xhr) {
+                    Swal.close();
+                    
+                    let errorMessage = 'Error al enviar el reporte de atención';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMessage
                     });
                 }
             });

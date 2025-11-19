@@ -14,6 +14,7 @@ use App\Exports\EnfermeriaEstudiantesExport;
 use App\Mail\EnfermeriaReporteSent;
 use App\Mail\EstudianteSinRutaNotification;
 use App\Mail\EstudianteSinRutaBasico;
+use App\Mail\AtencionEnfermeriaNotification;
 use Maatwebsite\Excel\Facades\Excel;
 
 class EnfermeriaController extends Controller
@@ -583,6 +584,62 @@ class EnfermeriaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al enviar el reporte: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Enviar notificación manual de estudiante sin ruta
+     */
+    public function enviarNotificacionManual(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'destinatario_email' => 'required|email',
+            'destinatario_nombre' => 'required|string',
+        ]);
+
+        try {
+            // Buscar el ingreso del estudiante
+            $ingreso = IngresoEstudiante::findOrFail($id);
+            
+            // Verificar que la derivación sea una que requiere notificación
+            if (!in_array($ingreso->derivacion_estudiante, ['Salida a Casa', 'Salida al medico'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este registro no requiere notificación de ruta'
+                ], 400);
+            }
+
+            $destinatarioEmail = $validated['destinatario_email'];
+            $destinatarioNombre = $validated['destinatario_nombre'];
+
+            \Log::info("DEBUG - Manual: Iniciando envío manual de reporte de atención para ingreso ID: {$id}");
+            \Log::info("DEBUG - Manual: Destinatario: {$destinatarioNombre} ({$destinatarioEmail})");
+
+            // Enviar reporte de atención en enfermería al destinatario seleccionado
+            try {
+                \Log::info("DEBUG - Manual: Enviando reporte de atención a: {$destinatarioEmail}");
+                
+                Mail::to($destinatarioEmail)->send(
+                    new AtencionEnfermeriaNotification($ingreso)
+                );
+                
+                \Log::info("DEBUG - Manual: ✅ Reporte de atención enviado exitosamente");
+            } catch (\Exception $e) {
+                \Log::error("DEBUG - Manual: ❌ Error al enviar: " . $e->getMessage());
+                throw $e; // Re-lanzar la excepción para que sea capturada por el catch externo
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reporte de atención enviado exitosamente a ' . $destinatarioNombre
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error("DEBUG - Manual: ❌ Error general: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al enviar la notificación: ' . $e->getMessage()
             ], 500);
         }
     }
