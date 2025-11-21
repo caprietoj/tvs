@@ -16,43 +16,216 @@ class AusentismoController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'mes' => 'required',
-            'datos' => 'required'
-        ]);
+        try {
+            $request->validate([
+                'mes' => 'required',
+            ]);
 
-        $rows = explode("\n", $request->datos);
-        
-        foreach($rows as $row) {
-            $columns = explode("\t", $row);
-            if(count($columns) == 9) {
-                try {
-                    // Formatear fechas
-                    $fechaCreacion = Carbon::createFromFormat('d/m/y H:i', trim($columns[2]))->format('Y-m-d');
-                    $fechaDesde = Carbon::createFromFormat('n/j/y H:i', trim($columns[4]))->format('Y-m-d');
-                    $fechaHasta = Carbon::createFromFormat('n/j/y H:i', trim($columns[5]))->format('Y-m-d');
+            $registrosProcesados = 0;
+            $registrosError = 0;
 
-                    Ausentismo::create([
-                        'persona' => trim($columns[1]),
-                        'fecha_de_creacion' => $fechaCreacion,
-                        'dependencia' => trim($columns[3]),
-                        'fecha_ausencia_desde' => $fechaDesde,
-                        'fecha_hasta' => $fechaHasta,
-                        'asistencia' => trim($columns[6]),
-                        'duracion_ausencia' => trim($columns[7]),
-                        'motivo_de_ausencia' => trim($columns[8]),
-                        'mes' => $request->mes
-                    ]);
-                } catch (\Exception $e) {
-                    // Log el error y continuar con la siguiente fila
-                    \Log::error("Error procesando fila: " . $row);
-                    \Log::error($e->getMessage());
-                    continue;
+            // Si viene un archivo
+            if ($request->hasFile('archivo')) {
+                $request->validate([
+                    'archivo' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB máximo
+                ]);
+
+                $file = $request->file('archivo');
+                $extension = $file->getClientOriginalExtension();
+
+                // Leer el contenido del archivo
+                if (in_array($extension, ['xlsx', 'xls'])) {
+                    // Para archivos Excel, necesitamos la librería PhpSpreadsheet
+                    try {
+                        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getPathname());
+                        $worksheet = $spreadsheet->getActiveSheet();
+                        $rows = $worksheet->toArray();
+                        
+                        // Saltar la primera fila si es encabezado
+                        $firstRow = true;
+                        foreach ($rows as $row) {
+                            if ($firstRow) {
+                                $firstRow = false;
+                                continue;
+                            }
+                            
+                            if ($this->processRow($row, $request->mes)) {
+                                $registrosProcesados++;
+                            } else {
+                                $registrosError++;
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Error leyendo archivo Excel: ' . $e->getMessage());
+                        return redirect()->back()->with('error', 'Error al procesar el archivo Excel. Por favor, verifique el formato.');
+                    }
+                } elseif ($extension === 'csv') {
+                    // Para archivos CSV
+                    $csvData = array_map('str_getcsv', file($file->getPathname()));
+                    $firstRow = true;
+                    foreach ($csvData as $row) {
+                        if ($firstRow) {
+                            $firstRow = false;
+                            continue;
+                        }
+                        
+                        if ($this->processRow($row, $request->mes)) {
+                            $registrosProcesados++;
+                        } else {
+                            $registrosError++;
+                        }
+                    }
                 }
+            } 
+            // Si vienen datos pegados
+            elseif ($request->has('datos') && !empty($request->datos)) {
+                $request->validate([
+                    'datos' => 'required',
+                ]);
+
+                $rows = explode("\n", $request->datos);
+                
+                foreach($rows as $row) {
+                    if (empty(trim($row))) continue;
+                    
+                    $columns = explode("\t", $row);
+                    
+                    if ($this->processRow($columns, $request->mes)) {
+                        $registrosProcesados++;
+                    } else {
+                        $registrosError++;
+                    }
+                }
+            } else {
+                return redirect()->back()->with('error', 'Debe proporcionar un archivo o datos pegados.');
+            }
+
+            $mensaje = "Se procesaron $registrosProcesados registros correctamente.";
+            if ($registrosError > 0) {
+                $mensaje .= " $registrosError registros tuvieron errores y no se cargaron.";
+            }
+
+            return redirect()->back()->with('success', $mensaje);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Error general en store: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            return redirect()->back()->with('error', 'Error al procesar los datos: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Procesar una fila individual de datos
+     */
+    private function processRow($columns, $mes)
+    {
+        try {
+            // Verificar que tengamos suficientes columnas
+            if (count($columns) < 9) {
+                \Log::warning("Fila con columnas insuficientes: " . count($columns));
+                return false;
+            }
+
+            // Limpiar datos
+            $persona = trim($columns[1]);
+            $fechaCreacionStr = trim($columns[2]);
+            $dependencia = trim($columns[3]);
+            $fechaDesdeStr = trim($columns[4]);
+            $fechaHastaStr = trim($columns[5]);
+            $asistencia = trim($columns[6]);
+            $duracion = trim($columns[7]);
+            $motivo = trim($columns[8]);
+
+            // Validar que los campos principales no estén vacíos
+            if (empty($persona) || empty($fechaCreacionStr) || empty($fechaDesdeStr)) {
+                \Log::warning("Fila con campos vacíos");
+                return false;
+            }
+
+            // Formatear fechas - intentar diferentes formatos
+            try {
+                $fechaCreacion = $this->parseDate($fechaCreacionStr);
+                $fechaDesde = $this->parseDate($fechaDesdeStr);
+                $fechaHasta = $this->parseDate($fechaHastaStr);
+            } catch (\Exception $e) {
+                \Log::error("Error parseando fechas: " . $e->getMessage());
+                \Log::error("Fechas: creación=$fechaCreacionStr, desde=$fechaDesdeStr, hasta=$fechaHastaStr");
+                return false;
+            }
+
+            // Crear el registro
+            Ausentismo::create([
+                'persona' => $persona,
+                'fecha_de_creacion' => $fechaCreacion,
+                'dependencia' => $dependencia,
+                'fecha_ausencia_desde' => $fechaDesde,
+                'fecha_hasta' => $fechaHasta,
+                'asistencia' => $asistencia,
+                'duracion_ausencia' => $duracion,
+                'motivo_de_ausencia' => $motivo,
+                'mes' => $mes
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            \Log::error("Error procesando fila: " . json_encode($columns));
+            \Log::error($e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Parsear diferentes formatos de fecha
+     */
+    private function parseDate($dateString)
+    {
+        $dateString = trim($dateString);
+        
+        if (empty($dateString)) {
+            return null;
+        }
+
+        // Intentar diferentes formatos de fecha
+        $formats = [
+            'd/m/y H:i',
+            'n/j/y H:i',
+            'd/m/Y H:i',
+            'n/j/Y H:i',
+            'd-m-y H:i',
+            'd-m-Y H:i',
+            'Y-m-d H:i:s',
+            'Y-m-d',
+            'd/m/Y',
+            'd/m/y',
+            'n/j/Y',
+            'n/j/y',
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                $date = Carbon::createFromFormat($format, $dateString);
+                if ($date) {
+                    return $date->format('Y-m-d');
+                }
+            } catch (\Exception $e) {
+                continue;
             }
         }
 
-        return redirect()->back()->with('success', 'Datos cargados correctamente');
+        // Si ningún formato funcionó, intentar con strtotime
+        try {
+            $timestamp = strtotime($dateString);
+            if ($timestamp !== false) {
+                return date('Y-m-d', $timestamp);
+            }
+        } catch (\Exception $e) {
+            // Continuar
+        }
+
+        throw new \Exception("No se pudo parsear la fecha: $dateString");
     }
 
     public function dashboard(Request $request)
