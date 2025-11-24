@@ -1300,7 +1300,7 @@ class PurchaseRequestController extends Controller
             'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:524288', // 20MB máximo cada archivo
             // Validaciones para especificaciones
             'paper_size' => 'nullable|string|in:Carta,Oficio,A4,A3,Tabloid',
-            'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina,Papel adhesivo',
+            'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina,Papel adhesivo,Acetato para impresion',
             'paper_color' => 'nullable|string|in:Blanco,Amarillo,Rosa,Verde,Azul,Gris,Otro',
             'requires_binding' => 'nullable|boolean',
             'requires_lamination' => 'nullable|boolean',
@@ -1622,7 +1622,7 @@ class PurchaseRequestController extends Controller
             'attached_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:524288', // 20MB máximo cada archivo
             // Validaciones para especificaciones
             'paper_size' => 'nullable|string|in:Carta,Oficio,A4,A3,Tabloid',
-            'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina,Papel adhesivo',
+            'paper_type' => 'nullable|string|in:Bond 75g,Bond 90g,Propalcote 115g,Propalcote 150g,Cartulina,Opalina,Papel adhesivo,Acetato para impresion',
             'paper_color' => 'nullable|string|in:Blanco,Amarillo,Rosa,Verde,Azul,Gris,Otro',
             'requires_binding' => 'nullable|boolean',
             'requires_lamination' => 'nullable|boolean',
