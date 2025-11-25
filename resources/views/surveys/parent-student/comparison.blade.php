@@ -101,13 +101,14 @@
 
 @section('content')
     @php
-        // Datos ficticios para la comparación
-        $comparisonData = [
-            'period1' => '2024-05',
-            'period2' => '2025-06',
-            'responses_period1' => 45,
-            'responses_period2' => 82,
-            'service' => request('service', 'both'),
+        // Usar datos reales del controlador si existen, sino usar datos ficticios para la comparación
+        if (!isset($comparisonData)) {
+            $comparisonData = [
+                'period1' => '2024-05',
+                'period2' => '2025-06',
+                'responses_period1' => 45,
+                'responses_period2' => 82,
+                'service' => request('service', 'both'),
             
             // Datos detallados de cafetería por período
             'cafeteria_period1' => [
@@ -251,9 +252,10 @@
                 ]
             ]
         ];
+        }
     @endphp
     
-    @if(true)
+    @if(isset($comparisonData))
     
     <!-- Resumen Ejecutivo Mejorado -->
     <div class="card card-primary">

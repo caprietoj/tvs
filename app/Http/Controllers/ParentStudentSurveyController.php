@@ -587,11 +587,13 @@ class ParentStudentSurveyController extends Controller
 
         // Logging para debugging
         Log::info('=== COMPARISON DEBUGGING ===');
-        Log::info('Period1: ' . $period1);
-        Log::info('Period2: ' . $period2);
+        Log::info('Period1 INPUT: ' . $period1);
+        Log::info('Period2 INPUT: ' . $period2);
         Log::info('Service: ' . $service);
         Log::info('Grade: ' . $grade);
         Log::info('Request data: ' . json_encode($request->all()));
+        Log::info('Request URL: ' . $request->fullUrl());
+        Log::info('Request method: ' . $request->method());
 
         if (!$period1 || !$period2) {
             // Obtener períodos disponibles para mostrar en la vista
@@ -615,7 +617,16 @@ class ParentStudentSurveyController extends Controller
                 ->with('error', 'Debe seleccionar dos períodos para comparar.');
         }
 
-        $comparisonData = $this->buildComparisonData($period1, $period2, $grade);
+        $comparisonData = $this->buildComparisonData($period1, $period2, $grade, $service);
+        
+        // Log de depuración
+        Log::info('Comparison Data Built:', [
+            'cafeteria_period1_usuarios' => $comparisonData['cafeteria_period1']['total_usuarios'] ?? 'N/A',
+            'cafeteria_period2_usuarios' => $comparisonData['cafeteria_period2']['total_usuarios'] ?? 'N/A',
+            'cafeteria_period1_keys' => array_keys($comparisonData['cafeteria_period1']),
+            'cafeteria_period2_keys' => array_keys($comparisonData['cafeteria_period2']),
+            'service' => $comparisonData['service'] ?? 'N/A'
+        ]);
         
         // Obtener períodos disponibles para la vista
         $periods = DB::table('parent_student_surveys')
@@ -627,7 +638,7 @@ class ParentStudentSurveyController extends Controller
         return view('surveys.parent-student.comparison', compact('comparisonData', 'periods'));
     }
 
-    private function buildComparisonData($period1, $period2, $grade = 'all')
+    private function buildComparisonData($period1, $period2, $grade = 'all', $service = 'both')
     {
         $data1 = $this->getPeriodData($period1, $grade);
         $data2 = $this->getPeriodData($period2, $grade);
@@ -646,6 +657,7 @@ class ParentStudentSurveyController extends Controller
             'period1' => $period1,
             'period2' => $period2,
             'grade' => $grade,
+            'service' => $service,
             'responses_period1' => $data1->count(),
             'responses_period2' => $data2->count(),
             'cafeteria_period1' => $cafeteriaMetrics1,
@@ -764,7 +776,7 @@ class ParentStudentSurveyController extends Controller
     private function getDashboardData()
     {
         $latestPeriod = DB::table('parent_student_surveys')
-            ->select('period')
+            ->select('period', 'year', 'month')
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
             ->first();
