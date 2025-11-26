@@ -337,6 +337,45 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <!-- Buscador -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" 
+                                       id="searchInput"
+                                       class="form-control" 
+                                       placeholder="Buscar por documento o nombre completo..." 
+                                       value="{{ $search ?? '' }}"
+                                       autocomplete="off">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> La búsqueda se realiza automáticamente mientras escribes
+                            </small>
+                        </div>
+                        @if(isset($search) && $search != '')
+                            <div class="col-md-6">
+                                <div class="alert alert-info mb-0 py-2">
+                                    <i class="fas fa-filter"></i>
+                                    Filtrando por: <strong>"{{ $search }}"</strong>
+                                    <button type="button" class="close ml-2" onclick="clearSearch()">
+                                        <span>&times;</span>
+                                    </button>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    
+                    <!-- Indicador de carga -->
+                    <div id="loadingIndicator" style="display: none;" class="text-center mb-3">
+                        <i class="fas fa-spinner fa-spin"></i> Buscando...
+                    </div>
+                    
+                    <div id="tablaRegistros">
                     @if(isset($registros) && count($registros) > 0)
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped" id="registrosTable">
@@ -379,16 +418,17 @@
                         
                         <!-- Paginación de Laravel -->
                         @if($registros->hasPages())
-                            <div class="d-flex justify-content-center mt-3">
+                            <div class="d-flex justify-content-center mt-3" id="paginationContainer">
                                 {{ $registros->appends(request()->query())->links() }}
                             </div>
                         @endif
                     @else
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle"></i>
-                            No hay registros para mostrar en el período seleccionado.
+                            No hay registros para mostrar{{ isset($search) && $search != '' ? ' con los criterios de búsqueda' : ' en el período seleccionado' }}.
                         </div>
                     @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -404,12 +444,118 @@
 
 <script>
 function cambiarMes(mes) {
-    window.location.href = '{{ route("porteria.dashboard") }}?mes=' + mes;
+    const searchValue = document.getElementById('searchInput').value;
+    let url = '{{ route("porteria.dashboard") }}?mes=' + mes;
+    if (searchValue) {
+        url += '&search=' + encodeURIComponent(searchValue);
+    }
+    window.location.href = url;
+}
+
+// Búsqueda en tiempo real
+let searchTimeout;
+const searchInput = document.getElementById('searchInput');
+const loadingIndicator = document.getElementById('loadingIndicator');
+const tablaRegistros = document.getElementById('tablaRegistros');
+
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const searchValue = this.value.trim();
+        
+        // Mostrar indicador de carga
+        loadingIndicator.style.display = 'block';
+        
+        // Esperar 500ms después de que el usuario deja de escribir
+        searchTimeout = setTimeout(function() {
+            realizarBusqueda(searchValue);
+        }, 500);
+    });
+}
+
+function realizarBusqueda(searchValue) {
+    const mes = '{{ $mes }}';
+    const url = '{{ route("porteria.dashboard") }}?mes=' + mes + '&search=' + encodeURIComponent(searchValue);
+    
+    // Realizar petición AJAX
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        // Crear un elemento temporal para parsear el HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Extraer solo la tabla de registros
+        const nuevoContenido = doc.getElementById('tablaRegistros');
+        
+        if (nuevoContenido) {
+            tablaRegistros.innerHTML = nuevoContenido.innerHTML;
+            
+            // Reactivar los eventos de paginación
+            activarPaginacion();
+        }
+        
+        // Ocultar indicador de carga
+        loadingIndicator.style.display = 'none';
+    })
+    .catch(error => {
+        console.error('Error en la búsqueda:', error);
+        loadingIndicator.style.display = 'none';
+    });
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    realizarBusqueda('');
+}
+
+function activarPaginacion() {
+    // Interceptar clicks en los enlaces de paginación
+    const paginationLinks = document.querySelectorAll('#paginationContainer a');
+    paginationLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.href;
+            const searchValue = document.getElementById('searchInput').value;
+            
+            loadingIndicator.style.display = 'block';
+            
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const nuevoContenido = doc.getElementById('tablaRegistros');
+                
+                if (nuevoContenido) {
+                    tablaRegistros.innerHTML = nuevoContenido.innerHTML;
+                    activarPaginacion();
+                }
+                
+                loadingIndicator.style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Error en la paginación:', error);
+                loadingIndicator.style.display = 'none';
+            });
+        });
+    });
 }
 
 // Inicializar tabla simple sin DataTables (usando paginación de Laravel)
 $(document).ready(function() {
     console.log('Tabla de registros cargada correctamente');
+    
+    // Activar paginación AJAX al cargar la página
+    activarPaginacion();
 });
 
 // Datos para los gráficos analíticos
@@ -489,7 +635,7 @@ new Chart(hourlyCtx, {
         labels: hourlyData.map(item => item.hora),
         datasets: [{
             label: 'Entradas por Hora',
-            data: hourlyData.map(item => item.total_entradas),
+            data: hourlyData.map(item => item.entradas),
             backgroundColor: 'rgba(75, 192, 192, 0.6)',
             borderColor: 'rgba(75, 192, 192, 1)',
             borderWidth: 1
@@ -517,6 +663,7 @@ new Chart(hourlyCtx, {
             }
         }
     }
+});
 </script>
 @stop
 

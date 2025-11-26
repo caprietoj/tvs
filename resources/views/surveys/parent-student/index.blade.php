@@ -4,14 +4,28 @@
 
 @section('content_header')
     <div class="row">
-        <div class="col-sm-6">
+        <div class="col-sm-4">
             <h1>
                 <i class="fas fa-users text-primary"></i>
                 <i class="fas fa-graduation-cap text-success"></i>
-                Análisis de Encuestas Padre-Estudiante
+                Análisis de Encuestas
             </h1>
         </div>
-        <div class="col-sm-6">
+        <div class="col-sm-4">
+            @if(isset($dashboardData['has_data']) && $dashboardData['has_data'])
+            <div class="form-group mb-0">
+                <label for="period-filter" class="mb-1"><small>Filtrar por período:</small></label>
+                <select id="period-filter" class="form-control" onchange="filterByPeriod(this.value)">
+                    @foreach($periods as $period)
+                        <option value="{{ $period['id'] }}" {{ (isset($selectedPeriod) && $selectedPeriod == $period['id']) || (!isset($selectedPeriod) && $loop->first) ? 'selected' : '' }}>
+                            {{ $period['label'] }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+        </div>
+        <div class="col-sm-4">
             <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="{{ url('/') }}">Inicio</a></li>
                 <li class="breadcrumb-item"><a href="#">Encuestas</a></li>
@@ -182,7 +196,7 @@
             </div>
         </div>
 
-        <!-- Análisis de Cafetería -->
+        <!-- Análisis Detallado de Cafetería -->
         <div class="row">
             <div class="col-12">
                 <div class="card card-success">
@@ -195,13 +209,13 @@
                     <div class="card-body">
                         <div class="row">
                             @foreach([
-                                'calidad_sabor' => ['label' => 'Calidad y Sabor', 'icon' => 'fas fa-star', 'color' => 'primary'],
-                                'porcion_satisfaccion' => ['label' => 'Satisfacción Porciones', 'icon' => 'fas fa-balance-scale', 'color' => 'success'],
-                                'menu_calidad' => ['label' => 'Calidad del Menú', 'icon' => 'fas fa-list', 'color' => 'info'],
-                                'variedad_menu' => ['label' => 'Variedad del Menú', 'icon' => 'fas fa-layer-group', 'color' => 'warning'],
+                                'calidad_sabor' => ['label' => 'Calidad y Sabor', 'icon' => 'fas fa-star', 'color' => 'success'],
+                                'porcion_satisfaccion' => ['label' => 'Porciones', 'icon' => 'fas fa-balance-scale', 'color' => 'info'],
+                                'menu_calidad' => ['label' => 'Menú Ofrecido', 'icon' => 'fas fa-clipboard-list', 'color' => 'primary'],
+                                'variedad_menu' => ['label' => 'Variedad', 'icon' => 'fas fa-list-ul', 'color' => 'warning'],
                                 'temperatura_adecuada' => ['label' => 'Temperatura', 'icon' => 'fas fa-thermometer-half', 'color' => 'danger'],
-                                'limpieza_comedor' => ['label' => 'Limpieza', 'icon' => 'fas fa-broom', 'color' => 'secondary'],
-                                'trato_personal' => ['label' => 'Trato Personal', 'icon' => 'fas fa-handshake', 'color' => 'dark']
+                                'limpieza_comedor' => ['label' => 'Limpieza', 'icon' => 'fas fa-spray-can', 'color' => 'teal'],
+                                'trato_personal' => ['label' => 'Trato Personal', 'icon' => 'fas fa-user-friends', 'color' => 'indigo']
                             ] as $key => $config)
                                 <div class="col-md-6 col-lg-3 mb-3">
                                     <div class="info-box">
@@ -239,52 +253,101 @@
                                         <h4 class="card-title">Indicadores de Cafetería - {{ $dashboardData['latest_period'] }}</h4>
                                     </div>
                                     <div class="card-body">
-                                        <canvas id="cafeteriaChart" height="200"></canvas>
+                                        <canvas id="cafeteriaDetailChart" height="200"></canvas>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="card">
                                     <div class="card-header">
-                                        <h4 class="card-title">Distribución por Grado</h4>
+                                        <h4 class="card-title">Participación por Grado</h4>
                                     </div>
                                     <div class="card-body">
-                                        <div style="position: relative; height: 200px;">
-                                            <canvas id="gradeChart" style="width: 100%; height: 100%;"></canvas>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Grado</th>
+                                                        <th>Respuestas</th>
+                                                        <th>%</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($dashboardData['grades'] as $grade => $count)
+                                                        <tr>
+                                                            <td>{{ $grade }}</td>
+                                                            <td>{{ $count }}</td>
+                                                            <td>{{ round(($count / $dashboardData['total_responses']) * 100, 1) }}%</td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
                                         </div>
-                                        <div id="gradeChartMessage" style="display: none; text-align: center; padding: 20px; color: #6c757d;">
-                                            <i class="fas fa-chart-pie fa-2x mb-2"></i>
-                                            <p>No hay datos de distribución por grado disponibles</p>
-                                        </div>
-                                        
-                                        @if(isset($dashboardData['grade_stats']) && $dashboardData['grade_stats'])
-                                        <div class="mt-3 pt-3 border-top">
-                                            <div class="row text-center">
-                                                <div class="col-4">
-                                                    <div class="text-muted small">Total Grados</div>
-                                                    <div class="fw-bold text-primary">{{ $dashboardData['grade_stats']['total_grades'] ?? 0 }}</div>
-                                                </div>
-                                                <div class="col-4">
-                                                    <div class="text-muted small">Promedio/Grado</div>
-                                                    <div class="fw-bold text-success">{{ $dashboardData['grade_stats']['average_per_grade'] ?? 0 }}</div>
-                                                </div>
-                                                <div class="col-4">
-                                                    <div class="text-muted small">Balance</div>
-                                                    <div class="fw-bold text-info">{{ $dashboardData['grade_stats']['distribution_balance'] ?? 0 }}%</div>
-                                                </div>
-                                            </div>
-                                            
-                                            @if(isset($dashboardData['grade_stats']['most_represented']))
-                                            <div class="mt-2">
-                                                <small class="text-muted">
-                                                    <i class="fas fa-trophy text-warning"></i>
-                                                    Más representado: <strong>{{ $dashboardData['grade_stats']['most_represented']['grade'] ?? 'N/A' }}</strong>
-                                                    ({{ $dashboardData['grade_stats']['most_represented']['count'] ?? 0 }} respuestas)
-                                                </small>
-                                            </div>
-                                            @endif
-                                        </div>
-                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="card card-outline card-success">
+                                    <div class="card-header">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-thumbs-up text-success"></i>
+                                            Fortalezas del Servicio
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @php
+                                            $cafeteriaMetrics = collect([
+                                                'Calidad y Sabor' => $dashboardData['cafeteria']['calidad_sabor'] ?? 0,
+                                                'Porciones' => $dashboardData['cafeteria']['porcion_satisfaccion'] ?? 0,
+                                                'Menú Ofrecido' => $dashboardData['cafeteria']['menu_calidad'] ?? 0,
+                                                'Variedad' => $dashboardData['cafeteria']['variedad_menu'] ?? 0,
+                                                'Temperatura' => $dashboardData['cafeteria']['temperatura_adecuada'] ?? 0,
+                                                'Limpieza' => $dashboardData['cafeteria']['limpieza_comedor'] ?? 0,
+                                                'Trato Personal' => $dashboardData['cafeteria']['trato_personal'] ?? 0,
+                                            ])->sortDesc()->take(3);
+                                        @endphp
+                                        <ul class="list-group list-group-flush">
+                                            @foreach($cafeteriaMetrics as $metric => $value)
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    {{ $metric }}
+                                                    <span class="badge badge-success badge-pill">{{ $value }}%</span>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card card-outline card-warning">
+                                    <div class="card-header">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                                            Áreas de Mejora
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @php
+                                            $improvementAreas = collect([
+                                                'Calidad y Sabor' => $dashboardData['cafeteria']['calidad_sabor'] ?? 0,
+                                                'Porciones' => $dashboardData['cafeteria']['porcion_satisfaccion'] ?? 0,
+                                                'Menú Ofrecido' => $dashboardData['cafeteria']['menu_calidad'] ?? 0,
+                                                'Variedad' => $dashboardData['cafeteria']['variedad_menu'] ?? 0,
+                                                'Temperatura' => $dashboardData['cafeteria']['temperatura_adecuada'] ?? 0,
+                                                'Limpieza' => $dashboardData['cafeteria']['limpieza_comedor'] ?? 0,
+                                                'Trato Personal' => $dashboardData['cafeteria']['trato_personal'] ?? 0,
+                                            ])->sort()->take(3);
+                                        @endphp
+                                        <ul class="list-group list-group-flush">
+                                            @foreach($improvementAreas as $metric => $value)
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    {{ $metric }}
+                                                    <span class="badge badge-warning badge-pill">{{ $value }}%</span>
+                                                </li>
+                                            @endforeach
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
@@ -913,8 +976,14 @@
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
+// Función para filtrar por período
+function filterByPeriod(period) {
+    window.location.href = '{{ route("surveys.parent-student.index") }}?period=' + period;
+}
+
 // Global chart configurations
 Chart.defaults.font.family = "'Source Sans Pro', sans-serif";
 Chart.defaults.color = '#6c757d';
@@ -931,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    initializeCafeteriaChart();
+    initializeCafeteriaDetailChart();
     initializeTransportChart();
     
     // Agregar un pequeño delay para el gráfico de grados
@@ -940,55 +1009,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 
-function initializeCafeteriaChart() {
-    const ctx = document.getElementById('cafeteriaChart');
+function initializeCafeteriaDetailChart() {
+    const ctx = document.getElementById('cafeteriaDetailChart');
     if (!ctx) {
-        console.error('Cafeteria chart canvas element not found');
+        console.error('Cafeteria detail chart canvas element not found');
         return;
     }
     
-    // Verificar si hay datos de cafetería disponibles
     if (!dashboardData || !dashboardData.cafeteria) {
-        console.warn('No cafeteria data available');
-        ctx.style.display = 'none';
-        // Mostrar mensaje de no datos si existe un contenedor para ello
-        const parentCard = ctx.closest('.card-body');
-        if (parentCard) {
-            parentCard.innerHTML = `
-                <div class="text-center text-muted py-4">
-                    <i class="fas fa-utensils fa-3x mb-3"></i>
-                    <p>No hay datos de cafetería disponibles para este período</p>
-                </div>
-            `;
-        }
+        console.warn('No cafeteria data available for detail chart');
         return;
     }
     
     const cafeteriaData = dashboardData.cafeteria;
-    console.log('Cafeteria data:', cafeteriaData);
-    
-    // Verificar que tengamos al menos algunos datos válidos
-    const metrics = ['calidad_sabor', 'porcion_satisfaccion', 'menu_calidad', 'variedad_menu', 'temperatura_adecuada', 'limpieza_comedor', 'trato_personal'];
-    const hasValidData = metrics.some(metric => 
-        cafeteriaData[metric] !== undefined && 
-        cafeteriaData[metric] !== null && 
-        !isNaN(cafeteriaData[metric])
-    );
-    
-    if (!hasValidData) {
-        console.warn('No valid cafeteria metrics found');
-        ctx.style.display = 'none';
-        const parentCard = ctx.closest('.card-body');
-        if (parentCard) {
-            parentCard.innerHTML = `
-                <div class="text-center text-muted py-4">
-                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                    <p>Los datos de cafetería no están disponibles o son inválidos</p>
-                </div>
-            `;
-        }
-        return;
-    }
     
     const data = {
         labels: ['Calidad y Sabor', 'Porciones', 'Menú', 'Variedad', 'Temperatura', 'Limpieza', 'Trato Personal'],
@@ -1004,33 +1037,32 @@ function initializeCafeteriaChart() {
                 cafeteriaData.trato_personal || 0
             ],
             backgroundColor: [
-                'rgba(0, 123, 255, 0.8)',
                 'rgba(40, 167, 69, 0.8)',
                 'rgba(23, 162, 184, 0.8)',
+                'rgba(0, 123, 255, 0.8)',
                 'rgba(255, 193, 7, 0.8)',
                 'rgba(220, 53, 69, 0.8)',
-                'rgba(108, 117, 125, 0.8)',
-                'rgba(52, 58, 64, 0.8)'
+                'rgba(32, 201, 151, 0.8)',
+                'rgba(111, 66, 193, 0.8)'
             ],
             borderColor: [
-                'rgba(0, 123, 255, 1)',
                 'rgba(40, 167, 69, 1)',
                 'rgba(23, 162, 184, 1)',
+                'rgba(0, 123, 255, 1)',
                 'rgba(255, 193, 7, 1)',
                 'rgba(220, 53, 69, 1)',
-                'rgba(108, 117, 125, 1)',
-                'rgba(52, 58, 64, 1)'
+                'rgba(32, 201, 151, 1)',
+                'rgba(111, 66, 193, 1)'
             ],
             borderWidth: 2,
             borderRadius: 4
         }]
     };
 
-    console.log('Creating cafeteria chart with data:', data);
-
     new Chart(ctx, {
         type: 'bar',
         data: data,
+        plugins: [ChartDataLabels],
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -1047,6 +1079,18 @@ function initializeCafeteriaChart() {
                         label: function(context) {
                             return 'Satisfacción: ' + context.parsed.y.toFixed(1) + '%';
                         }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    formatter: function(value) {
+                        return value.toFixed(1) + '%';
+                    },
+                    color: '#333',
+                    font: {
+                        weight: 'bold',
+                        size: 11
                     }
                 }
             },
@@ -1163,6 +1207,7 @@ function initializeTransportChart() {
     new Chart(ctx, {
         type: 'bar',
         data: data,
+        plugins: [ChartDataLabels],
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -1179,6 +1224,18 @@ function initializeTransportChart() {
                         label: function(context) {
                             return 'Satisfacción: ' + context.parsed.y.toFixed(1) + '%';
                         }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    formatter: function(value) {
+                        return value.toFixed(1) + '%';
+                    },
+                    color: '#000',
+                    font: {
+                        weight: 'bold',
+                        size: 11
                     }
                 }
             },

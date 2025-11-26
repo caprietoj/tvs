@@ -12,10 +12,11 @@ use Carbon\Carbon;
 
 class ParentStudentSurveyController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $surveys = DB::table('parent_student_surveys')
             ->select('period', 'year', 'month', 'created_at')
+            ->where('period', '!=', '2024-05')  // Excluir período 2024-05
             ->groupBy(['period', 'year', 'month', 'created_at'])
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
@@ -41,9 +42,11 @@ class ParentStudentSurveyController extends Controller
             }
         })->unique('id');
 
-        $dashboardData = $this->getDashboardData();
+        // Obtener período seleccionado o el más reciente
+        $selectedPeriod = $request->get('period', null);
+        $dashboardData = $this->getDashboardData($selectedPeriod);
         
-        return view('surveys.parent-student.index', compact('periods', 'dashboardData'));
+        return view('surveys.parent-student.index', compact('periods', 'dashboardData', 'selectedPeriod'));
     }
 
     public function upload()
@@ -773,36 +776,53 @@ class ParentStudentSurveyController extends Controller
         return $results;
     }
 
-    private function getDashboardData()
+    private function getDashboardData($selectedPeriod = null)
     {
-        $latestPeriod = DB::table('parent_student_surveys')
-            ->select('period', 'year', 'month')
-            ->orderBy('year', 'desc')
-            ->orderBy('month', 'desc')
-            ->first();
+        // Si se proporciona un período, usarlo; si no, usar el más reciente
+        if ($selectedPeriod) {
+            $period = DB::table('parent_student_surveys')
+                ->select('period', 'year', 'month')
+                ->where('period', $selectedPeriod)
+                ->first();
+            
+            if (!$period) {
+                // Si el período seleccionado no existe, usar el más reciente
+                $period = DB::table('parent_student_surveys')
+                    ->select('period', 'year', 'month')
+                    ->orderBy('year', 'desc')
+                    ->orderBy('month', 'desc')
+                    ->first();
+            }
+        } else {
+            $period = DB::table('parent_student_surveys')
+                ->select('period', 'year', 'month')
+                ->orderBy('year', 'desc')
+                ->orderBy('month', 'desc')
+                ->first();
+        }
 
-        if (!$latestPeriod) {
+        if (!$period) {
             return [
                 'has_data' => false,
                 'message' => 'No hay datos cargados. Por favor, cargue al menos una encuesta.'
             ];
         }
 
-        // Obtener datos del período más reciente
-        $latestData = ParentStudentSurvey::where('period', $latestPeriod->period)->get();
+        // Obtener datos del período seleccionado o más reciente
+        $periodData = ParentStudentSurvey::where('period', $period->period)->get();
 
-        // CORRECCIÓN: Usar solo datos del período más reciente (junio 2025)
+        // CORRECCIÓN: Usar solo datos del período seleccionado
         // En lugar de buscar períodos diferentes para cafetería y transporte,
-        // usaremos únicamente los datos del período más reciente
+        // usaremos únicamente los datos del período seleccionado
         
         // Filtrar datos de cafetería del período actual
-        $cafeteriaData = $latestData->filter(function ($item) {
+        $cafeteriaData = $periodData->filter(function ($item) {
             return stripos($item->uses_cafeteria, 'Sí') !== false || 
                    stripos($item->uses_cafeteria, 'Si') !== false;
         });
 
         // Filtrar datos de transporte del período actual  
-        $transportData = $latestData->filter(function ($item) {
+        $transportData = $periodData->filter(function ($item) {
             return stripos($item->uses_transport, 'Sí') !== false || 
                    stripos($item->uses_transport, 'Si') !== false;
         });
@@ -812,23 +832,23 @@ class ParentStudentSurveyController extends Controller
         $transportMetrics = $this->calculateSinglePeriodTransportMetrics($transportData);
 
         // Calcular respuestas esperadas
-        $expectedResponses = $this->calculateExpectedResponses($latestPeriod->period);
+        $expectedResponses = $this->calculateExpectedResponses($period->period);
 
         // Contar usuarios totales solo del período actual
         $totalCafeteriaUsers = $cafeteriaData->count();
         $totalTransportUsers = $transportData->count();
 
         // Procesar datos de grados de manera más inteligente
-        $gradeData = $this->processGradeDistribution($latestData);
+        $gradeData = $this->processGradeDistribution($periodData);
 
         return [
             'has_data' => true,
-            'latest_period' => $latestPeriod->period,
-            'cafeteria_period' => $latestPeriod->period, // Siempre usar el período actual
-            'transport_period' => $latestPeriod->period,  // Siempre usar el período actual
+            'latest_period' => $period->period,
+            'cafeteria_period' => $period->period, // Siempre usar el período seleccionado
+            'transport_period' => $period->period,  // Siempre usar el período seleccionado
             'cafeteria' => $cafeteriaMetrics,
             'transport' => $transportMetrics,
-            'total_responses' => $latestData->count(),
+            'total_responses' => $periodData->count(),
             'expected_responses' => $expectedResponses,
             'cafeteria_users' => $totalCafeteriaUsers,
             'transport_users' => $totalTransportUsers,
@@ -837,9 +857,9 @@ class ParentStudentSurveyController extends Controller
             'grade_stats' => $gradeData['stats'],
             'transport_data' => $transportData,  // Agregar datos de transporte para los modales
             'periods_info' => [
-                'latest' => $latestPeriod->period,
-                'cafeteria_source' => $latestPeriod->period,  // Mismo período
-                'transport_source' => $latestPeriod->period   // Mismo período
+                'latest' => $period->period,
+                'cafeteria_source' => $period->period,  // Mismo período
+                'transport_source' => $period->period   // Mismo período
             ]
         ];
     }

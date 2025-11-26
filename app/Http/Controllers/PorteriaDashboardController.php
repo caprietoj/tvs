@@ -42,11 +42,21 @@ class PorteriaDashboardController extends Controller
         $analisisComparativo = $this->getAnalisisComparativo($startDate, $endDate);
         $patronesComportamiento = $this->getPatronesComportamiento($startDate, $endDate);
         
-        // Obtener registros para la tabla (con paginación)
+        // Obtener parámetro de búsqueda
+        $search = $request->get('search', '');
+        
+        // Obtener registros para la tabla (con paginación y búsqueda)
         $registros = RegistroPorteria::whereBetween('fecha', [$startDate, $endDate])
+            ->when($search, function($query, $search) {
+                return $query->where(function($q) use ($search) {
+                    $q->where('documento', 'like', '%' . $search . '%')
+                      ->orWhere('nombre', 'like', '%' . $search . '%');
+                });
+            })
             ->orderBy('fecha', 'desc')
             ->orderBy('hora_entrada', 'desc')
-            ->paginate(10);
+            ->paginate(10)
+            ->appends(['mes' => $mes, 'search' => $search]);
         
         return view('porteria.dashboard', compact(
             'estadisticas',
@@ -57,7 +67,8 @@ class PorteriaDashboardController extends Controller
             'patronesComportamiento',
             'registros',
             'mes',
-            'mesTexto'
+            'mesTexto',
+            'search'
         ));
     }
 
@@ -310,7 +321,7 @@ class PorteriaDashboardController extends Controller
                 fputcsv($file, [
                     $registro->fecha->format('d/m/Y'),
                     $registro->documento,
-                    $registro->nombre . ' ' . $registro->apellido,
+                    $registro->nombre,
                     $this->getTipoPersonaTexto($registro->tipo_persona),
                     $registro->hora_entrada ? Carbon::parse($registro->hora_entrada)->format('H:i:s') : '',
                     $registro->hora_salida ? Carbon::parse($registro->hora_salida)->format('H:i:s') : '',
@@ -469,7 +480,6 @@ class PorteriaDashboardController extends Controller
             ->selectRaw('
                 documento,
                 nombre,
-                apellido,
                 tipo_persona,
                 COUNT(*) as total_visitas,
                 AVG(TIMESTAMPDIFF(MINUTE, 
@@ -477,7 +487,7 @@ class PorteriaDashboardController extends Controller
                     CONCAT(fecha, " ", hora_salida)
                 )) as tiempo_promedio
             ')
-            ->groupBy('documento', 'nombre', 'apellido', 'tipo_persona')
+            ->groupBy('documento', 'nombre', 'tipo_persona')
             ->orderBy('total_visitas', 'desc')
             ->take(10)
             ->get();
