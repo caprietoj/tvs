@@ -223,6 +223,9 @@ class RolesAndPermissionsSeeder extends Seeder
              // Permisos para evaluaciones de desempeño
              Permission::firstOrCreate(['name' => 'view-own-performance-evaluations']),
              Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
+             // Permisos para módulo de enfermería
+             Permission::firstOrCreate(['name' => 'view.enfermeria']),
+             Permission::firstOrCreate(['name' => 'enfermeria.ingreso_estudiantes']),
          ]);
 
           // Crear el rol "contabilidad"
