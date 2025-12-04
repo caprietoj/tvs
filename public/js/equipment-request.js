@@ -42,12 +42,12 @@ window.initializeEquipmentRequest = function(elements) {
     elements.equipmentSelect.addEventListener('change', handleEquipmentChange);
     
     // Configurar el rango de fechas permitido al cargar la página
-    // ACTUALIZADO: Viernes hasta próximo domingo, otros días hasta este domingo
+    // ACTUALIZADO: Jueves hasta próximo domingo, otros días hasta este domingo
     function setupDateConstraints() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        const dayOfWeek = today.getDay(); // 0=domingo, 5=viernes, 6=sábado
+        const dayOfWeek = today.getDay(); // 0=domingo, 4=jueves, 6=sábado
         
         // Fecha mínima: mañana (no se permite préstamo para el mismo día)
         const tomorrow = new Date(today);
@@ -56,10 +56,10 @@ window.initializeEquipmentRequest = function(elements) {
         
         // Calcular fecha máxima según el día
         let maxDate;
-        if (dayOfWeek === 5) {
-            // Viernes: hasta domingo de la próxima semana (+9 días)
+        if (dayOfWeek === 4) {
+            // Jueves: hasta domingo de la próxima semana (+10 días)
             const nextWeekSunday = new Date(today);
-            nextWeekSunday.setDate(today.getDate() + 9);
+            nextWeekSunday.setDate(today.getDate() + 10);
             maxDate = nextWeekSunday.toISOString().split('T')[0];
         } else if (dayOfWeek === 6 || dayOfWeek === 0) {
             // Sábado o domingo: hasta domingo de la próxima semana
@@ -67,8 +67,13 @@ window.initializeEquipmentRequest = function(elements) {
             const nextWeekSunday = new Date(today);
             nextWeekSunday.setDate(today.getDate() + daysUntilNextSunday);
             maxDate = nextWeekSunday.toISOString().split('T')[0];
+        } else if (dayOfWeek === 5) {
+            // Viernes: hasta domingo de la próxima semana (+9 días)
+            const nextWeekSunday = new Date(today);
+            nextWeekSunday.setDate(today.getDate() + 9);
+            maxDate = nextWeekSunday.toISOString().split('T')[0];
         } else {
-            // Lunes a jueves: hasta domingo de esta semana
+            // Lunes a miércoles: hasta domingo de esta semana
             const daysUntilSunday = 7 - dayOfWeek;
             const thisSunday = new Date(today);
             thisSunday.setDate(today.getDate() + daysUntilSunday);
@@ -454,7 +459,7 @@ window.initializeEquipmentRequest = function(elements) {
                     { id: 'admin_6', type: 'class', start: '15:00', end: '16:00', label: 'Hora 7' },
                     { id: 'admin_7', type: 'class', start: '16:00', end: '17:00', label: 'Hora 8' }
                 ],
-                is_friday: today.getDay() === 5,
+                is_friday: today.getDay() === 4,
                 day_of_week: capitalizedDayOfWeek
             };
             
@@ -539,7 +544,7 @@ window.initializeEquipmentRequest = function(elements) {
         // Crear contenido HTML para los períodos - NUEVO FORMATO VISUAL
         let html = `
             <div class="alert alert-info mb-3">
-                <i class="fas fa-calendar-day"></i> <strong>${day_of_week}</strong> ${is_friday ? '(viernes)' : ''}
+                <i class="fas fa-calendar-day"></i> <strong>${day_of_week}</strong> ${is_friday ? '(jueves)' : ''}
             </div>
         `;
         
@@ -1050,9 +1055,12 @@ window.initializeEquipmentRequest = function(elements) {
         const endOfWeek = new Date(today);
         const dayOfWeek = today.getDay();
         
-        if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) { 
-            // Si es viernes (5), sábado (6) o domingo (0), permitir reservar para toda la próxima semana
-            if (dayOfWeek === 5) {
+        if (dayOfWeek === 4 || dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) { 
+            // Si es jueves (4), viernes (5), sábado (6) o domingo (0), permitir reservar para toda la próxima semana
+            if (dayOfWeek === 4) {
+                // Jueves: +10 días = domingo de la próxima semana
+                endOfWeek.setDate(today.getDate() + 10);
+            } else if (dayOfWeek === 5) {
                 // Viernes: +9 días = domingo de la próxima semana
                 endOfWeek.setDate(today.getDate() + 9);
             } else if (dayOfWeek === 6) {
