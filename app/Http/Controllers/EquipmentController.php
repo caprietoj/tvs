@@ -144,9 +144,12 @@ class EquipmentController extends Controller
             
             // Calcular fecha máxima permitida según el día actual
             $today = now()->startOfDay();
-            $dayOfWeek = $today->dayOfWeek; // 0=domingo, 5=viernes, 6=sábado
+            $dayOfWeek = $today->dayOfWeek; // 0=domingo, 4=jueves, 5=viernes, 6=sábado
             
-            if ($dayOfWeek === 5) {
+            if ($dayOfWeek === 4) {
+                // Jueves: hasta domingo de la próxima semana (+10 días)
+                $maxDate = $today->copy()->addDays(10)->format('Y-m-d');
+            } elseif ($dayOfWeek === 5) {
                 // Viernes: hasta domingo de la próxima semana (+9 días)
                 $maxDate = $today->copy()->addDays(9)->format('Y-m-d');
             } elseif ($dayOfWeek === 6 || $dayOfWeek === 0) {
@@ -154,7 +157,7 @@ class EquipmentController extends Controller
                 $daysUntilNextSunday = $dayOfWeek === 6 ? 8 : 7;
                 $maxDate = $today->copy()->addDays($daysUntilNextSunday)->format('Y-m-d');
             } else {
-                // Lunes a jueves: hasta domingo de esta semana
+                // Lunes a miércoles: hasta domingo de esta semana
                 $daysUntilSunday = 7 - $dayOfWeek;
                 $maxDate = $today->copy()->addDays($daysUntilSunday)->format('Y-m-d');
             }
@@ -176,9 +179,11 @@ class EquipmentController extends Controller
                 'loan_date.required' => 'Debe seleccionar una fecha para el préstamo.',
                 'loan_date.date' => 'La fecha seleccionada no es válida.',
                 'loan_date.after' => 'Los préstamos deben solicitarse con al menos un día de anticipación.',
-                'loan_date.before_or_equal' => $dayOfWeek === 5 
-                    ? 'Los viernes puede reservar solo hasta el domingo de la próxima semana.' 
-                    : 'Solo puede reservar hasta el domingo de ' . ($dayOfWeek === 6 || $dayOfWeek === 0 ? 'la próxima semana' : 'esta semana') . '.',
+                'loan_date.before_or_equal' => $dayOfWeek === 4 
+                    ? 'Los jueves puede reservar solo hasta el domingo de la próxima semana.' 
+                    : ($dayOfWeek === 5 
+                        ? 'Los viernes puede reservar solo hasta el domingo de la próxima semana.'
+                        : 'Solo puede reservar hasta el domingo de ' . ($dayOfWeek === 6 || $dayOfWeek === 0 ? 'la próxima semana' : 'esta semana') . '.'),
                 'start_time.required' => 'Debe seleccionar una hora de inicio.',
                 'start_time.date_format' => 'El formato de la hora de inicio no es válido.',
                 'end_time.required' => 'Debe seleccionar una hora de finalización.',
