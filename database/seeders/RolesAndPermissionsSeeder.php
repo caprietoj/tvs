@@ -320,6 +320,7 @@ class RolesAndPermissionsSeeder extends Seeder
              Permission::firstOrCreate(['name' => 'complete-own-performance-evaluations']),
              //compras sin cotizacion
              Permission::firstOrCreate(['name' => 'purchase-orders.no-quotation']),
+             Permission::firstOrCreate(['name' => 'inventario.view']),
          ]);
 
           // Crear el rol "rrhh"
