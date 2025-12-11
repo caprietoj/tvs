@@ -940,4 +940,52 @@ class SpaceReservationController extends Controller
         return redirect()->route('space-reservations.index')
             ->with('success', 'Reserva aprobada exitosamente.');
     }
+
+    /**
+     * Generar reporte PDF de reservas de espacios
+     */
+    public function generateReport(Request $request)
+    {
+        $query = SpaceReservation::with(['space', 'user']);
+        
+        // Aplicar filtros si existen
+        if ($request->filled('space_id')) {
+            $query->where('space_id', $request->space_id);
+        }
+        
+        if ($request->filled('date_from')) {
+            $query->where('date', '>=', $request->date_from);
+        }
+        
+        if ($request->filled('date_to')) {
+            $query->where('date', '<=', $request->date_to);
+        }
+        
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        // Si no es administrador, solo mostrar sus propias reservas
+        if (!$this->isSpaceAdmin()) {
+            $query->where('user_id', Auth::id());
+        }
+        
+        $reservations = $query->orderBy('date', 'desc')
+            ->orderBy('start_time')
+            ->get();
+        
+        // Estadísticas
+        $stats = [
+            'total' => $reservations->count(),
+            'approved' => $reservations->where('status', 'approved')->count(),
+            'pending' => $reservations->where('status', 'pending')->count(),
+            'rejected' => $reservations->where('status', 'rejected')->count(),
+        ];
+        
+        // Generar Excel
+        return \Excel::download(
+            new \App\Exports\SpaceReservationsExport($reservations, $stats),
+            'reporte-reservas-espacios-' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
 }

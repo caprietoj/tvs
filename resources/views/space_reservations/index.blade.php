@@ -6,7 +6,10 @@
     <div class="d-flex justify-content-between align-items-center">
         <h1>Mis Reservas de Espacios</h1>
         <div>
-            <a href="{{ route('space-reservations.create') }}" class="btn btn-primary">
+            <a href="{{ route('space-reservations.report') }}" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Generar Reporte Excel
+            </a>
+            <a href="{{ route('space-reservations.create') }}" class="btn btn-primary ml-2">
                 <i class="fas fa-plus"></i> Nueva Reserva
             </a>
             <a href="{{ route('space-reservations.calendar') }}" class="btn btn-info ml-2">

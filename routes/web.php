@@ -1041,6 +1041,8 @@ Route::middleware(['auth'])->group(function () {
     // 1. Otras rutas específicas
     Route::get('space-reservations/pending', [App\Http\Controllers\SpaceReservationController::class, 'pending'])
         ->name('space-reservations.pending');
+    Route::get('space-reservations/report', [App\Http\Controllers\SpaceReservationController::class, 'generateReport'])
+        ->name('space-reservations.report');
     Route::get('space-reservations/calendar/{spaceId?}', [App\Http\Controllers\SpaceReservationController::class, 'calendar'])
         ->name('space-reservations.calendar');
     Route::get('space-reservations/check-availability/{spaceId}/{date}', [App\Http\Controllers\SpaceReservationController::class, 'checkAvailability'])
