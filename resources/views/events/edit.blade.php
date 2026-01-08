@@ -82,7 +82,11 @@
                                     'Auditorio Biblioteca' => 'Auditorio Biblioteca',
                                     'Teatro' => 'Teatro',
                                     'Retiro San Juan' => 'Retiro San Juan',
-                                    'Aula Multiple' => 'Aula Multiple'
+                                    'Aula Multiple' => 'Aula Multiple',
+                                    'Sala de Cine' => 'Sala de Cine',
+                                    'Cafeteria' => 'Cafeteria',
+                                    'Restaurante' => 'Restaurante',
+                                    'Oficina Admisiones' => 'Oficina Admisiones'
                                 ];
                             @endphp
                             @foreach($locations as $value => $label)
