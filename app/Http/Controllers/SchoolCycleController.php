@@ -39,13 +39,26 @@ class SchoolCycleController extends Controller
 
         // Si se solicita activar este ciclo, desactivamos todos los demás
         if ($request->has('active')) {
+            // Obtener el ciclo activo actual antes de desactivarlo
+            $previousActiveCycle = SchoolCycle::where('active', true)->first();
+            
             SchoolCycle::where('active', true)->update(['active' => false]);
             $validated['active'] = true;
+            
+            // Crear el nuevo ciclo
+            $schoolCycle = SchoolCycle::create($validated);
+            
+            // Migrar automáticamente los bloqueos del ciclo anterior al nuevo
+            if ($previousActiveCycle) {
+                $migratedCount = $schoolCycle->migrateSpaceBlocksFrom($previousActiveCycle);
+                if ($migratedCount > 0) {
+                    session()->flash('info', "Se migraron $migratedCount bloqueos de espacios del ciclo anterior al nuevo ciclo.");
+                }
+            }
         } else {
             $validated['active'] = false;
+            $schoolCycle = SchoolCycle::create($validated);
         }
-
-        $schoolCycle = SchoolCycle::create($validated);
 
         // Si se solicita generar automáticamente los días del ciclo
         if ($request->has('generate_days')) {
@@ -92,15 +105,29 @@ class SchoolCycleController extends Controller
 
         // Si se solicita activar este ciclo, desactivamos todos los demás
         if ($request->has('active') && !$schoolCycle->active) {
+            // Obtener el ciclo activo actual antes de desactivarlo
+            $previousActiveCycle = SchoolCycle::where('active', true)->first();
+            
             SchoolCycle::where('active', true)->update(['active' => false]);
             $validated['active'] = true;
+            
+            // Actualizar el ciclo
+            $schoolCycle->update($validated);
+            
+            // Migrar automáticamente los bloqueos del ciclo anterior al nuevo
+            if ($previousActiveCycle) {
+                $migratedCount = $schoolCycle->migrateSpaceBlocksFrom($previousActiveCycle);
+                if ($migratedCount > 0) {
+                    session()->flash('info', "Se migraron $migratedCount bloqueos de espacios del ciclo anterior al nuevo ciclo.");
+                }
+            }
         } elseif (!$request->has('active') && $schoolCycle->active) {
             // No permitir desactivar el único ciclo activo
             return redirect()->back()
                 ->with('error', 'Debe haber al menos un ciclo escolar activo.');
+        } else {
+            $schoolCycle->update($validated);
         }
-
-        $schoolCycle->update($validated);
 
         return redirect()->route('school-cycles.index')
             ->with('success', 'Ciclo escolar actualizado exitosamente.');

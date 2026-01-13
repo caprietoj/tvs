@@ -88,4 +88,32 @@ class SchoolCycle extends Model
 
         return $cycleDaysCreated;
     }
+
+    /**
+     * Migra los bloqueos de espacios del ciclo escolar anterior a este ciclo
+     * 
+     * @param SchoolCycle|null $fromCycle Ciclo escolar desde el cual migrar los bloqueos
+     * @return int Número de bloqueos migrados
+     */
+    public function migrateSpaceBlocksFrom(?SchoolCycle $fromCycle = null): int
+    {
+        // Si no se especifica un ciclo de origen, buscar el último ciclo activo que no sea este
+        if (!$fromCycle) {
+            $fromCycle = SchoolCycle::where('active', true)
+                ->where('id', '!=', $this->id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+
+        // Si no hay ciclo de origen, no hay nada que migrar
+        if (!$fromCycle) {
+            return 0;
+        }
+
+        // Actualizar todos los bloqueos del ciclo anterior al nuevo ciclo
+        $migratedCount = SpaceBlock::where('school_cycle_id', $fromCycle->id)
+            ->update(['school_cycle_id' => $this->id]);
+
+        return $migratedCount;
+    }
 }
