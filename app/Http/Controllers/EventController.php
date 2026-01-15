@@ -99,6 +99,7 @@ class EventController extends Controller
                 'service_dates.*' => 'required|date',
                 'location_type' => 'required|in:single,multiple',
                 'location' => 'required_if:location_type,single|nullable|string|max:255',
+                'custom_location' => 'required_if:location,Otro|nullable|string|max:255',
                 'locations' => 'required_if:location_type,multiple|nullable|array',
                 'locations.*' => 'string|max:255',
                 'event_time' => 'required',
@@ -183,6 +184,10 @@ class EventController extends Controller
                     }
                 } else {
                     $eventData['locations'] = null;
+                    // Si se seleccionó "Otro", usar el lugar personalizado
+                    if ($request->input('location') === 'Otro' && $request->filled('custom_location')) {
+                        $eventData['location'] = $request->input('custom_location');
+                    }
                 }
 
                 \Log::info('Intentando crear evento', [

@@ -61,8 +61,8 @@ class EquipmentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|in:laptop,ipad',
-            'section' => 'required|in:bachillerato,preescolar_primaria',
+            'type' => 'required|in:laptop,ipad,imac',
+            'section' => 'required|in:bachillerato,preescolar_primaria,sala_informatica',
             'total_units' => 'required|integer|min:1'
         ]);
 
@@ -164,7 +164,7 @@ class EquipmentController extends Controller
             
             $validated = $request->validate([
                 'equipment_id' => 'required|exists:equipment,id',
-                'section' => 'required',
+                'section' => 'required|in:bachillerato,preescolar_primaria,administrativo,sala_informatica',
                 'grade' => 'required',
                 'loan_date' => 'required|date|after:today|before_or_equal:' . $maxDate,
                 'start_time' => 'required|date_format:H:i',
@@ -546,6 +546,10 @@ class EquipmentController extends Controller
                 // Para preescolar_primaria, mostrar solo iPads de esa sección
                 $equipment = Equipment::where('section', 'preescolar_primaria')
                     ->where('type', 'ipad');
+            } else if ($section === 'sala_informatica') {
+                // Para sala de informática, mostrar equipos tipo IMAC
+                $equipment = Equipment::where('section', 'sala_informatica')
+                    ->where('type', 'imac');
             }
 
             // Get equipment with their active loans

@@ -50,6 +50,7 @@
                                     <option value="bachillerato" {{ old('section') == 'bachillerato' ? 'selected' : '' }}>Bachillerato</option>
                                     <option value="preescolar_primaria" {{ old('section') == 'preescolar_primaria' ? 'selected' : '' }}>Preescolar y Primaria</option>
                                     <option value="administrativo" {{ old('section') == 'administrativo' ? 'selected' : '' }}>Administrativo</option>
+                                    <option value="sala_informatica" {{ old('section') == 'sala_informatica' ? 'selected' : '' }}>Sala de Informatica</option>
                                 </select>
                                 @error('section')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -74,7 +75,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label><i class="fas fa-door-open"></i> Salón</label>
-                                <input type="text" name="grade" class="form-control @error('grade') is-invalid @enderror" required placeholder="Ej: Aula 101, Laboratorio 3" value="{{ old('grade') }}">
+                                <input type="text" name="grade" id="grade-input" class="form-control @error('grade') is-invalid @enderror" required placeholder="Ej: Aula 101, Laboratorio 3" value="{{ old('grade') }}">
                                 @error('grade')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -649,6 +650,91 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('section-select').addEventListener('change', function() {
         const selectedSection = this.value;
         const equipmentSelect = document.getElementById('equipment-select');
+        const gradeInput = document.getElementById('grade-input');
+        const unitsInput = document.getElementById('units-input');
+        
+        // Si se selecciona "Sala de Informatica", autocompletar campos
+        if (selectedSection === 'sala_informatica') {
+            // Autocompletar Salón
+            gradeInput.value = 'sala de informatica';
+            // Autocompletar Cantidad de Equipos
+            unitsInput.value = '22';
+            
+            // Cargar equipos y seleccionar IMAC automáticamente
+            fetch(`/equipment/types/${selectedSection}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(equipment => {
+                    equipmentSelect.innerHTML = '<option value="">Seleccione un equipo</option>';
+                    
+                    let imacOption = null;
+                    equipment.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        
+                        // Personalizar el texto según el tipo de equipo
+                        let equipmentName = '';
+                        if (item.type === 'laptop') {
+                            equipmentName = 'Portátil';
+                        } else if (item.type === 'ipad') {
+                            equipmentName = 'iPad';
+                        } else if (item.type === 'imac') {
+                            equipmentName = 'IMAC';
+                        } else {
+                            equipmentName = item.type.charAt(0).toUpperCase() + item.type.slice(1);
+                        }
+                        
+                        // Personalizar el texto según la disponibilidad
+                        if (item.show_availability) {
+                            option.textContent = `${equipmentName} (${item.available_units} disponibles)`;
+                            option.dataset.available = item.available_units;
+                        } else {
+                            option.textContent = equipmentName;
+                            option.dataset.available = 0;
+                        }
+                        
+                        option.dataset.totalUnits = item.total_units;
+                        option.dataset.type = item.type;
+                        
+                        // Buscar la opción IMAC
+                        if (item.type && item.type.toLowerCase() === 'imac') {
+                            imacOption = option;
+                        }
+                        
+                        equipmentSelect.appendChild(option);
+                    });
+                    
+                    equipmentSelect.disabled = false;
+                    
+                    // Si encontramos IMAC, seleccionarlo automáticamente
+                    if (imacOption) {
+                        equipmentSelect.value = imacOption.value;
+                        // Disparar evento change para actualizar disponibilidad
+                        equipmentSelect.dispatchEvent(new Event('change'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error al cargar los equipos disponibles'
+                    });
+                });
+            return;
+        }
+        
+        // Limpiar campos si se cambia a otra sección
+        if (selectedSection !== 'sala_informatica') {
+            if (gradeInput.value === 'sala de informatica') {
+                gradeInput.value = '';
+            }
+            if (unitsInput.value === '22') {
+                unitsInput.value = '';
+            }
+        }
         
         if (!selectedSection) {
             equipmentSelect.disabled = true;
@@ -656,7 +742,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Realizar petición AJAX
+        // Realizar petición AJAX para otras secciones
         fetch(`/equipment/types/${selectedSection}`)
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
@@ -669,12 +755,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     const option = document.createElement('option');
                     option.value = item.id;
                     
+                    // Personalizar el texto según el tipo de equipo
+                    let equipmentName = '';
+                    if (item.type === 'laptop') {
+                        equipmentName = 'Portátil';
+                    } else if (item.type === 'ipad') {
+                        equipmentName = 'iPad';
+                    } else if (item.type === 'imac') {
+                        equipmentName = 'IMAC';
+                    } else {
+                        equipmentName = item.type.charAt(0).toUpperCase() + item.type.slice(1);
+                    }
+                    
                     // Personalizar el texto según la disponibilidad
                     if (item.show_availability) {
-                        option.textContent = `${item.type === 'laptop' ? 'Portátil' : 'iPad'} (${item.available_units} disponibles)`;
+                        option.textContent = `${equipmentName} (${item.available_units} disponibles)`;
                         option.dataset.available = item.available_units;
                     } else {
-                        option.textContent = item.type === 'laptop' ? 'Portátil' : 'iPad';
+                        option.textContent = equipmentName;
                         option.dataset.available = 0;
                     }
                     

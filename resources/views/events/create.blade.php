@@ -136,7 +136,11 @@
                                     <option value="Cafeteria">Cafeteria</option>
                                     <option value="Restaurante">Restaurante</option>
                                     <option value="Oficina Admisiones">Oficina Admisiones</option>
+                                    <option value="Otro">Otro</option>
                                 </select>
+                                <div id="custom_location_container" style="display: none; margin-top: 10px;">
+                                    <input type="text" name="custom_location" id="custom_location" class="form-control" placeholder="Ingrese el lugar">
+                                </div>
                             </div>
                             <div id="multiple_locations_container" style="display: none;">
                                 <select name="locations[]" id="locations" class="form-control" multiple size="5">
@@ -686,9 +690,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const multipleLocationsContainer = document.getElementById('multiple_locations_container');
     const locationInput = document.getElementById('location');
     const locationsInput = document.getElementById('locations');
+    const customLocationContainer = document.getElementById('custom_location_container');
+    const customLocationInput = document.getElementById('custom_location');
     
     // Botón para agregar más fechas
     const addDateBtn = document.getElementById('add_date');
+    
+    // Control para mostrar/ocultar campo personalizado de lugar
+    locationInput.addEventListener('change', function() {
+        if (this.value === 'Otro') {
+            customLocationContainer.style.display = 'block';
+            customLocationInput.setAttribute('required', '');
+        } else {
+            customLocationContainer.style.display = 'none';
+            customLocationInput.removeAttribute('required');
+            customLocationInput.value = '';
+        }
+    });
     
     // Control de fechas
     singleDateOption.addEventListener('change', function() {
