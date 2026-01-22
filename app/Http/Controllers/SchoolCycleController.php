@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SchoolCycle;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class SchoolCycleController extends Controller
 {
@@ -68,6 +69,11 @@ class SchoolCycleController extends Controller
                 : Carbon::parse($validated['start_date'])->addYear();
 
             $schoolCycle->generateCycleDays($endDate);
+            
+            // Crear reservas automáticas de iPads para cursos 4a y 4b en días 5
+            Artisan::call('equipment:create-automatic-ipad-reservations', [
+                '--school-cycle-id' => $schoolCycle->id
+            ]);
         }
 
         return redirect()->route('school-cycles.index')
@@ -177,6 +183,11 @@ class SchoolCycleController extends Controller
         // Generar los días del ciclo
         $endDate = Carbon::parse($request->input('end_date'));
         $daysGenerated = $schoolCycle->generateCycleDays($endDate);
+        
+        // Crear reservas automáticas de iPads para cursos 4a y 4b en días 5
+        Artisan::call('equipment:create-automatic-ipad-reservations', [
+            '--school-cycle-id' => $schoolCycle->id
+        ]);
 
         return redirect()->route('school-cycles.show', $schoolCycle)
             ->with('success', 'Se generaron ' . count($daysGenerated) . ' días de ciclo exitosamente.');
