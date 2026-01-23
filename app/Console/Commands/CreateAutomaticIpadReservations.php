@@ -4,9 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\CycleDay;
 use App\Models\Equipment;
-use App\Models\EquipmentLoan;
+use App\Models\EquipmentBlock;
 use App\Models\SchoolCycle;
-use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -24,7 +23,7 @@ class CreateAutomaticIpadReservations extends Command
      *
      * @var string
      */
-    protected $description = 'Crea reservas automáticas de 10 iPads para cada curso 4a y 4b (20 total) en todos los días 5 del ciclo escolar de 08:00-09:30';
+    protected $description = 'Crea bloqueos automáticos de 20 iPads para cursos 4a y 4b en todos los días 5 del ciclo escolar de 08:00-09:30';
 
     /**
      * Execute the console command.
@@ -59,16 +58,6 @@ class CreateAutomaticIpadReservations extends Command
         
         $this->info("Equipo encontrado: {$ipadEquipment->total_units} iPads disponibles");
         
-        // Buscar un usuario administrador para crear las reservas
-        $adminUser = User::whereHas('roles', function($query) {
-            $query->where('name', 'admin');
-        })->first();
-        
-        if (!$adminUser) {
-            $this->error('No se encontró un usuario administrador para crear las reservas.');
-            return 1;
-        }
-        
         // Obtener todos los días 5 del ciclo escolar
         $day5Dates = CycleDay::where('school_cycle_id', $schoolCycle->id)
             ->where('cycle_day', 5)
@@ -82,109 +71,75 @@ class CreateAutomaticIpadReservations extends Command
         
         $this->info("Se encontraron {$day5Dates->count()} días de ciclo 5");
         
-        $created = 0;
-        $skipped = 0;
-        $errors = 0;
+        // Crear un solo bloqueo para todos los días 5 del ciclo escolar
+        $result = $this->createEquipmentBlock(
+            $ipadEquipment,
+            $schoolCycle,
+            '08:00',
+            '09:30',
+            20  // 20 iPads bloqueados (10 para 4a + 10 para 4b)
+        );
         
-        foreach ($day5Dates as $cycleDay) {
-            $date = $cycleDay->date->format('Y-m-d');
-            
-            // Crear reserva para curso 4a
-            $result4a = $this->createReservation(
-                $ipadEquipment,
-                $adminUser,
-                $date,
-                '4a',
-                '08:00',
-                '09:30'
-            );
-            
-            if ($result4a === 'created') {
-                $created++;
-            } elseif ($result4a === 'skipped') {
-                $skipped++;
-            } else {
-                $errors++;
-            }
-            
-            // Crear reserva para curso 4b
-            $result4b = $this->createReservation(
-                $ipadEquipment,
-                $adminUser,
-                $date,
-                '4b',
-                '08:00',
-                '09:30'
-            );
-            
-            if ($result4b === 'created') {
-                $created++;
-            } elseif ($result4b === 'skipped') {
-                $skipped++;
-            } else {
-                $errors++;
-            }
+        if ($result === 'created') {
+            $this->info("\n✓ Bloqueo creado exitosamente");
+            $this->info("  - 20 iPads bloqueados en todos los días 5 del ciclo");
+            $this->info("  - Horario: 08:00 - 09:30");
+            $this->info("  - Razón: Cursos 4a y 4b (10 iPads por curso)");
+        } elseif ($result === 'skipped') {
+            $this->warn("\n- Bloqueo omitido: Ya existe un bloqueo para los días 5");
+        } else {
+            $this->error("\n✗ Error al crear el bloqueo");
         }
         
-        $this->info("\n=== Resumen ===");
-        $this->info("Reservas creadas: {$created}");
-        $this->warn("Reservas omitidas (ya existían): {$skipped}");
-        if ($errors > 0) {
-            $this->error("Errores: {$errors}");
-        }
-        
-        Log::info('Reservas automáticas de iPads creadas', [
+        Log::info('Bloqueo automático de iPads para días 5', [
             'school_cycle' => $schoolCycle->name,
-            'created' => $created,
-            'skipped' => $skipped,
-            'errors' => $errors
+            'result' => $result
         ]);
         
         return 0;
     }
     
     /**
-     * Crea una reserva de equipo si no existe
+     * Crea un bloqueo de equipo para todos los días 5 del ciclo escolar
      */
-    private function createReservation($equipment, $user, $date, $grade, $startTime, $endTime)
+    private function createEquipmentBlock($equipment, $schoolCycle, $startTime, $endTime, $blockedUnits)
     {
-        // Verificar si ya existe una reserva para este curso en esta fecha
-        $existingLoan = EquipmentLoan::where('equipment_id', $equipment->id)
-            ->where('loan_date', $date)
-            ->where('grade', $grade)
-            ->where('section', 'preescolar_primaria')
+        // Verificar si ya existe un bloqueo para los días 5
+        $existingBlock = EquipmentBlock::where('equipment_id', $equipment->id)
+            ->where('school_cycle_id', $schoolCycle->id)
+            ->where('cycle_day', 5)
+            ->where('start_time', $startTime)
+            ->where('end_time', $endTime)
             ->first();
         
-        if ($existingLoan) {
-            $this->line("  - Omitida: Ya existe reserva para {$grade} el {$date}");
+        if ($existingBlock) {
             return 'skipped';
         }
         
         try {
-            // Crear la reserva
-            $loan = EquipmentLoan::create([
-                'user_id' => $user->id,
+            // Crear el bloqueo para el día 5 del ciclo
+            $block = EquipmentBlock::create([
                 'equipment_id' => $equipment->id,
-                'section' => 'preescolar_primaria',
-                'subsection' => 'primaria',
-                'grade' => $grade,
-                'teacher_name' => 'Reserva Automática - Cursos 4°',
-                'loan_date' => $date,
+                'school_cycle_id' => $schoolCycle->id,
+                'cycle_day' => 5,  // Día 5 del ciclo escolar
                 'start_time' => $startTime,
                 'end_time' => $endTime,
-                'units_requested' => 10,
-                'status' => 'pending',
-                'auto_return' => true,
-                'period_id' => null
+                'blocked_units' => $blockedUnits,
+                'reason' => 'Cursos 4a y 4b (10 iPads por curso)',
+                'is_weekday_block' => false,  // Es un bloqueo por día de ciclo, no por día de semana
+                'monday' => false,
+                'tuesday' => false,
+                'wednesday' => false,
+                'thursday' => false,
+                'friday' => false,
+                'saturday' => false,
+                'sunday' => false
             ]);
             
-            $this->line("  ✓ Creada: Reserva de 10 iPads para {$grade} el {$date}");
             return 'created';
         } catch (\Exception $e) {
-            $this->error("  ✗ Error al crear reserva para {$grade} el {$date}: " . $e->getMessage());
-            Log::error('Error al crear reserva automática de iPad', [
-                'date' => $date,
-                'grade' => $grade,
+            Log::error('Error al crear bloqueo automático de iPads', [
+                'school_cycle' => $schoolCycle->name,
                 'error' => $e->getMessage()
             ]);
             return 'error';
