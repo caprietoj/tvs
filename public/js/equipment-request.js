@@ -3,7 +3,11 @@
  * Handles equipment request form functionality
  */
 
+console.log('%c EQUIPMENT-REQUEST.JS CARGADO ', 'background: #4CAF50; color: white; font-size: 16px; padding: 10px;');
+
 window.initializeEquipmentRequest = function(elements) {
+    console.log('%c initializeEquipmentRequest INICIADO ', 'background: #2196F3; color: white; font-size: 14px;');
+    
     // Elementos adicionales para los horarios de clase
     const classPeriods = {
         container: document.getElementById('class-periods-container'),
@@ -404,25 +408,8 @@ window.initializeEquipmentRequest = function(elements) {
     // Función para manejar el cambio de equipo
     function handleEquipmentChange() {
         if (elements.equipmentSelect.value && elements.loanDateInput.value) {
+            // Verificar disponibilidad para mostrar el timeline
             checkAvailability();
-            
-            // Mostrar mensaje informativo sobre la disponibilidad por horas
-            Swal.fire({
-                title: 'Disponibilidad por horarios',
-                icon: 'info',
-                html: `
-                    <div class="text-left">
-                        <p>La disponibilidad de equipos varía según el horario del día.</p>
-                        <p>Para encontrar equipos disponibles:</p>
-                        <ul>
-                            <li>Seleccione un horario específico en el formulario</li>
-                            <li>Verifique la línea de tiempo para ver los horarios ya reservados</li>
-                            <li>Busque espacios libres donde pueda realizar su reserva</li>
-                        </ul>
-                    </div>
-                `,
-                confirmButtonText: 'Entendido'
-            });
         }
     }
 
@@ -437,8 +424,14 @@ window.initializeEquipmentRequest = function(elements) {
         
         // RESTRICCIONES DE FECHA ELIMINADAS - Se permite cualquier fecha
 
-        // Mostrar el contenedor de períodos para cualquier sección, incluida administrativo
+        // Mostrar el contenedor de períodos para TODAS las secciones
         classPeriods.container.style.display = 'block';
+        
+        // Habilitar campos de horario manual para sala de informática y bachillerato
+        if (selectedSection === 'sala_informatica' || selectedSection === 'bachillerato') {
+            elements.startTimeInput.disabled = false;
+            elements.endTimeInput.disabled = false;
+        }
 
         // Para la sección administrativa, usamos horarios predefinidos en lugar de cargarlos desde el servidor
         if (selectedSection === 'administrativo') {
@@ -715,13 +708,18 @@ window.initializeEquipmentRequest = function(elements) {
     
     // Función para verificar la disponibilidad de equipos
     function checkAvailability() {
+        console.log('%c checkAvailability LLAMADO ', 'background: #9C27B0; color: white; font-size: 12px;');
+        
         const equipmentId = elements.equipmentSelect.value;
         const loanDate = elements.loanDateInput.value;
         const section = elements.sectionSelect.value;
         const startTime = elements.startTimeInput.value;
         const endTime = elements.endTimeInput.value;
         
+        console.log('Verificando: equipo=' + equipmentId + ' fecha=' + loanDate + ' sección=' + section);
+        
         if (!equipmentId || !loanDate || !section) {
+            console.log('Faltan datos, abortando');
             return;
         }
         
@@ -842,19 +840,21 @@ window.initializeEquipmentRequest = function(elements) {
             `;
         }
         
-        // Actualizar el timeline
-        updateTimelineSlots(data.occupied_slots);
+        // Actualizar el timeline con slots ocupados Y bloqueados
+        updateTimelineSlots(data.occupied_slots, data.blocked_slots);
     }
     
-    // Función para actualizar el timeline con los slots ocupados
-    function updateTimelineSlots(occupiedSlots) {
-        if (!occupiedSlots || occupiedSlots.length === 0) {
-            elements.timelineContainer.classList.add('d-none');
-            return;
-        }
+    // Función para actualizar el timeline con los slots ocupados y bloqueados
+    function updateTimelineSlots(occupiedSlots, blockedSlots) {
+        console.log('%c TIMELINE UPDATE LLAMADO ', 'background: #ff5722; color: white; font-size: 14px; padding: 5px;');
+        console.log('Datos recibidos:', { ocupados: occupiedSlots, bloqueados: blockedSlots });
         
+        // Mostrar siempre el timeline para que el usuario vea la grilla de horario
         elements.timelineContainer.classList.remove('d-none');
         elements.timelineSlots.innerHTML = '';
+        
+        // Log para depuración rápida en producción
+        console.log('Timeline slots -> ocupados:', (occupiedSlots || []).length, 'bloqueados:', (blockedSlots || []).length);
         
         // Convertir las horas a minutos desde 7:00 AM
         function timeToMinutes(timeString) {
@@ -867,27 +867,72 @@ window.initializeEquipmentRequest = function(elements) {
             return (minutes / 600) * 100;
         }
         
-        // Crear slots en el timeline
-        occupiedSlots.forEach((slot, index) => {
-            const startMinutes = timeToMinutes(slot.start);
-            const endMinutes = timeToMinutes(slot.end);
-            const leftPos = minutesToPercent(startMinutes);
-            const width = minutesToPercent(endMinutes - startMinutes);
-            
-            const slotElement = document.createElement('div');
-            slotElement.className = 'timeline-slot';
-            slotElement.style.left = `${leftPos}%`;
-            slotElement.style.width = `${width}%`;
-            slotElement.dataset.start = slot.start;
-            slotElement.dataset.end = slot.end;
-            slotElement.dataset.units = slot.units_taken;
-            slotElement.innerHTML = `${slot.units_taken} u.`;
-            
-            // Tooltip con información
-            slotElement.title = `${slot.start} - ${slot.end} (${slot.units_taken} unidades)`;
-            
-            elements.timelineSlots.appendChild(slotElement);
-        });
+        // Primero crear slots bloqueados (naranja - aparecen primero)
+        if (blockedSlots && blockedSlots.length > 0) {
+            blockedSlots.forEach((slot, index) => {
+                const startMinutes = timeToMinutes(slot.start);
+                const endMinutes = timeToMinutes(slot.end);
+                const leftPos = minutesToPercent(startMinutes);
+                const width = minutesToPercent(endMinutes - startMinutes);
+                
+                const slotElement = document.createElement('div');
+                slotElement.className = 'timeline-slot timeline-blocked';
+                slotElement.style.left = `${leftPos}%`;
+                slotElement.style.width = `${width}%`;
+                slotElement.style.backgroundColor = '#fd7e14'; // Naranja para bloqueos
+                slotElement.style.borderColor = '#fd7e14';
+                slotElement.dataset.start = slot.start;
+                slotElement.dataset.end = slot.end;
+                slotElement.dataset.units = slot.units_blocked;
+                slotElement.dataset.type = 'blocked';
+                slotElement.innerHTML = `${slot.units_blocked} bloq.`;
+                
+                // Tooltip con información
+                slotElement.title = `BLOQUEADO: ${slot.start} - ${slot.end} (${slot.units_blocked} unidades - ${slot.reason})`;
+                
+                elements.timelineSlots.appendChild(slotElement);
+            });
+        }
+        
+        // Luego crear slots ocupados (rojo - reservas)
+        if (occupiedSlots && occupiedSlots.length > 0) {
+            occupiedSlots.forEach((slot, index) => {
+                const startMinutes = timeToMinutes(slot.start);
+                const endMinutes = timeToMinutes(slot.end);
+                const leftPos = minutesToPercent(startMinutes);
+                const width = minutesToPercent(endMinutes - startMinutes);
+                
+                const slotElement = document.createElement('div');
+                slotElement.className = 'timeline-slot timeline-occupied';
+                slotElement.style.left = `${leftPos}%`;
+                slotElement.style.width = `${width}%`;
+                slotElement.style.backgroundColor = '#dc3545'; // Rojo para ocupados
+                slotElement.style.borderColor = '#dc3545';
+                slotElement.dataset.start = slot.start;
+                slotElement.dataset.end = slot.end;
+                slotElement.dataset.units = slot.units_taken;
+                slotElement.dataset.type = 'occupied';
+                slotElement.innerHTML = `${slot.units_taken} u.`;
+                
+                // Tooltip con información
+                slotElement.title = `RESERVADO: ${slot.start} - ${slot.end} (${slot.units_taken} unidades)`;
+                
+                elements.timelineSlots.appendChild(slotElement);
+            });
+        }
+        
+        // Si no hay datos, mantener la grilla visible y mostrar un indicador suave
+        if ((!occupiedSlots || occupiedSlots.length === 0) && (!blockedSlots || blockedSlots.length === 0)) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'text-muted small';
+            placeholder.style.position = 'absolute';
+            placeholder.style.left = '0';
+            placeholder.style.right = '0';
+            placeholder.style.top = '-22px';
+            placeholder.style.textAlign = 'right';
+            placeholder.innerText = 'Sin reservas ni bloqueos registrados';
+            elements.timelineSlots.appendChild(placeholder);
+        }
         
         // Mostrar la selección actual en el timeline
         updateTimelineSelection();
@@ -1095,7 +1140,6 @@ window.initializeEquipmentRequest = function(elements) {
             day: 'numeric' 
         }));
         console.log("====================================");
-        endOfWeek.setDate(today.getDate() + daysUntilEndOfWeek);
         
         console.group("Depuración de fechas");
         console.log("Hoy:", today.toISOString());
@@ -1138,4 +1182,11 @@ window.initializeEquipmentRequest = function(elements) {
             });
         }
     });
+    
+    // Exportar funciones críticas a window para evitar que otros scripts las sobrescriban
+    window.checkAvailability = checkAvailability;
+    window.updateAvailabilityInfo = updateAvailabilityInfo;
+    window.updateTimelineSlots = updateTimelineSlots;
+    
+    console.log('%c Funciones exportadas a window ', 'background: #4CAF50; color: white;');
 };

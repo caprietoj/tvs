@@ -86,7 +86,7 @@ class ClassSchedule extends Model
         ];
         
         // Devolver el horario correspondiente
-        if ($section === 'bachillerato') {
+        if ($section === 'bachillerato' || $section === 'sala_informatica') {
             if ($dayType === 'friday') {
                 return [
                     'periods' => $bachilleratoFriday,

@@ -189,23 +189,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Actualizar el timeline si es necesario
-            if ((data.occupied_slots || data.blocked_slots) && elements.timelineSlots) {
+            // Siempre actualizar el timeline (mostrar la grilla incluso sin reservas)
+            if (elements.timelineSlots) {
                 updateTimelineSlots(data.occupied_slots || [], data.blocked_slots || []);
             }
             
             function updateTimelineSlots(occupiedSlots, blockedSlots) {
-                if ((!occupiedSlots || occupiedSlots.length === 0) && (!blockedSlots || blockedSlots.length === 0)) {
-                    if (elements.timelineContainer) elements.timelineContainer.classList.add('d-none');
-                    return;
-                }
-                
+                // Siempre mostrar el timeline para que el usuario vea la grilla de horarios
                 if (!elements.timelineContainer || !elements.timelineSlots) {
                     return;
                 }
                 
+                // SIEMPRE mostrar el timeline (quitar d-none)
                 elements.timelineContainer.classList.remove('d-none');
                 elements.timelineSlots.innerHTML = '';
+                
+                // Log para depuración
+                console.log('FIXES: Timeline actualizado - bloqueados:', (blockedSlots || []).length, 'ocupados:', (occupiedSlots || []).length);
                 
                 // Convertir las horas a minutos desde 7:00 AM
                 function timeToMinutes(timeString) {

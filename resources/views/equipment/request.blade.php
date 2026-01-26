@@ -943,7 +943,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Script de depuración para verificar disponibilidad -->
 <script src="{{ asset('js/debug-equipment-availability.js') }}"></script>
 <!-- Script de correcciones para disponibilidad -->
-<script src="{{ asset('js/equipment-request-fixes.js') }}"></script></script>
+<script src="{{ asset('js/equipment-request-fixes.js') }}"></script>
 @stop
 
 @section('css')
