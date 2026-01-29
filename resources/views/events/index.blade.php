@@ -188,8 +188,8 @@ document.addEventListener('DOMContentLoaded', function() {
     @if(session('swal'))
         Swal.fire({
             icon: '{{ session("swal.icon") }}',
-            title: '{{ session("swal.title") }}',
-            text: '{{ session("swal.text") }}',
+            title: '{!! session("swal.title") !!}',
+            text: '{!! session("swal.text") !!}',
             showConfirmButton: true,
             timer: 3000
         });

@@ -162,6 +162,8 @@ class EventController extends Controller
                 // Eliminar campos que no existen en la tabla
                 unset($eventData['date_type']);
                 unset($eventData['location_type']);
+                unset($eventData['custom_location']);
+                unset($eventData['_token']);
                 
                 // Procesar fecha única vs múltiple
                 if ($request->input('date_type') === 'multiple') {
@@ -271,7 +273,11 @@ class EventController extends Controller
                 \Log::info('Transacción completada exitosamente');
 
                 return redirect()->route('events.index')
-                    ->with('success', 'Evento creado correctamente.');
+                    ->with('swal', [
+                        'icon' => 'success',
+                        'title' => '¡Evento Creado!',
+                        'text' => 'El evento ' . $event->event_name . ' (' . $event->consecutive . ') ha sido creado correctamente.'
+                    ]);
 
             } catch (\Exception $e) {
                 DB::rollback();
