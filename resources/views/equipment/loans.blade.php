@@ -64,6 +64,7 @@
                     <option value="">Todos los equipos</option>
                     <option value="laptop">Portátiles</option>
                     <option value="ipad">iPads</option>
+                    <option value="imac">iMacs</option>
                 </select>
             </div>
             <div class="col-md-3 mb-2">
@@ -161,8 +162,21 @@
                                     <td>{{ ucfirst(str_replace('_', ' ', $loan->section)) }}</td>
                                     <td>{{ $loan->grade }}</td>
                                     <td>
-                                        <span class="badge badge-{{ $loan->equipment->type === 'laptop' ? 'info' : 'warning' }}">
-                                            {{ $loan->equipment->type === 'laptop' ? 'Portátil' : 'iPad' }}
+                                        @php
+                                            $equipType = $loan->equipment->type;
+                                            $badgeColor = match($equipType) {
+                                                'laptop' => 'info',
+                                                'imac' => 'success',
+                                                default => 'warning'
+                                            };
+                                            $equipName = match($equipType) {
+                                                'laptop' => 'Portátil',
+                                                'imac' => 'iMac',
+                                                default => 'iPad'
+                                            };
+                                        @endphp
+                                        <span class="badge badge-{{ $badgeColor }}">
+                                            {{ $equipName }}
                                         </span>
                                     </td>
                                     <td><span class="badge bg-primary">{{ $loan->units_requested }}</span></td>
@@ -335,6 +349,7 @@
                 <div class="timeline-legend">
                     <span class="badge badge-warning"><i class="fas fa-circle"></i> iPads</span>
                     <span class="badge badge-info"><i class="fas fa-circle"></i> Portátiles</span>
+                    <span class="badge badge-success"><i class="fas fa-circle"></i> iMacs</span>
                     <span class="badge badge-success"><i class="fas fa-circle"></i> Devuelto</span>
                     <span class="badge badge-info"><i class="fas fa-circle"></i> Entregado</span>
                     <span class="badge badge-warning"><i class="fas fa-circle"></i> Pendiente</span>
@@ -1404,8 +1419,8 @@ $(document).ready(function() {
         
         // Crear la línea de tiempo para cada tipo de equipo
         Object.keys(groupedByType).forEach(type => {
-            const typeName = type === 'laptop' ? 'Portátil' : 'iPad';
-            const typeIcon = type === 'laptop' ? 'fas fa-laptop' : 'fas fa-tablet-alt';
+            const typeName = type === 'laptop' ? 'Portátil' : (type === 'imac' ? 'iMac' : 'iPad');
+            const typeIcon = type === 'laptop' ? 'fas fa-laptop' : (type === 'imac' ? 'fas fa-desktop' : 'fas fa-tablet-alt');
             
             // Crear contenedor por tipo
             const typeContainer = $(`<div class="timeline-equipment-type">
@@ -1414,9 +1429,10 @@ $(document).ready(function() {
             
             // Añadir cada préstamo
             groupedByType[type].forEach((loan, index) => {
+                const badgeColor = type === 'laptop' ? 'info' : (type === 'imac' ? 'success' : 'warning');
                 const equipmentRow = $(`<div class="timeline-equipment">
                     <div class="timeline-equipment-name">
-                        <span class="badge badge-${type === 'laptop' ? 'info' : 'warning'} mr-2">${loan.units}</span> ${loan.grade}
+                        <span class="badge badge-${badgeColor} mr-2">${loan.units}</span> ${loan.grade}
                     </div>
                     <div class="timeline-slots" id="timeline-${loan.id}"></div>
                 </div>`);
