@@ -38,22 +38,24 @@
                     <div class="card-body">
                         <div class="alert alert-info">
                             <h5><i class="icon fas fa-info"></i> Instrucciones</h5>
-                            <p>Puede copiar y pegar la información directamente desde Excel u otra fuente sin preocuparse por el formato. El sistema intentará procesarla automáticamente.</p>
+                            <p>Puede copiar y pegar la información directamente desde Excel. El sistema procesará los datos separados por tabulaciones automáticamente.</p>
                             
-                            <p><strong>Formato esperado:</strong> Cada línea debe contener un producto con la siguiente estructura:</p>
-                            <p class="text-success"><code>Nombre del Producto     Cantidad Sugerida    Stock Actual</code></p>
+                            <p><strong>Formato esperado (separado por tabulaciones):</strong> Cada línea debe contener las columnas en el siguiente orden:</p>
+                            <p class="text-success"><code>DESCRIPCION DEL MATERIAL    COLOR    CANTIDAD SUGERIDA    STOCK    SOBRE STOCK    CANTIDAD A COMPRAR    UNIDAD DE MEDIDA O PRESENTACION</code></p>
                             
                             <p><strong>Ejemplos de datos válidos:</strong></p>
-                            <pre><code>Lápices de colores x12    100    85
-Papel Bond Carta        200    150
-Carpetas plásticas     50     30</code></pre>
+                            <pre><code>PAPEL CREPE    ROSADO    0    24    24    0    PLIEGO * UNIDAD
+PAPEL CREPE    VIOLETA    0    17    17    0    PLIEGO * UNIDAD
+CARTULINA IRIS    AZUL    0    20    20    0    PLIEGO * UNIDAD</code></pre>
                             
                             <p class="mb-0"><strong>Notas importantes:</strong></p>
                             <ul>
-                                <li>El nombre del producto puede contener espacios.</li>
-                                <li>Las dos últimas columnas deben ser números (cantidad sugerida y stock).</li>
-                                <li>El sistema procesará automáticamente cualquier separador (espacios múltiples o tabulaciones).</li>
-                                <li>Si un producto ya existe, se actualizarán sus cantidades.</li>
+                                <li>Las columnas de cantidad y stock deben ser números.</li>
+                                <li>El color se guarda en la columna <strong>Color</strong> del inventario.</li>
+                                <li>Si el color es <strong>N/A</strong> se dejará vacío.</li>
+                                <li>La descripción y la unidad de medida se combinan para formar el nombre del producto.</li>
+                                <li>La fila de encabezados se ignora automáticamente.</li>
+                                <li>Si un producto con el mismo nombre y color ya existe, se actualizarán sus cantidades.</li>
                             </ul>
                         </div>
 

@@ -50,7 +50,8 @@
                                     <option value="bachillerato" {{ old('section') == 'bachillerato' ? 'selected' : '' }}>Bachillerato</option>
                                     <option value="preescolar_primaria" {{ old('section') == 'preescolar_primaria' ? 'selected' : '' }}>Preescolar y Primaria</option>
                                     <option value="administrativo" {{ old('section') == 'administrativo' ? 'selected' : '' }}>Administrativo</option>
-                                    <option value="sala_informatica" {{ old('section') == 'sala_informatica' ? 'selected' : '' }}>Sala de Informatica</option>
+                                    <option value="sala_informatica" {{ old('section') == 'sala_informatica' ? 'selected' : '' }}>Sala de Informatica Segundo Piso</option>
+                                    <option value="sala_informatica_primer_piso" {{ old('section') == 'sala_informatica_primer_piso' ? 'selected' : '' }}>Sala de Informatica Primer Piso</option>
                                 </select>
                                 @error('section')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -188,7 +189,19 @@
                 <i class="fas fa-calendar-day"></i> <strong>Tuesday</strong> 
             </div>
         
-                <div class="period-item" data-period-id="period_0" data-start="8:00" data-end="8:45">
+                <div class="period-item" data-period-id="period_0" data-start="7:00" data-end="8:00">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="period-time">
+                            <i class="fas fa-clock mr-1"></i> 7:00 - 8:00
+                        </div>
+                        <div>
+                            <span class="period-label">Clase 0</span>
+                        </div>
+                    </div>
+                    <div class="period-status"></div>
+                </div>
+            
+                <div class="period-item" data-period-id="period_1" data-start="8:00" data-end="8:45">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="period-time">
                             <i class="fas fa-clock mr-1"></i> 8:00 - 8:45
@@ -200,7 +213,7 @@
                     <div class="period-status"></div>
                 </div>
             
-                <div class="period-item" data-period-id="period_1" data-start="8:45" data-end="9:30">
+                <div class="period-item" data-period-id="period_2" data-start="8:45" data-end="9:30">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="period-time">
                             <i class="fas fa-clock mr-1"></i> 8:45 - 9:30
@@ -212,7 +225,7 @@
                     <div class="period-status"></div>
                 </div>
             
-                <div class="period-item" data-period-id="period_2" data-start="10:00" data-end="10:45">
+                <div class="period-item" data-period-id="period_3" data-start="10:00" data-end="10:45">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="period-time">
                             <i class="fas fa-clock mr-1"></i> 10:00 - 10:45
@@ -224,7 +237,7 @@
                     <div class="period-status"></div>
                 </div>
             
-                <div class="period-item" data-period-id="period_3" data-start="10:45" data-end="11:30">
+                <div class="period-item" data-period-id="period_4" data-start="10:45" data-end="11:30">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="period-time">
                             <i class="fas fa-clock mr-1"></i> 10:45 - 11:30
@@ -236,7 +249,7 @@
                     <div class="period-status"></div>
                 </div>
             
-                <div class="period-item" data-period-id="period_4" data-start="11:30" data-end="12:15">
+                <div class="period-item" data-period-id="period_5" data-start="11:30" data-end="12:15">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="period-time">
                             <i class="fas fa-clock mr-1"></i> 11:30 - 12:15
@@ -248,7 +261,7 @@
                     <div class="period-status"></div>
                 </div>
             
-                <div class="period-item" data-period-id="period_5" data-start="13:00" data-end="13:45">
+                <div class="period-item" data-period-id="period_6" data-start="13:00" data-end="13:45">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="period-time">
                             <i class="fas fa-clock mr-1"></i> 13:00 - 13:45
@@ -260,7 +273,7 @@
                     <div class="period-status"></div>
                 </div>
             
-                <div class="period-item" data-period-id="period_6" data-start="13:45" data-end="14:30">
+                <div class="period-item" data-period-id="period_7" data-start="13:45" data-end="14:30">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="period-time">
                             <i class="fas fa-clock mr-1"></i> 13:45 - 14:30
@@ -653,10 +666,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const gradeInput = document.getElementById('grade-input');
         const unitsInput = document.getElementById('units-input');
         
-        // Si se selecciona "Sala de Informatica", autocompletar campos
-        if (selectedSection === 'sala_informatica') {
+        // Si se selecciona una sala de informática, autocompletar campos
+        if (selectedSection === 'sala_informatica' || selectedSection === 'sala_informatica_primer_piso') {
             // Autocompletar Salón
-            gradeInput.value = 'sala de informatica';
+            gradeInput.value = selectedSection === 'sala_informatica_primer_piso'
+                ? 'sala de informatica primer piso'
+                : 'sala de informatica segundo piso';
             // Autocompletar Cantidad de Equipos
             unitsInput.value = '22';
             
@@ -727,8 +742,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Limpiar campos si se cambia a otra sección
-        if (selectedSection !== 'sala_informatica') {
-            if (gradeInput.value === 'sala de informatica') {
+        if (selectedSection !== 'sala_informatica' && selectedSection !== 'sala_informatica_primer_piso') {
+            if (gradeInput.value === 'sala de informatica'
+                || gradeInput.value === 'sala de informatica segundo piso'
+                || gradeInput.value === 'sala de informatica primer piso') {
                 gradeInput.value = '';
             }
             if (unitsInput.value === '22') {

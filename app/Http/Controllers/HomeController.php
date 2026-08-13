@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\Announcement;
-use App\Models\SchoolCycle; // Importar el modelo SchoolCycle
+use App\Models\SchoolCycle;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -27,16 +27,23 @@ class HomeController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Obtener el ciclo escolar activo
         $activeCycle = SchoolCycle::where('active', true)->first();
-        
-        // Obtener el día actual del ciclo si existe un ciclo activo
+
         $currentCycleDay = null;
         if ($activeCycle) {
             $today = Carbon::today()->format('Y-m-d');
             $currentCycleDay = $activeCycle->cycleDays()
                 ->where('date', $today)
                 ->first();
+
+            if (!$currentCycleDay) {
+                $calculatedDay = $activeCycle->calculateCycleDayForDate($today);
+                if ($calculatedDay) {
+                    $currentCycleDay = new \App\Models\CycleDay();
+                    $currentCycleDay->cycle_day = $calculatedDay;
+                    $currentCycleDay->date = Carbon::today();
+                }
+            }
         }
 
         return view('welcome', compact('announcements', 'activeCycle', 'currentCycleDay'));
@@ -53,13 +60,12 @@ class HomeController extends Controller
         $media = Ticket::where('prioridad', 'Media')->count();
         $alta = Ticket::where('prioridad', 'Alta')->count();
 
-        // Obtener los últimos 10 tickets
         $recentTickets = Ticket::latest()->take(10)->get();
 
         return view('dashboard', compact(
-            'totalTickets', 
-            'abiertos', 
-            'enProceso', 
+            'totalTickets',
+            'abiertos',
+            'enProceso',
             'cerrados',
             'baja',
             'media',

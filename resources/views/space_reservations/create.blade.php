@@ -47,13 +47,20 @@
                             </div>
                             
                             <div class="form-group col-md-6">
-                                <label for="date">Fecha <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control @error('date') is-invalid @enderror" id="date" 
-                                    name="date" value="{{ old('date', request('date', now()->format('Y-m-d'))) }}" required>
-                                @error('date')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                <label for="date">Fechas <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control @error('dates') is-invalid @enderror @error('dates.*') is-invalid @enderror" id="date" 
+                                    name="dates_display" placeholder="Seleccione una o más fechas" readonly required>
+                                <input type="hidden" id="dates_hidden" name="dates" value="{{ old('dates') }}">
+                                @error('dates')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
-                                <small id="date_help" class="form-text text-muted"></small>
+                                @error('dates.*')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                                <small id="date_help" class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i> Haga clic en varias fechas para seleccionarlas, o arrastre para seleccionar un rango.
+                                </small>
+                                <div id="selected-dates-badges" class="mt-2"></div>
                             </div>
                         </div>
 
@@ -384,6 +391,8 @@
 @endsection
 
 @section('css')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
 <style>
     /* Estilos para la visualización de horarios */
     .time-schedule-container {
@@ -561,6 +570,8 @@
 @endsection
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const spaceSelect = document.getElementById('space_id');
@@ -602,8 +613,66 @@
         const noSpaceSkills = document.getElementById('no-space-skills');
         const spaceSkillsList = document.getElementById('space-skills-list');
         
-        // Set minimum date to today
-        dateField.min = new Date().toISOString().split('T')[0];
+        // Initialize flatpickr for multi-date selection
+        let selectedDates = [];
+        const flatpickrInstance = flatpickr(dateField, {
+            mode: 'multiple',
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'M j, Y',
+            locale: 'es',
+            minDate: 'today',
+            conjunction: ', ',
+            disable: [
+                function(date) {
+                    // Disable weekends
+                    return (date.getDay() === 0 || date.getDay() === 6);
+                }
+            ],
+            onChange: function(dates, dateStr) {
+                selectedDates = dates.map(d => {
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${day}`;
+                });
+                document.getElementById('dates_hidden').value = selectedDates.join(',');
+                updateDateBadges();
+                // Check availability for first selected date
+                if (selectedDates.length > 0) {
+                    checkAvailability();
+                }
+            }
+        });
+
+        function updateDateBadges() {
+            const container = document.getElementById('selected-dates-badges');
+            container.innerHTML = '';
+            if (selectedDates.length === 0) {
+                container.innerHTML = '<small class="text-muted">No hay fechas seleccionadas</small>';
+                return;
+            }
+            const countBadge = document.createElement('span');
+            countBadge.className = 'badge badge-primary mr-2 mb-1';
+            countBadge.innerHTML = `<i class="fas fa-calendar-check"></i> ${selectedDates.length} fecha(s) seleccionada(s)`;
+            container.appendChild(countBadge);
+            selectedDates.forEach((date, index) => {
+                const badge = document.createElement('span');
+                badge.className = 'badge badge-info mr-1 mb-1';
+                const dateObj = new Date(date + 'T12:00:00');
+                const options = { day: 'numeric', month: 'short' };
+                badge.innerHTML = dateObj.toLocaleDateString('es', options) + ' <i class="fas fa-times ml-1" style="cursor:pointer" data-index="' + index + '"></i>';
+                badge.querySelector('i').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    selectedDates.splice(index, 1);
+                    document.getElementById('dates_hidden').value = selectedDates.join(',');
+                    flatpickrInstance.setDate(selectedDates);
+                    updateDateBadges();
+                });
+                container.appendChild(badge);
+            });
+        }
+        updateDateBadges();
         
         // Función para convertir formato de hora a minutos desde las 07:00
         function timeToMinutes(time) {
@@ -748,7 +817,7 @@
         // Check availability and load space details when space or date changes
         function checkAvailability() {
             const spaceId = spaceSelect.value;
-            const date = dateField.value;
+            const date = selectedDates.length > 0 ? selectedDates[0] : '';
             
             if (!spaceId || !date) {
                 availabilityInfo.classList.add('d-none');
@@ -1478,7 +1547,7 @@
             loadSpaceDetails();
         });
         
-        dateField.addEventListener('change', checkAvailability);
+        // flatpickr onChange handles availability check
         
         // Validate end time is after start time
         function validateTimes() {

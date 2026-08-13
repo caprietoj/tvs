@@ -30,6 +30,10 @@
                             <td>{{ $inventory->producto }}</td>
                         </tr>
                         <tr>
+                            <th>Color</th>
+                            <td>{{ $inventory->color ?? 'N/A' }}</td>
+                        </tr>
+                        <tr>
                             <th>Cantidad Sugerida</th>
                             <td>{{ $inventory->cantidad_sugerida }}</td>
                         </tr>

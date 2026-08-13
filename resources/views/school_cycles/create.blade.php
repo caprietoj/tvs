@@ -32,25 +32,39 @@
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group col-md-6">
+                    <div class="form-group col-md-4">
                         <label for="start_date">Fecha de Inicio <span class="text-danger">*</span></label>
                         <input type="date" class="form-control @error('start_date') is-invalid @enderror" 
                                id="start_date" name="start_date" value="{{ old('start_date') }}" required>
                         @error('start_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <small class="form-text text-muted">Es recomendable iniciar en un lunes.</small>
+                        <small class="form-text text-muted">Primer día lectivo del ciclo escolar.</small>
                     </div>
                     
-                    <div class="form-group col-md-6">
+                    <div class="form-group col-md-4">
                         <label for="cycle_length">Longitud del Ciclo <span class="text-danger">*</span></label>
                         <input type="number" class="form-control @error('cycle_length') is-invalid @enderror" 
-                               id="cycle_length" name="cycle_length" value="{{ old('cycle_length', 7) }}" 
+                               id="cycle_length" name="cycle_length" value="{{ old('cycle_length', 6) }}" 
                                min="1" max="30" required>
                         @error('cycle_length')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <small class="form-text text-muted">Número de días lectivos que componen el ciclo (Ej: 7 para un ciclo semanal).</small>
+                        <small class="form-text text-muted">Número de días del ciclo rotativo. Para The Victoria School es 6.</small>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label for="start_cycle_day">Día de Ciclo Inicial <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control @error('start_cycle_day') is-invalid @enderror" 
+                               id="start_cycle_day" name="start_cycle_day" value="{{ old('start_cycle_day', 1) }}" 
+                               min="1" max="30" required>
+                        @error('start_cycle_day')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="form-text text-muted">
+                            Número del ciclo (1–6) asignado al primer día lectivo. Normalmente 1.
+                            Ajustar si el ciclo continúa la secuencia del período anterior.
+                        </small>
                     </div>
                 </div>
 

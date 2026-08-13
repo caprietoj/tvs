@@ -392,6 +392,24 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Enfermería -->
+                        <div class="service-section">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="nursing_required" name="nursing_required" value="1">
+                                <label class="custom-control-label" for="nursing_required">Enfermería</label>
+                            </div>
+                            <div id="nursing_fields" class="service-fields" style="display: none;">
+                                <div class="form-group">
+                                    <label>Requerimiento</label>
+                                    <input type="text" name="nursing_requirement" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label>Observaciones</label>
+                                    <textarea name="nursing_observations" class="form-control"></textarea>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -851,7 +869,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'maintenance_required',
         'systems_required',
         'aldimark_required',
-        'communications_required'
+        'communications_required',
+        'nursing_required'
     ];
 
     services.forEach(setupServiceToggle);

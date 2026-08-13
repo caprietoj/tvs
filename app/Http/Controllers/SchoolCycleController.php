@@ -36,6 +36,7 @@ class SchoolCycleController extends Controller
             'description' => 'nullable|string',
             'start_date' => 'required|date',
             'cycle_length' => 'required|integer|min:1|max:30',
+            'start_cycle_day' => 'required|integer|min:1|max:30',
         ]);
 
         // Si se solicita activar este ciclo, desactivamos todos los demás

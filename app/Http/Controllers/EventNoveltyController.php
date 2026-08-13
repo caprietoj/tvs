@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\EventNoveltyCreated;
 use App\Models\Event;
 use App\Models\EventNovelty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class EventNoveltyController extends Controller
 {
@@ -43,7 +46,28 @@ class EventNoveltyController extends Controller
 
         $novelty->save();
 
-        return redirect()->route('event.novelties.index', $event)
+        // Cargar la relación user para usarla en el correo sin consulta adicional
+        $novelty->load('user');
+
+        // Notificar por correo a todas las áreas vinculadas al evento
+        $recipients = $event->getNotificationEmails();
+        foreach ($recipients as $email) {
+            try {
+                Mail::to($email)->send(new EventNoveltyCreated($event, $novelty));
+            } catch (\Throwable $e) {
+                Log::error("Error enviando notificación de novedad al correo {$email}: {$e->getMessage()}");
+            }
+        }
+
+        // Si la petición vino desde la página del evento (show), volver allí.
+        // De lo contrario, ir al listado de novedades.
+        $redirectRoute = request()->headers->get('referer')
+            && str_contains(request()->headers->get('referer'), "/events/{$event->id}")
+            && !str_contains(request()->headers->get('referer'), '/novelties')
+            ? route('events.show', $event)
+            : route('event.novelties.index', $event);
+
+        return redirect($redirectRoute)
             ->with('swal', [
                 'icon' => 'success',
                 'title' => '¡Novedad registrada!',
@@ -113,7 +137,13 @@ class EventNoveltyController extends Controller
 
         $novelty->delete();
 
-        return redirect()->route('event.novelties.index', $event)
+        $redirectRoute = request()->headers->get('referer')
+            && str_contains(request()->headers->get('referer'), "/events/{$event->id}")
+            && !str_contains(request()->headers->get('referer'), '/novelties')
+            ? route('events.show', $event)
+            : route('event.novelties.index', $event);
+
+        return redirect($redirectRoute)
             ->with('swal', [
                 'icon' => 'success',
                 'title' => '¡Eliminado!',

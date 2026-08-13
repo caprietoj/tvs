@@ -40,6 +40,15 @@
                                 @enderror
                             </div>
                             <div class="form-group">
+                                <label for="color">Color</label>
+                                <input type="text" class="form-control @error('color') is-invalid @enderror" id="color" name="color" value="{{ old('color') }}" placeholder="Ingrese el color del producto (opcional)">
+                                @error('color')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                            <div class="form-group">
                                 <label for="cantidad_sugerida">Cantidad Sugerida</label>
                                 <input type="number" class="form-control @error('cantidad_sugerida') is-invalid @enderror" id="cantidad_sugerida" name="cantidad_sugerida" value="{{ old('cantidad_sugerida') }}" min="0" placeholder="Ingrese la cantidad mínima sugerida" required>
                                 <small class="form-text text-muted">Esta es la cantidad mínima que se debería tener en inventario</small>

@@ -39,6 +39,7 @@ class ClassSchedule extends Model
         
         // Horario para primaria
         $primariaRegular = [
+            ['7:00', '8:00'],
             ['8:00', '8:45'],
             ['8:45', '9:30'],
             ['10:00', '10:45'],
@@ -86,7 +87,7 @@ class ClassSchedule extends Model
         ];
         
         // Devolver el horario correspondiente
-        if ($section === 'bachillerato' || $section === 'sala_informatica') {
+        if ($section === 'bachillerato' || $section === 'sala_informatica' || $section === 'sala_informatica_primer_piso') {
             if ($dayType === 'friday') {
                 return [
                     'periods' => $bachilleratoFriday,

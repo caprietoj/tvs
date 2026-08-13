@@ -135,10 +135,10 @@
                                         <div><i class="fas fa-users"></i> Pasajeros: {{ $event->passengers }}</div>
                                     @endif
                                     @if($event->departure_time)
-                                        <div><i class="fas fa-clock"></i> Salida: {{ $event->departure_time }}</div>
+                                        <div><i class="fas fa-clock"></i> Salida: {{ $event->service_date->format('d/m/Y') }} {{ $event->departure_time->format('H:i') }}</div>
                                     @endif
                                     @if($event->return_time)
-                                        <div><i class="fas fa-clock"></i> Regreso: {{ $event->return_time }}</div>
+                                        <div><i class="fas fa-clock"></i> Regreso: {{ $event->service_date->format('d/m/Y') }} {{ $event->return_time->format('H:i') }}</div>
                                     @endif
                                 </div>
                             </td>
@@ -367,6 +367,38 @@
                             </td>
                         </tr>
                         @endif
+
+                        @if($event->nursing_required)
+                        <tr>
+                            <td class="border-left border-primary">
+                                <strong><i class="fas fa-briefcase-medical"></i> Enfermería</strong>
+                                <div class="text-muted small">
+                                    @if($event->nursing_requirement)
+                                        <div><i class="fas fa-clipboard-list"></i> Requerimiento: {{ $event->nursing_requirement }}</div>
+                                    @endif
+                                    @if($event->nursing_observations)
+                                        <div><i class="fas fa-comment"></i> Observaciones: {{ $event->nursing_observations }}</div>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="text-right align-middle">
+                                @if($event->nursing_confirmed)
+                                    <span class="badge badge-success badge-lg">Confirmado</span>
+                                @else
+                                    @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'confirmacion-enfermeria']) || auth()->user()->can('confirm.events'))
+                                        <button type="button" class="btn btn-warning btn-sm confirm-service" 
+                                                data-service="nursing" 
+                                                data-event="{{ $event->id }}"
+                                                data-url="{{ route('events.confirm-service', ['event' => $event->id]) }}">
+                                            <i class="fas fa-check"></i> Confirmar
+                                        </button>
+                                    @else
+                                        <span class="badge badge-warning badge-lg">Pendiente</span>
+                                    @endif
+                                @endif
+                            </td>
+                        </tr>
+                        @endif
                     </table>
                 </div>
             </div>
@@ -381,7 +413,7 @@
                 @php
                     $totalServices = 0;
                     $confirmedServices = 0;
-                    $services = ['metro_junior', 'aldimark', 'maintenance', 'general_services', 'systems', 'purchases', 'communications'];
+                    $services = ['metro_junior', 'aldimark', 'maintenance', 'general_services', 'systems', 'purchases', 'communications', 'nursing'];
                     
                     foreach ($services as $service) {
                         $requiredField = $service . '_required';
@@ -410,6 +442,111 @@
                         {{ $progress }}% Completado
                     </span>
                 </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     NOVEDADES DEL EVENTO
+     ============================================================ -->
+<div class="row mt-2">
+    <div class="col-12">
+        <div class="card card-primary card-outline">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-clipboard-list"></i> Novedades
+                    @if($event->novelties->count() > 0)
+                        <span class="badge badge-primary ml-1">{{ $event->novelties->count() }}</span>
+                    @endif
+                </h3>
+                <button class="btn btn-sm btn-primary" type="button"
+                        data-toggle="collapse" data-target="#collapseNovedad"
+                        aria-expanded="{{ $errors->any() ? 'true' : 'false' }}">
+                    <i class="fas fa-plus"></i> Agregar novedad
+                </button>
+            </div>
+
+            {{-- Formulario inline colapsable --}}
+            <div class="collapse {{ $errors->any() ? 'show' : '' }}" id="collapseNovedad">
+                <div class="card-body border-bottom bg-light">
+                    <form action="{{ route('event.novelties.store', $event) }}" method="POST">
+                        @csrf
+                        <div class="form-group mb-2">
+                            <label for="observation" class="font-weight-bold">
+                                <i class="fas fa-pen"></i> Nueva novedad / observación
+                            </label>
+                            <textarea name="observation" id="observation" rows="3"
+                                class="form-control @error('observation') is-invalid @enderror"
+                                placeholder="Ingrese la novedad u observación…" maxlength="1000">{{ old('observation') }}</textarea>
+                            @error('observation')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="form-text text-muted">Máximo 1000 caracteres.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-save"></i> Guardar novedad
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm"
+                                data-toggle="collapse" data-target="#collapseNovedad">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card-body">
+                @if($event->novelties->count() > 0)
+                    <div class="timeline">
+                        @foreach($event->novelties->sortByDesc('created_at') as $novelty)
+                        <div class="time-label">
+                            <span class="bg-primary">{{ $novelty->created_at->format('d/m/Y') }}</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-clipboard-list bg-info"></i>
+                            <div class="timeline-item">
+                                <span class="time">
+                                    <i class="fas fa-clock"></i> {{ $novelty->created_at->format('h:i A') }}
+                                </span>
+                                <h3 class="timeline-header">
+                                    <strong>{{ $novelty->user->name }}</strong> registró una novedad
+                                    @if($novelty->created_at->ne($novelty->updated_at))
+                                        <small class="text-muted ml-1">(editada {{ $novelty->updated_at->format('d/m/Y H:i') }})</small>
+                                    @endif
+                                </h3>
+                                <div class="timeline-body">
+                                    {{ $novelty->observation }}
+                                </div>
+                                @if(auth()->user()->hasAnyRole(['admin', 'Admin', 'modificacion-novedad']))
+                                <div class="timeline-footer">
+                                    <a href="{{ route('event.novelties.edit', ['event' => $event, 'novelty' => $novelty]) }}"
+                                       class="btn btn-warning btn-xs">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                    <form action="{{ route('event.novelties.destroy', ['event' => $event, 'novelty' => $novelty]) }}"
+                                          method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-xs delete-novelty-show">
+                                            <i class="fas fa-trash"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
+                        <div>
+                            <i class="fas fa-clock bg-gray"></i>
+                        </div>
+                    </div>
+                @else
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        No hay novedades registradas para este evento.
+                        Use el botón <strong>Agregar novedad</strong> para registrar la primera.
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -522,6 +659,93 @@
             margin-left: 0;
         }
     }
+
+    /* ── Novedades timeline ─────────────────────────── */
+    .timeline {
+        position: relative;
+        margin: 0 0 20px 0;
+        padding: 0;
+        list-style: none;
+    }
+    .timeline:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: #ddd;
+        left: 31px;
+        margin: 0;
+        border-radius: 2px;
+    }
+    .timeline > div {
+        position: relative;
+        margin-right: 10px;
+        margin-bottom: 12px;
+    }
+    .time-label {
+        background-color: #fff;
+        display: inline-block;
+        margin-left: 45px;
+        padding: 4px 6px;
+        font-weight: 600;
+    }
+    .time-label > span {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        color: #fff;
+    }
+    .timeline > div > i {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+        line-height: 30px;
+        position: absolute;
+        color: #fff;
+        background-color: #6c757d;
+        border-radius: 50%;
+        text-align: center;
+        left: 18px;
+        top: 0;
+    }
+    .timeline-item {
+        box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+        border-radius: 4px;
+        background-color: #fff;
+        color: #495057;
+        margin-left: 60px;
+        margin-right: 10px;
+        margin-bottom: 8px;
+        padding: 0;
+        position: relative;
+    }
+    .timeline-header {
+        border-radius: 4px 4px 0 0;
+        padding: 8px 12px;
+        border-bottom: 1px solid rgba(0,0,0,.1);
+        font-size: 0.9rem;
+    }
+    .timeline-body {
+        padding: 10px 12px;
+        white-space: pre-wrap;
+    }
+    .timeline-footer {
+        padding: 6px 12px;
+        background-color: rgba(0,0,0,.04);
+        border-radius: 0 0 4px 4px;
+    }
+    .timeline-item .time {
+        color: #999;
+        float: right;
+        padding: 8px 12px 0 0;
+        font-size: 0.8rem;
+    }
+    .btn-xs {
+        padding: 2px 8px;
+        font-size: 0.78rem;
+        border-radius: 4px;
+    }
 </style>
 @stop
 
@@ -589,7 +813,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     @endif
 
-    // SweetAlert para confirmar eliminación
+    // SweetAlert para confirmar eliminación del evento
     $(document).on('click', '.delete-event', function(e) {
         e.preventDefault();
         let form = $(this).closest('form');
@@ -609,6 +833,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // SweetAlert para confirmar eliminación de una novedad
+    $(document).on('click', '.delete-novelty-show', function(e) {
+        e.preventDefault();
+        let form = $(this).closest('form');
+
+        Swal.fire({
+            title: '¿Eliminar novedad?',
+            text: "Esta acción no se puede deshacer.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+
+    // Mantener abierto el collapse si hay errores de validación
+    @if($errors->any())
+        $('#collapseNovedad').addClass('show');
+    @endif
 });
 </script>
 @stop

@@ -262,3 +262,6 @@ update_rrhh_permissions.php
 # Documentation files generated during development
 # NOTE: Main documentation files are tracked (README.md, CONTRIBUTING.md, docs/, etc.)
 *.txt
+
+# Backup/docs mirror folder (contiene cookies.txt con token de sesión)
+tvs-main/

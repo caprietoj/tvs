@@ -34,6 +34,9 @@ window.initializeEquipmentRequest = function(elements) {
     // Variable para almacenar todos los períodos cargados
     let allPeriods = [];
 
+    // Firma del último pop-up de bloqueo mostrado (para no repetirlo)
+    let lastBlockedPopupSignature = null;
+
     // Validar que todos los elementos existen
     if (!elements || !classPeriods.container || !classPeriods.list || !classPeriods.noPeriodsMessage) {
         console.error('Missing required elements for class periods');
@@ -428,7 +431,7 @@ window.initializeEquipmentRequest = function(elements) {
         classPeriods.container.style.display = 'block';
         
         // Habilitar campos de horario manual para sala de informática y bachillerato
-        if (selectedSection === 'sala_informatica' || selectedSection === 'bachillerato') {
+        if (selectedSection === 'sala_informatica' || selectedSection === 'sala_informatica_primer_piso' || selectedSection === 'bachillerato') {
             elements.startTimeInput.disabled = false;
             elements.endTimeInput.disabled = false;
         }
@@ -840,6 +843,50 @@ window.initializeEquipmentRequest = function(elements) {
             `;
         }
         
+        // Notificar con un pop-up si el horario seleccionado coincide con un bloqueo
+        if (hasSelectedTime && data.blocked_slots && data.blocked_slots.length > 0) {
+            const overlappingBlocks = data.blocked_slots.filter(slot =>
+                (startTime < slot.end) && (slot.start < endTime)
+            );
+
+            if (overlappingBlocks.length > 0) {
+                const signature = `${startTime}-${endTime}|` + overlappingBlocks
+                    .map(s => `${s.start}-${s.end}-${s.reason}-${s.cycle_day || ''}`)
+                    .join(';');
+
+                // Mostrar el pop-up solo una vez por cada combinación distinta
+                if (signature !== lastBlockedPopupSignature) {
+                    lastBlockedPopupSignature = signature;
+
+                    const detalles = overlappingBlocks.map(slot => `
+                        <li class="mb-2">
+                            <i class="fas fa-user-tie text-primary"></i>
+                            <strong>${slot.reason || 'Bloqueo programado'}</strong><br>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> ${slot.start} - ${slot.end}
+                                ${slot.cycle_day ? `&nbsp;·&nbsp;<i class="fas fa-calendar-day"></i> Día de ciclo ${slot.cycle_day}` : ''}
+                            </small>
+                        </li>
+                    `).join('');
+
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Sala bloqueada en este horario',
+                        html: `<div class="text-left">
+                                <p>La sala está bloqueada en el horario seleccionado por:</p>
+                                <ul class="list-unstyled mb-2">${detalles}</ul>
+                                <p class="mb-0 small text-muted">Seleccione otro horario para continuar con su solicitud.</p>
+                            </div>`,
+                        confirmButtonText: 'Entendido'
+                    });
+                }
+            } else {
+                lastBlockedPopupSignature = null;
+            }
+        } else {
+            lastBlockedPopupSignature = null;
+        }
+
         // Actualizar el timeline con slots ocupados Y bloqueados
         updateTimelineSlots(data.occupied_slots, data.blocked_slots);
     }

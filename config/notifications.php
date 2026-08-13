@@ -3,9 +3,7 @@
 return [
     'events' => [
         'emails' => [
-            'jefesistemas@tvs.edu.co',
-            'supervsergenerales@tvs.edu.co',
-            // Agrega aquí otros correos que deban recibir notificaciones de eventos
+            // Agrega aquí correos que deban recibir notificaciones de TODOS los eventos
         ],
         // Correos específicos para cada departamento/servicio
         'systems_emails' => [
@@ -15,11 +13,10 @@ return [
             'compras@tvs.edu.co',
         ],
         'maintenance_emails' => [
-            'mantenimiento@tvs.edu.co',
+            'sgeneralesymto@tvs.edu.co',
         ],
         'general_services_emails' => [
-            'serviciosgenerales@tvs.edu.co',
-            'supervsergenerales@tvs.edu.co',
+            'sgeneralesymto@tvs.edu.co',
         ],
         'communications_emails' => [
             'comunicaciones@tvs.edu.co',
@@ -29,6 +26,10 @@ return [
         ],
         'metro_junior_emails' => [
             'transporte@tvs.edu.co',
-        ]
+        ],
+        'nursing_emails' => [
+            'enfermeria@tvs.edu.co',
+            'auxiliarenfermeria@tvs.edu.co',
+        ],
     ]
 ];

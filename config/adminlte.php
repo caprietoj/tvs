@@ -419,7 +419,7 @@ return [
                 [
                     'text' => '📅 Eventos Institucionales',
                     'icon' => 'fas fa-calendar-alt',
-                    'active' => ['events', 'events/create', 'events/calendar'],
+                    'active' => ['events', 'events/*', 'event/*'],
                     'submenu' => [
                         [
                             'text' => 'Nuevo Evento',
@@ -758,6 +758,13 @@ return [
                             'icon' => 'fas fa-building',
                             'can' => 'institucional-access',
                             'active' => ['institucional/documents*'],
+                        ],
+                        [
+                            'text' => '🛡️ SST',
+                            'url'  => 'sst/documents',
+                            'icon' => 'fas fa-hard-hat',
+                            'can' => 'documents-sst',
+                            'active' => ['sst/documents*'],
                         ],
                     ],
                 ],

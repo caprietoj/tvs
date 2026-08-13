@@ -176,6 +176,7 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Producto</th>
+                                    <th>Color</th>
                                     <th>Cantidad Sugerida</th>
                                     <th>Stock</th>
                                     <th>Sobre Stock</th>
@@ -189,6 +190,7 @@
                                 <tr class="{{ $item->stock < $item->cantidad_sugerida ? 'text-danger' : '' }}">
                                     <td>{{ $item->id }}</td>
                                     <td>{{ $item->producto }}</td>
+                                    <td>{{ $item->color ?? 'N/A' }}</td>
                                     <td>{{ $item->cantidad_sugerida }}</td>
                                     <td>{{ $item->stock }}</td>
                                     <td>{{ $item->sobre_stock }}</td>
@@ -248,13 +250,14 @@
                 },
                 "columns": [
                     { "width": "5%" },
-                    { "width": "25%" },
-                    { "width": "12%" },
+                    { "width": "20%" },
                     { "width": "10%" },
                     { "width": "10%" },
-                    { "width": "12%" },
-                    { "width": "15%" },
-                    { "width": "11%" }
+                    { "width": "8%" },
+                    { "width": "8%" },
+                    { "width": "10%" },
+                    { "width": "13%" },
+                    { "width": "16%" }
                 ]
             });
 

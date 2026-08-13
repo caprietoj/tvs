@@ -85,15 +85,18 @@ class InventoryController extends Controller
     {
         $request->validate([
             'producto' => 'required|string|max:255',
+            'color' => 'nullable|string|max:255',
             'cantidad_sugerida' => 'required|integer|min:0',
             'stock' => 'required|integer|min:0',
         ]);
 
         $item = InventoryItem::create([
             'producto' => $request->producto,
+            'color' => $request->color,
             'cantidad_sugerida' => $request->cantidad_sugerida,
             'stock' => $request->stock,
-            'user_id' => Auth::id()
+            'user_id' => Auth::id(),
+            'is_active' => true,
         ]);
 
         // Verificar si se debe enviar alerta
@@ -120,6 +123,7 @@ class InventoryController extends Controller
     {
         $request->validate([
             'producto' => 'required|string|max:255',
+            'color' => 'nullable|string|max:255',
             'cantidad_sugerida' => 'required|integer|min:0',
             'stock' => 'required|integer|min:0',
         ]);
@@ -128,6 +132,7 @@ class InventoryController extends Controller
         
         $inventory->update([
             'producto' => $request->producto,
+            'color' => $request->color,
             'cantidad_sugerida' => $request->cantidad_sugerida,
             'stock' => $request->stock,
             'user_id' => Auth::id()
@@ -182,40 +187,71 @@ class InventoryController extends Controller
 
             foreach ($rows as $index => $row) {
                 try {
-                    if (empty(trim($row))) continue;
-                    
-                    // Mejoramos la detección de datos separando por cualquier cantidad de espacios o tabulaciones
-                    $data = preg_split('/[\t\s]+/', trim($row));
-                    
-                    // Filtrar elementos vacíos
-                    $data = array_values(array_filter($data, function($val) {
-                        return trim($val) !== '';
-                    }));
-                    
-                    // Verificar que tenga todos los campos necesarios
-                    if (count($data) < 3) {
-                        $errors[] = "Fila " . ($index + 1) . ": Formato incorrecto. Se encontraron " . count($data) . " elementos. Formato requerido: PRODUCTO, CANTIDAD_SUGERIDA, STOCK";
-                        continue;
-                    }
+                    $line = trim($row);
+                    if ($line === '') continue;
 
-                    // Extraer el nombre del producto (que puede tener varios elementos si contiene espacios)
-                    $productName = '';
-                    for ($i = 0; $i < count($data) - 2; $i++) {
-                        $productName .= $data[$i] . ' ';
+                    $color = null;
+
+                    // Si la línea contiene tabulaciones, se asume el formato Excel:
+                    // DESCRIPCION | COLOR | CANTIDAD_SUGERIDA | STOCK | SOBRE_STOCK | CANTIDAD_A_COMPRAR | UNIDAD
+                    if (strpos($line, "\t") !== false) {
+                        $data = preg_split('/\t+/', $line);
+                        $data = array_values(array_filter($data, function($val) {
+                            return trim($val) !== '';
+                        }));
+
+                        if (count($data) < 4) {
+                            $errors[] = "Fila " . ($index + 1) . ": Formato incorrecto. Se encontraron " . count($data) . " columnas. Formato requerido: DESCRIPCION, COLOR, CANTIDAD_SUGERIDA, STOCK, ... , UNIDAD";
+                            continue;
+                        }
+
+                        // Omitir filas de encabezado (no numéricas en las columnas de cantidad/stock)
+                        $cantRaw = str_replace([',', '.'], '', $data[2]);
+                        $stockRaw = str_replace([',', '.'], '', $data[3]);
+                        if (!is_numeric($cantRaw) || !is_numeric($stockRaw)) {
+                            continue;
+                        }
+
+                        $descripcion = preg_replace('/\s+/', ' ', trim($data[0]));
+                        $colorRaw = trim($data[1]);
+                        $cantidadSugerida = intval($cantRaw);
+                        $stock = intval($stockRaw);
+                        $unidad = isset($data[6]) ? preg_replace('/\s+/', ' ', trim($data[6])) : '';
+
+                        $productName = trim($descripcion . ($unidad !== '' ? ' ' . $unidad : ''));
+                        $color = (empty($colorRaw) || strtoupper($colorRaw) === 'N/A') ? null : $colorRaw;
+                    } else {
+                        // Formato anterior: PRODUCTO CANTIDAD_SUGERIDA STOCK (separado por espacios o tabulaciones)
+                        $data = preg_split('/[\t\s]+/', $line);
+                        $data = array_values(array_filter($data, function($val) {
+                            return trim($val) !== '';
+                        }));
+
+                        if (count($data) < 3) {
+                            $errors[] = "Fila " . ($index + 1) . ": Formato incorrecto. Se encontraron " . count($data) . " elementos. Formato requerido: PRODUCTO, CANTIDAD_SUGERIDA, STOCK";
+                            continue;
+                        }
+
+                        $productName = '';
+                        for ($i = 0; $i < count($data) - 2; $i++) {
+                            $productName .= $data[$i] . ' ';
+                        }
+                        $productName = trim($productName);
+
+                        // Los últimos dos elementos son siempre cantidades
+                        $cantidadSugerida = intval(str_replace(['.', ','], '', $data[count($data) - 2]));
+                        $stock = intval(str_replace(['.', ','], '', $data[count($data) - 1]));
                     }
-                    $productName = trim($productName);
-                    
-                    // Los últimos dos elementos son siempre cantidades
-                    $cantidadSugerida = intval(str_replace(['.',','], '', $data[count($data) - 2]));
-                    $stock = intval(str_replace(['.',','], '', $data[count($data) - 1]));
 
                     // Validar los datos
                     $validator = Validator::make([
                         'producto' => $productName,
+                        'color' => $color,
                         'cantidad_sugerida' => $cantidadSugerida,
                         'stock' => $stock,
                     ], [
                         'producto' => 'required|string|max:255',
+                        'color' => 'nullable|string|max:255',
                         'cantidad_sugerida' => 'required|integer|min:0',
                         'stock' => 'required|integer|min:0',
                     ]);
@@ -225,13 +261,14 @@ class InventoryController extends Controller
                         continue;
                     }
 
-                    // Crear o actualizar el ítem
-                    $item = InventoryItem::updateOrCreate(
-                        ['producto' => $productName],
+                    // Crear o actualizar el ítem (producto + color como identificador único)
+                    $item = InventoryItem::withoutGlobalScope('active')->updateOrCreate(
+                        ['producto' => $productName, 'color' => $color],
                         [
                             'cantidad_sugerida' => $cantidadSugerida,
                             'stock' => $stock,
                             'user_id' => Auth::id(),
+                            'is_active' => true,
                         ]
                     );
                     

@@ -35,14 +35,14 @@
         // Lista de productos válidos para validación con información de stock
         const validProducts = [
             @foreach($inventoryItems as $item)
-                "{{ addslashes($item->producto) }}",
+                "{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }}",
             @endforeach
         ];
         
         // Mapa de productos con su stock para referencia rápida
         const productStockMap = {
             @foreach($inventoryItems as $item)
-                "{{ addslashes($item->producto) }}": {{ $item->stock }},
+                "{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }}": {{ $item->stock }},
             @endforeach
         };
         
@@ -128,7 +128,7 @@
             const datalistId = `products-datalist-${index}`;
             const options = [
                 @foreach($inventoryItems as $item)
-                    '<option value="{{ addslashes($item->producto) }}" data-stock="{{ $item->stock }}">{{ addslashes($item->producto) }} (Stock: {{ $item->stock }})</option>',
+                    '<option value="{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }}" data-stock="{{ $item->stock }}">{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }} (Stock: {{ $item->stock }})</option>',
                 @endforeach
             ].join('');
             
@@ -481,13 +481,13 @@
                                                            placeholder="Escriba para buscar producto..."
                                                            autocomplete="off"
                                                            data-stock-info="">
-                                                    <datalist id="products-datalist-{{ $index }}">
-                                                        @foreach($inventoryItems as $inventoryItem)
-                                                            <option value="{{ $inventoryItem->producto }}" data-stock="{{ $inventoryItem->stock }}">
-                                                                {{ $inventoryItem->producto }} (Stock: {{ $inventoryItem->stock }})
-                                                            </option>
-                                                        @endforeach
-                                                    </datalist>
+                                                     <datalist id="products-datalist-{{ $index }}">
+                                                         @foreach($inventoryItems as $inventoryItem)
+                                                             <option value="{{ $inventoryItem->producto }}{{ $inventoryItem->color ? ' (' . $inventoryItem->color . ')' : '' }}" data-stock="{{ $inventoryItem->stock }}">
+                                                                 {{ $inventoryItem->producto }}{{ $inventoryItem->color ? ' (' . $inventoryItem->color . ')' : '' }} (Stock: {{ $inventoryItem->stock }})
+                                                             </option>
+                                                         @endforeach
+                                                     </datalist>
                                                     <input type="hidden" name="material_items[{{ $index }}][item]" value="{{ $item['item'] }}">
                                                     <small class="text-muted stock-info" style="display: none;">
                                                         <i class="fas fa-box mr-1"></i>Stock disponible: <span class="stock-amount">0</span>
@@ -517,13 +517,13 @@
                                                        placeholder="Escriba para buscar producto..."
                                                        autocomplete="off"
                                                        data-stock-info="">
-                                                <datalist id="products-datalist-0">
-                                                    @foreach($inventoryItems as $item)
-                                                        <option value="{{ $item->producto }}" data-stock="{{ $item->stock }}">
-                                                            {{ $item->producto }} (Stock: {{ $item->stock }})
-                                                        </option>
-                                                    @endforeach
-                                                </datalist>
+                                                 <datalist id="products-datalist-0">
+                                                     @foreach($inventoryItems as $item)
+                                                         <option value="{{ $item->producto }}{{ $item->color ? ' (' . $item->color . ')' : '' }}" data-stock="{{ $item->stock }}">
+                                                             {{ $item->producto }}{{ $item->color ? ' (' . $item->color . ')' : '' }} (Stock: {{ $item->stock }})
+                                                         </option>
+                                                     @endforeach
+                                                 </datalist>
                                                 <input type="hidden" name="material_items[0][item]" value="1">
                                                 <small class="text-muted stock-info" style="display: none;">
                                                     <i class="fas fa-box mr-1"></i>Stock disponible: <span class="stock-amount">0</span>

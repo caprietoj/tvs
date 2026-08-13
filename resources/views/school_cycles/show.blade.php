@@ -63,6 +63,14 @@
                                 <dt class="col-sm-4">Longitud de ciclo:</dt>
                                 <dd class="col-sm-8">{{ $schoolCycle->cycle_length }} días</dd>
                                 
+                                <dt class="col-sm-4">Día de ciclo inicial:</dt>
+                                <dd class="col-sm-8">
+                                    Día {{ $schoolCycle->start_cycle_day ?? 1 }}
+                                    @if(($schoolCycle->start_cycle_day ?? 1) > 1)
+                                        <small class="text-muted">(continúa secuencia del período anterior)</small>
+                                    @endif
+                                </dd>
+                                
                                 <dt class="col-sm-4">Estado:</dt>
                                 <dd class="col-sm-8">
                                     @if($schoolCycle->active)

@@ -39,6 +39,10 @@ Su evento ha sido creado y las notificaciones han sido enviadas a las áreas cor
 **Comunicaciones:** Solicitado  
 @endif
 
+@if($event->nursing_required)
+**Enfermería:** Solicitado  
+@endif
+
 @component('mail::button', ['url' => route('events.index')])
 Ver Todos los Eventos
 @endcomponent

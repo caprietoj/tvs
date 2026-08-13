@@ -46,13 +46,15 @@ class Event extends Model
         'systems_required' => 'boolean',
         'purchases_required' => 'boolean',
         'communications_required' => 'boolean',
+        'nursing_required' => 'boolean',
         'metro_junior_confirmed' => 'boolean',
         'aldimark_confirmed' => 'boolean',
         'maintenance_confirmed' => 'boolean',
         'general_services_confirmed' => 'boolean',
         'systems_confirmed' => 'boolean',
         'purchases_confirmed' => 'boolean',
-        'communications_confirmed' => 'boolean'
+        'communications_confirmed' => 'boolean',
+        'nursing_confirmed' => 'boolean',
     ];
 
     public function getStatusColor()
@@ -67,7 +69,8 @@ class Event extends Model
             'general_services',
             'systems',
             'purchases',
-            'communications'
+            'communications',
+            'nursing',
         ];
 
         foreach ($services as $service) {
@@ -110,7 +113,8 @@ class Event extends Model
             'general_services',
             'communications',
             'aldimark',
-            'metro_junior'
+            'metro_junior',
+            'nursing',
         ];
         
         foreach ($services as $service) {
@@ -125,6 +129,36 @@ class Event extends Model
         return array_unique($emails);
     }
     
+    /**
+     * Devuelve la lista única de correos que deben recibir notificaciones
+     * de este evento: correos generales + correos de cada servicio requerido.
+     *
+     * @return array<string>
+     */
+    public function getNotificationEmails(): array
+    {
+        $emails = config('notifications.events.emails', []);
+
+        $services = [
+            'systems',
+            'metro_junior',
+            'aldimark',
+            'maintenance',
+            'general_services',
+            'communications',
+            'nursing',
+        ];
+
+        foreach ($services as $service) {
+            if ($this->{$service . '_required'}) {
+                $serviceEmails = config("notifications.events.{$service}_emails", []);
+                $emails = array_merge($emails, $serviceEmails);
+            }
+        }
+
+        return array_unique(array_filter($emails));
+    }
+
     /**
      * Obtiene las novedades asociadas al evento.
      */

@@ -62,9 +62,14 @@ class EquipmentController extends Controller
     {
         $validated = $request->validate([
             'type' => 'required|in:laptop,ipad,imac',
-            'section' => 'required|in:bachillerato,preescolar_primaria,sala_informatica',
+            'section' => 'required|in:bachillerato,preescolar_primaria,sala_informatica,sala_informatica_primer_piso',
             'total_units' => 'required|integer|min:1'
         ]);
+
+        $existing = Equipment::where("type", $validated["type"])->where("section", $validated["section"])->first();
+        if ($existing) {
+            return redirect()->route("equipment.index")->with("error", "Ya existe un registro de este tipo de equipo para esta sección.");
+        }
 
         $equipment = Equipment::create([
             'type' => $validated['type'],
@@ -100,6 +105,9 @@ class EquipmentController extends Controller
         // Formatear para la respuesta JSON
         $formattedPeriods = [];
         
+        // Para preescolar y primaria los períodos se numeran desde la Clase 0
+        $labelStart = $section === 'preescolar_primaria' ? 0 : 1;
+        
         // Agregar períodos de clase
         foreach ($schedule['periods'] as $index => $period) {
             $formattedPeriods[] = [
@@ -107,7 +115,7 @@ class EquipmentController extends Controller
                 'type' => 'class',
                 'start' => $period[0],
                 'end' => $period[1],
-                'label' => 'Clase ' . ($index + 1)
+                'label' => 'Clase ' . ($index + $labelStart)
             ];
         }
         
@@ -164,7 +172,7 @@ class EquipmentController extends Controller
             
             $validated = $request->validate([
                 'equipment_id' => 'required|exists:equipment,id',
-                'section' => 'required|in:bachillerato,preescolar_primaria,administrativo,sala_informatica',
+                'section' => 'required|in:bachillerato,preescolar_primaria,administrativo,sala_informatica,sala_informatica_primer_piso',
                 'grade' => 'required',
                 'loan_date' => 'required|date|after:today|before_or_equal:' . $maxDate,
                 'start_time' => 'required|date_format:H:i',
@@ -546,9 +554,9 @@ class EquipmentController extends Controller
                 // Para preescolar_primaria, mostrar solo iPads de esa sección
                 $equipment = Equipment::where('section', 'preescolar_primaria')
                     ->where('type', 'ipad');
-            } else if ($section === 'sala_informatica') {
-                // Para sala de informática, mostrar equipos tipo IMAC
-                $equipment = Equipment::where('section', 'sala_informatica')
+            } else if ($section === 'sala_informatica' || $section === 'sala_informatica_primer_piso') {
+                // Para las salas de informática, mostrar equipos tipo IMAC
+                $equipment = Equipment::where('section', $section)
                     ->where('type', 'imac');
             }
 
@@ -1459,7 +1467,8 @@ class EquipmentController extends Controller
                     'end' => Carbon::parse($block->end_time)->format('H:i'),
                     'units_blocked' => $block->blocked_units,
                     'reason' => $block->reason ?? 'Bloqueo día de ciclo ' . $cycleDay->cycle_day,
-                    'type' => 'cycle_day'
+                    'type' => 'cycle_day',
+                    'cycle_day' => $cycleDay->cycle_day
                 ];
             }
         }

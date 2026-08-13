@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Mail;
@@ -12,14 +13,39 @@ class InventoryItem extends Model
 
     protected $fillable = [
         'producto',
+        'color',
         'cantidad_sugerida',
         'stock',
         'alerta_enviada',
         'ultima_alerta',
-        'user_id'
+        'user_id',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     protected $appends = ['sobre_stock', 'cantidad_comprar'];
+
+    /**
+     * Global scope: solo mostrar productos activos por defecto.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('active', function (Builder $query) {
+            $query->where('is_active', true);
+        });
+    }
+
+    /**
+     * Scope para obtener todos los productos (incluyendo inactivos).
+     * Útil para reportes históricos y trazabilidad de movimientos.
+     */
+    public function scopeAllItems(Builder $query): Builder
+    {
+        return $query->withoutGlobalScope('active');
+    }
 
     // Relación con el usuario que creó/modificó el registro
     public function user()

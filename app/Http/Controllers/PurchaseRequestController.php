@@ -880,7 +880,7 @@ class PurchaseRequestController extends Controller
     if (isset($request->material_items) && is_array($request->material_items)) {
         foreach ($request->material_items as $item) {
             if (!empty($item['article']) && !empty($item['quantity'])) {
-                $inventoryItem = \App\Models\InventoryItem::where('producto', $item['article'])->first();
+                $inventoryItem = $this->findInventoryItem($item['article']);
                 
                 if (!$inventoryItem) {
                     // Producto no existe en inventario
@@ -987,7 +987,7 @@ class PurchaseRequestController extends Controller
         if (isset($request->material_items) && is_array($request->material_items)) {
             foreach ($request->material_items as $item) {
                 if (!empty($item['article']) && !empty($item['quantity'])) {
-                    $inventoryItem = \App\Models\InventoryItem::where('producto', $item['article'])->first();
+                    $inventoryItem = $this->findInventoryItem($item['article']);
                     
                     if ($inventoryItem) {
                         // Actualizar el stock del producto
@@ -1082,6 +1082,28 @@ class PurchaseRequestController extends Controller
             ->with('error', 'Error al procesar la solicitud: ' . $e->getMessage())
             ->withInput();
     }
+    }
+
+    /**
+     * Buscar un ítem de inventario a partir del artículo seleccionado en la solicitud.
+     * El artículo puede venir en formato "PRODUCTO" o "PRODUCTO (COLOR)".
+     */
+    private function findInventoryItem($article)
+    {
+        $producto = $article;
+        $color = null;
+
+        if (is_string($article) && preg_match('/^(.*)\s\(([^)]+)\)$/', $article, $matches)) {
+            $producto = trim($matches[1]);
+            $color = trim($matches[2]);
+        }
+
+        $query = \App\Models\InventoryItem::where('producto', $producto);
+        if (!empty($color)) {
+            $query->where('color', $color);
+        }
+
+        return $query->first();
     }
 
     /**

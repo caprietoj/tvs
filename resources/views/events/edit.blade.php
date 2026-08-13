@@ -191,6 +191,13 @@
                                     'time' => 'Hora',
                                     'details' => 'Detalles'
                                 ]
+                            ],
+                            'nursing' => [
+                                'label' => 'Enfermería',
+                                'fields' => [
+                                    'requirement'  => 'Requerimiento',
+                                    'observations' => 'Observaciones',
+                                ]
                             ]
                         ];
                     @endphp
@@ -401,7 +408,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'systems_required',
         'aldimark_required',
         'purchases_required',
-        'communications_required'
+        'communications_required',
+        'nursing_required'
     ];
 
     services.forEach(setupServiceToggle);

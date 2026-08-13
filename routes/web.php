@@ -387,6 +387,24 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('tickets/dashboard', [HomeController::class, 'dashboard'])->name('tickets.dashboard');
+
+    // SST Document Management
+    Route::group(["prefix" => "sst", "middleware" => ["auth"]], function () {
+        Route::get("/documents", [App\Http\Controllers\SstDocumentController::class, "index"])
+            ->name("sst.documents.index");
+        Route::get("/documents/create", [App\Http\Controllers\SstDocumentController::class, "create"])
+            ->name("sst.documents.create");
+        Route::post("/documents", [App\Http\Controllers\SstDocumentController::class, "store"])
+            ->name("sst.documents.store");
+        Route::get("/documents/{document}/preview", [App\Http\Controllers\SstDocumentController::class, "preview"])
+            ->name("sst.documents.preview");
+        Route::get("/documents/{document}/structure", [App\Http\Controllers\SstDocumentController::class, "showStructure"])
+            ->name("sst.documents.structure");
+        Route::get("/documents/{document}/download", [App\Http\Controllers\SstDocumentController::class, "download"])
+            ->name("sst.documents.download");
+        Route::delete("/documents/{document}", [App\Http\Controllers\SstDocumentController::class, "destroy"])
+            ->name("sst.documents.destroy");
+    });
     Route::resource('tickets', TicketController::class);
 
     // ruta para documentos y documentos request

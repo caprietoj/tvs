@@ -144,6 +144,11 @@ class EventController extends Controller
                 'communications_required' => 'boolean',
                 'communications_coverage' => 'required_if:communications_required,1|nullable|string',
                 'communications_observations' => 'nullable|string',
+
+                // Enfermería
+                'nursing_required' => 'boolean',
+                'nursing_requirement' => 'required_if:nursing_required,1|nullable|string',
+                'nursing_observations' => 'nullable|string',
             ]);
             
             \Log::info('Validación de datos exitosa', ['validated_data' => $validated]);
@@ -235,7 +240,8 @@ class EventController extends Controller
                         'general_services',
                         'communications',
                         'aldimark',
-                        'metro_junior'
+                        'metro_junior',
+                        'nursing',
                     ];
                     
                     foreach ($services as $service) {
@@ -315,6 +321,7 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
+        $event->load(['novelties.user']);
         return view('events.show', compact('event'));
     }
 
@@ -428,7 +435,8 @@ class EventController extends Controller
                 'general_services',
                 'communications',
                 'aldimark',
-                'metro_junior'
+                'metro_junior',
+                'nursing',
             ];
             
             $serviceConfirmed = false;
@@ -552,7 +560,7 @@ class EventController extends Controller
         // Estadísticas generales
         $totalEvents = Event::count();
         $pendingEvents = Event::where(function($query) {
-            $services = ['metro_junior', 'aldimark', 'maintenance', 'general_services', 'systems', 'purchases', 'communications'];
+            $services = ['metro_junior', 'aldimark', 'maintenance', 'general_services', 'systems', 'purchases', 'communications', 'nursing'];
             foreach ($services as $service) {
                 $query->orWhere(function($q) use ($service) {
                     $q->where($service . '_required', true)
@@ -562,7 +570,7 @@ class EventController extends Controller
         })->count();
 
         $confirmedEvents = Event::where(function($query) {
-            $services = ['metro_junior', 'aldimark', 'maintenance', 'general_services', 'systems', 'purchases', 'communications'];
+            $services = ['metro_junior', 'aldimark', 'maintenance', 'general_services', 'systems', 'purchases', 'communications', 'nursing'];
             $query->where(function($q) use ($services) {
                 foreach ($services as $service) {
                     $q->where(function($subq) use ($service) {
@@ -586,7 +594,8 @@ class EventController extends Controller
             'general_services' => 'Servicios Generales',
             'systems' => 'Sistemas',
             'purchases' => 'Compras',
-            'communications' => 'Comunicaciones'
+            'communications' => 'Comunicaciones',
+            'nursing' => 'Enfermería',
         ];
 
         // Eventos por servicio (Total)

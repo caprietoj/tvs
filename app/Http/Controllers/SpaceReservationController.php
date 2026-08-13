@@ -82,88 +82,115 @@ class SpaceReservationController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        // Parsear las fechas del campo comma-separated
+        $datesRaw = $request->input('dates', '');
+        $datesArray = array_filter(array_map('trim', explode(',', $datesRaw)));
+        
+        if (empty($datesArray)) {
+            return redirect()->back()->withInput()->with('error', 'Debe seleccionar al menos una fecha.');
+        }
+        
+        $request->validate([
             'space_id' => 'required|exists:spaces,id',
-            'date' => 'required|date|after_or_equal:today',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'purpose' => 'required|string|max:255',
             'selected_electronic_resources' => 'nullable|string',
         ]);
         
-        // Verificar si se puede realizar la reserva en esa fecha
-        $canReserve = SpaceReservation::canReserveOnDate($validated['space_id'], $validated['date']);
-        if (!$canReserve[0]) {
-            return redirect()->back()->withInput()->with('error', 'No se puede reservar en esta fecha: ' . $canReserve[1]);
-        }
-        
-        // Obtener el espacio
-        $space = Space::findOrFail($validated['space_id']);
-        
-        // Verificar conflictos de horario
-        if (SpaceReservation::hasTimeConflict(
-            $validated['space_id'],
-            $validated['date'],
-            $validated['start_time'],
-            $validated['end_time']
-        )) {
-            // Obtener detalles del conflicto para mostrar un mensaje más específico
-            $conflictDetails = SpaceReservation::getConflictDetails(
-                $validated['space_id'],
-                $validated['date'],
-                $validated['start_time'],
-                $validated['end_time']
-            );
+        // Validar cada fecha
+        $errors = [];
+        foreach ($datesArray as $date) {
+            if (!strtotime($date) || Carbon::parse($date)->lt(Carbon::today())) {
+                $errors[] = "La fecha {$date} no es válida o es anterior a hoy.";
+                continue;
+            }
             
-            return redirect()->back()->withInput()->with('error', $conflictDetails);
-        }
-        
-        // Añadir el usuario que crea la reserva y establecer el estado como pendiente
-        $validated['user_id'] = Auth::id();
-        $validated['status'] = 'pending';
-        
-        // Procesar el campo requires_librarian (asegurarse de que sea booleano)
-        $validated['requires_librarian'] = $request->has('requires_librarian') ? true : false;
-        
-        // Crear la reserva
-        $reservation = SpaceReservation::create($validated);
-        
-        // Procesar implementos seleccionados si existen
-        if ($request->has('items')) {
-            $space = Space::findOrFail($validated['space_id']);
-            foreach ($request->items as $itemId => $itemData) {
-                if (isset($itemData['selected']) && $itemData['selected']) {
-                    $spaceItem = $space->items()->find($itemId);
-                    if ($spaceItem && $spaceItem->available) {
-                        $quantity = isset($itemData['quantity']) ? min($itemData['quantity'], $spaceItem->quantity) : 1;
-                        
-                        // Registrar el implemento en la reserva
-                        $reservation->items()->create([
-                            'space_item_id' => $itemId,
-                            'quantity' => $quantity,
-                            'status' => 'pending' // El estado del implemento sigue el de la reserva
-                        ]);
-                    }
-                }
+            $canReserve = SpaceReservation::canReserveOnDate($request->space_id, $date);
+            if (!$canReserve[0]) {
+                $errors[] = "Fecha {$date}: " . $canReserve[1];
+                continue;
+            }
+            
+            if (SpaceReservation::hasTimeConflict($request->space_id, $date, $request->start_time, $request->end_time)) {
+                $conflictDetails = SpaceReservation::getConflictDetails($request->space_id, $date, $request->start_time, $request->end_time);
+                $errors[] = "Fecha {$date}: " . $conflictDetails;
             }
         }
         
-        // Cargar las relaciones necesarias para el correo
-        $reservation->load(['user', 'space', 'items.item']);
-        
-        // Enviar notificación por correo electrónico
-        try {
-            $recipients = ['asistentegeneral@tvs.edu.co', 'library@tvs.edu.co'];
-            $emailTestService = new \App\Services\EmailTestModeService();
-            $interceptedRecipients = $emailTestService->interceptEmails($recipients, 'Biblioteca');
-            Mail::to($interceptedRecipients)->send(new SpaceReservationNotification($reservation));
-        } catch (\Exception $e) {
-            // Log del error pero no interrumpir el flujo de la reserva
-            \Log::error('Error enviando correo de notificación de reserva: ' . $e->getMessage());
+        if (!empty($errors)) {
+            return redirect()->back()->withInput()->with('error', implode("\n", $errors));
         }
         
+        // Obtener el espacio
+        $space = Space::findOrFail($request->space_id);
+        
+        // Crear una reserva por cada fecha seleccionada
+        $createdReservations = [];
+        foreach ($datesArray as $date) {
+            $validated = [
+                'space_id' => $request->space_id,
+                'date' => $date,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+                'purpose' => $request->purpose,
+                'selected_electronic_resources' => $request->selected_electronic_resources,
+            ];
+        
+        // Añadir el usuario que crea la reserva y establecer el estado como pendiente
+            $validated['user_id'] = Auth::id();
+            $validated['status'] = 'pending';
+            
+            // Procesar el campo requires_librarian (asegurarse de que sea booleano)
+            $validated['requires_librarian'] = $request->has('requires_librarian') ? true : false;
+            
+            // Crear la reserva
+            $reservation = SpaceReservation::create($validated);
+            
+            // Procesar implementos seleccionados si existen
+            if ($request->has('items')) {
+                foreach ($request->items as $itemId => $itemData) {
+                    if (isset($itemData['selected']) && $itemData['selected']) {
+                        $spaceItem = $space->items()->find($itemId);
+                        if ($spaceItem && $spaceItem->available) {
+                            $quantity = isset($itemData['quantity']) ? min($itemData['quantity'], $spaceItem->quantity) : 1;
+                            
+                            // Registrar el implemento en la reserva
+                            $reservation->items()->create([
+                                'space_item_id' => $itemId,
+                                'quantity' => $quantity,
+                                'status' => 'pending'
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            // Cargar las relaciones necesarias para el correo
+            $reservation->load(['user', 'space', 'items.item']);
+            
+            // Enviar notificación por correo electrónico
+            try {
+                // Enviar a library y al usuario que creó la reserva
+                $userEmail = Auth::user()->email;
+                $recipients = array_unique(array_filter(['library@tvs.edu.co', $userEmail]));
+                $emailTestService = new \App\Services\EmailTestModeService();
+                $interceptedRecipients = $emailTestService->interceptEmails($recipients);
+                Mail::to($interceptedRecipients)->send(new SpaceReservationNotification($reservation));
+            } catch (\Exception $e) {
+                \Log::error('Error enviando correo de notificación de reserva: ' . $e->getMessage());
+            }
+            
+            $createdReservations[] = $reservation;
+        } // end foreach dates
+        
+        $count = count($createdReservations);
+        $message = $count === 1 
+            ? 'Reserva creada exitosamente. Estado: Pendiente de aprobación.'
+            : "{$count} reservas creadas exitosamente para las fechas seleccionadas. Estado: Pendiente de aprobación.";
+        
         return redirect()->route('space-reservations.index')
-            ->with('success', 'Reserva creada exitosamente. Estado: Pendiente de aprobación.');
+            ->with('success', $message);
     }
 
     /**

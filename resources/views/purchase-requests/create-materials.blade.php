@@ -200,8 +200,8 @@
                                                    data-stock-info="">
                                             <datalist id="products-datalist-0">
                                                 @foreach($inventoryItems as $item)
-                                                    <option value="{{ $item->producto }}" data-stock="{{ $item->stock }}">
-                                                        {{ $item->producto }} (Stock: {{ $item->stock }})
+                                                    <option value="{{ $item->producto }}{{ $item->color ? ' (' . $item->color . ')' : '' }}" data-stock="{{ $item->stock }}">
+                                                        {{ $item->producto }}{{ $item->color ? ' (' . $item->color . ')' : '' }} (Stock: {{ $item->stock }})
                                                     </option>
                                                 @endforeach
                                             </datalist>
@@ -427,14 +427,14 @@
         // Lista de productos válidos para validación con información de stock
         const validProducts = [
             @foreach($inventoryItems as $item)
-                "{{ addslashes($item->producto) }}",
+                "{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }}",
             @endforeach
         ];
         
         // Mapa de productos con su stock para referencia rápida
         const productStockMap = {
             @foreach($inventoryItems as $item)
-                "{{ addslashes($item->producto) }}": {{ $item->stock }},
+                "{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }}": {{ $item->stock }},
             @endforeach
         };
         
@@ -574,7 +574,7 @@
             const datalistId = `products-datalist-${index}`;
             const options = [
                 @foreach($inventoryItems as $item)
-                    '<option value="{{ addslashes($item->producto) }}" data-stock="{{ $item->stock }}">{{ addslashes($item->producto) }} (Stock: {{ $item->stock }})</option>',
+                    '<option value="{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }}" data-stock="{{ $item->stock }}">{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }} (Stock: {{ $item->stock }})</option>',
                 @endforeach
             ].join('');
             
