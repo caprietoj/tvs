@@ -15,6 +15,9 @@ class SalidaPedagogica extends Model
     // Variable estática para almacenar cambios temporalmente durante la actualización
     protected static $pendingChanges = [];
 
+    // Flag para evitar logging duplicado cuando el controller crea entrada manual
+    protected static $skipUpdatedHistory = false;
+
     protected $fillable = [
         'consecutivo',
         'fecha_solicitud',
@@ -216,6 +219,11 @@ class SalidaPedagogica extends Model
 
         // Registrar los cambios después de actualizar
         static::updated(function ($salida) {
+            // Si el controller va a crear una entrada manual, skip este logging
+            if (static::$skipUpdatedHistory) {
+                return;
+            }
+
             if (isset(static::$pendingChanges[$salida->id]) && !empty(static::$pendingChanges[$salida->id])) {
                 SalidaPedagogicaHistory::logAction(
                     $salida,
@@ -243,6 +251,30 @@ class SalidaPedagogica extends Model
         static::retrieved(function ($salida) {
             $salida->updateEstadoAutomatico();
         });
+    }
+
+    /**
+     * Obtener color según el estado para mostrar en calendario
+     */
+    public static function skipUpdatedHistory($skip = true)
+    {
+        static::$skipUpdatedHistory = $skip;
+    }
+
+    /**
+     * Obtener los cambios pendientes de la última actualización
+     */
+    public static function getPendingChanges($salidaId)
+    {
+        return static::$pendingChanges[$salidaId] ?? null;
+    }
+
+    /**
+     * Limpiar los cambios pendientes
+     */
+    public static function clearPendingChanges($salidaId)
+    {
+        unset(static::$pendingChanges[$salidaId]);
     }
 
     /**

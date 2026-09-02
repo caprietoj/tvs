@@ -123,7 +123,7 @@
                         <div id="metro_junior_fields" class="service-fields" style="display: none;">
                             <div class="form-group">
                                 <label>Ruta</label>
-                                <input type="text" name="route" class="form-control" value="{{ $event->route }}">
+                                <textarea name="route" class="form-control" rows="4">{{ old('route', $event->route) }}</textarea>
                             </div>
                             <div class="form-group">
                                 <label>Cantidad de pasajeros</label>
@@ -138,6 +138,10 @@
                                 <label>Hora de regreso</label>
                                 <input type="time" name="return_time" class="form-control"
                                        value="{{ $event->return_time ? $event->return_time->format('H:i') : '' }}">
+                            </div>
+                            <div class="form-group">
+                                <label>Observaciones</label>
+                                <textarea name="metro_junior_observations" class="form-control">{{ $event->metro_junior_observations }}</textarea>
                             </div>
                         </div>
                     </div>

@@ -90,6 +90,14 @@
             
             <div class="col-lg-4 col-md-5 text-right">
                 <div class="action-buttons">
+                    @if(auth()->user()->email === 'jefesistemas@tvs.edu.co')
+                    <a href="{{ route('salidas.informe', $salida) }}" target="_blank" class="btn btn-lg shadow-lg mb-2" 
+                       style="background: rgba(255,255,255,0.9); color: #233e6c; border: none; border-radius: 12px; padding: 12px 24px; font-weight: 600; transition: all 0.3s ease; backdrop-filter: blur(10px);"
+                       onmouseover="this.style.background='rgba(255,255,255,1)'; this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,0.9)'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-file-pdf mr-2"></i>Descargar Informe
+                    </a>
+                    @endif
                     @if(!auth()->user()->hasRole('profesor'))
                     <a href="{{ route('salidas.edit', $salida) }}" class="btn btn-edit btn-lg mr-2 shadow-lg mb-2" 
                        style="background: rgba(255,255,255,0.9); color: #233e6c; border: none; border-radius: 12px; padding: 12px 24px; font-weight: 600; transition: all 0.3s ease; backdrop-filter: blur(10px);"

@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SalidaPedagogicaNotification;
 use App\Http\Controllers\ConfigurationController;
+use PDF;
 
 class SalidaPedagogicaController extends Controller
 {
@@ -362,15 +363,23 @@ class SalidaPedagogicaController extends Controller
                 'observaciones_comunicaciones' => $request->observaciones_comunicaciones
             ];
 
+            // Prevenir logging duplicado del evento model updated
+            SalidaPedagogica::skipUpdatedHistory(true);
             $salida->update($data);
 
-            // Registrar específicamente que fue una edición manual por parte del usuario
+            // Obtener los cambios capturados por el evento updating
+            $changes = SalidaPedagogica::getPendingChanges($salida->id);
+            SalidaPedagogica::clearPendingChanges($salida->id);
+
+            // Registrar la edición manual con los cambios reales
             \App\Models\SalidaPedagogicaHistory::logAction(
                 $salida,
                 'manual_edit',
-                null,
+                $changes,
                 'Edición manual realizada por ' . auth()->user()->name
             );
+
+            SalidaPedagogica::skipUpdatedHistory(false);
 
             // Update or create calendar event
             // TODO: Configurar correctamente la relación con eventos de calendario
@@ -398,6 +407,7 @@ class SalidaPedagogicaController extends Controller
                 ->route('salidas.show', $salida)
                 ->with('success', 'Salida pedagógica actualizada exitosamente');
         } catch (\Exception $e) {
+            SalidaPedagogica::skipUpdatedHistory(false);
             return back()
                 ->withInput()
                 ->with('error', 'Error al actualizar la salida pedagógica: ' . $e->getMessage());
@@ -595,5 +605,70 @@ class SalidaPedagogicaController extends Controller
         SalidaPedagogica::where('estado', 'Programada')
             ->whereDate('fecha_salida', '<', now())
             ->update(['estado' => 'Realizada']);
+    }
+
+    /**
+     * Generar informe detallado (PDF) de una salida pedagógica.
+     * Solo accesible para el usuario jefesistemas@tvs.edu.co
+     */
+    public function informe(SalidaPedagogica $salida)
+    {
+        // Verificar que solo el usuario de sistemas pueda acceder
+        if (auth()->user()->email !== 'jefesistemas@tvs.edu.co') {
+            abort(403, 'No tienes permisos para descargar este informe.');
+        }
+
+        $salida->load([
+            'responsable',
+            'transporteConfirmadoPor',
+            'alimentacionConfirmadaPor',
+            'accesosConfirmadosPor',
+            'enfermeriaConfirmadaPor',
+            'comunicacionesConfirmadoPor',
+            'arlConfirmadoPor',
+            'history' => function($query) {
+                $query->with('user')->orderBy('created_at', 'asc');
+            }
+        ]);
+
+        // Consolidar el historial: cuando una entrada manual_edit no tiene cambios
+        // (registros históricos con changes NULL), asociar los cambios de la entrada
+        // 'updated' cercana del mismo momento para mostrar qué editó el usuario.
+        $history = collect($salida->history->all());
+
+        $manualEdits = $history->filter(function($entry) {
+            return $entry->action === 'manual_edit'
+                && empty($entry->changes);
+        })->keyBy('id');
+
+        $updatedIdsToRemove = [];
+
+        foreach ($history as $entry) {
+            if ($entry->action === 'updated' && !empty($entry->changes)) {
+                // Buscar un manual_edit sin cambios realizado alrededor del mismo tiempo
+                foreach ($manualEdits as $mKey => $manual) {
+                    $diff = abs(strtotime($manual->created_at) - strtotime($entry->created_at));
+                    if ($diff <= 60 && $manual->user_id === $entry->user_id) {
+                        $manual->changes = $entry->changes;
+                        $manualEdits->forget($mKey);
+                        $updatedIdsToRemove[] = $entry->id;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Eliminar las entradas 'updated' que ya fueron fusionadas en un manual_edit
+        // para no mostrar información duplicada en el informe.
+        $salida->history = $history->reject(function($entry) use ($updatedIdsToRemove) {
+            return in_array($entry->id, $updatedIdsToRemove);
+        })->values();
+
+        $pdf = PDF::loadView('salidas.informe', compact('salida'))
+            ->setPaper('letter', 'portrait');
+
+        $filename = 'Informe_Salida_' . $salida->consecutivo . '_' . date('Ymd_His') . '.pdf';
+
+        return $pdf->download($filename);
     }
 }

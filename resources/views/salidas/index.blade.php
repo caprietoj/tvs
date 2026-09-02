@@ -233,6 +233,13 @@
                                            title="Ver detalles">
                                             <i class="fas fa-eye mr-1"></i>Ver
                                         </a>
+                                        @if(auth()->user()->email === 'jefesistemas@tvs.edu.co')
+                                            <a href="{{ route('salidas.informe', $salida) }}" target="_blank"
+                                               class="btn btn-secondary btn-sm mb-1" 
+                                               title="Descargar informe detallado (solo administración)">
+                                                <i class="fas fa-file-pdf mr-1"></i>Informe
+                                            </a>
+                                        @endif
                                         @if(!auth()->user()->hasRole('profesor'))
                                             <a href="{{ route('salidas.edit', $salida) }}" 
                                                class="btn btn-warning btn-sm mb-1" 

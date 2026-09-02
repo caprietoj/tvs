@@ -195,7 +195,7 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label>Ruta</label>
-                                            <input type="text" name="route" class="form-control">
+                                            <textarea name="route" class="form-control" rows="4" placeholder="Describa las rutas (puede detallar por grados, acompañantes, etc.)">{{ old('route') }}</textarea>
                                         </div>
                                     </div>
                                     <div class="col-md-6">

@@ -140,6 +140,9 @@
                                     @if($event->return_time)
                                         <div><i class="fas fa-clock"></i> Regreso: {{ $event->service_date->format('d/m/Y') }} {{ $event->return_time->format('H:i') }}</div>
                                     @endif
+                                    @if($event->metro_junior_observations)
+                                        <div><i class="fas fa-comment"></i> Observaciones: {{ $event->metro_junior_observations }}</div>
+                                    @endif
                                 </div>
                             </td>
                             <td class="text-right align-middle">

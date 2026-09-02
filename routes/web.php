@@ -647,6 +647,8 @@ Route::middleware('auth')->group(function () {
         ->name('salidas.confirmar-comunicaciones');
     Route::post('salidas/{salida}/confirmar-arl', [SalidaPedagogicaController::class, 'confirmarArl'])
         ->name('salidas.confirmar-arl');
+    Route::get('salidas/{salida}/informe', [SalidaPedagogicaController::class, 'informe'])
+        ->name('salidas.informe');
 
     Route::prefix('proveedores')->group(function () {
         Route::get('/', [ProveedorController::class, 'index'])->name('proveedores.index');

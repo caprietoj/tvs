@@ -17,7 +17,7 @@ class EquipmentBlockController extends Controller
     {
         $blocks = EquipmentBlock::with(['equipment', 'schoolCycle'])
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->get();
 
         return view('equipment.blocks.index', compact('blocks'));
     }

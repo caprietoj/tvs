@@ -109,7 +109,7 @@ class EventController extends Controller
 
                 // Metro Junior
                 'metro_junior_required' => 'boolean',
-                'route' => 'required_if:metro_junior_required,1|nullable|string|max:255',
+                'route' => 'required_if:metro_junior_required,1|nullable|string|max:1000',
                 'passengers' => 'required_if:metro_junior_required,1|nullable|integer',
                 'departure_time' => 'required_if:metro_junior_required,1|nullable',
                 'return_time' => 'required_if:metro_junior_required,1|nullable',

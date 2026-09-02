@@ -36,6 +36,7 @@
         </div>
         <div class="card-body">
             @if($blocks->count() > 0)
+
                 <div class="table-responsive">
                     <table class="table table-striped table-hover" id="blocks-table">
                         <thead>
@@ -123,9 +124,7 @@
                     </table>
                 </div>
 
-                <div class="d-flex justify-content-center">
-                    {{ $blocks->links() }}
-                </div>
+
             @else
                 <div class="text-center py-4">
                     <i class="fas fa-lock fa-3x text-muted mb-3"></i>
