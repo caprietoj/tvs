@@ -423,9 +423,6 @@ class SalidaPedagogicaController extends Controller
         }
 
         try {
-            // Delete associated calendar event
-            Event::where('salida_pedagogica_id', $salida->id)->delete();
-            
             $salida->delete();
             return redirect()
                 ->route('salidas.index')
