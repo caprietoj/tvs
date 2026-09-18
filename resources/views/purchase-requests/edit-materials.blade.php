@@ -32,19 +32,22 @@
     $(document).ready(function() {
         console.log('🚀 Sistema de autocompletado con datalist iniciado (Edición)');
         
+        // Datos de productos en JSON (manejo seguro de nombres con comillas, p.ej. TIJERAS GRANDES 7")
+        const inventoryItemsData = @json($inventoryItems->map(function ($item) {
+            return [
+                'name' => $item->producto . ($item->color ? ' (' . $item->color . ')' : ''),
+                'stock' => $item->stock,
+            ];
+        })->values()->all());
+        
         // Lista de productos válidos para validación con información de stock
-        const validProducts = [
-            @foreach($inventoryItems as $item)
-                "{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }}",
-            @endforeach
-        ];
+        const validProducts = inventoryItemsData.map(item => item.name);
         
         // Mapa de productos con su stock para referencia rápida
-        const productStockMap = {
-            @foreach($inventoryItems as $item)
-                "{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }}": {{ $item->stock }},
-            @endforeach
-        };
+        const productStockMap = {};
+        inventoryItemsData.forEach(item => {
+            productStockMap[item.name] = item.stock;
+        });
         
         console.log('📦 Total productos válidos:', validProducts.length);
         
@@ -124,13 +127,20 @@
         });
         
         // Función para crear datalist único con información de stock
+        function escapeHtmlAttr(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+        
         function createUniqueDatalist(index) {
             const datalistId = `products-datalist-${index}`;
-            const options = [
-                @foreach($inventoryItems as $item)
-                    '<option value="{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }}" data-stock="{{ $item->stock }}">{{ addslashes($item->producto) }}{{ $item->color ? ' (' . addslashes($item->color) . ')' : '' }} (Stock: {{ $item->stock }})</option>',
-                @endforeach
-            ].join('');
+            const options = inventoryItemsData.map(function(item) {
+                const nameEscaped = escapeHtmlAttr(item.name);
+                return `<option value="${nameEscaped}" data-stock="${item.stock}">${nameEscaped} (Stock: ${item.stock})</option>`;
+            }).join('');
             
             return `<datalist id="${datalistId}">${options}</datalist>`;
         }
