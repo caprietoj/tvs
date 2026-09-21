@@ -213,6 +213,8 @@
                                         <option value="Opalina" {{ old('paper_type') == 'Opalina' ? 'selected' : '' }}>Opalina</option>
                                         <option value="Papel adhesivo" {{ old('paper_type') == 'Papel adhesivo' ? 'selected' : '' }}>Papel adhesivo</option>
                                         <option value="Acetato para impresion" {{ old('paper_type') == 'Acetato para impresion' ? 'selected' : '' }}>Acetato para impresión</option>
+                                        <option value="Durex" {{ old('paper_type') == 'Durex' ? 'selected' : '' }}>Durex</option>
+                                        <option value="Acuarella" {{ old('paper_type') == 'Acuarella' ? 'selected' : '' }}>Acuarella</option>
                                     </select>
                                     @error('paper_type')
                                         <div class="invalid-feedback">{{ $message }}</div>
