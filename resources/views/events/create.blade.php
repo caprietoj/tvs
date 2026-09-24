@@ -182,7 +182,7 @@
                     </div>
                     <div class="col-md-6" id="cafam_parking_details_container" style="display: none;">
                         <div class="form-group">
-                            <label>¿Qué requiere para el parqueadero CAFAM?</label>
+                            <label>Requerimientos adicionales</label>
                             <textarea name="cafam_parking_details" id="cafam_parking_details" class="form-control" rows="3" placeholder="Describa lo que requiere">{{ old('cafam_parking_details') }}</textarea>
                         </div>
                     </div>
