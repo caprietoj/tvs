@@ -430,8 +430,8 @@ window.initializeEquipmentRequest = function(elements) {
         // Mostrar el contenedor de períodos para TODAS las secciones
         classPeriods.container.style.display = 'block';
         
-        // Habilitar campos de horario manual para sala de informática y bachillerato
-        if (selectedSection === 'sala_informatica' || selectedSection === 'sala_informatica_primer_piso' || selectedSection === 'bachillerato') {
+        // Habilitar campos de horario manual para sala de informática, biblioteca y bachillerato
+        if (selectedSection === 'sala_informatica' || selectedSection === 'sala_informatica_primer_piso' || selectedSection === 'bachillerato' || selectedSection === 'biblioteca_sala_computadores') {
             elements.startTimeInput.disabled = false;
             elements.endTimeInput.disabled = false;
         }

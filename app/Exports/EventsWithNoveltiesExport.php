@@ -199,6 +199,7 @@ class EventsWithNoveltiesExport implements FromCollection, WithHeadings, WithMap
             'Lugar' => $event->location,
             'Responsable' => $event->responsible,
             'Parqueadero CAFAM' => $event->cafam_parking ? 'Sí' : 'No',
+            'Detalle parqueadero CAFAM' => $event->cafam_parking ? ($event->cafam_parking_details ?? '') : '',
             'Servicios' => $servicesText,
             'Novedades' => $noveltiesText,
         ];
@@ -218,6 +219,7 @@ class EventsWithNoveltiesExport implements FromCollection, WithHeadings, WithMap
             'Lugar',
             'Responsable',
             'Parqueadero CAFAM',
+            'Detalle parqueadero CAFAM',
             'Servicios',
             'Novedades'
         ];
@@ -245,7 +247,7 @@ class EventsWithNoveltiesExport implements FromCollection, WithHeadings, WithMap
             ],
             
             // Estilo para todas las celdas
-            'A1:J1000' => [
+            'A1:K1000' => [
                 'alignment' => ['vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP],
                 'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
             ],

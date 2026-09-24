@@ -62,7 +62,7 @@ class EquipmentController extends Controller
     {
         $validated = $request->validate([
             'type' => 'required|in:laptop,ipad,imac',
-            'section' => 'required|in:bachillerato,preescolar_primaria,sala_informatica,sala_informatica_primer_piso',
+            'section' => 'required|in:bachillerato,preescolar_primaria,sala_informatica,sala_informatica_primer_piso,biblioteca_sala_computadores',
             'total_units' => 'required|integer|min:1'
         ]);
 
@@ -172,13 +172,18 @@ class EquipmentController extends Controller
             
             $validated = $request->validate([
                 'equipment_id' => 'required|exists:equipment,id',
-                'section' => 'required|in:bachillerato,preescolar_primaria,administrativo,sala_informatica,sala_informatica_primer_piso',
+                'section' => 'required|in:bachillerato,preescolar_primaria,administrativo,sala_informatica,sala_informatica_primer_piso,biblioteca_sala_computadores',
                 'grade' => 'required',
                 'loan_date' => 'required|date|after:today|before_or_equal:' . $maxDate,
                 'start_time' => 'required|date_format:H:i',
                 'end_time' => 'required|date_format:H:i|after:start_time',
                 'units_requested' => 'required|integer|min:1',
-                'period_id' => 'nullable|string' // ID del período de clase seleccionado
+                'period_id' => 'nullable|string', // ID del período de clase seleccionado
+                'uses_electronic_resources' => 'nullable|boolean',
+                'uses_skills' => 'nullable|boolean',
+                'selected_electronic_resources' => 'nullable|string',
+                'skills' => 'nullable|array',
+                'skills.*' => 'integer|exists:skills,id'
             ], [
                 'equipment_id.required' => 'Debe seleccionar un tipo de equipo.',
                 'equipment_id.exists' => 'El equipo seleccionado no existe en nuestro inventario.',
@@ -350,6 +355,9 @@ class EquipmentController extends Controller
             }
             
             // Crear el préstamo con devolución automática programada
+            $usesElectronicResources = $request->boolean('uses_electronic_resources');
+            $usesSkills = $request->boolean('uses_skills');
+
             $loan = EquipmentLoan::create([
                 'user_id' => auth()->id(),
                 'equipment_id' => $validated['equipment_id'],
@@ -361,11 +369,30 @@ class EquipmentController extends Controller
                 'units_requested' => $validated['units_requested'],
                 'status' => 'pending',
                 'auto_return' => true, // Marcar que este préstamo debe devolverse automáticamente
-                'period_id' => $request->filled('period_id') ? $request->period_id : null
+                'period_id' => $request->filled('period_id') ? $request->period_id : null,
+                'uses_electronic_resources' => $usesElectronicResources,
+                'uses_skills' => $usesSkills,
+                'selected_electronic_resources' => $usesElectronicResources
+                    ? $request->input('selected_electronic_resources')
+                    : null,
             ]);
 
+            // Registrar las habilidades seleccionadas (solo si el usuario indicó que las usará)
+            if ($usesSkills && $request->filled('skills')) {
+                $skillIds = collect($request->input('skills', []))
+                    ->filter()
+                    ->map(fn ($id) => (int) $id)
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                if (!empty($skillIds)) {
+                    $loan->skills()->sync($skillIds);
+                }
+            }
+
             // Cargar la relación equipment para asegurar que esté disponible en el correo
-            $loan->load('equipment', 'user');
+            $loan->load('equipment', 'user', 'skills');
 
             // Enviar notificación por correo al usuario y al administrador
             $user = auth()->user();
@@ -427,13 +454,13 @@ class EquipmentController extends Controller
 
     public function showRequestForm()
     {
-        $equipment = Equipment::all();
+        $equipment = Equipment::with('space')->get();
         return view('equipment.request', compact('equipment'));
     }
 
     public function showLoans()
     {
-        $loans = EquipmentLoan::with(['equipment', 'user'])
+        $loans = EquipmentLoan::with(['equipment', 'user', 'skills'])
             ->orderBy('loan_date', 'desc')
             ->get();
         return view('equipment.loans', compact('loans'));
@@ -554,10 +581,13 @@ class EquipmentController extends Controller
                 // Para preescolar_primaria, mostrar solo iPads de esa sección
                 $equipment = Equipment::where('section', 'preescolar_primaria')
                     ->where('type', 'ipad');
-            } else if ($section === 'sala_informatica' || $section === 'sala_informatica_primer_piso') {
-                // Para las salas de informática, mostrar equipos tipo IMAC
+            } else if ($section === 'sala_informatica' || $section === 'sala_informatica_primer_piso' || $section === 'biblioteca_sala_computadores') {
+                // Para las salas de informática y biblioteca, mostrar equipos tipo IMAC
                 $equipment = Equipment::where('section', $section)
                     ->where('type', 'imac');
+            } else {
+                // Fallback dinámico: cualquier sala administrada desde /spaces
+                $equipment = Equipment::where('section', $section);
             }
 
             // Get equipment with their active loans
@@ -877,7 +907,7 @@ class EquipmentController extends Controller
     public function exportLoans(Request $request)
     {
         // Construir la consulta base
-        $query = EquipmentLoan::with(['equipment', 'user'])
+        $query = EquipmentLoan::with(['equipment', 'user', 'skills', 'blockOverride.block'])
                  ->join('equipment', 'equipment_loans.equipment_id', '=', 'equipment.id')
                  ->select('equipment_loans.*', 'equipment.type as equipment_type');
         
@@ -1220,7 +1250,7 @@ class EquipmentController extends Controller
     public function getLoanDetails($id)
     {
         try {
-            $loan = EquipmentLoan::with(['equipment', 'user'])
+            $loan = EquipmentLoan::with(['equipment', 'user', 'skills'])
                 ->findOrFail($id);
             
             $formattedLoanDate = $loan->loan_date->format('Y-m-d');
@@ -1244,6 +1274,10 @@ class EquipmentController extends Controller
                 'end_time' => $loan->end_time,
                 'units_requested' => $loan->units_requested,
                 'status' => $loan->status,
+                'uses_electronic_resources' => $loan->uses_electronic_resources,
+                'selected_electronic_resources' => $loan->selected_electronic_resources,
+                'uses_skills' => $loan->uses_skills,
+                'skills' => $loan->skills->pluck('name')->values(),
                 'delivery_date' => $loan->delivery_date,
                 'delivery_observations' => $loan->delivery_observations,
                 'return_date' => $loan->return_date,
@@ -1435,11 +1469,17 @@ class EquipmentController extends Controller
 
         $blockedSlots = [];
 
+        // Bloqueos cedidos/liberados para esta fecha: no se muestran como bloqueados
+        $overriddenIds = \App\Models\EquipmentBlock::overriddenBlockIdsForDate($date);
+
         // 1. Obtener bloqueos semanales
         $weeklyBlocks = \App\Models\EquipmentBlock::where('equipment_id', $equipmentId)
             ->where('school_cycle_id', $activeCycle->id)
             ->where('is_weekday_block', true)
             ->where($dayOfWeek, true)
+            ->when(!empty($overriddenIds), function ($q) use ($overriddenIds) {
+                $q->whereNotIn('id', $overriddenIds);
+            })
             ->get();
 
         foreach ($weeklyBlocks as $block) {
@@ -1459,6 +1499,9 @@ class EquipmentController extends Controller
                 ->where('school_cycle_id', $activeCycle->id)
                 ->where('cycle_day', $cycleDay->cycle_day)
                 ->where('is_weekday_block', false)
+                ->when(!empty($overriddenIds), function ($q) use ($overriddenIds) {
+                    $q->whereNotIn('id', $overriddenIds);
+                })
                 ->get();
 
             foreach ($cycleDayBlocks as $block) {

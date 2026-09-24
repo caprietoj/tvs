@@ -105,6 +105,7 @@ class EventController extends Controller
                 'event_time' => 'required',
                 'end_time' => 'required',
                 'cafam_parking' => 'required|boolean',
+                'cafam_parking_details' => 'required_if:cafam_parking,1|nullable|string|max:1000',
                 'request_date' => 'required|date',
 
                 // Metro Junior

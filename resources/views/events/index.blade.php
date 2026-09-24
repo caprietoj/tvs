@@ -30,6 +30,7 @@
                         <th>Fecha</th>
                         <th>Lugar</th>
                         <th>Estado</th>
+                        <th>Gestión Administrativa</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -74,6 +75,22 @@
                                     {{ number_format($percentage) }}%
                                 </div>
                             </div>
+                        </td>
+                        <td>
+                            @if($event->cafam_parking)
+                                <span class="badge badge-success mb-1">
+                                    <i class="fas fa-parking"></i> Parqueadero CAFAM: Sí
+                                </span>
+                                @if($event->cafam_parking_details)
+                                    <div class="small text-muted" title="{{ $event->cafam_parking_details }}">
+                                        {{ \Illuminate\Support\Str::limit($event->cafam_parking_details, 80) }}
+                                    </div>
+                                @else
+                                    <div class="small text-muted">Sin detalle</div>
+                                @endif
+                            @else
+                                <span class="badge badge-secondary">Parqueadero CAFAM: No</span>
+                            @endif
                         </td>
                         <td>
                             <a href="{{ route('events.show', $event) }}" class="btn btn-sm btn-info">

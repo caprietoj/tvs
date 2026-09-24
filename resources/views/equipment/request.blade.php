@@ -50,8 +50,38 @@
                                     <option value="bachillerato" {{ old('section') == 'bachillerato' ? 'selected' : '' }}>Bachillerato</option>
                                     <option value="preescolar_primaria" {{ old('section') == 'preescolar_primaria' ? 'selected' : '' }}>Preescolar y Primaria</option>
                                     <option value="administrativo" {{ old('section') == 'administrativo' ? 'selected' : '' }}>Administrativo</option>
-                                    <option value="sala_informatica" {{ old('section') == 'sala_informatica' ? 'selected' : '' }}>Sala de Informatica Segundo Piso</option>
-                                    <option value="sala_informatica_primer_piso" {{ old('section') == 'sala_informatica_primer_piso' ? 'selected' : '' }}>Sala de Informatica Primer Piso</option>
+                                    @php
+                                        $roomSections = ['sala_informatica', 'sala_informatica_primer_piso', 'biblioteca_sala_computadores'];
+                                        $defaultRoomGrades = [
+                                            'sala_informatica' => 'sala de informatica segundo piso',
+                                            'sala_informatica_primer_piso' => 'sala de informatica primer piso',
+                                            'biblioteca_sala_computadores' => 'Biblioteca',
+                                        ];
+                                        $fallbackRoomNames = [
+                                            'sala_informatica' => 'Sala de Informática – Segundo Piso',
+                                            'sala_informatica_primer_piso' => 'Sala de Informática – Primer Piso',
+                                            'biblioteca_sala_computadores' => 'Biblioteca - Sala de computadores (MAC)',
+                                        ];
+                                        $roomEquipment = $equipment
+                                            ->filter(function ($item) use ($roomSections) {
+                                                return in_array($item->section, $roomSections) || !is_null($item->space_id);
+                                            })
+                                            ->unique('section')
+                                            ->values();
+                                    @endphp
+                                    @if($roomEquipment->isNotEmpty())
+                                        <optgroup label="Salas de Informática / Biblioteca">
+                                            @foreach($roomEquipment as $room)
+                                                <option value="{{ $room->section }}"
+                                                        data-space-id="{{ $room->space_id }}"
+                                                        data-default-grade="{{ $defaultRoomGrades[$room->section] ?? ($room->space->name ?? '') }}"
+                                                        data-default-units="{{ $room->total_units }}"
+                                                        {{ old('section') == $room->section ? 'selected' : '' }}>
+                                                    {{ $room->space->name ?? ($fallbackRoomNames[$room->section] ?? ucfirst(str_replace('_', ' ', $room->section))) }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
                                 </select>
                                 @error('section')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -399,6 +429,57 @@
                         </div>
                     </div>
 
+                    <!-- Recursos electrónicos y habilidades (salas administradas desde /spaces) -->
+                    <div class="row mt-3" id="space-resources-skills-container" style="display: none;">
+                        <div class="col-md-12">
+                            <div class="card bg-light border-0 shadow-sm">
+                                <div class="card-header institutional-bg text-white py-2">
+                                    <h5 class="card-title mb-0"><i class="fas fa-laptop-code"></i> Recursos y Habilidades de la Sala</h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Recursos electrónicos -->
+                                    <div id="electronic-resources-wrapper" class="mb-4 d-none">
+                                        <div class="custom-control custom-switch mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="uses-electronic-resources" name="uses_electronic_resources" value="1">
+                                            <label class="custom-control-label font-weight-bold" for="uses-electronic-resources">
+                                                <i class="fas fa-laptop"></i> ¿Usará recursos electrónicos?
+                                            </label>
+                                        </div>
+                                        <div id="electronic-resources-container" class="card border-success" style="display: none;">
+                                            <div class="card-body">
+                                                <label>Seleccione los recursos electrónicos que desea utilizar:</label>
+                                                <div id="electronic-resources-list"></div>
+                                                <input type="hidden" name="selected_electronic_resources" id="selected-electronic-resources" value="">
+                                                <small class="form-text text-danger d-none" id="electronic-resources-error">
+                                                    <i class="fas fa-exclamation-circle"></i> Debe seleccionar al menos un recurso electrónico.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Habilidades -->
+                                    <div id="skills-wrapper" class="d-none">
+                                        <div class="custom-control custom-switch mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="uses-skills" name="uses_skills" value="1">
+                                            <label class="custom-control-label font-weight-bold" for="uses-skills">
+                                                <i class="fas fa-lightbulb"></i> ¿Trabajará habilidades?
+                                            </label>
+                                        </div>
+                                        <div id="skills-container" class="card border-primary" style="display: none;">
+                                            <div class="card-body">
+                                                <label>Seleccione las habilidades que trabajará durante el préstamo:</label>
+                                                <div id="skills-list"></div>
+                                                <small class="form-text text-danger d-none" id="skills-error">
+                                                    <i class="fas fa-exclamation-circle"></i> Debe seleccionar al menos una habilidad.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="alert alert-warning mb-3 d-none" id="time-slot-warning">
                         <div class="d-flex">
                             <div class="mr-3">
@@ -659,6 +740,239 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Equipment request module not loaded');
     }
 
+    // ===== Recursos electrónicos y habilidades de salas (administradas desde /spaces) =====
+    const roomSelection = {
+        container: document.getElementById('space-resources-skills-container'),
+        electronicWrapper: document.getElementById('electronic-resources-wrapper'),
+        usesElectronic: document.getElementById('uses-electronic-resources'),
+        electronicContainer: document.getElementById('electronic-resources-container'),
+        electronicList: document.getElementById('electronic-resources-list'),
+        electronicHidden: document.getElementById('selected-electronic-resources'),
+        electronicError: document.getElementById('electronic-resources-error'),
+        skillsWrapper: document.getElementById('skills-wrapper'),
+        usesSkills: document.getElementById('uses-skills'),
+        skillsContainer: document.getElementById('skills-container'),
+        skillsList: document.getElementById('skills-list'),
+        skillsError: document.getElementById('skills-error')
+    };
+
+    let currentSpaceId = null;
+
+    function resetRoomSelections() {
+        currentSpaceId = null;
+        if (!roomSelection.container) return;
+        roomSelection.container.style.display = 'none';
+        if (roomSelection.usesElectronic) roomSelection.usesElectronic.checked = false;
+        if (roomSelection.usesSkills) roomSelection.usesSkills.checked = false;
+        if (roomSelection.electronicContainer) roomSelection.electronicContainer.style.display = 'none';
+        if (roomSelection.skillsContainer) roomSelection.skillsContainer.style.display = 'none';
+        if (roomSelection.electronicList) roomSelection.electronicList.innerHTML = '';
+        if (roomSelection.electronicHidden) roomSelection.electronicHidden.value = '';
+        if (roomSelection.skillsList) roomSelection.skillsList.innerHTML = '';
+        if (roomSelection.electronicError) roomSelection.electronicError.classList.add('d-none');
+        if (roomSelection.skillsError) roomSelection.skillsError.classList.add('d-none');
+    }
+
+    function renderElectronicResources(rawResources) {
+        const resources = (rawResources || '')
+            .split('\n')
+            .map(r => r.trim())
+            .filter(r => r !== '');
+
+        if (resources.length === 0) {
+            roomSelection.electronicWrapper.classList.add('d-none');
+            return;
+        }
+
+        roomSelection.electronicWrapper.classList.remove('d-none');
+
+        let html = '';
+        resources.forEach((resource, index) => {
+            html += `
+                <div class="custom-control custom-checkbox mb-1">
+                    <input type="checkbox" class="custom-control-input electronic-resource-checkbox"
+                           id="electronic_resource_${index}" value="${resource.replace(/"/g, '&quot;')}">
+                    <label class="custom-control-label" for="electronic_resource_${index}">
+                        <i class="fas fa-laptop-code text-success mr-2"></i>${resource}
+                    </label>
+                </div>`;
+        });
+        roomSelection.electronicList.innerHTML = html;
+
+        roomSelection.electronicList.querySelectorAll('.electronic-resource-checkbox').forEach(cb => {
+            cb.addEventListener('change', function () {
+                const selected = [];
+                roomSelection.electronicList.querySelectorAll('.electronic-resource-checkbox:checked').forEach(checked => {
+                    selected.push(checked.value);
+                });
+                if (roomSelection.electronicHidden) {
+                    roomSelection.electronicHidden.value = selected.join(',');
+                }
+                const anyChecked = selected.length > 0;
+                roomSelection.electronicError.classList.toggle('d-none', anyChecked);
+            });
+        });
+    }
+
+    function renderSkills(skills) {
+        if (!skills || skills.length === 0) {
+            roomSelection.skillsWrapper.classList.add('d-none');
+            return;
+        }
+
+        roomSelection.skillsWrapper.classList.remove('d-none');
+
+        // Agrupar por categoría y subcategoría
+        const grouped = {};
+        skills.forEach(skill => {
+            const categoryId = skill.category_id || 'otros';
+            const subcategoryName = skill.subcategory_name || 'General';
+
+            if (!grouped[categoryId]) {
+                grouped[categoryId] = { name: skill.category_name || 'Otros', subcategories: {} };
+            }
+            if (!grouped[categoryId].subcategories[subcategoryName]) {
+                grouped[categoryId].subcategories[subcategoryName] = { name: subcategoryName, skills: [] };
+            }
+            grouped[categoryId].subcategories[subcategoryName].skills.push(skill);
+        });
+
+        let html = '';
+        let categoryIndex = 0;
+        Object.values(grouped).forEach(category => {
+            categoryIndex++;
+            const collapseId = `equipment-skills-collapse-${categoryIndex}`;
+            html += `
+                <div class="card mb-2">
+                    <div class="card-header bg-light p-2">
+                        <button class="btn btn-link btn-block text-left text-primary p-0" type="button"
+                                data-toggle="collapse" data-target="#${collapseId}"
+                                aria-expanded="false" aria-controls="${collapseId}">
+                            <i class="fas fa-layer-group mr-2"></i>${category.name}
+                        </button>
+                    </div>
+                    <div id="${collapseId}" class="collapse">
+                        <div class="card-body">`;
+            Object.values(category.subcategories).forEach(subcategory => {
+                html += `
+                            <h6 class="text-secondary font-weight-bold border-bottom pb-2 mt-2">
+                                <i class="fas fa-tags mr-2"></i>${subcategory.name}
+                            </h6>`;
+                subcategory.skills.forEach(skill => {
+                    html += `
+                            <div class="form-check mb-2 ml-3">
+                                <input class="form-check-input equipment-skill-checkbox" type="checkbox"
+                                       id="equipment-skill-${skill.id}" name="skills[]" value="${skill.id}">
+                                <label class="form-check-label" for="equipment-skill-${skill.id}">
+                                    ${skill.name}
+                                    ${skill.description ? `<p class="mb-0 text-muted small">${skill.description}</p>` : ''}
+                                </label>
+                            </div>`;
+                });
+            });
+            html += `
+                        </div>
+                    </div>
+                </div>`;
+        });
+        roomSelection.skillsList.innerHTML = html;
+
+        roomSelection.skillsList.querySelectorAll('.equipment-skill-checkbox').forEach(cb => {
+            cb.addEventListener('change', function () {
+                const anyChecked = roomSelection.skillsList.querySelectorAll('.equipment-skill-checkbox:checked').length > 0;
+                roomSelection.skillsError.classList.toggle('d-none', anyChecked);
+            });
+        });
+    }
+
+    function loadSpaceDetails(spaceId) {
+        currentSpaceId = spaceId;
+        roomSelection.container.style.display = 'block';
+
+        fetch(`{{ url('spaces') }}/${spaceId}/details`)
+            .then(response => {
+                if (!response.ok) throw new Error('No se pudo cargar la sala');
+                return response.json();
+            })
+            .then(space => {
+                renderElectronicResources(space.electronic_resources);
+                renderSkills(space.skills || []);
+            })
+            .catch(error => {
+                console.error('Error al cargar la sala:', error);
+                resetRoomSelections();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo cargar la información de recursos y habilidades de la sala.'
+                });
+            });
+    }
+
+    if (roomSelection.usesElectronic) {
+        roomSelection.usesElectronic.addEventListener('change', function () {
+            roomSelection.electronicContainer.style.display = this.checked ? 'block' : 'none';
+            if (!this.checked) {
+                roomSelection.electronicList.querySelectorAll('.electronic-resource-checkbox').forEach(cb => cb.checked = false);
+                if (roomSelection.electronicHidden) roomSelection.electronicHidden.value = '';
+                roomSelection.electronicError.classList.add('d-none');
+            }
+        });
+    }
+
+    if (roomSelection.usesSkills) {
+        roomSelection.usesSkills.addEventListener('change', function () {
+            roomSelection.skillsContainer.style.display = this.checked ? 'block' : 'none';
+            if (!this.checked) {
+                roomSelection.skillsList.querySelectorAll('.equipment-skill-checkbox').forEach(cb => cb.checked = false);
+                roomSelection.skillsError.classList.add('d-none');
+            }
+        });
+    }
+
+    function validateRoomSelections() {
+        if (!currentSpaceId) return true;
+
+        if (roomSelection.usesElectronic && roomSelection.usesElectronic.checked) {
+            const count = roomSelection.electronicList.querySelectorAll('.electronic-resource-checkbox:checked').length;
+            if (count === 0) {
+                roomSelection.electronicError.classList.remove('d-none');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Recursos electrónicos',
+                    text: 'Indique los recursos electrónicos que usará o marque la opción "No".'
+                });
+                return false;
+            }
+        }
+        roomSelection.electronicError.classList.add('d-none');
+
+        if (roomSelection.usesSkills && roomSelection.usesSkills.checked) {
+            const count = roomSelection.skillsList.querySelectorAll('.equipment-skill-checkbox:checked').length;
+            if (count === 0) {
+                roomSelection.skillsError.classList.remove('d-none');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Habilidades',
+                    text: 'Indique las habilidades que trabajará o marque la opción "No".'
+                });
+                return false;
+            }
+        }
+        roomSelection.skillsError.classList.add('d-none');
+
+        return true;
+    }
+
+    // Validar recursos/habilidades antes de enviar el formulario
+    elements.form.addEventListener('submit', function (event) {
+        if (!validateRoomSelections()) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return false;
+        }
+    });
+
     // Manejador del cambio de sección
     document.getElementById('section-select').addEventListener('change', function() {
         const selectedSection = this.value;
@@ -666,14 +980,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const gradeInput = document.getElementById('grade-input');
         const unitsInput = document.getElementById('units-input');
         
-        // Si se selecciona una sala de informática, autocompletar campos
-        if (selectedSection === 'sala_informatica' || selectedSection === 'sala_informatica_primer_piso') {
-            // Autocompletar Salón
-            gradeInput.value = selectedSection === 'sala_informatica_primer_piso'
-                ? 'sala de informatica primer piso'
-                : 'sala de informatica segundo piso';
-            // Autocompletar Cantidad de Equipos
-            unitsInput.value = '22';
+        // Salas administradas desde /spaces (la opción tiene data-space-id)
+        const selectedOption = this.options[this.selectedIndex];
+        const spaceId = selectedOption ? selectedOption.dataset.spaceId : '';
+        const defaultGrade = selectedOption ? selectedOption.dataset.defaultGrade : '';
+        const defaultUnits = selectedOption ? selectedOption.dataset.defaultUnits : '';
+        const wasRoom = !!currentSpaceId;
+
+        // Reiniciar la selección de recursos/habilidades de la sala
+        resetRoomSelections();
+
+        // Si se selecciona una sala, completar campos desde /spaces
+        if (spaceId) {
+            if (defaultGrade) gradeInput.value = defaultGrade;
+            if (defaultUnits) unitsInput.value = defaultUnits;
+
+            // Cargar recursos electrónicos y habilidades de la sala
+            loadSpaceDetails(spaceId);
             
             // Cargar equipos y seleccionar IMAC automáticamente
             fetch(`/equipment/types/${selectedSection}`)
@@ -741,14 +1064,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Limpiar campos si se cambia a otra sección
-        if (selectedSection !== 'sala_informatica' && selectedSection !== 'sala_informatica_primer_piso') {
+        // Limpiar campos si se cambia de una sala a otra sección
+        if (!spaceId && wasRoom) {
             if (gradeInput.value === 'sala de informatica'
                 || gradeInput.value === 'sala de informatica segundo piso'
-                || gradeInput.value === 'sala de informatica primer piso') {
+                || gradeInput.value === 'sala de informatica primer piso'
+                || gradeInput.value === 'Biblioteca') {
                 gradeInput.value = '';
             }
-            if (unitsInput.value === '22') {
+            if (unitsInput.value === '22' || unitsInput.value === '12') {
                 unitsInput.value = '';
             }
         }
@@ -851,6 +1175,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function validateForm() {
+        // Validar recursos electrónicos y habilidades de la sala seleccionada
+        if (!validateRoomSelections()) {
+            return false;
+        }
+
         const requiredFields = [
             { element: elements.sectionSelect, message: "Seleccione una sección" },
             { element: elements.equipmentSelect, message: "Seleccione un equipo" },
@@ -954,6 +1283,11 @@ document.addEventListener('DOMContentLoaded', function() {
             elements.unitsHelpText.textContent = "Seleccione un equipo para ver disponibilidad";
         }
     });
+
+    // Si hay una sección preseleccionada (por old input), cargar sus datos
+    if (elements.sectionSelect.value) {
+        elements.sectionSelect.dispatchEvent(new Event('change'));
+    }
 });
 </script>
 <script src="{{ asset('js/equipment-request.js') }}?v={{ time() }}"></script>

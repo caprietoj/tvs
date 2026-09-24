@@ -25,6 +25,20 @@ Se ha recibido una nueva solicitud de préstamo con los siguientes detalles:
         <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Cantidad:</strong></td>
         <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ $loan->units_requested }} unidad(es)</td>
     </tr>
+    @if($loan->uses_electronic_resources)
+    <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Recursos electrónicos:</strong></td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ $loan->selected_electronic_resources ?: 'No especificados' }}</td>
+    </tr>
+    @endif
+    @if($loan->uses_skills)
+    <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Habilidades:</strong></td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">
+            {{ $loan->skills->isNotEmpty() ? $loan->skills->pluck('name')->implode(', ') : 'No especificadas' }}
+        </td>
+    </tr>
+    @endif
 </table>
 </div>
 

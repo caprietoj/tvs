@@ -99,12 +99,24 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Solicitud de parqueadero CAFAM</label>
-                <select name="cafam_parking" class="form-control">
-                    <option value="0" {{ !$event->cafam_parking ? 'selected' : '' }}>No</option>
-                    <option value="1" {{ $event->cafam_parking ? 'selected' : '' }}>Sí</option>
-                </select>
+            <!-- Gestión Administrativa -->
+            <div class="card mt-4">
+                <div class="card-header bg-primary">
+                    <h3 class="card-title">Gestión Administrativa</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Solicitud de parqueadero CAFAM</label>
+                        <select name="cafam_parking" id="cafam_parking" class="form-control">
+                            <option value="0" {{ !$event->cafam_parking ? 'selected' : '' }}>No</option>
+                            <option value="1" {{ $event->cafam_parking ? 'selected' : '' }}>Sí</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="cafam_parking_details_container" style="{{ $event->cafam_parking ? '' : 'display: none;' }}">
+                        <label>¿Qué requiere para el parqueadero CAFAM?</label>
+                        <textarea name="cafam_parking_details" id="cafam_parking_details" class="form-control" rows="3" placeholder="Describa lo que requiere">{{ old('cafam_parking_details', $event->cafam_parking_details) }}</textarea>
+                    </div>
+                </div>
             </div>
 
             <!-- Servicios -->
@@ -417,6 +429,20 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     services.forEach(setupServiceToggle);
+
+    // Gestión Administrativa - Parqueadero CAFAM
+    (function() {
+        const cafamSelect = document.getElementById('cafam_parking');
+        const cafamDetailsContainer = document.getElementById('cafam_parking_details_container');
+        if (!cafamSelect || !cafamDetailsContainer) return;
+
+        function toggleCafamDetails() {
+            cafamDetailsContainer.style.display = cafamSelect.value === '1' ? 'block' : 'none';
+        }
+
+        cafamSelect.addEventListener('change', toggleCafamDetails);
+        toggleCafamDetails();
+    })();
 });
 </script>
 @stop

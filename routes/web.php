@@ -548,6 +548,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/weekly', [App\Http\Controllers\EquipmentBlockController::class, 'storeWeekly'])
                 ->name('store-weekly')
                 ->middleware('can:equipment.blocks.manage');
+            Route::get('/cede', [App\Http\Controllers\EquipmentBlockController::class, 'cedeForm'])
+                ->name('cede-form')
+                ->middleware('can:equipment.blocks.manage');
+            Route::post('/{equipmentBlock}/cede', [App\Http\Controllers\EquipmentBlockController::class, 'cede'])
+                ->name('cede')
+                ->middleware('can:equipment.blocks.manage');
             Route::get('/{equipmentBlock}', [App\Http\Controllers\EquipmentBlockController::class, 'show'])
                 ->name('show')
                 ->middleware('can:equipment.blocks.manage');

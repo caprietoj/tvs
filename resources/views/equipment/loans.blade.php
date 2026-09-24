@@ -145,6 +145,7 @@
                                 <th>Horario</th>
                                 <th>Estado</th>
                                 <th>Observaciones</th>
+                                <th>Recursos / Habilidades</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -156,7 +157,11 @@
                                     data-section="{{ $loan->section }}" 
                                     data-status="{{ $loan->status }}"
                                     data-equipment-type="{{ $loan->equipment->type }}"
-                                    data-auto-return="{{ $loan->auto_return ? '1' : '0' }}">
+                                    data-auto-return="{{ $loan->auto_return ? '1' : '0' }}"
+                                    data-uses-electronic="{{ $loan->uses_electronic_resources ? '1' : '0' }}"
+                                    data-electronic-resources="{{ $loan->selected_electronic_resources }}"
+                                    data-uses-skills="{{ $loan->uses_skills ? '1' : '0' }}"
+                                    data-skills="{{ $loan->skills->pluck('name')->implode('|') }}">
                                     <td>{{ $loan->id }}</td>
                                     <td>{{ $loan->user->name }}</td>
                                     <td>{{ ucfirst(str_replace('_', ' ', $loan->section)) }}</td>
@@ -232,6 +237,30 @@
                                             </div>
                                         @else
                                             <span class="text-muted">Sin observaciones</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($loan->uses_electronic_resources)
+                                            <span class="badge badge-success mb-1"
+                                                  data-toggle="tooltip"
+                                                  data-placement="top"
+                                                  data-html="true"
+                                                  title="<strong>Recursos electrónicos:</strong><br>{{ $loan->selected_electronic_resources ? str_replace(',', '<br>', $loan->selected_electronic_resources) : 'No especificados' }}">
+                                                <i class="fas fa-laptop-code"></i>
+                                                {{ $loan->selected_electronic_resources ? count(array_filter(explode(',', $loan->selected_electronic_resources))) : 0 }} recurso(s)
+                                            </span>
+                                        @endif
+                                        @if($loan->uses_skills)
+                                            <span class="badge badge-primary mb-1"
+                                                  data-toggle="tooltip"
+                                                  data-placement="top"
+                                                  data-html="true"
+                                                  title="<strong>Habilidades:</strong><br>{{ $loan->skills->isNotEmpty() ? $loan->skills->pluck('name')->implode('<br>') : 'No especificadas' }}">
+                                                <i class="fas fa-lightbulb"></i> {{ $loan->skills->count() }} habilidad(es)
+                                            </span>
+                                        @endif
+                                        @if(!$loan->uses_electronic_resources && !$loan->uses_skills)
+                                            <span class="text-muted">—</span>
                                         @endif
                                     </td>
                                     <td>
@@ -1059,6 +1088,18 @@ $(document).ready(function() {
         // Verificar si tiene devolución automática
         const autoReturn = row.attr('data-auto-return') === '1';
         
+        // Recursos electrónicos y habilidades (salas administradas desde /spaces)
+        const usesElectronicResources = row.attr('data-uses-electronic') === '1';
+        const electronicResources = (row.attr('data-electronic-resources') || '')
+            .split(',')
+            .map(r => r.trim())
+            .filter(r => r !== '');
+        const usesSkills = row.attr('data-uses-skills') === '1';
+        const skills = (row.attr('data-skills') || '')
+            .split('|')
+            .map(s => s.trim())
+            .filter(s => s !== '');
+        
         const status = row.attr('data-status');
         const statusText = row.find('td:eq(8) .badge').text().trim();
         
@@ -1080,7 +1121,11 @@ $(document).ready(function() {
             statusText,
             autoReturn,
             periodId,
-            isPeriodBlock
+            isPeriodBlock,
+            usesElectronicResources,
+            electronicResources,
+            usesSkills,
+            skills
         };
         
         allLoans.push(loan);
@@ -1533,6 +1578,16 @@ $(document).ready(function() {
                                     }
                                 </td>
                             </tr>
+                            ${loan.usesElectronicResources ? `
+                            <tr>
+                                <th>Recursos electrónicos</th>
+                                <td>${loan.electronicResources.length ? loan.electronicResources.join(', ') : 'No especificados'}</td>
+                            </tr>` : ''}
+                            ${loan.usesSkills ? `
+                            <tr>
+                                <th>Habilidades</th>
+                                <td>${loan.skills.length ? loan.skills.join(', ') : 'No especificadas'}</td>
+                            </tr>` : ''}
                             <tr>
                                 <th>Estado</th>
                                 <td><span class="badge badge-${statusClass}">${loan.statusText}</span></td>

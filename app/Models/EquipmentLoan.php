@@ -28,7 +28,10 @@ class EquipmentLoan extends Model
         'inventory_discounted',
         'inventory_returned',
         'auto_return',
-        'period_id'
+        'period_id',
+        'uses_electronic_resources',
+        'uses_skills',
+        'selected_electronic_resources'
     ];
 
     protected $casts = [
@@ -39,12 +42,31 @@ class EquipmentLoan extends Model
         'return_date' => 'datetime',
         'inventory_discounted' => 'boolean',
         'inventory_returned' => 'boolean',
-        'auto_return' => 'boolean'
+        'auto_return' => 'boolean',
+        'uses_electronic_resources' => 'boolean',
+        'uses_skills' => 'boolean'
     ];
 
     public function equipment()
     {
         return $this->belongsTo(Equipment::class);
+    }
+
+    /**
+     * Habilidades trabajadas durante el préstamo (salas con habilidades configuradas)
+     */
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class, 'equipment_loan_skill')
+            ->withTimestamps();
+    }
+
+    /**
+     * Excepción de bloqueo (cesión de sala) que originó este préstamo, si aplica.
+     */
+    public function blockOverride()
+    {
+        return $this->hasOne(EquipmentBlockOverride::class, 'equipment_loan_id');
     }
 
     public function user()

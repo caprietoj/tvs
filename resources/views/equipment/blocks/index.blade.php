@@ -5,9 +5,14 @@
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1>🔒 Bloqueos de Equipos</h1>
-        <a href="{{ route('equipment.blocks.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Nuevo Bloqueo
-        </a>
+        <div>
+            <a href="{{ route('equipment.blocks.cede-form') }}" class="btn btn-success">
+                <i class="fas fa-exchange-alt"></i> Ceder / Reasignar Sala
+            </a>
+            <a href="{{ route('equipment.blocks.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nuevo Bloqueo
+            </a>
+        </div>
     </div>
 @stop
 

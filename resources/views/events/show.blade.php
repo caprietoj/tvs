@@ -107,6 +107,9 @@
                             <span class="badge badge-{{ $event->cafam_parking ? 'success' : 'secondary' }}">
                                 {{ $event->cafam_parking ? 'Sí' : 'No' }}
                             </span>
+                            @if($event->cafam_parking && $event->cafam_parking_details)
+                                <div class="mt-2 text-muted">{{ $event->cafam_parking_details }}</div>
+                            @endif
                         </td>
                     </tr>
                 </table>

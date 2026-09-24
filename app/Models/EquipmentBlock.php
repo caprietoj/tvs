@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Carbon\Carbon;
 
 class EquipmentBlock extends Model
@@ -51,6 +52,29 @@ class EquipmentBlock extends Model
     public function schoolCycle(): BelongsTo
     {
         return $this->belongsTo(SchoolCycle::class);
+    }
+
+    /**
+     * Obtiene las excepciones (cesiones) por fecha asociadas a este bloqueo
+     */
+    public function overrides(): HasMany
+    {
+        return $this->hasMany(EquipmentBlockOverride::class, 'equipment_block_id');
+    }
+
+    /**
+     * IDs de los bloqueos que fueron cedidos/liberados para una fecha específica.
+     * Estos bloqueos NO deben contar como ocupados en esa fecha, ya que la
+     * asignación se representa con el préstamo del nuevo docente.
+     *
+     * @param string $date Fecha (Y-m-d)
+     * @return array<int>
+     */
+    public static function overriddenBlockIdsForDate(string $date): array
+    {
+        return EquipmentBlockOverride::where('override_date', $date)
+            ->pluck('equipment_block_id')
+            ->all();
     }
 
     /**
@@ -147,17 +171,40 @@ class EquipmentBlock extends Model
             return 0;
         }
 
+        // Bloqueos cedidos/liberados para esta fecha: no cuentan como ocupados
+        $overriddenIds = self::overriddenBlockIdsForDate($date);
+
         $totalBlocked = 0;
 
         // 1. Verificar bloqueos semanales
-        $weeklyBlocked = self::getBlockedUnitsForWeekday($equipmentId, $dayOfWeek, $startTime, $endTime, $date);
-        $totalBlocked += $weeklyBlocked;
+        $weeklyQuery = self::where('equipment_id', $equipmentId)
+            ->where('school_cycle_id', $activeCycle->id)
+            ->where('is_weekday_block', true)
+            ->where($dayOfWeek, true)
+            ->where('start_time', '<', $endTime)
+            ->where('end_time', '>', $startTime);
+
+        if (!empty($overriddenIds)) {
+            $weeklyQuery->whereNotIn('id', $overriddenIds);
+        }
+
+        $totalBlocked += (int) $weeklyQuery->sum('blocked_units');
 
         // 2. Verificar bloqueos por día de ciclo
         $cycleDay = \App\Models\CycleDay::getCycleDayForDate($date, $activeCycle->id);
         if ($cycleDay) {
-            $cycleDayBlocked = self::getBlockedUnitsForCycleDayTime($equipmentId, $activeCycle->id, $cycleDay->cycle_day, $startTime, $endTime);
-            $totalBlocked += $cycleDayBlocked;
+            $cycleQuery = self::where('equipment_id', $equipmentId)
+                ->where('school_cycle_id', $activeCycle->id)
+                ->where('cycle_day', $cycleDay->cycle_day)
+                ->where('is_weekday_block', false)
+                ->where('start_time', '<', $endTime)
+                ->where('end_time', '>', $startTime);
+
+            if (!empty($overriddenIds)) {
+                $cycleQuery->whereNotIn('id', $overriddenIds);
+            }
+
+            $totalBlocked += (int) $cycleQuery->sum('blocked_units');
         }
 
         return $totalBlocked;

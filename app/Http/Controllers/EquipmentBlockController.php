@@ -4,9 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Equipment;
 use App\Models\EquipmentBlock;
+use App\Models\EquipmentBlockOverride;
+use App\Models\EquipmentLoan;
 use App\Models\SchoolCycle;
+use App\Models\User;
+use App\Mail\EquipmentBlockCeded;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class EquipmentBlockController extends Controller
 {
@@ -228,6 +234,210 @@ class EquipmentBlockController extends Controller
     {
         $equipmentBlock->load(['equipment', 'schoolCycle']);
         return view('equipment.blocks.show', compact('equipmentBlock'));
+    }
+
+    /**
+     * Muestra el formulario para ceder/reasignar un bloqueo a otro docente
+     * para una fecha específica (excepción por fecha).
+     */
+    public function cedeForm(Request $request)
+    {
+        $date = $request->get('date', now()->toDateString());
+
+        try {
+            $date = Carbon::parse($date)->format('Y-m-d');
+        } catch (\Throwable $e) {
+            $date = now()->toDateString();
+        }
+
+        $activeCycle = SchoolCycle::where('active', true)->first();
+        $cycleDay = $activeCycle ? \App\Models\CycleDay::getCycleDayForDate($date, $activeCycle->id) : null;
+
+        $blocks = $this->getBlocksForDate($date);
+        $teachers = User::orderBy('name')->get(['id', 'name', 'email']);
+
+        return view('equipment.blocks.cede', compact('date', 'blocks', 'teachers', 'cycleDay', 'activeCycle'));
+    }
+
+    /**
+     * Cede el espacio de un bloqueo a otro docente solo para la fecha indicada.
+     * Crea una excepción por fecha y un préstamo a nombre del nuevo docente.
+     */
+    public function cede(Request $request, EquipmentBlock $equipmentBlock)
+    {
+        $validated = $request->validate([
+            'override_date' => 'required|date',
+            'assigned_user_id' => 'required|exists:users,id',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $date = Carbon::parse($validated['override_date'])->format('Y-m-d');
+
+        if (!$this->blockAppliesOnDate($equipmentBlock, $date)) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'El bloqueo seleccionado no aplica a la fecha indicada.');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $teacher = User::findOrFail($validated['assigned_user_id']);
+            $equipment = $equipmentBlock->equipment;
+            $startTime = Carbon::parse($equipmentBlock->start_time)->format('H:i');
+            $endTime = Carbon::parse($equipmentBlock->end_time)->format('H:i');
+
+            $override = EquipmentBlockOverride::firstOrNew([
+                'equipment_block_id' => $equipmentBlock->id,
+                'override_date' => $date,
+            ]);
+
+            // Si se vuelve a ceder, eliminar el préstamo pendiente anterior para no duplicar
+            if ($override->exists && $override->equipment_loan_id) {
+                $previousLoan = EquipmentLoan::find($override->equipment_loan_id);
+                if ($previousLoan && $previousLoan->status === 'pending') {
+                    $previousLoan->delete();
+                }
+            }
+
+            // Crear el préstamo a nombre del docente (se permite la fecha del mismo día)
+            $existingLoan = EquipmentLoan::where('equipment_id', $equipment->id)
+                ->where('user_id', $teacher->id)
+                ->where('loan_date', $date)
+                ->where('start_time', $startTime)
+                ->where('end_time', $endTime)
+                ->where('status', '!=', 'returned')
+                ->first();
+
+            if (!$existingLoan) {
+                $existingLoan = EquipmentLoan::create([
+                    'user_id' => $teacher->id,
+                    'equipment_id' => $equipment->id,
+                    'section' => $equipment->section,
+                    'grade' => optional($equipment->space)->name ?: $equipment->section,
+                    'loan_date' => $date,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime,
+                    'units_requested' => (int) $equipmentBlock->blocked_units,
+                    'status' => 'pending',
+                    'auto_return' => true,
+                    'period_id' => null,
+                    'uses_electronic_resources' => false,
+                    'uses_skills' => false,
+                ]);
+            }
+
+            // Registrar/actualizar la excepción por fecha
+            $override->fill([
+                'new_reason' => $teacher->name,
+                'assigned_user_id' => $teacher->id,
+                'equipment_loan_id' => $existingLoan->id,
+                'created_by' => auth()->id(),
+                'notes' => $validated['notes'] ?? null,
+            ])->save();
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            \Log::error('Error al ceder bloqueo: ' . $e->getMessage());
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'No se pudo ceder el espacio: ' . $e->getMessage());
+        }
+
+        // Notificar por correo al docente que recibe la sala y a los responsables de sistemas
+        try {
+            $spaceName = optional($equipment->space)->name
+                ?: strtoupper(str_replace('_', ' ', $equipment->section));
+
+            $recipients = array_values(array_unique(array_filter([
+                $teacher->email,
+                'mmarcell@tvs.edu.co',
+                'jefesistemas@tvs.edu.co',
+                'auxiliarsistemas@tvs.edu.co',
+            ])));
+
+            Mail::to($recipients)->send(new EquipmentBlockCeded([
+                'space_name' => $spaceName,
+                'date' => Carbon::parse($date)->format('d/m/Y'),
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'original_teacher' => $equipmentBlock->reason,
+                'new_teacher' => $teacher->name,
+                'ceded_by' => optional(auth()->user())->name ?? 'Sistema',
+            ]));
+        } catch (\Throwable $e) {
+            \Log::error('Error al enviar correo de cesión de sala: ' . $e->getMessage());
+        }
+
+        return redirect()->route('equipment.blocks.index')
+            ->with('success', 'Espacio cedido correctamente. Se creó el préstamo para el docente.');
+    }
+
+    /**
+     * Obtiene los bloqueos que aplican a una fecha (semanal + día de ciclo).
+     */
+    private function getBlocksForDate(string $date): \Illuminate\Support\Collection
+    {
+        $dateObj = Carbon::parse($date);
+        $dayOfWeek = strtolower($dateObj->format('l'));
+
+        $activeCycle = SchoolCycle::where('active', true)->first();
+        if (!$activeCycle) {
+            return collect();
+        }
+
+        $cycleDay = \App\Models\CycleDay::getCycleDayForDate($date, $activeCycle->id);
+
+        $blocks = EquipmentBlock::with(['equipment.space'])
+            ->where('school_cycle_id', $activeCycle->id)
+            ->where(function ($q) use ($dayOfWeek, $cycleDay) {
+                $q->where(function ($sub) use ($dayOfWeek) {
+                    $sub->where('is_weekday_block', true)->where($dayOfWeek, true);
+                });
+
+                if ($cycleDay) {
+                    $q->orWhere(function ($sub) use ($cycleDay) {
+                        $sub->where('is_weekday_block', false)->where('cycle_day', $cycleDay->cycle_day);
+                    });
+                }
+            })
+            ->orderBy('start_time')
+            ->get();
+
+        $overrides = EquipmentBlockOverride::where('override_date', $date)
+            ->whereIn('equipment_block_id', $blocks->pluck('id'))
+            ->get()
+            ->keyBy('equipment_block_id');
+
+        $blocks->each(function ($block) use ($overrides) {
+            $block->setAttribute('override', $overrides->get($block->id));
+        });
+
+        return $blocks;
+    }
+
+    /**
+     * Verifica si un bloqueo aplica a una fecha específica.
+     */
+    private function blockAppliesOnDate(EquipmentBlock $block, string $date): bool
+    {
+        $activeCycle = SchoolCycle::where('active', true)->first();
+        if (!$activeCycle || (int) $block->school_cycle_id !== (int) $activeCycle->id) {
+            return false;
+        }
+
+        $dateObj = Carbon::parse($date);
+
+        if ($block->is_weekday_block) {
+            $dayOfWeek = strtolower($dateObj->format('l'));
+            return (bool) $block->$dayOfWeek;
+        }
+
+        $cycleDay = \App\Models\CycleDay::getCycleDayForDate($date, $activeCycle->id);
+
+        return $cycleDay && (int) $cycleDay->cycle_day === (int) $block->cycle_day;
     }
 
     /**

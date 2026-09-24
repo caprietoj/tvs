@@ -11,6 +11,7 @@ class Equipment extends Model
     protected $fillable = [
         'type',
         'section',
+        'space_id',
         'total_units',
         'available_units'
     ];
@@ -18,6 +19,15 @@ class Equipment extends Model
     public function loans()
     {
         return $this->hasMany(EquipmentLoan::class);
+    }
+
+    /**
+     * Obtiene el espacio (sala) asociado a este equipo.
+     * Permite administrar las salas desde el módulo /spaces.
+     */
+    public function space()
+    {
+        return $this->belongsTo(Space::class);
     }
 
     /**

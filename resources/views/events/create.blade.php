@@ -163,14 +163,27 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Sección de Gestión Administrativa -->
+            <div class="form-section">
+                <h3 class="form-section-title">Gestión Administrativa</h3>
+                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Solicitud de parqueadero CAFAM</label>
-                            <select name="cafam_parking" class="form-control" required>
+                            <select name="cafam_parking" id="cafam_parking" class="form-control" required>
                                 <option value="">Seleccione una opción</option>
-                                <option value="0">No</option>
-                                <option value="1">Sí</option>
+                                <option value="0" {{ old('cafam_parking') === '0' ? 'selected' : '' }}>No</option>
+                                <option value="1" {{ old('cafam_parking') === '1' ? 'selected' : '' }}>Sí</option>
                             </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6" id="cafam_parking_details_container" style="display: none;">
+                        <div class="form-group">
+                            <label>¿Qué requiere para el parqueadero CAFAM?</label>
+                            <textarea name="cafam_parking_details" id="cafam_parking_details" class="form-control" rows="3" placeholder="Describa lo que requiere">{{ old('cafam_parking_details') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -874,6 +887,28 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     services.forEach(setupServiceToggle);
+    
+    // Gestión Administrativa - Parqueadero CAFAM
+    (function() {
+        const cafamSelect = document.getElementById('cafam_parking');
+        const cafamDetailsContainer = document.getElementById('cafam_parking_details_container');
+        const cafamDetails = document.getElementById('cafam_parking_details');
+        if (!cafamSelect || !cafamDetailsContainer || !cafamDetails) return;
+
+        function toggleCafamDetails() {
+            const isYes = cafamSelect.value === '1';
+            cafamDetailsContainer.style.display = isYes ? 'block' : 'none';
+            if (isYes) {
+                cafamDetails.setAttribute('required', '');
+            } else {
+                cafamDetails.removeAttribute('required');
+                cafamDetails.value = '';
+            }
+        }
+
+        cafamSelect.addEventListener('change', toggleCafamDetails);
+        toggleCafamDetails();
+    })();
     
     // Mejorar la experiencia del formulario
     document.getElementById('eventForm').addEventListener('submit', function(e) {

@@ -42,12 +42,28 @@ class EquipmentLoansExport implements FromCollection, WithHeadings, WithMapping,
             'Docente' => $loan->user ? $loan->user->name : 'N/A',
             'Sección' => ucfirst(str_replace('_', ' ', $loan->section)),
             'Salón' => $loan->grade, // Changed to match the column name shown in UI
-            'Equipo' => $loan->equipment_type === 'laptop' ? 'Portátil' : 'iPad',
+            'Equipo' => match ($loan->equipment_type) {
+                'laptop' => 'Portátil',
+                'imac' => 'iMac',
+                'ipad' => 'iPad',
+                default => ucfirst((string) $loan->equipment_type),
+            },
             'Cantidad' => $loan->units_requested,
             'Fecha' => $loan->loan_date ? Carbon::parse($loan->loan_date)->format('d/m/Y') : 'N/A',
             'Horario' => ($loan->start_time && $loan->end_time) ? 
                 Carbon::parse($loan->start_time)->format('H:i') . ' - ' . 
                 Carbon::parse($loan->end_time)->format('H:i') : 'N/A',
+            'Cedida' => $loan->blockOverride ? 'Sí' : 'No',
+            'Cedida a' => $loan->blockOverride ? ($loan->user->name ?? '') : '',
+            'Docente original' => ($loan->blockOverride && $loan->blockOverride->block)
+                ? ($loan->blockOverride->block->reason ?? '')
+                : '',
+            'Recursos electrónicos' => $loan->uses_electronic_resources
+                ? ($loan->selected_electronic_resources ?: 'No especificados')
+                : '',
+            'Habilidades' => $loan->uses_skills
+                ? ($loan->skills->isNotEmpty() ? $loan->skills->pluck('name')->implode(', ') : 'No especificadas')
+                : '',
             'Estado' => $this->getStatusText($loan),
             'Observaciones de Entrega' => $loan->delivery_observations ?? '',
             'Observaciones de Devolución' => $loan->return_observations ?? '',
@@ -68,6 +84,11 @@ class EquipmentLoansExport implements FromCollection, WithHeadings, WithMapping,
             'Cantidad',
             'Fecha',
             'Horario',
+            'Cedida',
+            'Cedida a',
+            'Docente original',
+            'Recursos electrónicos',
+            'Habilidades',
             'Estado',
             'Observaciones de Entrega',
             'Observaciones de Devolución',
@@ -87,7 +108,7 @@ class EquipmentLoansExport implements FromCollection, WithHeadings, WithMapping,
         ];
         
         // Estilo para la cabecera
-        $sheet->getStyle('A1:K1')->applyFromArray([
+        $sheet->getStyle('A1:P1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -122,7 +143,7 @@ class EquipmentLoansExport implements FromCollection, WithHeadings, WithMapping,
         }
         
         // Borde para todas las celdas con datos
-        $sheet->getStyle('A1:K' . $sheet->getHighestRow())->applyFromArray([
+        $sheet->getStyle('A1:P' . $sheet->getHighestRow())->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
