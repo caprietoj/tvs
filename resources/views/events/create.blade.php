@@ -12,88 +12,96 @@
         <form action="{{ route('events.store') }}" method="POST" id="eventForm">
             @csrf
             <!-- Sección de información básica -->
-            <div class="form-section">
-                <h3 class="form-section-title">Información Básica</h3>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Fecha de solicitud</label>
-                            <input type="date" name="request_date" class="form-control" required value="{{ date('Y-m-d') }}">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Nombre del evento</label>
-                            <input type="text" name="event_name" class="form-control" required>
-                        </div>
-                    </div>
+            <div class="card mt-4">
+                <div class="card-header bg-primary">
+                    <h3 class="card-title">Información Básica</h3>
                 </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Sección</label>
-                            <input type="text" name="section" class="form-control" required>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Fecha de solicitud</label>
+                                <input type="date" name="request_date" class="form-control" required value="{{ date('Y-m-d') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Nombre del evento</label>
+                                <input type="text" name="event_name" class="form-control" required>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Responsable</label>
-                            <input type="text" name="responsible" class="form-control" required>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Sección</label>
+                                <input type="text" name="section" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Responsable</label>
+                                <input type="text" name="responsible" class="form-control" required>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Sección de fechas y horas -->
-            <div class="form-section">
-                <h3 class="form-section-title">Fecha y Hora</h3>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Fecha del servicio</label>
-                            <div class="date-type-selector mb-2">
-                                <div class="custom-control custom-radio mr-3">
-                                    <input type="radio" id="single_date_option" name="date_type" value="single" class="custom-control-input" checked>
-                                    <label class="custom-control-label" for="single_date_option">Fecha única</label>
-                                </div>
-                                <div class="custom-control custom-radio">
-                                    <input type="radio" id="multiple_dates_option" name="date_type" value="multiple" class="custom-control-input">
-                                    <label class="custom-control-label" for="multiple_dates_option">Múltiples fechas</label>
-                                </div>
-                            </div>
-                            <div id="single_date_container">
-                                <input type="date" name="service_date" id="service_date" class="form-control" required>
-                            </div>
-                            <div id="multiple_dates_container" style="display: none;">
-                                <div class="date-inputs">
-                                    <div class="d-flex mb-2">
-                                        <input type="date" name="service_dates[]" class="form-control mr-2">
-                                        <button type="button" class="btn btn-sm btn-outline-danger remove-date" style="display: none;">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+            <div class="card mt-4">
+                <div class="card-header bg-primary">
+                    <h3 class="card-title">Fecha y Hora</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Fecha del servicio</label>
+                                <div class="date-type-selector mb-2">
+                                    <div class="custom-control custom-radio mr-3">
+                                        <input type="radio" id="single_date_option" name="date_type" value="single" class="custom-control-input" checked>
+                                        <label class="custom-control-label" for="single_date_option">Fecha única</label>
+                                    </div>
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="multiple_dates_option" name="date_type" value="multiple" class="custom-control-input">
+                                        <label class="custom-control-label" for="multiple_dates_option">Múltiples fechas</label>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-outline-primary mt-1" id="add_date">
-                                    <i class="fas fa-plus"></i> Agregar otra fecha
-                                </button>
+                                <div id="single_date_container">
+                                    <input type="date" name="service_date" id="service_date" class="form-control" required>
+                                </div>
+                                <div id="multiple_dates_container" style="display: none;">
+                                    <div class="date-inputs">
+                                        <div class="d-flex mb-2">
+                                            <input type="date" name="service_dates[]" class="form-control mr-2">
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-date" style="display: none;">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary mt-1" id="add_date">
+                                        <i class="fas fa-plus"></i> Agregar otra fecha
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Horario</label>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group mb-0">
-                                        <label class="small text-muted">Hora inicio</label>
-                                        <input type="time" name="event_time" class="form-control" required>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Horario</label>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-0">
+                                            <label class="small text-muted">Hora inicio</label>
+                                            <input type="time" name="event_time" class="form-control" required>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group mb-0">
-                                        <label class="small text-muted">Hora final</label>
-                                        <input type="time" name="end_time" class="form-control" required>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-0">
+                                            <label class="small text-muted">Hora final</label>
+                                            <input type="time" name="end_time" class="form-control" required>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -103,63 +111,67 @@
             </div>
 
             <!-- Sección de lugares y parqueadero -->
-            <div class="form-section">
-                <h3 class="form-section-title">Ubicación</h3>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Lugar</label>
-                            <div class="location-type-selector">
-                                <div class="custom-control custom-radio mr-3">
-                                    <input type="radio" id="single_location_option" name="location_type" value="single" class="custom-control-input" checked>
-                                    <label class="custom-control-label" for="single_location_option">Lugar único</label>
+            <div class="card mt-4">
+                <div class="card-header bg-primary">
+                    <h3 class="card-title">Ubicación</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Lugar</label>
+                                <div class="location-type-selector">
+                                    <div class="custom-control custom-radio mr-3">
+                                        <input type="radio" id="single_location_option" name="location_type" value="single" class="custom-control-input" checked>
+                                        <label class="custom-control-label" for="single_location_option">Lugar único</label>
+                                    </div>
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="multiple_locations_option" name="location_type" value="multiple" class="custom-control-input">
+                                        <label class="custom-control-label" for="multiple_locations_option">Múltiples lugares</label>
+                                    </div>
                                 </div>
-                                <div class="custom-control custom-radio">
-                                    <input type="radio" id="multiple_locations_option" name="location_type" value="multiple" class="custom-control-input">
-                                    <label class="custom-control-label" for="multiple_locations_option">Múltiples lugares</label>
+                                <div id="single_location_container">
+                                    <select name="location" id="location" class="form-control" required>
+                                        <option value="">Seleccione un lugar</option>
+                                        <option value="Plaza Colibri">Plaza Colibrí</option>
+                                        <option value="Cancha football">Cancha Fútbol</option>
+                                        <option value="Cancha Baloncesto">Cancha Baloncesto</option>
+                                        <option value="Tienda">Tienda</option>
+                                        <option value="Biblioteca Primer Piso">Biblioteca Primer Piso</option>
+                                        <option value="Biblioteca Segundo Piso">Biblioteca Segundo Piso</option>
+                                        <option value="Auditorio Biblioteca">Auditorio Biblioteca</option>
+                                        <option value="Teatro">Teatro</option>
+                                        <option value="Retiro San Juan">Retiro San Juan</option>
+                                        <option value="Aula Multiple">Aula Multiple</option>
+                                        <option value="Sala de Cine">Sala de Cine</option>
+                                        <option value="Cafeteria">Cafeteria</option>
+                                        <option value="Restaurante">Restaurante</option>
+                                        <option value="Oficina Admisiones">Oficina Admisiones</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                    <div id="custom_location_container" style="display: none; margin-top: 10px;">
+                                        <input type="text" name="custom_location" id="custom_location" class="form-control" placeholder="Ingrese el lugar">
+                                    </div>
                                 </div>
-                            </div>
-                            <div id="single_location_container">
-                                <select name="location" id="location" class="form-control" required>
-                                    <option value="">Seleccione un lugar</option>
-                                    <option value="Plaza Colibri">Plaza Colibrí</option>
-                                    <option value="Cancha football">Cancha Fútbol</option>
-                                    <option value="Cancha Baloncesto">Cancha Baloncesto</option>
-                                    <option value="Tienda">Tienda</option>
-                                    <option value="Biblioteca Primer Piso">Biblioteca Primer Piso</option>
-                                    <option value="Biblioteca Segundo Piso">Biblioteca Segundo Piso</option>
-                                    <option value="Auditorio Biblioteca">Auditorio Biblioteca</option>
-                                    <option value="Teatro">Teatro</option>
-                                    <option value="Retiro San Juan">Retiro San Juan</option>
-                                    <option value="Aula Multiple">Aula Multiple</option>
-                                    <option value="Sala de Cine">Sala de Cine</option>
-                                    <option value="Cafeteria">Cafeteria</option>
-                                    <option value="Restaurante">Restaurante</option>
-                                    <option value="Oficina Admisiones">Oficina Admisiones</option>
-                                    <option value="Otro">Otro</option>
-                                </select>
-                                <div id="custom_location_container" style="display: none; margin-top: 10px;">
-                                    <input type="text" name="custom_location" id="custom_location" class="form-control" placeholder="Ingrese el lugar">
+                                <div id="multiple_locations_container" style="display: none;">
+                                    <select name="locations[]" id="locations" class="form-control" multiple size="5">
+                                        <option value="Plaza Colibri">Plaza Colibrí</option>
+                                        <option value="Cancha football">Cancha Fútbol</option>
+                                        <option value="Cancha Baloncesto">Cancha Baloncesto</option>
+                                        <option value="Tienda">Tienda</option>
+                                        <option value="Biblioteca Primer Piso">Biblioteca Primer Piso</option>
+                                        <option value="Biblioteca Segundo Piso">Biblioteca Segundo Piso</option>
+                                        <option value="Auditorio Biblioteca">Auditorio Biblioteca</option>
+                                        <option value="Teatro">Teatro</option>
+                                        <option value="Retiro San Juan">Retiro San Juan</option>
+                                        <option value="Aula Multiple">Aula Multiple</option>
+                                        <option value="Sala de Cine">Sala de Cine</option>
+                                        <option value="Cafeteria">Cafeteria</option>
+                                        <option value="Restaurante">Restaurante</option>
+                                        <option value="Oficina Admisiones">Oficina Admisiones</option>
+                                    </select>
+                                    <small class="form-text text-muted">Mantenga presionada la tecla Ctrl para seleccionar varios lugares.</small>
                                 </div>
-                            </div>
-                            <div id="multiple_locations_container" style="display: none;">
-                                <select name="locations[]" id="locations" class="form-control" multiple size="5">
-                                    <option value="Plaza Colibri">Plaza Colibrí</option>
-                                    <option value="Cancha football">Cancha Fútbol</option>
-                                    <option value="Cancha Baloncesto">Cancha Baloncesto</option>
-                                    <option value="Tienda">Tienda</option>
-                                    <option value="Biblioteca Primer Piso">Biblioteca Primer Piso</option>
-                                    <option value="Biblioteca Segundo Piso">Biblioteca Segundo Piso</option>
-                                    <option value="Auditorio Biblioteca">Auditorio Biblioteca</option>
-                                    <option value="Teatro">Teatro</option>
-                                    <option value="Retiro San Juan">Retiro San Juan</option>
-                                    <option value="Aula Multiple">Aula Multiple</option>
-                                    <option value="Sala de Cine">Sala de Cine</option>
-                                    <option value="Cafeteria">Cafeteria</option>
-                                    <option value="Restaurante">Restaurante</option>
-                                    <option value="Oficina Admisiones">Oficina Admisiones</option>
-                                </select>
-                                <small class="form-text text-muted">Mantenga presionada la tecla Ctrl para seleccionar varios lugares.</small>
                             </div>
                         </div>
                     </div>
@@ -167,23 +179,27 @@
             </div>
 
             <!-- Sección de Gestión Administrativa -->
-            <div class="form-section">
-                <h3 class="form-section-title">Gestión Administrativa</h3>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Solicitud de parqueadero CAFAM</label>
-                            <select name="cafam_parking" id="cafam_parking" class="form-control" required>
-                                <option value="">Seleccione una opción</option>
-                                <option value="0" {{ old('cafam_parking') === '0' ? 'selected' : '' }}>No</option>
-                                <option value="1" {{ old('cafam_parking') === '1' ? 'selected' : '' }}>Sí</option>
-                            </select>
+            <div class="card mt-4">
+                <div class="card-header bg-primary">
+                    <h3 class="card-title">Gestión Administrativa</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Solicitud de parqueadero CAFAM</label>
+                                <select name="cafam_parking" id="cafam_parking" class="form-control" required>
+                                    <option value="">Seleccione una opción</option>
+                                    <option value="0" {{ old('cafam_parking') === '0' ? 'selected' : '' }}>No</option>
+                                    <option value="1" {{ old('cafam_parking') === '1' ? 'selected' : '' }}>Sí</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-6" id="cafam_parking_details_container" style="display: none;">
-                        <div class="form-group">
-                            <label>Requerimientos adicionales</label>
-                            <textarea name="cafam_parking_details" id="cafam_parking_details" class="form-control" rows="3" placeholder="Describa lo que requiere">{{ old('cafam_parking_details') }}</textarea>
+                        <div class="col-md-6" id="cafam_parking_details_container" style="display: none;">
+                            <div class="form-group">
+                                <label>Requerimientos adicionales</label>
+                                <textarea name="cafam_parking_details" id="cafam_parking_details" class="form-control" rows="3" placeholder="Describa lo que requiere">{{ old('cafam_parking_details') }}</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
