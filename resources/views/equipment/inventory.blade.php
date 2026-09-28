@@ -11,6 +11,11 @@
 @stop
 
 @section('content')
+@php
+    $laptopBach = $equipment->where('section', 'bachillerato')->where('type', 'laptop')->first();
+    $ipadBach = $equipment->where('section', 'bachillerato')->where('type', 'ipad')->first();
+    $ipadPrimaria = $equipment->where('section', 'preescolar_primaria')->where('type', 'ipad')->first();
+@endphp
 <div class="container-fluid">
     <!-- Resumen del Inventario -->
     <div class="row mb-4">
@@ -121,18 +126,24 @@
             <div class="card card-primary card-outline elevation-3">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-plus-circle mr-2"></i>
-                        Registrar Equipos - Bachillerato
+                        <i class="fas fa-edit mr-2"></i>
+                        Modificar Equipos - Bachillerato
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form id="laptopForm" action="{{ route('equipment.store') }}" method="POST" class="mb-4 equipment-form">
+                    <form id="laptopForm"
+                          action="{{ $laptopBach ? route('equipment.update', $laptopBach) : route('equipment.store') }}"
+                          method="POST" class="mb-4 equipment-form">
                         @csrf
+                        @if($laptopBach)
+                            @method('PUT')
+                        @endif
                         <input type="hidden" name="section" value="bachillerato">
+                        <input type="hidden" name="type" value="laptop">
                         <div class="form-group">
                             <label class="font-weight-bold d-block">
                                 <i class="fas fa-laptop mr-1"></i> Portátiles
-                                <small class="text-muted ml-2">Ingrese la cantidad a registrar</small>
+                                <small class="text-muted ml-2">{{ $laptopBach ? 'Modifique la cantidad total' : 'Ingrese la cantidad a registrar' }}</small>
                             </label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -144,28 +155,42 @@
                                        required 
                                        min="1" 
                                        placeholder="Cantidad"
+                                       value="{{ old('total_units', $laptopBach->total_units ?? '') }}"
                                        data-type="laptop">
-                                <input type="hidden" name="type" value="laptop">
                                 <div class="input-group-append">
                                     <button type="submit" class="btn btn-primary btn-register">
-                                        <i class="fas fa-plus mr-1"></i> Registrar
+                                        @if($laptopBach)
+                                            <i class="fas fa-save mr-1"></i> Actualizar
+                                        @else
+                                            <i class="fas fa-plus mr-1"></i> Registrar
+                                        @endif
                                     </button>
                                 </div>
                             </div>
                             <small class="form-text text-muted mt-2">
                                 <i class="fas fa-info-circle"></i>
-                                Los equipos registrados se agregarán al inventario actual
+                                @if($laptopBach)
+                                    Actualmente hay {{ $laptopBach->total_units }} equipos registrados ({{ $laptopBach->available_units }} disponibles)
+                                @else
+                                    Los equipos registrados se agregarán al inventario actual
+                                @endif
                             </small>
                         </div>
                     </form>
 
-                    <form id="ipadBachForm" action="{{ route('equipment.store') }}" method="POST" class="equipment-form">
+                    <form id="ipadBachForm"
+                          action="{{ $ipadBach ? route('equipment.update', $ipadBach) : route('equipment.store') }}"
+                          method="POST" class="equipment-form">
                         @csrf
+                        @if($ipadBach)
+                            @method('PUT')
+                        @endif
                         <input type="hidden" name="section" value="bachillerato">
+                        <input type="hidden" name="type" value="ipad">
                         <div class="form-group">
                             <label class="font-weight-bold d-block">
                                 <i class="fas fa-tablet-alt mr-1"></i> iPads
-                                <small class="text-muted ml-2">Ingrese la cantidad a registrar</small>
+                                <small class="text-muted ml-2">{{ $ipadBach ? 'Modifique la cantidad total' : 'Ingrese la cantidad a registrar' }}</small>
                             </label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -177,17 +202,25 @@
                                        required 
                                        min="1" 
                                        placeholder="Cantidad"
+                                       value="{{ old('total_units', $ipadBach->total_units ?? '') }}"
                                        data-type="ipad">
-                                <input type="hidden" name="type" value="ipad">
                                 <div class="input-group-append">
                                     <button type="submit" class="btn btn-info btn-register">
-                                        <i class="fas fa-plus mr-1"></i> Registrar
+                                        @if($ipadBach)
+                                            <i class="fas fa-save mr-1"></i> Actualizar
+                                        @else
+                                            <i class="fas fa-plus mr-1"></i> Registrar
+                                        @endif
                                     </button>
                                 </div>
                             </div>
                             <small class="form-text text-muted mt-2">
                                 <i class="fas fa-info-circle"></i>
-                                Los equipos registrados se agregarán al inventario actual
+                                @if($ipadBach)
+                                    Actualmente hay {{ $ipadBach->total_units }} equipos registrados ({{ $ipadBach->available_units }} disponibles)
+                                @else
+                                    Los equipos registrados se agregarán al inventario actual
+                                @endif
                             </small>
                         </div>
                     </form>
@@ -200,19 +233,24 @@
             <div class="card card-success card-outline elevation-3">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-plus-circle mr-2"></i>
-                        Registrar Equipos - Preescolar y Primaria
+                        <i class="fas fa-edit mr-2"></i>
+                        Modificar Equipos - Preescolar y Primaria
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form id="ipadPrimariaForm" action="{{ route('equipment.store') }}" method="POST" class="equipment-form">
+                    <form id="ipadPrimariaForm"
+                          action="{{ $ipadPrimaria ? route('equipment.update', $ipadPrimaria) : route('equipment.store') }}"
+                          method="POST" class="equipment-form">
                         @csrf
+                        @if($ipadPrimaria)
+                            @method('PUT')
+                        @endif
                         <input type="hidden" name="section" value="preescolar_primaria">
                         <input type="hidden" name="type" value="ipad">
                         <div class="form-group">
                             <label class="font-weight-bold d-block">
                                 <i class="fas fa-tablet-alt mr-1"></i> iPads
-                                <small class="text-muted ml-2">Ingrese la cantidad a registrar</small>
+                                <small class="text-muted ml-2">{{ $ipadPrimaria ? 'Modifique la cantidad total' : 'Ingrese la cantidad a registrar' }}</small>
                             </label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -224,16 +262,25 @@
                                        required 
                                        min="1" 
                                        placeholder="Cantidad"
+                                       value="{{ old('total_units', $ipadPrimaria->total_units ?? '') }}"
                                        data-type="ipad">
                                 <div class="input-group-append">
                                     <button type="submit" class="btn btn-success btn-register">
-                                        <i class="fas fa-plus mr-1"></i> Registrar
+                                        @if($ipadPrimaria)
+                                            <i class="fas fa-save mr-1"></i> Actualizar
+                                        @else
+                                            <i class="fas fa-plus mr-1"></i> Registrar
+                                        @endif
                                     </button>
                                 </div>
                             </div>
                             <small class="form-text text-muted mt-2">
                                 <i class="fas fa-info-circle"></i>
-                                Los equipos registrados se agregarán al inventario actual
+                                @if($ipadPrimaria)
+                                    Actualmente hay {{ $ipadPrimaria->total_units }} equipos registrados ({{ $ipadPrimaria->available_units }} disponibles)
+                                @else
+                                    Los equipos registrados se agregarán al inventario actual
+                                @endif
                             </small>
                         </div>
                     </form>
@@ -249,7 +296,7 @@
         <div class="spinner-border text-primary" role="status">
             <span class="sr-only">Procesando...</span>
         </div>
-        <div class="mt-3 text-primary">Registrando equipos...</div>
+        <div class="mt-3 text-primary">Guardando cambios...</div>
     </div>
 </div>
 @stop
@@ -427,13 +474,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const type = this.querySelector('input[name="type"]').value;
             const units = this.querySelector('input[name="total_units"]').value;
             const section = this.querySelector('input[name="section"]').value;
+            const isUpdate = this.querySelector('input[name="_method"]') !== null;
 
             Swal.fire({
-                title: '¿Confirmar registro?',
+                title: isUpdate ? '¿Confirmar actualización?' : '¿Confirmar registro?',
                 html: `
                     <div class="text-left">
                         <p><strong>Tipo:</strong> ${type === 'laptop' ? 'Portátiles' : 'iPads'}</p>
-                        <p><strong>Cantidad:</strong> ${units} unidad(es)</p>
+                        <p><strong>Cantidad total:</strong> ${units} unidad(es)</p>
                         <p><strong>Sección:</strong> ${section === 'bachillerato' ? 'Bachillerato' : 'Preescolar y Primaria'}</p>
                     </div>
                 `,
@@ -441,7 +489,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showCancelButton: true,
                 confirmButtonColor: '#364E76',
                 cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, registrar',
+                confirmButtonText: isUpdate ? 'Sí, actualizar' : 'Sí, registrar',
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {

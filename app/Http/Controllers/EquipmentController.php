@@ -83,6 +83,48 @@ class EquipmentController extends Controller
     }
 
     /**
+     * Actualiza la cantidad total de equipos de un registro del inventario,
+     * ajustando las unidades disponibles según la diferencia.
+     */
+    public function update(Request $request, Equipment $equipment)
+    {
+        $validated = $request->validate([
+            'total_units' => 'required|integer|min:1',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $oldTotalUnits = $equipment->total_units;
+            $difference = $validated['total_units'] - $oldTotalUnits;
+
+            $equipment->total_units = $validated['total_units'];
+            $equipment->available_units = max(0, $equipment->available_units + $difference);
+            $equipment->save();
+
+            DB::commit();
+
+            Log::info('Inventario de equipos actualizado', [
+                'equipment_id' => $equipment->id,
+                'type' => $equipment->type,
+                'section' => $equipment->section,
+                'old_total_units' => $oldTotalUnits,
+                'new_total_units' => $equipment->total_units,
+                'available_units' => $equipment->available_units,
+            ]);
+
+            return redirect()->route('equipment.inventory')
+                ->with('success', 'Cantidad de equipos actualizada correctamente');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al actualizar inventario de equipos: ' . $e->getMessage());
+
+            return redirect()->route('equipment.inventory')
+                ->with('error', 'No se pudo actualizar la cantidad de equipos. Intente nuevamente.');
+        }
+    }
+
+    /**
      * Get class schedule periods for the requested section and date
      */
     public function getClassSchedule(Request $request)

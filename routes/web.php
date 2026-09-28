@@ -492,6 +492,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/loans', [EquipmentController::class, 'showLoans'])->name('equipment.loans');
         Route::get('/loans/export', [EquipmentController::class, 'exportLoans'])->name('equipment.loans.export');
         Route::get('/inventory', [EquipmentController::class, 'inventory'])->name('equipment.inventory');
+        Route::put('/inventory/{equipment}', [EquipmentController::class, 'update'])
+            ->name('equipment.update')
+            ->middleware('can:equipment.manage');
         Route::post('/reset', [EquipmentController::class, 'resetInventory'])->name('equipment.reset')->middleware('can:equipment.manage');
         Route::get('/dashboard', [EquipmentController::class, 'dashboard'])->name('equipment.dashboard');
         Route::get('/loans/data', [EquipmentController::class, 'getLoansData'])->name('equipment.loans.data');
