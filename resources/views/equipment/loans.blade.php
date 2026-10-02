@@ -53,9 +53,22 @@
                 <label for="sectionFilter">Sección</label>
                 <select class="form-control form-control-sm" id="sectionFilter" name="section">
                     <option value="">Todas las secciones</option>
-                    <option value="bachillerato">Bachillerato</option>
-                    <option value="preescolar_primaria">Preescolar y Primaria</option>
-                    <option value="administrativo">Administrativo</option>
+                    @php
+                        $sectionLabels = [
+                            'bachillerato' => 'Bachillerato',
+                            'preescolar_primaria' => 'Preescolar y Primaria',
+                            'administrativo' => 'Administrativo',
+                            'sala_informatica' => 'Sala de Informática – Segundo Piso',
+                            'sala_informatica_primer_piso' => 'Sala de Informática – Primer Piso',
+                            'biblioteca_sala_computadores' => 'Biblioteca - Sala de computadores (MAC)',
+                        ];
+                        $availableSections = $loans->pluck('section')->filter()->unique()->values();
+                    @endphp
+                    @foreach($availableSections as $sectionValue)
+                        <option value="{{ $sectionValue }}">
+                            {{ $sectionLabels[$sectionValue] ?? ucfirst(str_replace('_', ' ', $sectionValue)) }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
             <div class="col-md-3 mb-2">
@@ -185,7 +198,7 @@
                                         </span>
                                     </td>
                                     <td><span class="badge bg-primary">{{ $loan->units_requested }}</span></td>
-                                    <td>{{ $loan->loan_date->format('d/m/Y') }}</td>
+                                    <td data-order="{{ $loan->loan_date->format('Y-m-d') }}">{{ $loan->loan_date->format('d/m/Y') }}</td>
                                     <td>
                                         <span class="time-badge">
                                             <i class="far fa-clock"></i> {{ \Carbon\Carbon::parse($loan->start_time)->format('H:i') }} - 

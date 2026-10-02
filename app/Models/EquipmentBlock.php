@@ -207,6 +207,14 @@ class EquipmentBlock extends Model
             $totalBlocked += (int) $cycleQuery->sum('blocked_units');
         }
 
+        // 3. Bloqueos de la sala (módulo /space-blocks) para equipos con espacio asociado.
+        // Si la sala está bloqueada, no hay unidades disponibles.
+        $equipment = \App\Models\Equipment::find($equipmentId);
+        if ($equipment && $equipment->space_id
+            && \App\Models\SpaceBlock::isSpaceBlockedForDate($equipment->space_id, $date, $startTime, $endTime)) {
+            return max($totalBlocked, (int) $equipment->total_units);
+        }
+
         return $totalBlocked;
     }
 

@@ -74,6 +74,14 @@ class SpaceReservation extends Model
     }
 
     /**
+     * Préstamo de equipo sincronizado con esta reserva (salas con equipos asociados)
+     */
+    public function equipmentLoan()
+    {
+        return $this->hasOne(EquipmentLoan::class, 'space_reservation_id');
+    }
+
+    /**
      * Obtiene la fecha formateada
      */
     public function getFormattedDateAttribute()

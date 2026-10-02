@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Mail\SpaceReservationNotification;
 use App\Models\CycleDay;
+use App\Models\Equipment;
+use App\Models\EquipmentLoan;
 use App\Models\Holiday;
 use App\Models\SchoolCycle;
 use App\Models\Space;
@@ -22,6 +24,69 @@ class SpaceReservationController extends Controller
     private function isSpaceAdmin()
     {
         return Auth::user()->hasRole(['admin', 'admin-espacios', 'reservation_manager']);
+    }
+
+    /**
+     * Sincroniza un préstamo de equipo con la reserva de espacio.
+     *
+     * Las salas de informática y biblioteca tienen un equipo asociado (equipment.space_id).
+     * Cuando se reserva el espacio, también se registra/actualiza el préstamo de equipo
+     * para que aparezca en /equipment/loans y en su exportación a Excel.
+     */
+    private function syncEquipmentLoan(SpaceReservation $reservation): void
+    {
+        $equipment = Equipment::where('space_id', $reservation->space_id)->orderBy('id')->first();
+        $loan = EquipmentLoan::where('space_reservation_id', $reservation->id)->first();
+
+        // Si el espacio no tiene equipo o la reserva fue cancelada/rechazada, eliminar el préstamo
+        if (!$equipment || in_array($reservation->status, ['cancelled', 'rejected'])) {
+            if ($loan) {
+                $loan->delete();
+            }
+            return;
+        }
+
+        $date = $reservation->date instanceof Carbon
+            ? $reservation->date->format('Y-m-d')
+            : Carbon::parse($reservation->date)->format('Y-m-d');
+
+        $data = [
+            'user_id' => $reservation->user_id,
+            'equipment_id' => $equipment->id,
+            'section' => $equipment->section,
+            'grade' => optional($equipment->space)->name ?: $equipment->section,
+            'loan_date' => $date,
+            'start_time' => $reservation->start_time,
+            'end_time' => $reservation->end_time,
+            'units_requested' => $equipment->total_units,
+            'uses_electronic_resources' => !empty($reservation->selected_electronic_resources),
+            'selected_electronic_resources' => $reservation->selected_electronic_resources,
+        ];
+
+        if ($loan) {
+            // No sobreescribir el flujo de entrega/devolución si ya avanzó
+            if ($loan->status === 'pending') {
+                $loan->update($data);
+            } else {
+                $loan->update([
+                    'section' => $data['section'],
+                    'grade' => $data['grade'],
+                ]);
+            }
+        } else {
+            $data['space_reservation_id'] = $reservation->id;
+            $data['status'] = 'pending';
+            $data['auto_return'] = true;
+            EquipmentLoan::create($data);
+        }
+    }
+
+    /**
+     * Elimina el préstamo de equipo asociado a la reserva.
+     */
+    private function removeEquipmentLoan(SpaceReservation $reservation): void
+    {
+        EquipmentLoan::where('space_reservation_id', $reservation->id)->delete();
     }
 
     /**
@@ -67,7 +132,16 @@ class SpaceReservationController extends Controller
      */
     public function create()
     {
-        $spaces = Space::where('active', true)->get();
+        // Excluir las salas que se gestionan desde el módulo de equipos
+        // (salas de informática y biblioteca - tienen equipo asociado).
+        $equipmentSpaceIds = Equipment::whereNotNull('space_id')->pluck('space_id')->all();
+
+        $spaces = Space::where('active', true)
+            ->when(!empty($equipmentSpaceIds), function ($query) use ($equipmentSpaceIds) {
+                $query->whereNotIn('id', $equipmentSpaceIds);
+            })
+            ->get();
+
         $activeCycle = SchoolCycle::where('active', true)->first();
         
         if (!$activeCycle) {
@@ -97,6 +171,13 @@ class SpaceReservationController extends Controller
             'purpose' => 'required|string|max:255',
             'selected_electronic_resources' => 'nullable|string',
         ]);
+
+        // Las salas con equipo asociado (informática y biblioteca) se solicitan
+        // desde el módulo de equipos, no desde reservas de espacios.
+        if (Equipment::where('space_id', $request->space_id)->exists()) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Las salas de informática y la sala de computadores de biblioteca se solicitan en el módulo de Préstamo de Equipos.');
+        }
         
         // Validar cada fecha
         $errors = [];
@@ -166,6 +247,9 @@ class SpaceReservationController extends Controller
                 }
             }
             
+            // Sincronizar con el módulo de préstamos de equipos (salas con equipo asociado)
+            $this->syncEquipmentLoan($reservation);
+
             // Cargar las relaciones necesarias para el correo
             $reservation->load(['user', 'space', 'items.item']);
             
@@ -414,6 +498,9 @@ class SpaceReservationController extends Controller
             // Actualizar la reserva
             $spaceReservation->fill($validated);
             $spaceReservation->save();
+
+            // Sincronizar con el módulo de préstamos de equipos
+            $this->syncEquipmentLoan($spaceReservation);
             
             // Procesar los implementos seleccionados si se han modificado
             if ($request->has('items') && !$fromPendingPage) {
@@ -513,6 +600,9 @@ class SpaceReservationController extends Controller
             $spaceReservation->update(['status' => 'cancelled']);
             $message = 'Reserva cancelada exitosamente.';
         }
+
+        // Eliminar el préstamo de equipo sincronizado, si existe
+        $this->removeEquipmentLoan($spaceReservation);
         
         return redirect()->route('space-reservations.index')
             ->with('success', $message);
@@ -774,13 +864,21 @@ class SpaceReservationController extends Controller
                 // Extraer componentes de fecha y hora de forma segura
                 $dateStr = $reservation->date->format('Y-m-d');
                 
-                // Extraer solo la hora de los campos de hora
-                $startHour = is_string($reservation->start_time) ? $reservation->start_time : substr($reservation->start_time->format('H:i:s'), 0, 5);
-                $endHour = is_string($reservation->end_time) ? $reservation->end_time : substr($reservation->end_time->format('H:i:s'), 0, 5);
-                
+                // Extraer solo la hora de los campos de hora (soporta string "HH:MM(:SS)" o Carbon)
+                $startHour = is_string($reservation->start_time)
+                    ? $reservation->start_time
+                    : $reservation->start_time->format('H:i:s');
+                $endHour = is_string($reservation->end_time)
+                    ? $reservation->end_time
+                    : $reservation->end_time->format('H:i:s');
+
+                // Normalizar a HH:MM para evitar "trailing data"
+                $startHour = substr($startHour, 0, 5);
+                $endHour = substr($endHour, 0, 5);
+
                 // Crear objetos de fecha y hora combinados correctamente
-                $startDateTime = Carbon::createFromFormat('Y-m-d H:i', $dateStr . ' ' . $startHour);
-                $endDateTime = Carbon::createFromFormat('Y-m-d H:i', $dateStr . ' ' . $endHour);
+                $startDateTime = Carbon::parse($dateStr . ' ' . $startHour);
+                $endDateTime = Carbon::parse($dateStr . ' ' . $endHour);
                 
                 $events[] = [
                     'id' => $reservation->id,
@@ -884,7 +982,10 @@ class SpaceReservationController extends Controller
         
         // Actualizar el estado de la reserva a "cancelled"
         $spaceReservation->update(['status' => 'cancelled']);
-        
+
+        // Eliminar el préstamo de equipo sincronizado, si existe
+        $this->removeEquipmentLoan($spaceReservation);
+
         return redirect()->back()
             ->with('success', 'Reserva cancelada exitosamente.');
     }
@@ -900,8 +1001,13 @@ class SpaceReservationController extends Controller
                 ->with('error', 'No tiene permisos para copiar esta reserva.');
         }
         
-        // Obtener todos los espacios activos
-        $spaces = Space::where('active', true)->get();
+        // Obtener todos los espacios activos (excluyendo los que se gestionan desde equipos)
+        $equipmentSpaceIds = Equipment::whereNotNull('space_id')->pluck('space_id')->all();
+        $spaces = Space::where('active', true)
+            ->when(!empty($equipmentSpaceIds), function ($query) use ($equipmentSpaceIds) {
+                $query->whereNotIn('id', $equipmentSpaceIds);
+            })
+            ->get();
         $activeCycle = SchoolCycle::where('active', true)->first();
         
         if (!$activeCycle) {
@@ -950,6 +1056,9 @@ class SpaceReservationController extends Controller
         $spaceReservation->approved_by = Auth::id();
         $spaceReservation->approved_at = now();
         $spaceReservation->save();
+
+        // Sincronizar con el módulo de préstamos de equipos
+        $this->syncEquipmentLoan($spaceReservation);
         
         // Actualizar el estado de los implementos si existen
         if ($spaceReservation->items()->count() > 0) {

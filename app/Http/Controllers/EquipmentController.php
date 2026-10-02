@@ -310,6 +310,19 @@ class EquipmentController extends Controller
                 }
             }
 
+            // Verificar bloqueos de la sala (módulo /space-blocks)
+            if ($equipment->space_id
+                && \App\Models\SpaceBlock::isSpaceBlockedForDate(
+                    $equipment->space_id,
+                    $validated['loan_date'],
+                    $validated['start_time'],
+                    $validated['end_time']
+                )) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'La sala está bloqueada en la fecha y horario seleccionados. Por favor elija otra fecha u horario.');
+            }
+
             // Obtener todos los préstamos para la fecha
             $allLoans = EquipmentLoan::where('equipment_id', $validated['equipment_id'])
                 ->where('loan_date', $validated['loan_date'])
@@ -1555,6 +1568,15 @@ class EquipmentController extends Controller
                     'type' => 'cycle_day',
                     'cycle_day' => $cycleDay->cycle_day
                 ];
+            }
+        }
+
+        // 3. Bloqueos de la sala (módulo /space-blocks) para equipos con espacio asociado
+        $equipment = \App\Models\Equipment::find($equipmentId);
+        if ($equipment && $equipment->space_id) {
+            foreach (\App\Models\SpaceBlock::getBlocksForDate($equipment->space_id, $date) as $spaceBlock) {
+                $spaceBlock['units_blocked'] = $equipment->total_units;
+                $blockedSlots[] = $spaceBlock;
             }
         }
 

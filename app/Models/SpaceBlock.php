@@ -199,4 +199,132 @@ class SpaceBlock extends Model
         
         return $blocks;
     }
+
+    /**
+     * Verifica si un espacio está bloqueado en una fecha y horario específicos,
+     * considerando bloqueos semanales (con excepciones por fecha) y por día de ciclo.
+     *
+     * @param int $spaceId
+     * @param string $date Fecha (Y-m-d)
+     * @param string $startTime Hora inicio (HH:MM)
+     * @param string $endTime Hora fin (HH:MM)
+     * @return bool
+     */
+    public static function isSpaceBlockedForDate(int $spaceId, string $date, string $startTime, string $endTime): bool
+    {
+        $startTime = substr($startTime, 0, 5);
+        $endTime = substr($endTime, 0, 5);
+
+        $dateObj = Carbon::parse($date);
+        $dayOfWeek = strtolower($dateObj->format('l'));
+        $activeCycle = SchoolCycle::where('active', true)->first();
+
+        // 1. Bloqueos semanales (con excepciones por fecha)
+        $weeklyBlocks = self::where('space_id', $spaceId)
+            ->where('is_weekday_block', true)
+            ->where($dayOfWeek, true)
+            ->where('start_time', '<', $endTime)
+            ->where('end_time', '>', $startTime)
+            ->get();
+
+        foreach ($weeklyBlocks as $block) {
+            $hasException = SpaceBlockException::where('space_block_id', $block->id)
+                ->where('exception_date', $date)
+                ->exists();
+
+            if (!$hasException) {
+                return true;
+            }
+        }
+
+        // 2. Bloqueos por día de ciclo
+        if ($activeCycle) {
+            $cycleDay = CycleDay::getCycleDayForDate($date, $activeCycle->id);
+
+            if ($cycleDay) {
+                $exists = self::where('space_id', $spaceId)
+                    ->where('school_cycle_id', $activeCycle->id)
+                    ->where('cycle_day', $cycleDay->cycle_day)
+                    ->where('is_weekday_block', false)
+                    ->where('start_time', '<', $endTime)
+                    ->where('end_time', '>', $startTime)
+                    ->exists();
+
+                if ($exists) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Obtiene los bloqueos que aplican a un espacio en una fecha específica.
+     * Útil para mostrarlos en la línea de tiempo de equipos.
+     *
+     * @param int $spaceId
+     * @param string $date Fecha (Y-m-d)
+     * @return array
+     */
+    public static function getBlocksForDate(int $spaceId, string $date): array
+    {
+        $dateObj = Carbon::parse($date);
+        $dayOfWeek = strtolower($dateObj->format('l'));
+        $activeCycle = SchoolCycle::where('active', true)->first();
+
+        $result = [];
+
+        // 1. Bloqueos semanales
+        $weeklyBlocks = self::where('space_id', $spaceId)
+            ->where('is_weekday_block', true)
+            ->where($dayOfWeek, true)
+            ->orderBy('start_time')
+            ->get();
+
+        foreach ($weeklyBlocks as $block) {
+            $hasException = SpaceBlockException::where('space_block_id', $block->id)
+                ->where('exception_date', $date)
+                ->exists();
+
+            if ($hasException) {
+                continue;
+            }
+
+            $result[] = [
+                'start' => substr($block->start_time, 0, 5),
+                'end' => substr($block->end_time, 0, 5),
+                'units_blocked' => null,
+                'reason' => $block->reason ?? 'Bloqueo de sala',
+                'type' => 'space_block',
+            ];
+        }
+
+        // 2. Bloqueos por día de ciclo
+        if ($activeCycle) {
+            $cycleDay = CycleDay::getCycleDayForDate($date, $activeCycle->id);
+
+            if ($cycleDay) {
+                $cycleBlocks = self::where('space_id', $spaceId)
+                    ->where('school_cycle_id', $activeCycle->id)
+                    ->where('cycle_day', $cycleDay->cycle_day)
+                    ->where('is_weekday_block', false)
+                    ->orderBy('start_time')
+                    ->get();
+
+                foreach ($cycleBlocks as $block) {
+                    $result[] = [
+                        'start' => substr($block->start_time, 0, 5),
+                        'end' => substr($block->end_time, 0, 5),
+                        'units_blocked' => null,
+                        'reason' => $block->reason ?? ('Bloqueo de sala (día de ciclo ' . $cycleDay->cycle_day . ')'),
+                        'type' => 'space_block',
+                        'cycle_day' => $cycleDay->cycle_day,
+                    ];
+                }
+            }
+        }
+
+        return $result;
+    }
 }

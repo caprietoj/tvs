@@ -10,6 +10,7 @@ class EquipmentLoan extends Model
     protected $fillable = [
         'user_id',
         'equipment_id',
+        'space_reservation_id',
         'section',
         'subsection',
         'grade',
@@ -67,6 +68,14 @@ class EquipmentLoan extends Model
     public function blockOverride()
     {
         return $this->hasOne(EquipmentBlockOverride::class, 'equipment_loan_id');
+    }
+
+    /**
+     * Reserva de espacio (módulo /spaces) que originó este préstamo, si aplica.
+     */
+    public function spaceReservation()
+    {
+        return $this->belongsTo(SpaceReservation::class, 'space_reservation_id');
     }
 
     public function user()
