@@ -314,7 +314,8 @@ class SectionClassifierService
             'jefesistemas@tvs.edu.co',
             'administrativedirector@tvs.edu.co',
             'auxiliarsistemas@tvs.edu.co',
-            'contabilidad@tvs.edu.co'
+            'contabilidad@tvs.edu.co',
+            'admin@tvs.edu.co'
         ];
         
         $filteredEmails = array_diff($emails, $excludedEmails);
