@@ -14,6 +14,7 @@ class EquipmentLoan extends Model
         'section',
         'subsection',
         'grade',
+        'course',
         'teacher_name',
         'loan_date',
         'start_time',

@@ -103,6 +103,20 @@
                     </div>
 
                     <div class="row">
+                        <div class="col-md-6" id="course-field-row" style="display: none;">
+                            <div class="form-group">
+                                <label><i class="fas fa-users"></i> Curso</label>
+                                <select name="course" class="form-control @error('course') is-invalid @enderror" id="course-select">
+                                    <option value="">Seleccione una sección primero</option>
+                                </select>
+                                @error('course')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label><i class="fas fa-door-open"></i> Salón</label>
@@ -669,6 +683,10 @@
                                 <th>Equipo</th>
                                 <td id="preview-equipment"></td>
                             </tr>
+                            <tr id="preview-course-row">
+                                <th>Curso</th>
+                                <td id="preview-course"></td>
+                            </tr>
                             <tr>
                                 <th>Salón</th>
                                 <td id="preview-grade"></td>
@@ -973,12 +991,62 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Curso según la sección seleccionada
+    const courseOptionsMap = {
+        preescolar_primaria: ['PKA', 'KA', 'Transición A', '1A', '2A', '3A', '4A', '4B'],
+        bachillerato: ['5A', '6A', '7A', '7B', '8A', '8B', '9A', '9B', '10A', '10B', '11A', '11B']
+    };
+    const courseSelect = document.getElementById('course-select');
+    const courseFieldRow = document.getElementById('course-field-row');
+    let pendingCourseValue = @json(old('course'));
+
+    function updateCourseOptions() {
+        if (!courseSelect) return;
+
+        const section = elements.sectionSelect.value;
+        const previous = pendingCourseValue || courseSelect.value;
+        pendingCourseValue = null;
+        const courses = courseOptionsMap[section] || [];
+
+        courseSelect.innerHTML = '';
+
+        if (courses.length === 0) {
+            courseSelect.required = false;
+            if (courseFieldRow) courseFieldRow.style.display = 'none';
+
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = 'No aplica para esta sección';
+            courseSelect.appendChild(emptyOption);
+            return;
+        }
+
+        if (courseFieldRow) courseFieldRow.style.display = '';
+        courseSelect.required = true;
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Seleccione un curso';
+        courseSelect.appendChild(placeholder);
+
+        courses.forEach(function(course) {
+            const option = document.createElement('option');
+            option.value = course;
+            option.textContent = course;
+            if (course === previous) option.selected = true;
+            courseSelect.appendChild(option);
+        });
+    }
+
     // Manejador del cambio de sección
     document.getElementById('section-select').addEventListener('change', function() {
         const selectedSection = this.value;
         const equipmentSelect = document.getElementById('equipment-select');
         const gradeInput = document.getElementById('grade-input');
         const unitsInput = document.getElementById('units-input');
+
+        // Actualizar el listado de cursos según la sección
+        updateCourseOptions();
         
         // Salas administradas desde /spaces (la opción tiene data-space-id)
         const selectedOption = this.options[this.selectedIndex];
@@ -1144,6 +1212,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Llenar los datos de la vista previa
         document.getElementById('preview-section').textContent = elements.sectionSelect.options[elements.sectionSelect.selectedIndex].text;
         document.getElementById('preview-equipment').textContent = elements.equipmentSelect.options[elements.equipmentSelect.selectedIndex].text;
+
+        const previewCourseRow = document.getElementById('preview-course-row');
+        if (courseSelect && courseSelect.required) {
+            document.getElementById('preview-course').textContent = courseSelect.value;
+            if (previewCourseRow) previewCourseRow.style.display = '';
+        } else if (previewCourseRow) {
+            previewCourseRow.style.display = 'none';
+        }
+
         document.getElementById('preview-grade').textContent = document.querySelector('input[name="grade"]').value;
         document.getElementById('preview-units').textContent = elements.unitsInput.value;
         
@@ -1188,6 +1265,10 @@ document.addEventListener('DOMContentLoaded', function() {
             { element: elements.startTimeInput, message: "Seleccione la hora de inicio" },
             { element: elements.endTimeInput, message: "Seleccione la hora de finalización" }
         ];
+
+        if (courseSelect && courseSelect.required) {
+            requiredFields.push({ element: courseSelect, message: "Seleccione el curso" });
+        }
         
         for (const field of requiredFields) {
             if (!field.element.value) {

@@ -42,6 +42,7 @@ class EquipmentLoansExport implements FromCollection, WithHeadings, WithMapping,
             'Docente' => $loan->user ? $loan->user->name : 'N/A',
             'Sección' => ucfirst(str_replace('_', ' ', $loan->section)),
             'Salón' => $loan->grade, // Changed to match the column name shown in UI
+            'Curso' => $loan->course ?? '',
             'Equipo' => match ($loan->equipment_type) {
                 'laptop' => 'Portátil',
                 'imac' => 'iMac',
@@ -80,6 +81,7 @@ class EquipmentLoansExport implements FromCollection, WithHeadings, WithMapping,
             'Docente',
             'Sección',
             'Salón',
+            'Curso',
             'Equipo',
             'Cantidad',
             'Fecha',
@@ -103,12 +105,12 @@ class EquipmentLoansExport implements FromCollection, WithHeadings, WithMapping,
         // Definir las columnas que queremos resaltar
         $highlightColumns = [
             'D' => 'Salón',     // Columna Salón
-            'F' => 'Cantidad',  // Columna Cantidad
-            'H' => 'Horario',   // Columna Horario
+            'G' => 'Cantidad',  // Columna Cantidad
+            'I' => 'Horario',   // Columna Horario
         ];
         
         // Estilo para la cabecera
-        $sheet->getStyle('A1:P1')->applyFromArray([
+        $sheet->getStyle('A1:Q1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -143,7 +145,7 @@ class EquipmentLoansExport implements FromCollection, WithHeadings, WithMapping,
         }
         
         // Borde para todas las celdas con datos
-        $sheet->getStyle('A1:P' . $sheet->getHighestRow())->applyFromArray([
+        $sheet->getStyle('A1:Q' . $sheet->getHighestRow())->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,

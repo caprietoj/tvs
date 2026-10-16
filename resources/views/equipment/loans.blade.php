@@ -152,6 +152,7 @@
                                 <th>Docente</th>
                                 <th>Sección</th>
                                 <th>Salón</th>
+                                <th>Curso</th>
                                 <th>Equipo</th>
                                 <th>Cantidad</th>
                                 <th>Fecha</th>
@@ -179,6 +180,13 @@
                                     <td>{{ $loan->user->name }}</td>
                                     <td>{{ ucfirst(str_replace('_', ' ', $loan->section)) }}</td>
                                     <td>{{ $loan->grade }}</td>
+                                    <td>
+                                        @if($loan->course)
+                                            <span class="badge bg-secondary">{{ $loan->course }}</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         @php
                                             $equipType = $loan->equipment->type;
@@ -1013,7 +1021,7 @@
 $(document).ready(function() {
     // Inicialización de DataTables con drawCallback
     const loansTable = $('#loansTable').DataTable({
-        "order": [[4, 'desc']], // Ordenar por fecha de préstamo de forma descendente
+        "order": [[7, 'desc']], // Ordenar por fecha de préstamo de forma descendente
         "pageLength": 25,
         "drawCallback": function(settings) {
             // Adjuntar manejadores de eventos después de cada redibujado
@@ -1044,7 +1052,7 @@ $(document).ready(function() {
                 "sPrevious": "Anterior"
             }
         },
-        "order": [[6, "desc"], [7, "desc"]],
+        "order": [[7, "desc"], [8, "desc"]],
         "pageLength": 10,
         "responsive": true
     });
@@ -1065,14 +1073,15 @@ $(document).ready(function() {
         const section = row.attr('data-section');
         const sectionName = row.find('td:eq(2)').text().trim();
         const grade = row.find('td:eq(3)').text().trim();
+        const course = row.find('td:eq(4)').text().trim();
         const equipmentType = row.attr('data-equipment-type');
-        const equipmentName = row.find('td:eq(4) .badge').text().trim();
-        const units = row.find('td:eq(5) .badge').text().trim();
+        const equipmentName = row.find('td:eq(5) .badge').text().trim();
+        const units = row.find('td:eq(6) .badge').text().trim();
         const date = row.attr('data-loan-date');
-        const dateFormatted = row.find('td:eq(6)').text().trim();
+        const dateFormatted = row.find('td:eq(7)').text().trim();
         
         // Extraer información de horario y períodos de manera más robusta
-        const timeCell = row.find('td:eq(7)');
+        const timeCell = row.find('td:eq(8)');
         const timeRange = timeCell.find('.time-badge').text().trim();
         let startTime = '';
         let endTime = '';
@@ -1114,7 +1123,7 @@ $(document).ready(function() {
             .filter(s => s !== '');
         
         const status = row.attr('data-status');
-        const statusText = row.find('td:eq(8) .badge').text().trim();
+        const statusText = row.find('td:eq(9) .badge').text().trim();
         
         // Crear objeto de préstamo y agregarlo al array
         const loan = {
@@ -1123,6 +1132,7 @@ $(document).ready(function() {
             section,
             sectionName,
             grade,
+            course,
             equipmentType,
             equipmentName,
             units,
@@ -1564,6 +1574,10 @@ $(document).ready(function() {
                             <tr>
                                 <th>Salón</th>
                                 <td>${loan.grade}</td>
+                            </tr>
+                            <tr>
+                                <th>Curso</th>
+                                <td>${loan.course || '-'}</td>
                             </tr>
                             <tr>
                                 <th>Equipo</th>

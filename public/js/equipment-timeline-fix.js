@@ -73,16 +73,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const user = row.find('td:eq(1)').text().trim();
             const sectionName = row.find('td:eq(2)').text().trim();
             const grade = row.find('td:eq(3)').text().trim();
+            const course = row.find('td:eq(4)').text().trim();
             
             // Obtener nombre del equipo y unidades
-            const equipmentName = row.find('td:eq(4) .badge').text().trim();
-            const units = row.find('td:eq(5) .badge').text().trim();
+            const equipmentName = row.find('td:eq(5) .badge').text().trim();
+            const units = row.find('td:eq(6) .badge').text().trim();
             
             // Obtener fecha formateada
-            const dateFormatted = row.find('td:eq(6)').text().trim();
+            const dateFormatted = row.find('td:eq(7)').text().trim();
             
             // Extraer tiempos
-            const timeCell = row.find('td:eq(7)');
+            const timeCell = row.find('td:eq(8)');
             const timeRange = timeCell.find('.time-badge').text().trim();
             let startTime = '';
             let endTime = '';
@@ -109,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Obtener texto de estado
-            const statusText = row.find('td:eq(8) .badge').text().trim();
+            const statusText = row.find('td:eq(9) .badge').text().trim();
             
             // Crear objeto de préstamo
             const loan = {
@@ -118,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 section,
                 sectionName,
                 grade,
+                course,
                 equipmentType,
                 equipmentName,
                 units,
