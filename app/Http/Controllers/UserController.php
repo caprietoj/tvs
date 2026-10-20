@@ -2,27 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\WelcomeNewUser;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use App\Services\UserDeletionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use App\Mail\WelcomeNewUser;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with('roles')->get();
-        return view('admin.users.index', compact('users'));
+        $status = request('status');
+
+        $query = User::with('roles');
+
+        if ($status === 'active') {
+            $query->where('active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('active', false);
+        }
+
+        $users = $query->get();
+
+        return view('admin.users.index', compact('users', 'status'));
     }
 
     public function create()
     {
         $roles = Role::all();
+
         return view('admin.users.create', compact('roles'));
     }
 
@@ -56,6 +70,7 @@ class UserController extends Controller
     public function edit(User $user)  // Type-hint the User model
     {
         $roles = Role::all();
+
         return view('admin.users.edit', compact('user', 'roles'));
     }
 
@@ -74,23 +89,23 @@ class UserController extends Controller
         ]);
 
         $data = $request->except(['password', 'avatar']);
-        
+
         // Handle password update
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
         }
-        
+
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
             // Delete old avatar if exists
             if ($user->avatar) {
                 Storage::disk('public')->delete($user->avatar);
             }
-            
+
             $path = $request->file('avatar')->store('avatars', 'public');
             $data['avatar'] = $path;
         }
-        
+
         // Ensure active is boolean
         $data['active'] = filter_var($request->active, FILTER_VALIDATE_BOOLEAN);
 
@@ -101,12 +116,74 @@ class UserController extends Controller
             ->with('success', 'Usuario actualizado exitosamente.');
     }
 
-    public function destroy($id)
+    public function destroy($id, UserDeletionService $userDeletionService)
     {
         $user = User::findOrFail($id);
-        $user->delete();
+
+        if ($user->id === auth()->id()) {
+            return redirect()->route('users.index')
+                ->with('error', 'No puedes eliminar tu propio usuario.');
+        }
+
+        try {
+            $userDeletionService->delete($user);
+        } catch (\Throwable $e) {
+            Log::error('Error al eliminar usuario', [
+                'user_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('users.index')
+                ->with('error', 'No se pudo eliminar el usuario: '.$e->getMessage());
+        }
 
         return redirect()->route('users.index')->with('success', 'Usuario eliminado exitosamente');
+    }
+
+    public function bulkDestroy(Request $request, UserDeletionService $userDeletionService)
+    {
+        $data = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:users,id',
+        ]);
+
+        $ids = collect($data['ids'])
+            ->map(fn ($id) => (int) $id)
+            ->reject(fn ($id) => $id === (int) auth()->id())
+            ->unique()
+            ->values();
+
+        $deleted = 0;
+        $failed = [];
+
+        foreach ($ids as $id) {
+            $user = User::find($id);
+
+            if (!$user) {
+                continue;
+            }
+
+            try {
+                $userDeletionService->delete($user);
+                $deleted++;
+            } catch (\Throwable $e) {
+                $failed[] = $user->email;
+
+                Log::error('Error al eliminar usuario en bloque', [
+                    'user_id' => $id,
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if (!empty($failed)) {
+            return redirect()->route('users.index')
+                ->with('error', "Se eliminaron {$deleted} usuarios. No se pudieron eliminar: ".implode(', ', $failed));
+        }
+
+        return redirect()->route('users.index')
+            ->with('success', "Se eliminaron {$deleted} usuarios exitosamente.");
     }
 
     /**
@@ -115,6 +192,7 @@ class UserController extends Controller
     public function showBulkImport()
     {
         $roles = Role::all();
+
         return view('admin.users.bulk-import', compact('roles'));
     }
 
@@ -130,28 +208,31 @@ class UserController extends Controller
 
         $userData = $request->user_data;
         $lines = explode("\n", $userData);
-        
+
         $successCount = 0;
         $errors = [];
-        
+
         foreach ($lines as $index => $line) {
             $line = trim($line);
-            if (empty($line)) continue;
-            
+            if (empty($line)) {
+                continue;
+            }
+
             $columns = preg_split('/\t/', $line);
             if (count($columns) < 2) {
                 $columns = str_getcsv($line, ',');
             }
-            
+
             if (count($columns) < 2) {
-                $errors[] = "Línea " . ($index + 1) . ": formato inválido, se requiere al menos nombre y email.";
+                $errors[] = 'Línea '.($index + 1).': formato inválido, se requiere al menos nombre y email.';
+
                 continue;
             }
-            
+
             $name = trim($columns[0]);
             $email = trim($columns[1]);
             $password = Str::random(10); // Generate random password
-            
+
             $validator = Validator::make([
                 'name' => $name,
                 'email' => $email,
@@ -159,12 +240,13 @@ class UserController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
             ]);
-            
+
             if ($validator->fails()) {
-                $errors[] = "Línea " . ($index + 1) . ": " . implode(', ', $validator->errors()->all());
+                $errors[] = 'Línea '.($index + 1).': '.implode(', ', $validator->errors()->all());
+
                 continue;
             }
-            
+
             try {
                 $user = User::create([
                     'name' => $name,
@@ -172,40 +254,40 @@ class UserController extends Controller
                     'password' => Hash::make($password),
                     'first_login' => true,
                 ]);
-                
+
                 $user->roles()->sync($request->default_roles);
-                
+
                 // Send welcome email
                 $this->sendWelcomeEmail($user, $password);
-                
+
                 $successCount++;
             } catch (\Exception $e) {
-                $errors[] = "Línea " . ($index + 1) . ": " . $e->getMessage();
+                $errors[] = 'Línea '.($index + 1).': '.$e->getMessage();
             }
         }
-        
+
         $message = "Se han creado $successCount usuarios correctamente";
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             return redirect()->back()
                 ->with('success', $message)
                 ->with('errors', $errors);
         }
-        
+
         return redirect()->route('users.index')
             ->with('success', $message);
     }
-    
+
     /**
      * Send welcome email to newly created user
      */
     private function sendWelcomeEmail($user, $password)
     {
         try {
-            $emailTestService = new \App\Services\EmailTestModeService();
+            $emailTestService = new \App\Services\EmailTestModeService;
             $interceptedEmail = $emailTestService->interceptEmail($user->email, 'General');
             Mail::to($interceptedEmail)->send(new WelcomeNewUser($user, $password));
         } catch (\Exception $e) {
-            \Log::error('Error sending welcome email: ' . $e->getMessage());
+            \Log::error('Error sending welcome email: '.$e->getMessage());
         }
     }
 
@@ -219,21 +301,21 @@ class UserController extends Controller
             'Content-Disposition' => 'attachment; filename=users_template.csv',
             'Pragma' => 'no-cache',
             'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0'
+            'Expires' => '0',
         ];
 
-        $callback = function() {
+        $callback = function () {
             $file = fopen('php://output', 'w');
-            
+
             // Add UTF-8 BOM for proper Excel encoding
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            
+
             // Add header row
             fputcsv($file, ['Nombre Completo', 'Correo Electrónico']);
-            
+
             // Add example row
             fputcsv($file, ['Juan Pérez', 'juan.perez@ejemplo.com']);
-            
+
             fclose($file);
         };
 
@@ -257,17 +339,17 @@ class UserController extends Controller
             'current_password' => 'required',
             'password' => 'required|string|min:8|confirmed|different:current_password',
         ]);
-        
+
         $user = auth()->user();
-        
-        if (!Hash::check($request->current_password, $user->password)) {
+
+        if (! Hash::check($request->current_password, $user->password)) {
             return back()->withErrors(['current_password' => 'La contraseña actual no es correcta.']);
         }
-        
+
         $user->password = Hash::make($request->password);
         $user->first_login = false;
         $user->save();
-        
+
         return redirect()->route('home')->with('success', 'Contraseña actualizada correctamente.');
     }
 

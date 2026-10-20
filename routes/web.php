@@ -427,6 +427,7 @@ Route::middleware('auth')->group(function () {
         // Add these new routes for bulk user import
         Route::get('users/bulk-import', [App\Http\Controllers\UserController::class, 'showBulkImport'])->name('users.bulk.import');
         Route::post('users/bulk-import', [App\Http\Controllers\UserController::class, 'bulkImport'])->name('users.bulk.import.process');
+        Route::post('users/bulk-delete', [UserController::class, 'bulkDestroy'])->name('users.bulk-delete');
         Route::get('users/template/download', [UserController::class, 'downloadTemplate'])
             ->name('users.template.download');
         

@@ -19,9 +19,40 @@
 @section('content')
     <div class="card">
         <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                <div class="btn-group mb-2" role="group" aria-label="Filtrar usuarios">
+                    <a href="{{ route('users.index') }}"
+                       class="btn btn-sm {{ empty($status) ? 'btn-primary' : 'btn-outline-primary' }}">
+                        Todos
+                    </a>
+                    <a href="{{ route('users.index', ['status' => 'active']) }}"
+                       class="btn btn-sm {{ $status === 'active' ? 'btn-primary' : 'btn-outline-primary' }}">
+                        Activos
+                    </a>
+                    <a href="{{ route('users.index', ['status' => 'inactive']) }}"
+                       class="btn btn-sm {{ $status === 'inactive' ? 'btn-primary' : 'btn-outline-primary' }}">
+                        Inactivos
+                    </a>
+                </div>
+                <div class="mb-2">
+                    <button type="button" id="select-inactive" class="btn btn-sm btn-outline-warning">
+                        <i class="fas fa-user-slash mr-1"></i> Seleccionar inactivos
+                    </button>
+                    <button type="button" id="clear-selection" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-times mr-1"></i> Limpiar
+                    </button>
+                    <button type="button" id="bulk-delete-btn" class="btn btn-sm btn-danger" disabled>
+                        <i class="fas fa-trash-alt mr-1"></i> Eliminar seleccionados (<span id="selected-count">0</span>)
+                    </button>
+                </div>
+            </div>
+
             <table id="users-table" class="table table-striped table-hover">
                 <thead class="">
                     <tr>
+                        <th style="width: 3%">
+                            <input type="checkbox" id="select-all-users" title="Seleccionar visibles">
+                        </th>
                         <th style="width: 5%">ID</th>
                         <th style="width: 10%">Avatar</th>
                         <th style="width: 20%">Nombre</th>
@@ -34,7 +65,13 @@
                 </thead>
                 <tbody>
                     @foreach($users as $user)
-                        <tr>
+                        <tr data-user-id="{{ $user->id }}" data-active="{{ $user->active ? '1' : '0' }}">
+                            <td>
+                                <input type="checkbox"
+                                       class="user-checkbox"
+                                       value="{{ $user->id }}"
+                                       @disabled($user->id === auth()->id())>
+                            </td>
                             <td>{{ $user->id }}</td>
                             <td class="text-center">
                                 <img src="{{ $user->avatar ? asset('storage/'.$user->avatar) : 'https://ui-avatars.com/api/?name='.urlencode($user->name).'&color=7F9CF5&background=EBF4FF' }}" 
@@ -102,6 +139,11 @@
         @csrf
         @method('DELETE')
     </form>
+
+    <form id="bulk-delete-form" method="POST" action="{{ route('users.bulk-delete') }}" style="display: none;">
+        @csrf
+        <div id="bulk-delete-inputs"></div>
+    </form>
 @stop
 
 @section('css')
@@ -162,19 +204,92 @@
 <script>
 $(document).ready(function() {
     // Initialize DataTable
-    $('#users-table').DataTable({
+    const usersTable = $('#users-table').DataTable({
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
         },
-        order: [[2, 'asc']],
+        order: [[3, 'asc']],
         pageLength: 10,
         columnDefs: [
-            { orderable: false, targets: [1, 7] }
+            { orderable: false, targets: [0, 2, 8] }
         ]
     });
 
     // Initialize tooltips
     $('[data-toggle="tooltip"]').tooltip();
+
+    function updateSelectionState() {
+        const selected = $('.user-checkbox:checked').length;
+        $('#selected-count').text(selected);
+        $('#bulk-delete-btn').prop('disabled', selected === 0);
+    }
+
+    function selectRows(predicate) {
+        usersTable.rows().every(function() {
+            const row = $(this.node());
+            if (predicate(row)) {
+                row.find('.user-checkbox').prop('checked', true);
+            }
+        });
+        updateSelectionState();
+    }
+
+    $(document).on('change', '.user-checkbox', updateSelectionState);
+
+    $('#select-all-users').on('change', function() {
+        const checked = $(this).prop('checked');
+        selectRows(() => checked);
+        if (!checked) {
+            $('.user-checkbox').prop('checked', false);
+            updateSelectionState();
+        }
+    });
+
+    $('#select-inactive').on('click', function() {
+        selectRows((row) => row.data('active') === 0);
+    });
+
+    $('#clear-selection').on('click', function() {
+        $('.user-checkbox').prop('checked', false);
+        $('#select-all-users').prop('checked', false);
+        updateSelectionState();
+    });
+
+    $('#bulk-delete-btn').on('click', function() {
+        const ids = $('.user-checkbox:checked').map(function() {
+            return $(this).val();
+        }).get();
+
+        if (ids.length === 0) {
+            return;
+        }
+
+        Swal.fire({
+            title: '¿Eliminar usuarios seleccionados?',
+            text: `Se eliminarán ${ids.length} usuario(s) y todos sus registros asociados. Esta acción no se puede deshacer.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            const container = $('#bulk-delete-inputs');
+            container.empty();
+
+            ids.forEach(function(id) {
+                container.append(
+                    $('<input>', { type: 'hidden', name: 'ids[]', value: id })
+                );
+            });
+
+            $('#bulk-delete-form').submit();
+        });
+    });
 
     // Handle delete user
     $('.delete-user').click(function() {
@@ -203,9 +318,17 @@ $(document).ready(function() {
         Swal.fire({
             icon: 'success',
             title: '¡Éxito!',
-            text: '{{ session("success") }}',
+            text: {!! json_encode(session('success')) !!},
             timer: 3000,
             showConfirmButton: false
+        });
+    @endif
+
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: {!! json_encode(session('error')) !!}
         });
     @endif
 });
