@@ -610,8 +610,8 @@ class SalidaPedagogicaController extends Controller
      */
     public function informe(SalidaPedagogica $salida)
     {
-        // Verificar que solo el usuario de sistemas pueda acceder
-        if (auth()->user()->email !== 'jefesistemas@tvs.edu.co') {
+        // Verificar que solo los usuarios autorizados puedan acceder
+        if (!auth()->user()->canDownloadSalidaInforme()) {
             abort(403, 'No tienes permisos para descargar este informe.');
         }
 

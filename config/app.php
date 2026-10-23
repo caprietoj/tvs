@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Seguimiento de Estudiantes (SSO)
+    |--------------------------------------------------------------------------
+    |
+    | URL pública del sistema de Seguimiento y secreto compartido para el
+    | inicio de sesión único desde la intranet.
+    |
+    */
+
+    'seguimiento_url' => env('SEGUIMIENTO_URL', 'http://72.62.86.100:8080'),
+    'seguimiento_sso_secret' => env('SEGUIMIENTO_SSO_SECRET'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

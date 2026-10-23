@@ -326,6 +326,66 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Servicio de Tienda Escolar (Pregunta 8) -->
+                        @php
+                            $tienda = $dashboardData['cafeteria']['servicio_tienda'] ?? [];
+                            $tiendaTotal = $tienda['total'] ?? 0;
+                            $tiendaPositiva = $tienda['positiva'] ?? 0;
+                            $tiendaNegativa = $tienda['negativa'] ?? 0;
+                            $tiendaOtras = $tienda['otras'] ?? 0;
+                        @endphp
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card card-outline card-warning">
+                                    <div class="card-header">
+                                        <h4 class="card-title">
+                                            <i class="fas fa-store"></i>
+                                            Servicio de Tienda Escolar (Pregunta 8)
+                                        </h4>
+                                    </div>
+                                    <div class="card-body">
+                                        @if($tiendaTotal > 0)
+                                            <p class="text-muted">
+                                                ¿Cuál de las siguientes frases define el servicio de la tienda escolar?
+                                                <strong>{{ $tiendaTotal }}</strong> respuestas registradas.
+                                            </p>
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fas fa-thumbs-up text-success"></i> Productos variados, saludables, deliciosos y de buena calidad</span>
+                                                    <strong>{{ $tiendaPositiva }} ({{ round(($tiendaPositiva / $tiendaTotal) * 100, 1) }}%)</strong>
+                                                </div>
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-success" style="width: {{ round(($tiendaPositiva / $tiendaTotal) * 100, 1) }}%"></div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><i class="fas fa-thumbs-down text-danger"></i> Productos poco variados, poco saludables o por mejorar</span>
+                                                    <strong>{{ $tiendaNegativa }} ({{ round(($tiendaNegativa / $tiendaTotal) * 100, 1) }}%)</strong>
+                                                </div>
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-danger" style="width: {{ round(($tiendaNegativa / $tiendaTotal) * 100, 1) }}%"></div>
+                                                </div>
+                                            </div>
+                                            @if($tiendaOtras > 0)
+                                                <div class="mb-0">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span><i class="fas fa-question-circle text-secondary"></i> Otras respuestas</span>
+                                                        <strong>{{ $tiendaOtras }} ({{ round(($tiendaOtras / $tiendaTotal) * 100, 1) }}%)</strong>
+                                                    </div>
+                                                    <div class="progress">
+                                                        <div class="progress-bar bg-secondary" style="width: {{ round(($tiendaOtras / $tiendaTotal) * 100, 1) }}%"></div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <p class="text-muted mb-0">No hay respuestas registradas para esta pregunta en el período.</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -373,6 +433,24 @@
                                     <h5><i class="fas fa-lightbulb"></i> Sugerencias de Mejora</h5>
                                     <p>Ideas y sugerencias de la comunidad educativa.</p>
                                     <button class="btn btn-sm btn-danger" onclick="showImprovementComments()">Ver Sugerencias</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Motivos de Retiro (Preguntas 12 y 20) -->
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="callout callout-info">
+                                    <h5><i class="fas fa-door-open"></i> Retiros de Cafetería</h5>
+                                    <p>Razones por las que los usuarios decidieron retirarse del servicio (Pregunta 12).</p>
+                                    <button class="btn btn-sm btn-info" onclick="showRetiroCafeteria()">Ver Razones</button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="callout callout-warning">
+                                    <h5><i class="fas fa-door-open"></i> Retiros de Transporte</h5>
+                                    <p>Razones por las que los usuarios decidieron retirarse del servicio (Pregunta 20).</p>
+                                    <button class="btn btn-sm btn-warning" onclick="showRetiroTransporte()">Ver Razones</button>
                                 </div>
                             </div>
                         </div>
@@ -1186,6 +1264,59 @@ function showImprovementComments() {
     }
     
     showModal('Sugerencias de Mejora', content);
+    @else
+    showToast('No hay datos disponibles para mostrar', 'warning');
+    @endif
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function showRetiroCafeteria() {
+    @if(isset($dashboardData['has_data']) && $dashboardData['has_data'])
+    const comments = dashboardData.cafeteria.retiro_cafeteria || [];
+    let content = '';
+
+    if (comments.length > 0) {
+        content += '<p class="text-muted">Razones por las que los usuarios decidieron retirarse del servicio de cafetería (Pregunta 12).</p>';
+        content += '<ul class="list-group">';
+        comments.forEach(comment => {
+            content += `<li class="list-group-item border-left-info"><i class="fas fa-quote-left text-muted"></i> ${escapeHtml(comment)}</li>`;
+        });
+        content += '</ul>';
+    } else {
+        content = '<div class="alert alert-info"><i class="fas fa-info-circle"></i> No hay razones de retiro registradas para este período.</div>';
+    }
+
+    showModal('Retiros de Cafetería', content);
+    @else
+    showToast('No hay datos disponibles para mostrar', 'warning');
+    @endif
+}
+
+function showRetiroTransporte() {
+    @if(isset($dashboardData['has_data']) && $dashboardData['has_data'])
+    const comments = dashboardData.transport.retiro_transporte || [];
+    let content = '';
+
+    if (comments.length > 0) {
+        content += '<p class="text-muted">Razones por las que los usuarios decidieron retirarse del servicio de transporte (Pregunta 20).</p>';
+        content += '<ul class="list-group">';
+        comments.forEach(comment => {
+            content += `<li class="list-group-item border-left-warning"><i class="fas fa-quote-left text-muted"></i> ${escapeHtml(comment)}</li>`;
+        });
+        content += '</ul>';
+    } else {
+        content = '<div class="alert alert-info"><i class="fas fa-info-circle"></i> No hay razones de retiro registradas para este período.</div>';
+    }
+
+    showModal('Retiros de Transporte', content);
     @else
     showToast('No hay datos disponibles para mostrar', 'warning');
     @endif

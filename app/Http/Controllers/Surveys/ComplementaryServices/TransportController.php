@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Carbon\Carbon;
 
@@ -453,8 +455,10 @@ class TransportController extends Controller
                 'trato_personal' => 0,
                 'total_respuestas' => 0,
                 'total_usuarios' => 0,
+                'servicio_tienda' => ['positiva' => 0, 'negativa' => 0, 'otras' => 0, 'total' => 0],
                 'aspectos_positivos' => [],
-                'oportunidades_mejora' => []
+                'oportunidades_mejora' => [],
+                'retiro_cafeteria' => []
             ];
         }
 
@@ -466,10 +470,12 @@ class TransportController extends Controller
             'temperatura_adecuada' => $this->calculatePositivePercentage($cafeteriaUsers, 'temperatura_comida', ['Sí', 'Algunas veces']),
             'limpieza_comedor' => $this->calculatePositivePercentage($cafeteriaUsers, 'limpieza_comedor', ['Limpio y ordenado']),
             'trato_personal' => $this->calculatePositivePercentage($cafeteriaUsers, 'trato_personal_cafeteria', ['Excelente', 'Bueno']),
+            'servicio_tienda' => $this->calculateTiendaDistribution($cafeteriaUsers),
             'total_respuestas' => $total,
             'total_usuarios' => $cafeteriaUsers->count(),
             'aspectos_positivos' => $this->extractComments($cafeteriaUsers, 'aspectos_positivos_cafeteria'),
-            'oportunidades_mejora' => $this->extractComments($cafeteriaUsers, 'oportunidades_mejora_cafeteria')
+            'oportunidades_mejora' => $this->extractComments($cafeteriaUsers, 'oportunidades_mejora_cafeteria'),
+            'retiro_cafeteria' => $this->extractComments($data, 'retiro_cafeteria', 20)
         ];
     }
 
@@ -490,7 +496,8 @@ class TransportController extends Controller
                 'total_respuestas' => 0,
                 'total_usuarios' => 0,
                 'aspectos_positivos' => [],
-                'oportunidades_mejora' => []
+                'oportunidades_mejora' => [],
+                'retiro_transporte' => []
             ];
         }
 
@@ -502,35 +509,100 @@ class TransportController extends Controller
             'total_respuestas' => $total,
             'total_usuarios' => $transportUsers->count(),
             'aspectos_positivos' => $this->extractComments($transportUsers, 'aspectos_positivos_transporte'),
-            'oportunidades_mejora' => $this->extractComments($transportUsers, 'oportunidades_mejora_transporte')
+            'oportunidades_mejora' => $this->extractComments($transportUsers, 'oportunidades_mejora_transporte'),
+            'retiro_transporte' => $this->extractComments($data, 'retiro_transporte', 20)
         ];
     }
 
     private function calculatePositivePercentage($collection, $field, $positiveValues)
     {
-        $total = $collection->whereNotNull($field)->where($field, '!=', '')->count();
+        $normalizedPositives = array_map(function ($value) {
+            return $this->normalizeValue($value);
+        }, $positiveValues);
+
+        $values = $collection
+            ->pluck($field)
+            ->filter(function ($value) {
+                return $value !== null && trim((string) $value) !== '';
+            });
+
+        $total = $values->count();
         if ($total === 0) return 0;
-        
-        $positive = $collection->whereIn($field, $positiveValues)->count();
+
+        $positive = $values->filter(function ($value) use ($normalizedPositives) {
+            return in_array($this->normalizeValue($value), $normalizedPositives, true);
+        })->count();
+
         return round(($positive / $total) * 100, 1);
     }
 
-    private function extractComments($collection, $field)
+    private function normalizeValue($value)
     {
-        $comments = $collection
+        $value = trim((string) $value);
+        $value = mb_strtolower($value, 'UTF-8');
+        $value = str_replace(
+            ['á', 'é', 'í', 'ó', 'ú', 'ü'],
+            ['a', 'e', 'i', 'o', 'u', 'u'],
+            $value
+        );
+        $value = rtrim($value, " .;,");
+
+        if ($value === 'buena') {
+            $value = 'bueno';
+        }
+
+        return $value;
+    }
+
+    private function calculateTiendaDistribution($collection)
+    {
+        $values = $collection
+            ->pluck('servicio_tienda')
+            ->filter(function ($value) {
+                return $value !== null && trim((string) $value) !== '';
+            });
+
+        $total = $values->count();
+        $positiva = $values->filter(function ($value) {
+            return stripos((string) $value, 'variados, saludables') !== false;
+        })->count();
+        $negativa = $values->filter(function ($value) {
+            return stripos((string) $value, 'poco variados') !== false;
+        })->count();
+
+        return [
+            'positiva' => $positiva,
+            'negativa' => $negativa,
+            'otras' => max($total - $positiva - $negativa, 0),
+            'total' => $total
+        ];
+    }
+
+    private function extractComments($collection, $field, $limit = 10)
+    {
+        return $collection
             ->whereNotNull($field)
             ->where($field, '!=', '')
             ->pluck($field)
-            ->filter(function ($comment) {
-                $comment = trim(strtolower($comment));
-                // Filtrar comentarios vacíos o genéricos
-                return !empty($comment) && 
-                       !in_array($comment, ['ninguna', 'ninguno', 'n/a', 'na', 'no', 'no aplica', '-']);
+            ->map(function ($comment) {
+                return trim((string) $comment);
             })
-            ->take(10) // Limitar a 10 comentarios más relevantes
+            ->filter(function ($comment) {
+                $normalized = mb_strtolower($comment, 'UTF-8');
+                $normalized = rtrim($normalized, " .;,-\t\n\r\0\x0B");
+
+                if ($normalized === '') {
+                    return false;
+                }
+
+                return !in_array($normalized, [
+                    'ninguna', 'ninguno', 'n/a', 'na', 'n.a', 'no', 'no aplica',
+                    'nunca', 'no lo he usado', 'no lo he tomado', 'nunca lo he tomado',
+                ], true);
+            })
+            ->take($limit)
+            ->values()
             ->toArray();
-        
-        return array_values($comments);
     }
 
     private function getDashboardData()
@@ -618,6 +690,108 @@ class TransportController extends Controller
         }
         
         return $uniqueServiceUsers;
+    }
+
+    public function downloadTemplate()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Encuesta');
+
+        $headers = [
+            'timestamp',
+            'dependencia',
+            'usa_cafeteria',
+            'calidad_sabor',
+            'porcion_alimentos',
+            'menu_ofrecido',
+            'variedad_menu',
+            'temperatura_comida',
+            'limpieza_comedor',
+            'servicio_tienda',
+            'trato_personal_cafeteria',
+            'aspectos_positivos_cafeteria',
+            'oportunidades_mejora_cafeteria',
+            'retiro_cafeteria',
+            'usa_transporte',
+            'puntualidad_transporte',
+            'limpieza_vehiculo',
+            'trato_personal_transporte',
+            'comunicacion_transporte',
+            'aspectos_positivos_transporte',
+            'oportunidades_mejora_transporte',
+            'retiro_transporte',
+        ];
+
+        $example = [
+            now()->format('Y-m-d H:i:s'),
+            'Recursos Humanos',
+            'Si.',
+            'Excelente',
+            'Muy satisfecho',
+            'Excelente',
+            'Sí',
+            'Sí',
+            'Limpio y ordenado',
+            'Excelente',
+            'Excelente',
+            'Buen servicio',
+            'Mantener la variedad',
+            '',
+            'Si.',
+            'Sí',
+            'Sí',
+            'Sí',
+            'Sí',
+            'Puntualidad',
+            'Mejorar la comunicación',
+            '',
+        ];
+
+        $lastColumn = $sheet->getCellByColumnAndRow(count($headers), 1)->getColumn();
+
+        // Encabezados en la fila 1
+        foreach ($headers as $index => $header) {
+            $sheet->setCellValueByColumnAndRow($index + 1, 1, $header);
+        }
+
+        // Fila de ejemplo
+        foreach ($example as $index => $value) {
+            $sheet->setCellValueByColumnAndRow($index + 1, 2, $value);
+        }
+
+        // Estilo de encabezados
+        $sheet->getStyle('A1:' . $lastColumn . '1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '28A745'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+
+        foreach (range('A', $lastColumn) as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $filename = 'plantilla_servicios_complementarios.xlsx';
+        $writer = new Xlsx($spreadsheet);
+
+        ob_start();
+        $writer->save('php://output');
+        $excelOutput = ob_get_clean();
+
+        return response($excelOutput, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'max-age=0',
+        ]);
     }
 
     public function export()

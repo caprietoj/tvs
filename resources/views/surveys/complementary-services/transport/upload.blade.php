@@ -240,6 +240,7 @@
                                     <li>Trato del personal</li>
                                     <li>Aspectos positivos</li>
                                     <li>Oportunidades de mejora</li>
+                                    <li>Motivos de retiro (Pregunta 12)</li>
                                 </ul>
                             </div>
                         </div>
@@ -254,16 +255,18 @@
                                     <li>Comunicación</li>
                                     <li>Aspectos positivos</li>
                                     <li>Oportunidades de mejora</li>
+                                    <li>Motivos de retiro (Pregunta 20)</li>
                                 </ul>
                             </div>
 
                             <div class="callout callout-warning">
                                 <h6><i class="fas fa-exclamation-triangle"></i> Valores Esperados</h6>
                                 <ul class="mb-0 text-sm">
-                                    <li><strong>Satisfacción:</strong> Excelente, Bueno, Regular, Malo</li>
-                                    <li><strong>Conformidad:</strong> Sí, No, Algunas veces</li>
-                                    <li><strong>Limpieza:</strong> Limpio y ordenado, Necesita mejoras</li>
+                                    <li><strong>Satisfacción:</strong> Excelente, Bueno/Buena, Regular, Malo</li>
+                                    <li><strong>Conformidad:</strong> Sí/Si, No, Algunas veces</li>
+                                    <li><strong>Limpieza:</strong> Limpio y ordenado, Poco limpio y ordenado</li>
                                     <li><strong>Uso de servicios:</strong> "Si." (con punto)</li>
+                                    <li><strong>Retiro:</strong> texto libre con el motivo</li>
                                 </ul>
                             </div>
                         </div>
@@ -1120,10 +1123,7 @@ function updateFileData(fileId, field, value) {
 
 function downloadTemplate() {
     showNotification('Generando plantilla de Excel...', 'info');
-    // Aquí se podría implementar la descarga real de la plantilla
-    setTimeout(() => {
-        showNotification('Funcionalidad de plantilla en desarrollo. Consulte la documentación para el formato correcto.', 'warning');
-    }, 1000);
+    window.location.href = "{{ route('surveys.complementary-services.transport.template') }}";
 }
 
 function showSampleData() {

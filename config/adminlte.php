@@ -317,6 +317,14 @@ return [
             'icon' => 'fas fa-home',
             'can'  => 'view.dashboard',
         ],
+        [
+            'text' => '📋 Seguimiento',
+            'url'  => 'seguimiento',
+            'icon' => 'fas fa-user-graduate',
+            'can'  => 'seguimiento.access',
+            'target' => '_blank',
+            'active' => ['seguimiento*'],
+        ],
 
         // === MÓDULO DE SOLICITUDES ===
         [

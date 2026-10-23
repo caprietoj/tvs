@@ -151,6 +151,30 @@
                     </div>
                     @endcan
 
+                    <!-- Seguimiento de Estudiantes - Accesible para roles pedagógicos -->
+                    @can('seguimiento.access')
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-muted mb-3">
+                                <i class="fas fa-user-graduate mr-2" style="color: #364E76;"></i>Seguimiento Académico
+                            </h5>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{{ route('seguimiento') }}" target="_blank" rel="noopener" class="quick-access-card">
+                                <div class="quick-access-item">
+                                    <div class="icon-wrapper">
+                                        <i class="fas fa-clipboard-list"></i>
+                                    </div>
+                                    <div class="content">
+                                        <h6>Seguimiento</h6>
+                                        <p>Acompañamiento y acuerdos por estudiante</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    @endcan
+
                     <!-- Encuestas Institucionales - Solo Admin -->
                     @if(auth()->user()->hasRole('admin'))
                     <div class="row mb-4">

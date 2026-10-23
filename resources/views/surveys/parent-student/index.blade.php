@@ -1066,6 +1066,11 @@ function initializeCafeteriaDetailChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 24
+                }
+            },
             plugins: {
                 legend: {
                     display: false
@@ -1084,6 +1089,8 @@ function initializeCafeteriaDetailChart() {
                 datalabels: {
                     anchor: 'end',
                     align: 'top',
+                    offset: 4,
+                    clip: false,
                     formatter: function(value) {
                         return value.toFixed(1) + '%';
                     },
@@ -1211,6 +1218,11 @@ function initializeTransportChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 24
+                }
+            },
             plugins: {
                 legend: {
                     display: false
@@ -1229,6 +1241,8 @@ function initializeTransportChart() {
                 datalabels: {
                     anchor: 'end',
                     align: 'top',
+                    offset: 4,
+                    clip: false,
                     formatter: function(value) {
                         return value.toFixed(1) + '%';
                     },

@@ -57,6 +57,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Emails autorizados para ver y descargar el informe de salidas pedagógicas.
+     */
+    public const SALIDA_INFORME_EMAILS = [
+        'jefesistemas@tvs.edu.co',
+        'asistenteadministrativa@tvs.edu.co',
+    ];
+
+    /**
+     * Check if user can view and download the salida pedagógica report.
+     */
+    public function canDownloadSalidaInforme(): bool
+    {
+        return in_array($this->email, self::SALIDA_INFORME_EMAILS, true);
+    }
+
+    /**
      * Check if user can be impersonated
      */
     public function canBeImpersonated(): bool

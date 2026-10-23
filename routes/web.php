@@ -1145,6 +1145,31 @@ Route::get('/calendario-espacios/{spaceId?}', [App\Http\Controllers\SpaceReserva
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
+// Redirección con SSO al sistema de Seguimiento de Estudiantes (según el rol).
+Route::get('/seguimiento', function () {
+    $user = Auth::user();
+
+    if (! $user->can('seguimiento.access')) {
+        abort(403, 'No tiene permisos para acceder al sistema de Seguimiento.');
+    }
+
+    $base = rtrim((string) config('app.seguimiento_url', 'http://72.62.86.100:8080'), '/');
+    $secret = (string) config('app.seguimiento_sso_secret');
+    abort_if($secret === '', 500, 'SSO de Seguimiento no configurado.');
+
+    $payload = [
+        'uid' => $user->id,
+        'email' => $user->email,
+        'exp' => time() + 120,
+        'nonce' => bin2hex(random_bytes(16)),
+    ];
+
+    $payloadB64 = rtrim(strtr(base64_encode(json_encode($payload)), '+/', '-_'), '=');
+    $signature = rtrim(strtr(base64_encode(hash_hmac('sha256', $payloadB64, $secret, true)), '+/', '-_'), '=');
+
+    return redirect()->away($base.'/sso/intranet?token='.urlencode($payloadB64.'.'.$signature));
+})->middleware('auth')->name('seguimiento');
+
 // Rutas de depuración temporal
 Route::get('/debug-photocopies', [DebugPhotocopiesController::class, 'index'])->name('debug.photocopies');
 
@@ -1301,6 +1326,7 @@ Route::middleware(['auth', 'admin'])->prefix('surveys')->name('surveys.')->group
         Route::prefix('transport')->name('transport.')->group(function () {
             Route::get('/', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'index'])->name('index');
             Route::get('/upload', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'upload'])->name('upload');
+            Route::get('/template', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'downloadTemplate'])->name('template');
             Route::post('/upload', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'processUpload'])->name('process-upload');
             Route::post('/upload-multiple', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'processMultipleUpload'])->name('process-multiple-upload');
             Route::get('/comparison', [App\Http\Controllers\Surveys\ComplementaryServices\TransportController::class, 'comparison'])->name('comparison');
@@ -1314,6 +1340,7 @@ Route::middleware(['auth', 'admin'])->prefix('surveys')->name('surveys.')->group
     Route::prefix('parent-student')->name('parent-student.')->group(function () {
         Route::get('/', [App\Http\Controllers\ParentStudentSurveyController::class, 'index'])->name('index');
         Route::get('/upload', [App\Http\Controllers\ParentStudentSurveyController::class, 'upload'])->name('upload');
+        Route::get('/template', [App\Http\Controllers\ParentStudentSurveyController::class, 'downloadTemplate'])->name('template');
         Route::post('/upload', [App\Http\Controllers\ParentStudentSurveyController::class, 'processUpload'])->name('upload.process');
         Route::get('/analysis', [App\Http\Controllers\ParentStudentSurveyController::class, 'analysis'])->name('analysis');
         Route::get('/comparison', [App\Http\Controllers\ParentStudentSurveyController::class, 'comparison'])->name('comparison');

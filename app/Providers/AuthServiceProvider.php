@@ -91,6 +91,26 @@ class AuthServiceProvider extends ServiceProvider
             return in_array($user->name, $allowedUsers) || in_array($user->email, $allowedEmails);
         });
 
+        // Gate para verificar acceso al sistema de Seguimiento de Estudiantes
+        Gate::define('seguimiento.access', function ($user = null) {
+            if (!$user || !method_exists($user, 'roles')) {
+                return false;
+            }
+
+            // Se aceptan alias porque el nombre del rol puede renombrarse en la BD
+            // (p. ej. "psicologia" se renombró a "Departamento de Apoyo").
+            $allowed = [
+                'admin', 'administrador',
+                'profesor', 'profesora', 'docente',
+                'psicologia', 'departamento de apoyo', 'departamento apoyo',
+                'emc', 'coordinacion', 'coordinación',
+            ];
+
+            return $user->roles->contains(
+                fn ($role) => in_array(mb_strtolower(trim($role->name)), $allowed, true)
+            );
+        });
+
         // Gate para verificar acceso al módulo de enfermería
         Gate::define('view.enfermeria', function ($user) {
             // Administradores tienen acceso completo

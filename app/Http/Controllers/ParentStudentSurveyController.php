@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Carbon\Carbon;
 
 class ParentStudentSurveyController extends Controller
@@ -56,6 +58,105 @@ class ParentStudentSurveyController extends Controller
         $totalRecords = ParentStudentSurvey::count();
         
         return view('surveys.parent-student.upload', compact('recentUploads', 'totalRecords'));
+    }
+
+    /**
+     * Generar y descargar la plantilla de Excel para la carga de encuestas.
+     * El orden de las columnas debe coincidir con extractRowData/extractCafeteriaData/extractTransportData.
+     */
+    public function downloadTemplate()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Encuesta');
+
+        $headers = [
+            'A' => 'timestamp',
+            'B' => 'grado',
+            'C' => 'calidad_sabor',
+            'D' => 'porcion_alimentos',
+            'E' => 'menu_ofrecido',
+            'F' => 'variedad_menu',
+            'G' => 'temperatura_comida',
+            'H' => 'limpieza_comedor',
+            'I' => 'servicio_tienda',
+            'J' => 'trato_personal_cafeteria',
+            'K' => 'aspectos_positivos_cafeteria',
+            'L' => 'oportunidades_mejora_cafeteria',
+            'M' => '',
+            'N' => '',
+            'O' => '',
+            'P' => 'numero_ruta',
+            'Q' => 'puntualidad',
+            'R' => 'limpieza_vehiculo',
+            'S' => 'trato_personal_transporte',
+            'T' => 'comunicacion',
+            'U' => 'aspectos_positivos_transporte',
+            'V' => 'oportunidades_mejora_transporte',
+            'W' => 'retiro_transporte',
+        ];
+
+        $example = [
+            'A' => now()->format('Y-m-d H:i:s'),
+            'B' => 'Quinto',
+            'C' => 'Excelente',
+            'D' => 'Muy satisfecho',
+            'E' => 'Excelente',
+            'F' => 'Sí',
+            'G' => 'Sí',
+            'H' => 'Limpio y ordenado',
+            'I' => 'Excelente',
+            'J' => 'Excelente',
+            'K' => 'Buen servicio',
+            'L' => 'Mantener la variedad',
+            'P' => 'Ruta 1',
+            'Q' => 'Sí',
+            'R' => 'Sí',
+            'S' => 'Sí',
+            'T' => 'Sí',
+            'U' => 'Puntualidad',
+            'V' => 'Mejorar la comunicación',
+        ];
+
+        foreach ($headers as $column => $header) {
+            $sheet->setCellValue($column . '1', $header);
+        }
+
+        foreach ($example as $column => $value) {
+            $sheet->setCellValue($column . '2', $value);
+        }
+
+        $sheet->getStyle('A1:W1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '28A745'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+
+        foreach (range('A', 'W') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $filename = 'plantilla_encuesta_padres.xlsx';
+        $writer = new Xlsx($spreadsheet);
+
+        ob_start();
+        $writer->save('php://output');
+        $excelOutput = ob_get_clean();
+
+        return response($excelOutput, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'max-age=0',
+        ]);
     }
 
     public function processUpload(Request $request)

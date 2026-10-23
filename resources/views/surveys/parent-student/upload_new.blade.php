@@ -286,7 +286,7 @@
                     </div>
                     
                     <div class="mb-3">
-                        <a href="{{ asset('test_simple_encuesta.xlsx') }}" class="btn btn-info btn-block" download>
+                        <a href="{{ route('surveys.parent-student.template') }}" class="btn btn-info btn-block" download>
                             <i class="fas fa-file-excel"></i> Archivo de Prueba
                         </a>
                     </div>
@@ -864,13 +864,7 @@ $(document).ready(function() {
     };
 
     window.downloadTemplate = function() {
-        // Crear un enlace de descarga para la plantilla
-        const link = document.createElement('a');
-        link.href = '{{ asset("test_simple_encuesta.xlsx") }}';
-        link.download = 'plantilla_encuesta_padres.xlsx';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        window.location.href = "{{ route('surveys.parent-student.template') }}";
     };
 });
 </script>
