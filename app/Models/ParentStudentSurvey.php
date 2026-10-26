@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\SurveyAnswerEvaluator;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -83,8 +84,7 @@ class ParentStudentSurvey extends Model
 
     public static function getCafeteriaData($period = null, $grade = null)
     {
-        $query = self::where('uses_cafeteria', 'like', '%Sí%')
-                    ->orWhere('uses_cafeteria', 'like', '%Si%');
+        $query = self::query();
 
         if ($period) {
             $query->where('period', $period);
@@ -94,13 +94,14 @@ class ParentStudentSurvey extends Model
             $query->where('student_grade', $grade);
         }
 
-        return $query->get();
+        return $query->get()
+            ->filter(fn ($row) => SurveyAnswerEvaluator::usesService($row, 'cafeteria'))
+            ->values();
     }
 
     public static function getTransportData($period = null, $grade = null)
     {
-        $query = self::where('uses_transport', 'like', '%Sí%')
-                    ->orWhere('uses_transport', 'like', '%Si%');
+        $query = self::query();
 
         if ($period) {
             $query->where('period', $period);
@@ -110,7 +111,9 @@ class ParentStudentSurvey extends Model
             $query->where('student_grade', $grade);
         }
 
-        return $query->get();
+        return $query->get()
+            ->filter(fn ($row) => SurveyAnswerEvaluator::usesService($row, 'transport'))
+            ->values();
     }
 
     public static function calculateCafeteriaMetrics($period = null, $grade = null)
@@ -132,13 +135,13 @@ class ParentStudentSurvey extends Model
         }
 
         return [
-            'food_quality' => self::calculatePositivePercentage($data, 'food_quality', ['Excelente', 'Buena']),
-            'portion_satisfaction' => self::calculatePositivePercentage($data, 'portion_satisfaction', ['Muy satisfecho', 'Satisfecho']),
-            'menu_offered' => self::calculatePositivePercentage($data, 'menu_offered', ['Excelente', 'Bueno']),
-            'menu_variety' => self::calculatePositivePercentage($data, 'menu_variety', ['Sí']),
-            'food_temperature' => self::calculatePositivePercentage($data, 'food_temperature', ['Sí', 'Algunas veces']),
-            'dining_cleanliness' => self::calculatePositivePercentage($data, 'dining_cleanliness', ['Limpio y ordenado']),
-            'staff_treatment' => self::calculatePositivePercentage($data, 'staff_treatment_cafeteria', ['Excelente', 'Bueno']),
+            'food_quality' => self::calculatePositivePercentage($data, 'food_quality', SurveyAnswerEvaluator::CAFETERIA_RATING_POSITIVE),
+            'portion_satisfaction' => self::calculatePositivePercentage($data, 'portion_satisfaction', SurveyAnswerEvaluator::SATISFACTION_POSITIVE),
+            'menu_offered' => self::calculatePositivePercentage($data, 'menu_offered', SurveyAnswerEvaluator::CAFETERIA_RATING_POSITIVE),
+            'menu_variety' => self::calculatePositivePercentage($data, 'menu_variety', SurveyAnswerEvaluator::YES_POSITIVE),
+            'food_temperature' => self::calculatePositivePercentage($data, 'food_temperature', SurveyAnswerEvaluator::YES_POSITIVE),
+            'dining_cleanliness' => self::calculatePositivePercentage($data, 'dining_cleanliness', SurveyAnswerEvaluator::CLEANLINESS_POSITIVE),
+            'staff_treatment' => self::calculatePositivePercentage($data, 'staff_treatment_cafeteria', SurveyAnswerEvaluator::CAFETERIA_RATING_POSITIVE),
             'total_responses' => $total
         ];
     }
@@ -159,29 +162,20 @@ class ParentStudentSurvey extends Model
         }
 
         return [
-            'punctuality' => self::calculatePositivePercentage($data, 'punctuality', ['Sí']),
-            'vehicle_cleanliness' => self::calculatePositivePercentage($data, 'vehicle_cleanliness', ['Sí']),
-            'staff_treatment' => self::calculatePositivePercentage($data, 'staff_treatment_transport', ['Sí']),
-            'communication' => self::calculatePositivePercentage($data, 'communication', ['Sí']),
+            'punctuality' => self::calculatePositivePercentage($data, 'punctuality', SurveyAnswerEvaluator::YES_POSITIVE),
+            'vehicle_cleanliness' => self::calculatePositivePercentage($data, 'vehicle_cleanliness', SurveyAnswerEvaluator::YES_POSITIVE),
+            'staff_treatment' => self::calculatePositivePercentage($data, 'staff_treatment_transport', SurveyAnswerEvaluator::YES_POSITIVE),
+            'communication' => self::calculatePositivePercentage($data, 'communication', SurveyAnswerEvaluator::YES_POSITIVE),
             'total_responses' => $total
         ];
     }
 
     private static function calculatePositivePercentage($collection, $field, $positiveValues)
     {
-        $total = $collection->whereNotNull($field)->where($field, '!=', '')->count();
-        if ($total === 0) return 0;
-        
-        $positive = $collection->filter(function ($item) use ($field, $positiveValues) {
-            foreach ($positiveValues as $value) {
-                if (stripos($item->$field, $value) !== false) {
-                    return true;
-                }
-            }
-            return false;
-        })->count();
-        
-        return round(($positive / $total) * 100, 1);
+        return SurveyAnswerEvaluator::positivePercentage(
+            $collection->pluck($field),
+            $positiveValues
+        );
     }
 
     public static function getAnalysisByGrade($period = null)

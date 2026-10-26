@@ -684,31 +684,27 @@ $(document).ready(function() {
         let totalFiles = selectedFiles.length;
         let allResults = [];
 
-        selectedFiles.forEach((fileObj, index) => {
-            uploadSingleFile(fileObj, index)
-                .then(result => {
-                    completedFiles++;
+        (async function () {
+            for (let index = 0; index < selectedFiles.length; index++) {
+                const fileObj = selectedFiles[index];
+
+                try {
+                    const result = await uploadSingleFile(fileObj, index);
                     allResults.push(result);
-                    updateGlobalProgress(completedFiles, totalFiles);
-                    
-                    if (completedFiles === totalFiles) {
-                        showResults(allResults);
-                    }
-                })
-                .catch(error => {
-                    completedFiles++;
+                } catch (error) {
                     allResults.push({
                         file: fileObj.file.name,
                         success: false,
                         message: error.message
                     });
-                    updateGlobalProgress(completedFiles, totalFiles);
-                    
-                    if (completedFiles === totalFiles) {
-                        showResults(allResults);
-                    }
-                });
-        });
+                }
+
+                completedFiles++;
+                updateGlobalProgress(completedFiles, totalFiles);
+            }
+
+            showResults(allResults);
+        })();
     }
 
     function uploadSingleFile(fileObj, index) {

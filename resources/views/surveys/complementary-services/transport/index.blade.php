@@ -696,6 +696,7 @@
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // Global chart configurations
@@ -756,9 +757,15 @@ function initializeCafeteriaChart() {
     new Chart(ctx, {
         type: 'bar',
         data: data,
+        plugins: [ChartDataLabels],
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 24
+                }
+            },
             plugins: {
                 legend: {
                     display: false
@@ -772,6 +779,20 @@ function initializeCafeteriaChart() {
                         label: function(context) {
                             return 'Satisfacción: ' + context.parsed.y.toFixed(1) + '%';
                         }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    offset: 4,
+                    clip: false,
+                    formatter: function(value) {
+                        return value.toFixed(1) + '%';
+                    },
+                    color: '#333',
+                    font: {
+                        weight: 'bold',
+                        size: 11
                     }
                 }
             },
@@ -840,9 +861,15 @@ function initializeTransportChart() {
     new Chart(ctx, {
         type: 'bar',
         data: data,
+        plugins: [ChartDataLabels],
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 24
+                }
+            },
             plugins: {
                 legend: {
                     display: false
@@ -856,6 +883,20 @@ function initializeTransportChart() {
                         label: function(context) {
                             return 'Satisfacción: ' + context.parsed.y.toFixed(1) + '%';
                         }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    offset: 4,
+                    clip: false,
+                    formatter: function(value) {
+                        return value.toFixed(1) + '%';
+                    },
+                    color: '#333',
+                    font: {
+                        weight: 'bold',
+                        size: 11
                     }
                 }
             },
@@ -915,6 +956,7 @@ function initializeDependencyChart() {
                 borderWidth: 2
             }]
         },
+        plugins: [ChartDataLabels],
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -940,6 +982,21 @@ function initializeDependencyChart() {
                             const percentage = ((context.parsed / total) * 100).toFixed(1);
                             return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
                         }
+                    }
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 11
+                    },
+                    formatter: function(value, context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        if (!total) {
+                            return '0%';
+                        }
+
+                        return ((value / total) * 100).toFixed(1) + '%';
                     }
                 }
             },

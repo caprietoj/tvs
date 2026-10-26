@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Surveys\ComplementaryServices;
 
 use App\Http\Controllers\Controller;
+use App\Support\SurveyAnswerEvaluator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -440,7 +441,7 @@ class TransportController extends Controller
     {
         // Buscar usuarios que usan cafetería (si respuesta contiene "Si.")
         $cafeteriaUsers = $data->filter(function ($item) {
-            return stripos($item->usa_cafeteria, 'Si.') !== false;
+            return SurveyAnswerEvaluator::isAffirmative($item->usa_cafeteria);
         });
         $total = $cafeteriaUsers->count();
         
@@ -463,13 +464,13 @@ class TransportController extends Controller
         }
 
         return [
-            'calidad_sabor' => $this->calculatePositivePercentage($cafeteriaUsers, 'calidad_sabor', ['Excelente', 'Bueno']),
-            'porcion_satisfaccion' => $this->calculatePositivePercentage($cafeteriaUsers, 'porcion_alimentos', ['Muy satisfecho', 'Satisfecho']),
-            'menu_calidad' => $this->calculatePositivePercentage($cafeteriaUsers, 'menu_ofrecido', ['Excelente', 'Bueno']),
-            'variedad_menu' => $this->calculatePositivePercentage($cafeteriaUsers, 'variedad_menu', ['Sí', 'Algunas veces']),
-            'temperatura_adecuada' => $this->calculatePositivePercentage($cafeteriaUsers, 'temperatura_comida', ['Sí', 'Algunas veces']),
-            'limpieza_comedor' => $this->calculatePositivePercentage($cafeteriaUsers, 'limpieza_comedor', ['Limpio y ordenado']),
-            'trato_personal' => $this->calculatePositivePercentage($cafeteriaUsers, 'trato_personal_cafeteria', ['Excelente', 'Bueno']),
+            'calidad_sabor' => $this->calculatePositivePercentage($cafeteriaUsers, 'calidad_sabor', SurveyAnswerEvaluator::CAFETERIA_RATING_POSITIVE),
+            'porcion_satisfaccion' => $this->calculatePositivePercentage($cafeteriaUsers, 'porcion_alimentos', SurveyAnswerEvaluator::SATISFACTION_POSITIVE),
+            'menu_calidad' => $this->calculatePositivePercentage($cafeteriaUsers, 'menu_ofrecido', SurveyAnswerEvaluator::CAFETERIA_RATING_POSITIVE),
+            'variedad_menu' => $this->calculatePositivePercentage($cafeteriaUsers, 'variedad_menu', SurveyAnswerEvaluator::YES_POSITIVE),
+            'temperatura_adecuada' => $this->calculatePositivePercentage($cafeteriaUsers, 'temperatura_comida', SurveyAnswerEvaluator::YES_POSITIVE),
+            'limpieza_comedor' => $this->calculatePositivePercentage($cafeteriaUsers, 'limpieza_comedor', SurveyAnswerEvaluator::CLEANLINESS_POSITIVE),
+            'trato_personal' => $this->calculatePositivePercentage($cafeteriaUsers, 'trato_personal_cafeteria', SurveyAnswerEvaluator::CAFETERIA_RATING_POSITIVE),
             'servicio_tienda' => $this->calculateTiendaDistribution($cafeteriaUsers),
             'total_respuestas' => $total,
             'total_usuarios' => $cafeteriaUsers->count(),
@@ -483,7 +484,7 @@ class TransportController extends Controller
     {
         // Buscar usuarios que usan transporte (si respuesta contiene "Si.")
         $transportUsers = $data->filter(function ($item) {
-            return stripos($item->usa_transporte, 'Si.') !== false;
+            return SurveyAnswerEvaluator::isAffirmative($item->usa_transporte);
         });
         $total = $transportUsers->count();
         
@@ -502,10 +503,10 @@ class TransportController extends Controller
         }
 
         return [
-            'puntualidad' => $this->calculatePositivePercentage($transportUsers, 'puntualidad_transporte', ['Sí', 'Algunas veces']),
-            'limpieza_vehiculo' => $this->calculatePositivePercentage($transportUsers, 'limpieza_vehiculo', ['Sí']),
-            'trato_personal' => $this->calculatePositivePercentage($transportUsers, 'trato_personal_transporte', ['Sí']),
-            'comunicacion' => $this->calculatePositivePercentage($transportUsers, 'comunicacion_transporte', ['Sí']),
+            'puntualidad' => $this->calculatePositivePercentage($transportUsers, 'puntualidad_transporte', SurveyAnswerEvaluator::YES_POSITIVE),
+            'limpieza_vehiculo' => $this->calculatePositivePercentage($transportUsers, 'limpieza_vehiculo', SurveyAnswerEvaluator::YES_POSITIVE),
+            'trato_personal' => $this->calculatePositivePercentage($transportUsers, 'trato_personal_transporte', SurveyAnswerEvaluator::YES_POSITIVE),
+            'comunicacion' => $this->calculatePositivePercentage($transportUsers, 'comunicacion_transporte', SurveyAnswerEvaluator::YES_POSITIVE),
             'total_respuestas' => $total,
             'total_usuarios' => $transportUsers->count(),
             'aspectos_positivos' => $this->extractComments($transportUsers, 'aspectos_positivos_transporte'),
@@ -516,42 +517,7 @@ class TransportController extends Controller
 
     private function calculatePositivePercentage($collection, $field, $positiveValues)
     {
-        $normalizedPositives = array_map(function ($value) {
-            return $this->normalizeValue($value);
-        }, $positiveValues);
-
-        $values = $collection
-            ->pluck($field)
-            ->filter(function ($value) {
-                return $value !== null && trim((string) $value) !== '';
-            });
-
-        $total = $values->count();
-        if ($total === 0) return 0;
-
-        $positive = $values->filter(function ($value) use ($normalizedPositives) {
-            return in_array($this->normalizeValue($value), $normalizedPositives, true);
-        })->count();
-
-        return round(($positive / $total) * 100, 1);
-    }
-
-    private function normalizeValue($value)
-    {
-        $value = trim((string) $value);
-        $value = mb_strtolower($value, 'UTF-8');
-        $value = str_replace(
-            ['á', 'é', 'í', 'ó', 'ú', 'ü'],
-            ['a', 'e', 'i', 'o', 'u', 'u'],
-            $value
-        );
-        $value = rtrim($value, " .;,");
-
-        if ($value === 'buena') {
-            $value = 'bueno';
-        }
-
-        return $value;
+        return SurveyAnswerEvaluator::positivePercentage($collection->pluck($field), $positiveValues);
     }
 
     private function calculateTiendaDistribution($collection)
@@ -635,10 +601,10 @@ class TransportController extends Controller
             'total_responses' => $data->count(),
             'expected_responses' => $expectedResponses,
             'cafeteria_users' => $data->filter(function ($item) {
-                return stripos($item->usa_cafeteria, 'Si.') !== false;
+                return SurveyAnswerEvaluator::isAffirmative($item->usa_cafeteria);
             })->count(),
             'transport_users' => $data->filter(function ($item) {
-                return stripos($item->usa_transporte, 'Si.') !== false;
+                return SurveyAnswerEvaluator::isAffirmative($item->usa_transporte);
             })->count(),
             'dependencies' => $data->groupBy('dependencia')->map->count()
         ];
@@ -659,18 +625,18 @@ class TransportController extends Controller
         
         // Contar usuarios únicos de cafetería
         $cafeteriaUsers = $data->filter(function ($item) {
-            return stripos($item->usa_cafeteria, 'Si.') !== false;
+            return SurveyAnswerEvaluator::isAffirmative($item->usa_cafeteria);
         })->count();
         
         // Contar usuarios únicos de transporte
         $transportUsers = $data->filter(function ($item) {
-            return stripos($item->usa_transporte, 'Si.') !== false;
+            return SurveyAnswerEvaluator::isAffirmative($item->usa_transporte);
         })->count();
         
         // Usuarios que usan ambos servicios
         $bothUsers = $data->filter(function ($item) {
-            return stripos($item->usa_cafeteria, 'Si.') !== false && 
-                   stripos($item->usa_transporte, 'Si.') !== false;
+            return SurveyAnswerEvaluator::isAffirmative($item->usa_cafeteria) &&
+                   SurveyAnswerEvaluator::isAffirmative($item->usa_transporte);
         })->count();
         
         // Total de usuarios únicos que usan al menos uno de los servicios

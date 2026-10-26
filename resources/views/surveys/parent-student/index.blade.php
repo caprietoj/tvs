@@ -53,6 +53,17 @@
         </div>
     @endif
 
+    @if(!empty($dashboardData['needs_reimport']))
+        <div class="alert alert-warning">
+            <h5><i class="icon fas fa-exclamation-triangle"></i> Datos cargados con el mapeo anterior</h5>
+            Los promedios de este período no son confiables porque el archivo se cargó con el mapeo de columnas anterior.
+            Vuelva a cargar el archivo Excel del período para recalcular los promedios correctamente.
+            <a href="{{ route('surveys.parent-student.upload') }}" class="btn btn-sm btn-warning ml-2">
+                <i class="fas fa-upload"></i> Recargar encuesta
+            </a>
+        </div>
+    @endif
+
     @if(!isset($dashboardData['has_data']) || !$dashboardData['has_data'])
         <!-- No Data State -->
         <div class="row">

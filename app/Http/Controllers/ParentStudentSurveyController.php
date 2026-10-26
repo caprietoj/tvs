@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\ParentStudentSurvey;
+use App\Support\SurveyAnswerEvaluator;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -203,6 +206,13 @@ class ParentStudentSurveyController extends Controller
 
             DB::beginTransaction();
 
+            // Al recargar un período se reemplazan los datos previos de ese tipo de
+            // encuesta para evitar duplicados y conservar los valores corregidos.
+            DB::table('parent_student_surveys')
+                ->where('period', $request->period)
+                ->where('survey_type', $request->survey_type)
+                ->delete();
+
             foreach ($files as $index => $file) {
                 $fileName = $file->getClientOriginalName();
                 $processed = 0;
@@ -216,6 +226,9 @@ class ParentStudentSurveyController extends Controller
                     
                     $highestRow = $worksheet->getHighestRow();
                     Log::info("Archivo $fileName tiene $highestRow filas");
+
+                    $columnMap = $this->buildColumnMap($worksheet, $request->survey_type);
+                    Log::info("Mapa de columnas detectado: " . json_encode($columnMap));
                     
                     // Auto-detectar proveedor si está habilitado
                     $provider = $request->auto_detect_provider ? 
@@ -226,7 +239,7 @@ class ParentStudentSurveyController extends Controller
                     for ($row = 2; $row <= $highestRow; $row++) {
                         try {
                             Log::info("Procesando fila $row");
-                            $data = $this->extractRowData($worksheet, $row, $request->survey_type);
+                            $data = $this->extractRowData($worksheet, $row, $request->survey_type, $columnMap);
                             
                             if ($data && !empty($data['student_grade'])) {
                                 // Agregar campos adicionales automáticamente
@@ -261,7 +274,11 @@ class ParentStudentSurveyController extends Controller
                                 $totalErrors[] = "Archivo: $fileName, Fila $row: Datos vacíos o inválidos";
                                 Log::warning("Fila $row omitida: datos vacíos");
                             }
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
+                            if ($this->isRetryableDatabaseError($e)) {
+                                throw $e;
+                            }
+
                             $error = "Archivo: $fileName, Fila $row: " . $e->getMessage();
                             $errors[] = $error;
                             $totalErrors[] = $error;
@@ -278,7 +295,11 @@ class ParentStudentSurveyController extends Controller
                     
                     Log::info("Archivo $fileName completado: $processed procesados, " . count($errors) . " errores");
                     
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
+                    if ($this->isRetryableDatabaseError($e)) {
+                        throw $e;
+                    }
+
                     $error = "Error procesando archivo $fileName: " . $e->getMessage();
                     $errors[] = $error;
                     $totalErrors[] = $error;
@@ -329,8 +350,10 @@ class ParentStudentSurveyController extends Controller
             return redirect()->route('surveys.parent-student.index')
                 ->with('success', $message);
 
-        } catch (\Exception $e) {
-            DB::rollback();
+        } catch (\Throwable $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
             
             Log::error('=== ERROR CRÍTICO EN PROCESS UPLOAD ===');
             Log::error('Mensaje: ' . $e->getMessage());
@@ -349,6 +372,20 @@ class ParentStudentSurveyController extends Controller
             return redirect()->back()
                 ->withErrors(['error' => 'Error procesando archivos: ' . $e->getMessage()]);
         }
+    }
+
+    private function isRetryableDatabaseError(\Throwable $e): bool
+    {
+        if (!$e instanceof QueryException) {
+            return false;
+        }
+
+        $message = $e->getMessage();
+
+        return (string) $e->getCode() === '40001'
+            || str_contains($message, 'Deadlock')
+            || str_contains($message, '1213')
+            || str_contains($message, 'Lock wait timeout');
     }
 
     private function detectProvider($worksheet, $fileName)
@@ -392,15 +429,220 @@ class ParentStudentSurveyController extends Controller
             ->exists();
     }
 
-    private function extractRowData($worksheet, $row, $surveyType)
+    private function buildColumnMap($worksheet, $surveyType)
+    {
+        $map = [];
+        $sharedCounters = [];
+        $currentSection = null;
+        $lastColumn = Coordinate::columnIndexFromString($worksheet->getHighestColumn());
+
+        for ($index = 1; $index <= $lastColumn; $index++) {
+            $column = Coordinate::stringFromColumnIndex($index);
+            $header = SurveyAnswerEvaluator::normalize($worksheet->getCell($column . '1')->getValue());
+
+            if ($header === '') {
+                continue;
+            }
+
+            $field = $this->classifyHeader($header, $surveyType, $sharedCounters, $currentSection);
+
+            if ($field !== null && !array_key_exists($field, $map)) {
+                $map[$field] = $column;
+            }
+        }
+
+        $fallbacks = $surveyType === 'transport_only'
+            ? [
+                'timestamp' => 'A',
+                'student_grade' => 'B',
+                'route_number' => 'P',
+                'punctuality' => 'Q',
+                'vehicle_cleanliness' => 'R',
+                'staff_treatment_transport' => 'S',
+                'communication' => 'T',
+                'positive_aspects_transport' => 'U',
+                'improvement_opportunities_transport' => 'V',
+                'withdrawal_reason_transport' => 'W',
+            ]
+            : [
+                'timestamp' => 'A',
+                'student_grade' => 'B',
+                'food_quality' => 'C',
+                'portion_satisfaction' => 'D',
+                'menu_offered' => 'E',
+                'menu_variety' => 'F',
+                'food_temperature' => 'G',
+                'dining_cleanliness' => 'H',
+                'store_service' => 'I',
+                'staff_treatment_cafeteria' => 'J',
+                'positive_aspects_cafeteria' => 'K',
+                'improvement_opportunities_cafeteria' => 'L',
+                'withdrawal_reason_cafeteria' => 'M',
+                'route_number' => 'P',
+                'punctuality' => 'Q',
+                'vehicle_cleanliness' => 'R',
+                'staff_treatment_transport' => 'S',
+                'communication' => 'T',
+                'positive_aspects_transport' => 'U',
+                'improvement_opportunities_transport' => 'V',
+                'withdrawal_reason_transport' => 'W',
+            ];
+
+        $recognizedQuestions = array_diff(array_keys($map), ['timestamp', 'student_grade']);
+
+        if (empty($recognizedQuestions)) {
+            foreach ($fallbacks as $field => $column) {
+                if (!isset($map[$field])) {
+                    $map[$field] = $column;
+                }
+            }
+        } else {
+            $map['timestamp'] = $map['timestamp'] ?? 'A';
+            $map['student_grade'] = $map['student_grade'] ?? 'B';
+        }
+
+        return $map;
+    }
+
+    private function classifyHeader($header, $surveyType, array &$sharedCounters, ?string &$currentSection = null)
+    {
+        $isTransport = str_contains($header, 'transport');
+        $isCafeteria = str_contains($header, 'cafeter')
+            || str_contains($header, 'comedor')
+            || str_contains($header, 'aliment')
+            || str_contains($header, 'tienda');
+
+        if (str_contains($header, 'marca temporal') || str_contains($header, 'timestamp') || str_contains($header, 'fecha')) {
+            return 'timestamp';
+        }
+
+        if (str_contains($header, 'grado') || str_contains($header, 'curso')) {
+            return 'student_grade';
+        }
+
+        if (str_contains($header, 'usa') && $isCafeteria) {
+            $currentSection = 'cafeteria';
+
+            return 'uses_cafeteria';
+        }
+
+        if (str_contains($header, 'usa') && $isTransport) {
+            $currentSection = 'transport';
+
+            return 'uses_transport';
+        }
+
+        if (str_contains($header, 'ruta')) {
+            return 'route_number';
+        }
+
+        if (str_contains($header, 'puntualidad')) {
+            return 'punctuality';
+        }
+
+        if (str_contains($header, 'limpieza') && (str_contains($header, 'vehiculo') || $isTransport)) {
+            return 'vehicle_cleanliness';
+        }
+
+        if (str_contains($header, 'limpieza') && (str_contains($header, 'comedor') || $isCafeteria)) {
+            return 'dining_cleanliness';
+        }
+
+        if (str_contains($header, 'limpieza')) {
+            if ($isTransport || $surveyType === 'transport_only' || $currentSection === 'transport') {
+                return 'vehicle_cleanliness';
+            }
+
+            if ($isCafeteria || $surveyType === 'cafeteria_only' || $currentSection === 'cafeteria') {
+                return 'dining_cleanliness';
+            }
+        }
+
+        if (str_contains($header, 'calidad') && (str_contains($header, 'sabor') || str_contains($header, 'comida') || str_contains($header, 'alimento'))) {
+            return 'food_quality';
+        }
+
+        if (str_contains($header, 'porcion')) {
+            return 'portion_satisfaction';
+        }
+
+        if (str_contains($header, 'variedad')) {
+            return 'menu_variety';
+        }
+
+        if (str_contains($header, 'menu')) {
+            return 'menu_offered';
+        }
+
+        if (str_contains($header, 'temperatura')) {
+            return 'food_temperature';
+        }
+
+        if (str_contains($header, 'tienda')) {
+            return 'store_service';
+        }
+
+        if (str_contains($header, 'comunicacion')) {
+            return 'communication';
+        }
+
+        if (str_contains($header, 'aspecto') && str_contains($header, 'positiv')) {
+            return $this->sharedServiceField('positive_aspects', $isTransport, $isCafeteria, $surveyType, $sharedCounters, $currentSection);
+        }
+
+        if (str_contains($header, 'oportunidad') && str_contains($header, 'mejora')) {
+            return $this->sharedServiceField('improvement_opportunities', $isTransport, $isCafeteria, $surveyType, $sharedCounters, $currentSection);
+        }
+
+        if (str_contains($header, 'retiro') || str_contains($header, 'retiraria')) {
+            return $this->sharedServiceField('withdrawal_reason', $isTransport, $isCafeteria, $surveyType, $sharedCounters, $currentSection);
+        }
+
+        if (str_contains($header, 'trato')) {
+            return $this->sharedServiceField('staff_treatment', $isTransport, $isCafeteria, $surveyType, $sharedCounters, $currentSection);
+        }
+
+        return null;
+    }
+
+    private function sharedServiceField($base, $isTransport, $isCafeteria, $surveyType, array &$sharedCounters, ?string $currentSection = null)
+    {
+        if ($isTransport) {
+            return $base . '_transport';
+        }
+
+        if ($isCafeteria) {
+            return $base . '_cafeteria';
+        }
+
+        if ($surveyType === 'transport_only') {
+            return $base . '_transport';
+        }
+
+        if ($surveyType === 'cafeteria_only') {
+            return $base . '_cafeteria';
+        }
+
+        if ($currentSection !== null) {
+            return $base . '_' . $currentSection;
+        }
+
+        $sharedCounters[$base] = ($sharedCounters[$base] ?? 0) + 1;
+
+        return $sharedCounters[$base] === 1
+            ? $base . '_cafeteria'
+            : $base . '_transport';
+    }
+
+    private function extractRowData($worksheet, $row, $surveyType, array $columnMap = [])
     {
         $data = [];
         
         try {
-            // Para archivos de cafetería: A=timestamp, B=grado
-            // Para archivos de transporte: A=timestamp, B=grado
-            $timestamp = $worksheet->getCell('A' . $row)->getValue();
-            $studentGrade = trim($worksheet->getCell('B' . $row)->getValue() ?: '');
+            $timestampColumn = $columnMap['timestamp'] ?? 'A';
+            $gradeColumn = $columnMap['student_grade'] ?? 'B';
+            $timestamp = $worksheet->getCell($timestampColumn . $row)->getValue();
+            $studentGrade = trim($worksheet->getCell($gradeColumn . $row)->getValue() ?: '');
             
             // Validar que los campos básicos no estén vacíos
             if (empty($timestamp)) {
@@ -415,23 +657,21 @@ class ParentStudentSurveyController extends Controller
             // Según el tipo de encuesta, extraer diferentes campos
             switch ($surveyType) {
                 case 'complete':
-                    $data = array_merge($data, $this->extractCafeteriaData($worksheet, $row));
-                    $data = array_merge($data, $this->extractTransportData($worksheet, $row));
+                    $data = array_merge($data, $this->extractCafeteriaData($worksheet, $row, $columnMap));
+                    $data = array_merge($data, $this->extractTransportData($worksheet, $row, $columnMap));
+                    $data['uses_cafeteria'] = $this->resolveServiceUsage($worksheet, $row, $columnMap, 'cafeteria', $data);
+                    $data['uses_transport'] = $this->resolveServiceUsage($worksheet, $row, $columnMap, 'transport', $data);
                     break;
                     
                 case 'cafeteria_only':
-                    $data = array_merge($data, $this->extractCafeteriaData($worksheet, $row));
-                    // Para archivos de solo cafetería, marcar que SÍ usa cafetería
-                    $data['uses_cafeteria'] = 'Sí';
-                    // Valores por defecto para transporte
+                    $data = array_merge($data, $this->extractCafeteriaData($worksheet, $row, $columnMap));
+                    $data['uses_cafeteria'] = $this->resolveServiceUsage($worksheet, $row, $columnMap, 'cafeteria', $data, 'Sí');
                     $data['uses_transport'] = 'No';
                     break;
                     
                 case 'transport_only':
-                    $data = array_merge($data, $this->extractTransportData($worksheet, $row));
-                    // Para archivos de solo transporte, marcar que SÍ usa transporte
-                    $data['uses_transport'] = 'Sí';
-                    // Valores por defecto para cafetería
+                    $data = array_merge($data, $this->extractTransportData($worksheet, $row, $columnMap));
+                    $data['uses_transport'] = $this->resolveServiceUsage($worksheet, $row, $columnMap, 'transport', $data, 'Sí');
                     $data['uses_cafeteria'] = 'No';
                     break;
             }
@@ -443,6 +683,31 @@ class ParentStudentSurveyController extends Controller
             Log::error("Error extrayendo datos de la fila $row: " . $e->getMessage());
             throw new \Exception("Error extrayendo datos de la fila $row: " . $e->getMessage());
         }
+    }
+
+    private function resolveServiceUsage($worksheet, $row, array $columnMap, $service, array $data, $default = null)
+    {
+        $field = $service === 'cafeteria' ? 'uses_cafeteria' : 'uses_transport';
+
+        if (isset($columnMap[$field])) {
+            $value = $worksheet->getCell($columnMap[$field] . $row)->getCalculatedValue();
+
+            if ($value !== null && trim((string) $value) !== '') {
+                return trim((string) $value);
+            }
+        }
+
+        $ratingFields = $service === 'cafeteria'
+            ? ['food_quality', 'portion_satisfaction', 'menu_offered', 'menu_variety', 'food_temperature', 'dining_cleanliness', 'store_service', 'staff_treatment_cafeteria', 'positive_aspects_cafeteria', 'improvement_opportunities_cafeteria', 'withdrawal_reason_cafeteria']
+            : ['route_number', 'punctuality', 'vehicle_cleanliness', 'staff_treatment_transport', 'communication', 'positive_aspects_transport', 'improvement_opportunities_transport', 'withdrawal_reason_transport'];
+
+        foreach ($ratingFields as $ratingField) {
+            if (trim((string) ($data[$ratingField] ?? '')) !== '') {
+                return 'Sí';
+            }
+        }
+
+        return $default ?? 'No';
     }
     
     /**
@@ -531,37 +796,50 @@ class ParentStudentSurveyController extends Controller
         return null;
     }
     
-    private function extractCafeteriaData($worksheet, $row)
+    private function extractCafeteriaData($worksheet, $row, array $columnMap = [])
     {
         return [
-            // Mapeo correcto para archivos de cafetería (basado en el Excel proporcionado)
-            'food_quality' => $worksheet->getCell('C' . $row)->getCalculatedValue() ?: null, // Calidad y sabor
-            'portion_satisfaction' => $worksheet->getCell('D' . $row)->getCalculatedValue() ?: null, // Satisfacción porción
-            'menu_offered' => $worksheet->getCell('E' . $row)->getCalculatedValue() ?: null, // Menú ofrecido
-            'menu_variety' => $worksheet->getCell('F' . $row)->getCalculatedValue() ?: null, // Variedad proteína/ensaladas
-            'food_temperature' => $worksheet->getCell('G' . $row)->getCalculatedValue() ?: null, // Temperatura comida
-            'dining_cleanliness' => $worksheet->getCell('H' . $row)->getCalculatedValue() ?: null, // Limpieza comedor
-            'store_service' => $worksheet->getCell('I' . $row)->getCalculatedValue() ?: null, // Servicio tienda escolar
-            'staff_treatment_cafeteria' => $worksheet->getCell('J' . $row)->getCalculatedValue() ?: null, // Trato personal Aldimark
-            'positive_aspects_cafeteria' => $worksheet->getCell('K' . $row)->getCalculatedValue() ?: null, // Aspectos positivos
-            'improvement_opportunities_cafeteria' => $worksheet->getCell('L' . $row)->getCalculatedValue() ?: null, // Oportunidades mejora
-            'withdrawal_reason_cafeteria' => null, // No aplica para este formato
+            'food_quality' => $this->readMappedCell($worksheet, $row, $columnMap, 'food_quality'),
+            'portion_satisfaction' => $this->readMappedCell($worksheet, $row, $columnMap, 'portion_satisfaction'),
+            'menu_offered' => $this->readMappedCell($worksheet, $row, $columnMap, 'menu_offered'),
+            'menu_variety' => $this->readMappedCell($worksheet, $row, $columnMap, 'menu_variety'),
+            'food_temperature' => $this->readMappedCell($worksheet, $row, $columnMap, 'food_temperature'),
+            'dining_cleanliness' => $this->readMappedCell($worksheet, $row, $columnMap, 'dining_cleanliness'),
+            'store_service' => $this->readMappedCell($worksheet, $row, $columnMap, 'store_service'),
+            'staff_treatment_cafeteria' => $this->readMappedCell($worksheet, $row, $columnMap, 'staff_treatment_cafeteria'),
+            'positive_aspects_cafeteria' => $this->readMappedCell($worksheet, $row, $columnMap, 'positive_aspects_cafeteria'),
+            'improvement_opportunities_cafeteria' => $this->readMappedCell($worksheet, $row, $columnMap, 'improvement_opportunities_cafeteria'),
+            'withdrawal_reason_cafeteria' => $this->readMappedCell($worksheet, $row, $columnMap, 'withdrawal_reason_cafeteria'),
         ];
     }
     
-    private function extractTransportData($worksheet, $row)
+    private function extractTransportData($worksheet, $row, array $columnMap = [])
     {
         return [
-            // NO incluir uses_transport aquí, se maneja en extractRowData
-            'route_number' => $worksheet->getCell('P' . $row)->getCalculatedValue() ?: null,
-            'punctuality' => $worksheet->getCell('Q' . $row)->getCalculatedValue() ?: null,
-            'vehicle_cleanliness' => $worksheet->getCell('R' . $row)->getCalculatedValue() ?: null,
-            'staff_treatment_transport' => $worksheet->getCell('S' . $row)->getCalculatedValue() ?: null,
-            'communication' => $worksheet->getCell('T' . $row)->getCalculatedValue() ?: null,
-            'positive_aspects_transport' => $worksheet->getCell('U' . $row)->getCalculatedValue() ?: null,
-            'improvement_opportunities_transport' => $worksheet->getCell('V' . $row)->getCalculatedValue() ?: null,
-            'withdrawal_reason_transport' => $worksheet->getCell('W' . $row)->getCalculatedValue() ?: null,
+            'route_number' => $this->readMappedCell($worksheet, $row, $columnMap, 'route_number'),
+            'punctuality' => $this->readMappedCell($worksheet, $row, $columnMap, 'punctuality'),
+            'vehicle_cleanliness' => $this->readMappedCell($worksheet, $row, $columnMap, 'vehicle_cleanliness'),
+            'staff_treatment_transport' => $this->readMappedCell($worksheet, $row, $columnMap, 'staff_treatment_transport'),
+            'communication' => $this->readMappedCell($worksheet, $row, $columnMap, 'communication'),
+            'positive_aspects_transport' => $this->readMappedCell($worksheet, $row, $columnMap, 'positive_aspects_transport'),
+            'improvement_opportunities_transport' => $this->readMappedCell($worksheet, $row, $columnMap, 'improvement_opportunities_transport'),
+            'withdrawal_reason_transport' => $this->readMappedCell($worksheet, $row, $columnMap, 'withdrawal_reason_transport'),
         ];
+    }
+
+    private function readMappedCell($worksheet, $row, array $columnMap, $field)
+    {
+        if (!isset($columnMap[$field])) {
+            return null;
+        }
+
+        $value = $worksheet->getCell($columnMap[$field] . $row)->getCalculatedValue();
+
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+
+        return $value;
     }
     
     private function parseDate($dateValue)
@@ -918,14 +1196,12 @@ class ParentStudentSurveyController extends Controller
         
         // Filtrar datos de cafetería del período actual
         $cafeteriaData = $periodData->filter(function ($item) {
-            return stripos($item->uses_cafeteria, 'Sí') !== false || 
-                   stripos($item->uses_cafeteria, 'Si') !== false;
+            return SurveyAnswerEvaluator::usesService($item, 'cafeteria');
         });
 
         // Filtrar datos de transporte del período actual  
         $transportData = $periodData->filter(function ($item) {
-            return stripos($item->uses_transport, 'Sí') !== false || 
-                   stripos($item->uses_transport, 'Si') !== false;
+            return SurveyAnswerEvaluator::usesService($item, 'transport');
         });
 
         // Calcular métricas usando solo datos del período actual
@@ -957,6 +1233,7 @@ class ParentStudentSurveyController extends Controller
             'grades_detailed' => $gradeData['detailed'],
             'grade_stats' => $gradeData['stats'],
             'transport_data' => $transportData,  // Agregar datos de transporte para los modales
+            'needs_reimport' => $this->periodNeedsReimport($periodData),
             'periods_info' => [
                 'latest' => $period->period,
                 'cafeteria_source' => $period->period,  // Mismo período
@@ -968,6 +1245,39 @@ class ParentStudentSurveyController extends Controller
     /**
      * Procesar distribución de grados de manera inteligente
      */
+    private function periodNeedsReimport($data): bool
+    {
+        $ratingFields = [
+            'food_quality',
+            'portion_satisfaction',
+            'menu_offered',
+            'menu_variety',
+            'food_temperature',
+            'dining_cleanliness',
+            'staff_treatment_cafeteria',
+            'punctuality',
+            'vehicle_cleanliness',
+            'staff_treatment_transport',
+            'communication',
+        ];
+
+        foreach ($data as $row) {
+            foreach ($ratingFields as $field) {
+                $value = trim((string) ($row->{$field} ?? ''));
+
+                if ($value === '') {
+                    continue;
+                }
+
+                if (str_contains(SurveyAnswerEvaluator::normalize($value), 'en este caso') || mb_strlen($value) > 40) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private function processGradeDistribution($data)
     {
         $rawGrades = $data->groupBy('student_grade')->map->count();
@@ -996,11 +1306,11 @@ class ParentStudentSurveyController extends Controller
                 'percentage' => round(($count / $totalResponses) * 100, 1),
                 'cafeteria_users' => $data->where('student_grade', $grade)
                     ->filter(function($item) {
-                        return stripos($item->uses_cafeteria, 'Sí') !== false || stripos($item->uses_cafeteria, 'Si') !== false;
+                        return SurveyAnswerEvaluator::usesService($item, 'cafeteria');
                     })->count(),
                 'transport_users' => $data->where('student_grade', $grade)
                     ->filter(function($item) {
-                        return stripos($item->uses_transport, 'Sí') !== false || stripos($item->uses_transport, 'Si') !== false;
+                        return SurveyAnswerEvaluator::usesService($item, 'transport');
                     })->count()
             ];
         }
@@ -1079,7 +1389,7 @@ class ParentStudentSurveyController extends Controller
     private function calculateSinglePeriodCafeteriaMetrics($data)
     {
         $cafeteriaUsers = $data->filter(function ($item) {
-            return stripos($item->uses_cafeteria, 'Sí') !== false || stripos($item->uses_cafeteria, 'Si') !== false;
+            return SurveyAnswerEvaluator::usesService($item, 'cafeteria');
         });
         
         $total = $cafeteriaUsers->count();
@@ -1099,13 +1409,13 @@ class ParentStudentSurveyController extends Controller
         }
 
         return [
-            'calidad_sabor' => $this->calculatePositivePercentage($cafeteriaUsers, 'food_quality', ['Excelente', 'Bueno', 'Regular']),
-            'porcion_satisfaccion' => $this->calculatePositivePercentage($cafeteriaUsers, 'portion_satisfaction', ['Muy satisfecho', 'Satisfecho']),
-            'menu_calidad' => $this->calculatePositivePercentage($cafeteriaUsers, 'menu_offered', ['Excelente', 'Bueno', 'Regular']),
-            'variedad_menu' => $this->calculatePositivePercentage($cafeteriaUsers, 'menu_variety', ['Sí', 'Algunas veces']),
-            'temperatura_adecuada' => $this->calculatePositivePercentage($cafeteriaUsers, 'food_temperature', ['Sí', 'Algunas veces']),
-            'limpieza_comedor' => $this->calculatePositivePercentage($cafeteriaUsers, 'dining_cleanliness', ['Limpio y ordenado']),
-            'trato_personal' => $this->calculatePositivePercentage($cafeteriaUsers, 'staff_treatment_cafeteria', ['Excelente', 'Bueno']),
+            'calidad_sabor' => $this->calculatePositivePercentage($cafeteriaUsers, 'food_quality', SurveyAnswerEvaluator::CAFETERIA_RATING_POSITIVE),
+            'porcion_satisfaccion' => $this->calculatePositivePercentage($cafeteriaUsers, 'portion_satisfaction', SurveyAnswerEvaluator::SATISFACTION_POSITIVE),
+            'menu_calidad' => $this->calculatePositivePercentage($cafeteriaUsers, 'menu_offered', SurveyAnswerEvaluator::CAFETERIA_RATING_POSITIVE),
+            'variedad_menu' => $this->calculatePositivePercentage($cafeteriaUsers, 'menu_variety', SurveyAnswerEvaluator::YES_POSITIVE),
+            'temperatura_adecuada' => $this->calculatePositivePercentage($cafeteriaUsers, 'food_temperature', SurveyAnswerEvaluator::YES_POSITIVE),
+            'limpieza_comedor' => $this->calculatePositivePercentage($cafeteriaUsers, 'dining_cleanliness', SurveyAnswerEvaluator::CLEANLINESS_POSITIVE),
+            'trato_personal' => $this->calculatePositivePercentage($cafeteriaUsers, 'staff_treatment_cafeteria', SurveyAnswerEvaluator::CAFETERIA_RATING_POSITIVE),
             'total_respuestas' => $total,
             'total_usuarios' => $cafeteriaUsers->count()
         ];
@@ -1114,7 +1424,7 @@ class ParentStudentSurveyController extends Controller
     private function calculateSinglePeriodTransportMetrics($data)
     {
         $transportUsers = $data->filter(function ($item) {
-            return stripos($item->uses_transport, 'Sí') !== false || stripos($item->uses_transport, 'Si') !== false;
+            return SurveyAnswerEvaluator::usesService($item, 'transport');
         });
         
         $total = $transportUsers->count();
@@ -1130,18 +1440,11 @@ class ParentStudentSurveyController extends Controller
             ];
         }
 
-        // Calcular cada métrica individualmente con sus valores positivos específicos
-        $puntualidad = $this->calculatePositivePercentage($transportUsers, 'punctuality', ['Sí']);
-        $limpieza_vehiculo = $this->calculatePositivePercentageFromComments($transportUsers, 'vehicle_cleanliness');
-        $trato_personal = $this->calculatePositivePercentageFromComments($transportUsers, 'staff_treatment_transport');
-        // TEMPORAL: Usar una estimación basada en otros campos hasta que se recarguen los datos
-        $comunicacion = $this->calculateCommunicationEstimate($transportUsers);
-        
         return [
-            'puntualidad' => $puntualidad,
-            'limpieza_vehiculo' => $limpieza_vehiculo,
-            'trato_personal' => $trato_personal,
-            'comunicacion' => $comunicacion,
+            'puntualidad' => $this->calculatePositivePercentage($transportUsers, 'punctuality', SurveyAnswerEvaluator::YES_POSITIVE),
+            'limpieza_vehiculo' => $this->calculatePositivePercentage($transportUsers, 'vehicle_cleanliness', SurveyAnswerEvaluator::YES_POSITIVE),
+            'trato_personal' => $this->calculatePositivePercentage($transportUsers, 'staff_treatment_transport', SurveyAnswerEvaluator::YES_POSITIVE),
+            'comunicacion' => $this->calculatePositivePercentage($transportUsers, 'communication', SurveyAnswerEvaluator::YES_POSITIVE),
             'total_respuestas' => $total,
             'total_usuarios' => $transportUsers->count()
         ];
@@ -1149,184 +1452,12 @@ class ParentStudentSurveyController extends Controller
 
     private function calculatePositivePercentage($collection, $field, $positiveValues = null)
     {
-        $total = $collection->count();
-        
-        if ($total === 0) {
-            return 0;
-        }
+        $positiveValues = $positiveValues ?? SurveyAnswerEvaluator::CAFETERIA_RATING_POSITIVE;
 
-        // Si no se especifican valores positivos, usar los predeterminados
-        if ($positiveValues === null) {
-            $positiveValues = ['Excelente', 'Bueno'];
-        }
-        
-        $positive = $collection->filter(function ($item) use ($field, $positiveValues) {
-            $value = $item->{$field} ?? '';
-            
-            // Manejar valores null o vacíos
-            if (empty($value) || is_null($value)) {
-                return false;
-            }
-            
-            // Verificar coincidencia exacta primero
-            $isPositive = in_array($value, $positiveValues);
-            
-            // Si no hay coincidencia exacta, buscar palabras clave en comentarios largos
-            if (!$isPositive && strlen($value) > 50) {
-                foreach ($positiveValues as $positiveValue) {
-                    if (stripos($value, $positiveValue) !== false) {
-                        $isPositive = true;
-                        break;
-                    }
-                }
-                // Buscar también palabras clave positivas comunes
-                $positiveKeywords = ['excelente', 'bueno', 'buena', 'satisfecho', 'satisfecha', 'limpio', 'ordenado', 'puntual', 'responsable', 'calidad', 'recomiendo'];
-                foreach ($positiveKeywords as $keyword) {
-                    if (stripos($value, $keyword) !== false) {
-                        $isPositive = true;
-                        break;
-                    }
-                }
-            }
-            
-            return $isPositive;
-        })->count();
-
-        return round(($positive / $total) * 100);
-    }
-
-    private function calculatePositivePercentageFromComments($collection, $field)
-    {
-        $total = $collection->count();
-        
-        if ($total === 0) {
-            return 0;
-        }
-        
-        $positive = $collection->filter(function ($item) use ($field) {
-            $value = $item->{$field} ?? '';
-            
-            // Manejar valores null o vacíos
-            if (empty($value) || is_null($value)) {
-                return false;
-            }
-            
-            // Lista de palabras clave positivas para evaluar comentarios
-            $positiveKeywords = [
-                'excelente', 'bueno', 'buena', 'muy bien', 'todo bien', 'todo muy bien',
-                'satisfecho', 'satisfecha', 'limpio', 'ordenado', 'puntual', 'puntualidad',
-                'responsable', 'respetuoso', 'respetuosa', 'amable', 'amables', 'calidad',
-                'recomiendo', 'felicitaciones', 'querido', 'querida', 'seguro', 'seguros',
-                'impecable', 'entrega', 'amor', 'cómoda', 'super servicio', 'muy amable',
-                'colaborador', 'colaboradores', 'servicial', 'esta todo muy bien',
-                'todo está bien', 'continuar como', 'buen servicio'
-            ];
-            
-            // Comentarios neutros que indican satisfacción (no hay quejas)
-            $neutralPositivePatterns = [
-                '/^(ninguna|no tengo|no tengo observaciones|no aplica|no hay|n\/a|—|\.+)$/i',
-                '/^(no tengo comentarios|todo está bien|esta todo muy bien)$/i'
-            ];
-            
-            // Palabras clave negativas que indican problemas claros
-            $negativeKeywords = [
-                'mal genio', 'no acertiva', 'cero amable', 'poco servicial', 'incómodo',
-                'incómodos', 'malas condiciones', 'inappropiado', 'inapropiado',
-                'falla', 'llega tarde', 'demasiado incómodos'
-            ];
-            
-            $value = trim($value);
-            $lowerValue = strtolower($value);
-            
-            // Verificar si contiene palabras negativas específicas primero
-            foreach ($negativeKeywords as $negativeWord) {
-                if (stripos($lowerValue, $negativeWord) !== false) {
-                    return false;
-                }
-            }
-            
-            // Buscar palabras clave positivas explícitas
-            foreach ($positiveKeywords as $positiveWord) {
-                if (stripos($lowerValue, $positiveWord) !== false) {
-                    return true;
-                }
-            }
-            
-            // Verificar patrones neutrales que indican satisfacción
-            foreach ($neutralPositivePatterns as $pattern) {
-                if (preg_match($pattern, trim($lowerValue))) {
-                    return true;
-                }
-            }
-            
-            // Si el comentario es constructivo/solicitud de mejora sin queja directa, considerarlo neutral-positivo
-            $constructivePatterns = [
-                'idealmente', 'sería bueno', 'deberían', 'podrían', 'buses más', 'mayor estabilidad'
-            ];
-            
-            foreach ($constructivePatterns as $constructive) {
-                if (stripos($lowerValue, $constructive) !== false) {
-                    return true;
-                }
-            }
-            
-            return false;
-        })->count();
-
-        return round(($positive / $total) * 100);
-    }
-
-    private function calculateCommunicationEstimate($collection)
-    {
-        // MÉTODO TEMPORAL: Estimar comunicación basado en otros indicadores de satisfacción
-        // hasta que se recarguen los datos con el mapeo correcto
-        
-        $total = $collection->count();
-        
-        if ($total === 0) {
-            return 0;
-        }
-        
-        // Obtener promedios de otros indicadores
-        $puntualidadPositivos = $collection->filter(function ($item) {
-            return ($item->punctuality ?? '') === 'Sí';
-        })->count();
-        
-        $limpiezaPositivos = $collection->filter(function ($item) {
-            $value = $item->vehicle_cleanliness ?? '';
-            if (empty($value)) return false;
-            
-            $positiveKeywords = ['excelente', 'bueno', 'buena', 'muy bien', 'responsable', 'calidad'];
-            $lowerValue = strtolower($value);
-            
-            foreach ($positiveKeywords as $keyword) {
-                if (stripos($lowerValue, $keyword) !== false) {
-                    return true;
-                }
-            }
-            return false;
-        })->count();
-        
-        $tratoPositivos = $collection->filter(function ($item) {
-            $value = $item->staff_treatment_transport ?? '';
-            if (empty($value)) return false;
-            
-            $positiveKeywords = ['bien', 'bueno', 'esperamos', 'continuar', 'excelente'];
-            $lowerValue = strtolower($value);
-            
-            foreach ($positiveKeywords as $keyword) {
-                if (stripos($lowerValue, $keyword) !== false) {
-                    return true;
-                }
-            }
-            return false;
-        })->count();
-        
-        // Estimar comunicación como promedio de otros indicadores (pero más conservador)
-        $promedioOtrosIndicadores = ($puntualidadPositivos + $limpiezaPositivos + $tratoPositivos) / 3;
-        $estimacionComunicacion = round(($promedioOtrosIndicadores / $total) * 100 * 0.8); // 80% del promedio para ser conservador
-        
-        return max(0, min(100, $estimacionComunicacion));
+        return SurveyAnswerEvaluator::positivePercentage(
+            $collection->pluck($field),
+            $positiveValues
+        );
     }
 
     private function calculateExpectedResponses($period)
