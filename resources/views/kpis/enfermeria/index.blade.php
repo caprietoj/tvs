@@ -61,16 +61,16 @@
                                 <strong>Análisis:</strong><br>
                                 Estado: {{ $kpi->status }}<br>
                                 Umbral: {{ $kpi->threshold->value }}%<br>
-                                @if(strpos($kpi->methodology, 'atenciones basado en') !== false)
+                                @if(in_array($kpi->name, ['Atención al paciente', 'Cobertura de atención al paciente', 'Seguimiento de la atención']))
                                     Tipo: Atención Médica<br>
-                                    {{ explode('.', $kpi->methodology)[0] }}
+                                    {{ $kpi->name }}
                                 @else
                                     Tipo: General<br>
                                     Variación: {{ $kpi->percentage - $kpi->threshold->value }}%
                                 @endif
                             </div>"
                             data-kpi-id="{{ $kpi->id }}"
-                            data-kpi-type="{{ strpos($kpi->methodology, 'atenciones basado en') !== false ? 'patient-care' : 'general' }}"
+                            data-kpi-type="{{ in_array($kpi->name, ['Atención al paciente', 'Cobertura de atención al paciente', 'Seguimiento de la atención']) ? 'patient-care' : 'general' }}"
                             style="cursor: pointer;">
                             {{ $kpi->percentage }}%
                         </td>
@@ -145,16 +145,16 @@
                                 <strong>Análisis Rápido:</strong><br>
                                 Estado: {{ $kpi->status }}<br>
                                 Umbral: {{ $kpi->threshold->value }}%<br>
-                                @if(strpos($kpi->methodology, 'atenciones basado en') !== false)
+                                @if(in_array($kpi->name, ['Atención al paciente', 'Cobertura de atención al paciente', 'Seguimiento de la atención']))
                                     Tipo: Atención Médica<br>
-                                    {{ explode('.', $kpi->methodology)[0] }}
+                                    {{ $kpi->name }}
                                 @else
                                     Tipo: General<br>
                                     Variación: {{ $kpi->percentage - $kpi->threshold->value }}%
                                 @endif
                             </div>"
                             data-kpi-id="{{ $kpi->id }}"
-                            data-kpi-type="{{ strpos($kpi->methodology, 'atenciones basado en') !== false ? 'patient-care' : 'general' }}"
+                            data-kpi-type="{{ in_array($kpi->name, ['Atención al paciente', 'Cobertura de atención al paciente', 'Seguimiento de la atención']) ? 'patient-care' : 'general' }}"
                             style="cursor: pointer;">
                             {{ $kpi->percentage }}%
                         </td>

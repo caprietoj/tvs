@@ -261,20 +261,23 @@
                             <h6 class="font-weight-bold mb-2">Cálculo de Atención</h6>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <p class="mb-1"><strong>Datos a procesar:</strong></p>
+                                    <p class="mb-1"><strong>Cobertura de Atención al Paciente:</strong></p>
                                     <ul class="pl-3 mb-0">
-                                        <li>Estudiantes: Primer input</li>
-                                        <li>Trabajadores: Segundo input</li>
-                                        <li>Cálculo combinado automático</li>
+                                        <li>Atendidos: registros sin marca de "no atendido"</li>
+                                        <li>Personas que acuden: total de registros válidos</li>
+                                        <li>Fórmula: (Atendidos / Personas que acuden) &times; 100</li>
+                                        <li>Se registra en el indicador «Atención al paciente»</li>
                                     </ul>
                                 </div>
                                 <div class="col-md-6">
-                                    <p class="mb-1"><strong>Criterios de Calidad:</strong></p>
+                                    <p class="mb-1"><strong>Calidad del seguimiento (indicador aparte):</strong></p>
                                     <ul class="pl-3 mb-0">
-                                        <li>Seguimiento completo</li>
+                                        <li>Seguimiento</li>
                                         <li>Nota escrita</li>
                                         <li>Llamada de control</li>
                                         <li>Retorno al salón</li>
+                                        <li>Fórmula: criterios cumplidos / (atenciones &times; 4)</li>
+                                        <li>Se registra en «Seguimiento de la atención»</li>
                                     </ul>
                                 </div>
                             </div>
@@ -823,6 +826,7 @@ $(document).ready(function() {
                 total: 0,
                 estudiantes: 0,
                 trabajadores: 0,
+                noAtendidas: 0,
                 seguimiento: 0,
                 notaEscrita: 0,
                 llamada: 0,
@@ -848,8 +852,18 @@ $(document).ready(function() {
                 return;
             }
 
-            const porcentaje = (((stats.seguimiento + stats.notaEscrita + stats.llamada + stats.retornoSalon) / 
+            // Cobertura de la demanda: personas atendidas / personas que acuden
+            const atendidas = Math.max(stats.total - stats.noAtendidas, 0);
+            const cobertura = ((atendidas / stats.total) * 100).toFixed(2);
+
+            // Calidad del seguimiento: criterios cumplidos / (atenciones x 4)
+            const calidad = (((stats.seguimiento + stats.notaEscrita + stats.llamada + stats.retornoSalon) / 
                 (stats.total * 4)) * 100).toFixed(2);
+
+            // El indicador seleccionado determina el valor que se registra
+            const indicadorSeleccionado = $('#threshold_id option:selected').text();
+            const esSeguimiento = /seguimiento/i.test(indicadorSeleccionado);
+            const porcentaje = esSeguimiento ? calidad : cobertura;
 
             // Show analysis and update form
             Swal.fire({
@@ -857,17 +871,33 @@ $(document).ready(function() {
                 html: `
                     <div class="text-left">
                         <div class="analysis-section">
-                            <h6 class="mb-3">Indicador de Calidad</h6>
-                            <div class="progress mb-3">
-                                <div class="progress-bar bg-${porcentaje >= 80 ? 'success' : 'warning'}" 
+                            <h6 class="mb-3">Cobertura de Atención</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-${cobertura >= 90 ? 'success' : 'warning'}" 
                                     role="progressbar" 
-                                    style="width: ${porcentaje}%" 
-                                    aria-valuenow="${porcentaje}" 
+                                    style="width: ${cobertura}%" 
+                                    aria-valuenow="${cobertura}" 
                                     aria-valuemin="0" 
                                     aria-valuemax="100">
-                                    ${porcentaje}%
+                                    ${cobertura}%
                                 </div>
                             </div>
+                            <p class="mb-0"><small>${atendidas} de ${stats.total} personas que acudieron fueron atendidas.</small></p>
+                        </div>
+
+                        <div class="analysis-section mt-3">
+                            <h6 class="mb-3">Calidad del Seguimiento</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-${calidad >= 80 ? 'success' : 'warning'}" 
+                                    role="progressbar" 
+                                    style="width: ${calidad}%" 
+                                    aria-valuenow="${calidad}" 
+                                    aria-valuemin="0" 
+                                    aria-valuemax="100">
+                                    ${calidad}%
+                                </div>
+                            </div>
+                            <p class="mb-0"><small>Cumplimiento de los 4 criterios de seguimiento.</small></p>
                         </div>
                         
                         <div class="analysis-section mt-3">
@@ -892,8 +922,10 @@ $(document).ready(function() {
 
                         <hr>
                         <p class="text-info">
-                            <small>Total de atenciones: ${stats.total}<br>
-                            Seguimiento completo: ${stats.seguimientoCompleto} casos</small>
+                            <small>Total de personas que acudieron: ${stats.total}<br>
+                            No atendidas: ${stats.noAtendidas}<br>
+                            Seguimiento completo: ${stats.seguimientoCompleto} casos<br>
+                            Se registrará: <strong>${porcentaje}%</strong> (${esSeguimiento ? 'Seguimiento de la atención' : 'Atención al paciente'})</small>
                         </p>
                     </div>
                 `,
@@ -903,9 +935,13 @@ $(document).ready(function() {
             });
 
             $('#percentage').val(porcentaje);
-            $('#analysis').val(`Análisis de atenciones basado en ${stats.total} registros. ` +
-                `Estudiantes: ${stats.estudiantes}, Trabajadores: ${stats.trabajadores}. ` +
-                `Seguimiento completo: ${stats.seguimientoCompleto} casos.`);
+            $('#analysis').val(esSeguimiento
+                ? `Análisis de seguimiento: ${calidad}% de cumplimiento de los 4 criterios de seguimiento ` +
+                  `(${stats.seguimientoCompleto} casos con seguimiento completo de ${stats.total} atenciones). ` +
+                  `Estudiantes: ${stats.estudiantes}, Trabajadores: ${stats.trabajadores}.`
+                : `Análisis de cobertura: ${atendidas} de ${stats.total} personas que acudieron fueron atendidas (${cobertura}%). ` +
+                  `Calidad de seguimiento: ${calidad}%. ` +
+                  `Estudiantes: ${stats.estudiantes}, Trabajadores: ${stats.trabajadores}.`);
 
             $('#surveyDataModal').modal('hide');
 
@@ -1126,25 +1162,36 @@ $(document).ready(function() {
 
 // Add helper function to process rows
 function processRows(rows, stats, type) {
+    const noAtendidaMarkers = [
+        'NO ATENDIDO', 'NO ATENDIDA', 'NO SE ATENDIO', 'NO SE ATENDIÓ',
+        'SIN ATENCION', 'SIN ATENCIÓN', 'NO ASISTIO', 'NO ASISTIÓ'
+    ];
+    const retornoMarkers = ['RETORNA AL SALON', 'RETORNA AL SALÓN'];
+
     rows.forEach(row => {
-        const cols = row.split('\t');
+        const cols = row.split('\t').map(col => col.trim().toUpperCase());
         if (cols.length >= 6) {
             stats.total++;
-            
+
+            const cellHas = (labels) => cols.some(col => labels.some(label => col.includes(label)));
+
             // Count by type
             if (type === 'estudiante') stats.estudiantes++;
             if (type === 'trabajador') stats.trabajadores++;
-            
+
+            // Detect rows explicitly marked as not attended
+            if (cellHas(noAtendidaMarkers)) stats.noAtendidas++;
+
             // Count quality indicators
-            if (cols.includes('SEGUIMIENTO')) stats.seguimiento++;
-            if (cols.includes('NOTA ESCRITA')) stats.notaEscrita++;
-            if (cols.includes('LLAMADA')) stats.llamada++;
-            if (cols.includes('RETORNA AL SALON')) stats.retornoSalon++;
-            
+            if (cellHas(['SEGUIMIENTO'])) stats.seguimiento++;
+            if (cellHas(['NOTA ESCRITA'])) stats.notaEscrita++;
+            if (cellHas(['LLAMADA'])) stats.llamada++;
+            if (cellHas(retornoMarkers)) stats.retornoSalon++;
+
             // Count complete follow-up
-            if (cols.includes('SEGUIMIENTO') && 
-                cols.includes('NOTA ESCRITA') && 
-                cols.includes('LLAMADA')) {
+            if (cellHas(['SEGUIMIENTO']) &&
+                cellHas(['NOTA ESCRITA']) &&
+                cellHas(['LLAMADA'])) {
                 stats.seguimientoCompleto++;
             }
 
