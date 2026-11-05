@@ -124,4 +124,15 @@ return [
     */
     'equipment_admin' => env('EQUIPMENT_ADMIN_EMAIL', 'jefesistemas@tvs.edu.co'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Library Administrator Email
+    |--------------------------------------------------------------------------
+    |
+    | Address that receives notifications for library spaces and the
+    | library computer room (MAC), which is managed from the equipment module.
+    |
+    */
+    'library_admin' => env('LIBRARY_EMAIL', 'library@tvs.edu.co'),
+
 ];

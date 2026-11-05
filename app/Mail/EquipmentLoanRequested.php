@@ -21,10 +21,32 @@ class EquipmentLoanRequested extends Mailable
 
     public function envelope(): Envelope
     {
+        $recipients = [config('mail.equipment_admin')];
+
+        if ($this->isLibraryLoan()) {
+            $recipients[] = config('mail.library_admin');
+        }
+
         return new Envelope(
-            to: [config('mail.equipment_admin')],
+            to: array_values(array_unique(array_filter($recipients))),
             subject: 'Nueva Solicitud de Préstamo de Equipo'
         );
+    }
+
+    /**
+     * Determina si el préstamo corresponde a un espacio de biblioteca.
+     */
+    protected function isLibraryLoan(): bool
+    {
+        if (($this->loan->section ?? null) === 'biblioteca_sala_computadores') {
+            return true;
+        }
+
+        $spaceName = optional(optional($this->loan->equipment)->space)->name
+            ?? $this->loan->grade
+            ?? '';
+
+        return stripos($spaceName, 'biblioteca') !== false;
     }
 
     public function content(): Content

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\SpaceReservationNotification;
+use App\Mail\SpaceReservationStatusNotification;
 use App\Models\CycleDay;
 use App\Models\Equipment;
 use App\Models\EquipmentLoan;
@@ -87,6 +88,84 @@ class SpaceReservationController extends Controller
     private function removeEquipmentLoan(SpaceReservation $reservation): void
     {
         EquipmentLoan::where('space_reservation_id', $reservation->id)->delete();
+    }
+
+    /**
+     * Determina si la reserva pertenece a un espacio de biblioteca.
+     */
+    private function isLibrarySpace(SpaceReservation $reservation): bool
+    {
+        return $reservation->space
+            && stripos($reservation->space->name, 'biblioteca') !== false;
+    }
+
+    /**
+     * Envía la notificación de una reserva a los destinatarios indicados.
+     */
+    private function sendReservationNotification(SpaceReservation $reservation, array $recipients): void
+    {
+        $recipients = array_values(array_unique(array_filter($recipients)));
+
+        if (empty($recipients)) {
+            return;
+        }
+
+        try {
+            $emailTestService = new \App\Services\EmailTestModeService();
+            $recipients = $emailTestService->interceptEmails($recipients);
+
+            Mail::to($recipients)->send(new SpaceReservationNotification($reservation));
+
+            \Log::info('Notificación de reserva enviada', [
+                'reservation_id' => $reservation->id,
+                'recipients' => $recipients,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error enviando correo de notificación de reserva: ' . $e->getMessage(), [
+                'reservation_id' => $reservation->id,
+                'recipients' => $recipients,
+            ]);
+        }
+    }
+
+    /**
+     * Notifica a la biblioteca cuando cambia el estado de una reserva de biblioteca.
+     */
+    private function notifyLibraryStatusChange(SpaceReservation $reservation, string $previousStatus): void
+    {
+        if ($previousStatus === $reservation->status) {
+            return;
+        }
+
+        if (!$this->isLibrarySpace($reservation)) {
+            return;
+        }
+
+        if (!in_array($reservation->status, ['approved', 'rejected', 'cancelled'], true)) {
+            return;
+        }
+
+        $libraryEmail = config('mail.library_admin');
+
+        if (empty($libraryEmail)) {
+            return;
+        }
+
+        try {
+            $reservation->loadMissing(['user', 'space', 'items.item']);
+
+            Mail::to($libraryEmail)->send(new SpaceReservationStatusNotification($reservation));
+
+            \Log::info('Notificación de cambio de estado enviada a biblioteca', [
+                'reservation_id' => $reservation->id,
+                'status' => $reservation->status,
+                'recipient' => $libraryEmail,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error enviando cambio de estado de reserva a biblioteca: ' . $e->getMessage(), [
+                'reservation_id' => $reservation->id,
+            ]);
+        }
     }
 
     /**
@@ -252,17 +331,15 @@ class SpaceReservationController extends Controller
 
             // Cargar las relaciones necesarias para el correo
             $reservation->load(['user', 'space', 'items.item']);
-            
-            // Enviar notificación por correo electrónico
-            try {
-                // Enviar a library y al usuario que creó la reserva
-                $userEmail = Auth::user()->email;
-                $recipients = array_unique(array_filter(['library@tvs.edu.co', $userEmail]));
-                $emailTestService = new \App\Services\EmailTestModeService();
-                $interceptedRecipients = $emailTestService->interceptEmails($recipients);
-                Mail::to($interceptedRecipients)->send(new SpaceReservationNotification($reservation));
-            } catch (\Exception $e) {
-                \Log::error('Error enviando correo de notificación de reserva: ' . $e->getMessage());
+
+            // Enviar una copia dedicada a la biblioteca y otra al usuario que creó la reserva.
+            // El envío por separado evita que los filtros del buzón agrupen u oculten el correo.
+            $libraryEmail = config('mail.library_admin');
+            $this->sendReservationNotification($reservation, [$libraryEmail]);
+
+            $userEmail = Auth::user()->email;
+            if ($userEmail && $userEmail !== $libraryEmail) {
+                $this->sendReservationNotification($reservation, [$userEmail]);
             }
             
             $createdReservations[] = $reservation;
@@ -359,7 +436,8 @@ class SpaceReservationController extends Controller
         
         // Si estamos aprobando/rechazando desde la página de pendientes
         $fromPendingPage = $request->has('status') && in_array($request->status, ['approved', 'rejected']);
-        
+        $previousStatus = $spaceReservation->status;
+
         try {
             // Ajustar las reglas de validación según la acción
             if ($fromPendingPage) {
@@ -501,7 +579,10 @@ class SpaceReservationController extends Controller
 
             // Sincronizar con el módulo de préstamos de equipos
             $this->syncEquipmentLoan($spaceReservation);
-            
+
+            // Notificar a la biblioteca si cambió el estado de una reserva de biblioteca
+            $this->notifyLibraryStatusChange($spaceReservation, $previousStatus);
+
             // Procesar los implementos seleccionados si se han modificado
             if ($request->has('items') && !$fromPendingPage) {
                 // Obtener el espacio
@@ -593,11 +674,16 @@ class SpaceReservationController extends Controller
         
         // Los administradores pueden eliminar cualquier reserva
         // Los usuarios solo pueden cancelar sus propias reservas
+        $previousStatus = $spaceReservation->status;
+
         if ($this->isSpaceAdmin()) {
+            $spaceReservation->status = 'cancelled';
+            $this->notifyLibraryStatusChange($spaceReservation, $previousStatus);
             $spaceReservation->delete();
             $message = 'Reserva eliminada exitosamente.';
         } else {
             $spaceReservation->update(['status' => 'cancelled']);
+            $this->notifyLibraryStatusChange($spaceReservation, $previousStatus);
             $message = 'Reserva cancelada exitosamente.';
         }
 
@@ -981,7 +1067,9 @@ class SpaceReservationController extends Controller
         }
         
         // Actualizar el estado de la reserva a "cancelled"
+        $previousStatus = $spaceReservation->status;
         $spaceReservation->update(['status' => 'cancelled']);
+        $this->notifyLibraryStatusChange($spaceReservation, $previousStatus);
 
         // Eliminar el préstamo de equipo sincronizado, si existe
         $this->removeEquipmentLoan($spaceReservation);
@@ -1052,6 +1140,7 @@ class SpaceReservationController extends Controller
         }
         
         // Actualizar el estado de la reserva
+        $previousStatus = $spaceReservation->status;
         $spaceReservation->status = 'approved';
         $spaceReservation->approved_by = Auth::id();
         $spaceReservation->approved_at = now();
@@ -1064,7 +1153,10 @@ class SpaceReservationController extends Controller
         if ($spaceReservation->items()->count() > 0) {
             $spaceReservation->items()->update(['status' => 'approved']);
         }
-        
+
+        // Notificar a la biblioteca sobre la aprobación
+        $this->notifyLibraryStatusChange($spaceReservation, $previousStatus);
+
         // Enviar notificación al usuario
         $user = $spaceReservation->user;
         
