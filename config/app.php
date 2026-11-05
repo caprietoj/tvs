@@ -64,7 +64,7 @@ return [
     |
     */
 
-    'seguimiento_url' => env('SEGUIMIENTO_URL', 'http://72.62.86.100:8080'),
+    'seguimiento_url' => env('SEGUIMIENTO_URL', 'https://seguimiento.tvs.edu.co'),
     'seguimiento_sso_secret' => env('SEGUIMIENTO_SSO_SECRET'),
 
     /*

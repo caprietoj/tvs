@@ -1167,7 +1167,12 @@ Route::get('/seguimiento', function () {
     $payloadB64 = rtrim(strtr(base64_encode(json_encode($payload)), '+/', '-_'), '=');
     $signature = rtrim(strtr(base64_encode(hash_hmac('sha256', $payloadB64, $secret, true)), '+/', '-_'), '=');
 
-    return redirect()->away($base.'/sso/intranet?token='.urlencode($payloadB64.'.'.$signature));
+    // El token viaja por POST para no exponerlo en la URL, el historial,
+    // los logs de acceso ni la cabecera Referer.
+    return response()->view('sso.seguimiento-redirect', [
+        'target' => $base.'/sso/intranet',
+        'token' => $payloadB64.'.'.$signature,
+    ]);
 })->middleware('auth')->name('seguimiento');
 
 // Rutas de depuración temporal
