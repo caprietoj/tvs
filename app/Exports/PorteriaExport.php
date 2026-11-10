@@ -34,7 +34,7 @@ class PorteriaExport implements FromCollection, WithHeadings, WithMapping, WithT
     {
         return RegistroPorteria::whereBetween('fecha', [$this->startDate, $this->endDate])
             ->orderBy('fecha', 'desc')
-            ->orderBy('hora_entrada', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
     }
 
@@ -46,10 +46,9 @@ class PorteriaExport implements FromCollection, WithHeadings, WithMapping, WithT
         return [
             'Fecha',
             'Documento',
-            'Nombre',
-            'Apellido',
             'Nombre Completo',
             'Tipo de Persona',
+            'Tipo de Registro',
             'Hora Entrada',
             'Hora Salida',
             'Estado',
@@ -76,16 +75,26 @@ class PorteriaExport implements FromCollection, WithHeadings, WithMapping, WithT
             $tiempoPermanencia = $horas . 'h ' . $minutos . 'm';
         }
 
+        // Estado según el movimiento registrado
+        if (!$horaEntrada && $horaSalida) {
+            $estado = 'Salida registrada';
+        } elseif ($horaEntrada && $horaSalida) {
+            $estado = 'Completado';
+        } elseif ($horaEntrada) {
+            $estado = 'Dentro';
+        } else {
+            $estado = 'Sin registro';
+        }
+
         return [
             Carbon::parse($registro->fecha)->format('d/m/Y'),
             $registro->documento,
             $registro->nombre,
-            $registro->apellido,
-            $registro->nombre . ' ' . $registro->apellido,
             $registro->tipo_persona ?? 'No especificado',
+            $registro->tipo_registro === 'salida' ? 'Salida' : 'Entrada',
             $horaEntrada ? $horaEntrada->format('H:i:s') : '',
             $horaSalida ? $horaSalida->format('H:i:s') : '',
-            $horaSalida ? 'Completado' : 'Dentro',
+            $estado,
             $tiempoPermanencia,
             Carbon::parse($registro->fecha)->locale('es')->dayName
         ];
@@ -106,7 +115,7 @@ class PorteriaExport implements FromCollection, WithHeadings, WithMapping, WithT
     public function styles(Worksheet $sheet)
     {
         // Aplicar filtros automáticos
-        $sheet->setAutoFilter('A1:K1');
+        $sheet->setAutoFilter('A1:J1');
 
         // Estilo para el encabezado
         return [

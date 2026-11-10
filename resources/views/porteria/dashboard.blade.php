@@ -117,7 +117,19 @@
             </div>
         </div>
 
-        <div class="col-lg-6 col-12">
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>{{ number_format($estadisticas['total_salidas_sin_entrada']) }}</h3>
+                    <p>Salidas sin Entrada</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
             <!-- Espacio vacío para mantener el layout -->
         </div>
     </div>
@@ -385,6 +397,7 @@
                                         <th>Documento</th>
                                         <th>Nombre Completo</th>
                                         <th>Tipo</th>
+                                        <th>Movimiento</th>
                                         <th>Hora Entrada</th>
                                         <th>Hora Salida</th>
                                         <th>Estado</th>
@@ -397,14 +410,24 @@
                                             <td>{{ $registro->documento }}</td>
                                             <td>{{ $registro->nombre }}</td>
                                             <td>
-                                                <span class="badge badge-{{ $registro->tipo_persona == 'Empleado' ? 'primary' : ($registro->tipo_persona == 'Visitante' ? 'warning' : 'info') }}">
+                                                @php $tipoPersona = strtolower($registro->tipo_persona ?? ''); @endphp
+                                                <span class="badge badge-{{ $tipoPersona == 'empleado' ? 'primary' : ($tipoPersona == 'estudiante' ? 'info' : 'warning') }}">
                                                     {{ $registro->tipo_persona ?? 'No especificado' }}
                                                 </span>
+                                            </td>
+                                            <td>
+                                                @if($registro->tipo_registro === 'salida')
+                                                    <span class="badge badge-warning"><i class="fas fa-sign-out-alt"></i> Salida</span>
+                                                @else
+                                                    <span class="badge badge-success"><i class="fas fa-sign-in-alt"></i> Entrada</span>
+                                                @endif
                                             </td>
                                             <td>{{ $registro->hora_entrada ? \Carbon\Carbon::parse($registro->hora_entrada)->format('H:i:s') : '-' }}</td>
                                             <td>{{ $registro->hora_salida ? \Carbon\Carbon::parse($registro->hora_salida)->format('H:i:s') : '-' }}</td>
                                             <td>
-                                                @if($registro->hora_salida)
+                                                @if(!$registro->hora_entrada && $registro->hora_salida)
+                                                    <span class="badge badge-info"><i class="fas fa-sign-out-alt"></i> Salida registrada</span>
+                                                @elseif($registro->hora_salida)
                                                     <span class="badge badge-success"><i class="fas fa-check"></i> Completado</span>
                                                 @else
                                                     <span class="badge badge-danger"><i class="fas fa-clock"></i> Dentro</span>

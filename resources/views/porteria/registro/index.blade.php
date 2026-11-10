@@ -32,7 +32,7 @@
                     <form id="form-registro" autocomplete="off">
                         @csrf
                         <div class="row align-items-end">
-                            <div class="col-md-10">
+                            <div class="col-md-6">
                                 <label for="documento" class="form-label">
                                     <i class="fas fa-id-card"></i> Número de Documento o Escanee el Carnet
                                 </label>
@@ -47,12 +47,28 @@
                                     style="font-size: 1.3rem; height: 60px;"
                                 >
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-3">
+                                <label for="tipo-registro" class="form-label">
+                                    <i class="fas fa-exchange-alt"></i> Tipo de registro
+                                </label>
+                                <select id="tipo-registro" name="accion" class="form-control form-control-lg" style="height: 60px;">
+                                    <option value="auto" selected>Automático</option>
+                                    <option value="entrada">Entrada</option>
+                                    <option value="salida">Salida</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
                                 <button type="submit" class="btn btn-success btn-lg btn-block" style="height: 60px;">
                                     <i class="fas fa-check-circle"></i> Registrar
                                 </button>
                             </div>
                         </div>
+                        <small class="form-text text-muted mt-2">
+                            <i class="fas fa-info-circle"></i>
+                            El modo <strong>Automático</strong> detecta la salida cuando la persona ya tiene una entrada abierta,
+                            o cuando un empleado sin registros previos del día marca después de las
+                            {{ \App\Models\RegistroPorteria::HORA_CORTE_SALIDA }}:00. Puede forzar el tipo manualmente.
+                        </small>
                     </form>
                 </div>
             </div>
@@ -82,6 +98,29 @@
             <div class="modal-visitante-body">
                 <form id="form-visitante">
                     <input type="hidden" id="visitante-documento">
+                    <div class="form-group-modal">
+                        <label for="visitante-tipo-registro">
+                            <i class="fas fa-exchange-alt"></i> Tipo de registro <span class="text-danger">*</span>
+                        </label>
+                        <select id="visitante-tipo-registro" class="form-control-modal">
+                            <option value="entrada" selected>Entrada</option>
+                            <option value="salida">Salida</option>
+                        </select>
+                        <small class="text-muted" id="visitante-accion-ayuda">
+                            Se registrará una entrada para este visitante.
+                        </small>
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="visitante-documento-texto">
+                            <i class="fas fa-id-card"></i> Documento
+                        </label>
+                        <input 
+                            type="text" 
+                            id="visitante-documento-texto" 
+                            class="form-control-modal"
+                            readonly
+                        >
+                    </div>
                     <div class="form-group-modal">
                         <label for="visitante-nombre">
                             <i class="fas fa-user"></i> Nombre Completo <span class="text-danger">*</span>
@@ -114,7 +153,7 @@
                         <button type="button" class="btn-modal btn-modal-cancel" onclick="cerrarModalVisitante()">
                             <i class="fas fa-times"></i> Cancelar
                         </button>
-                        <button type="submit" class="btn-modal btn-modal-primary">
+                        <button type="submit" class="btn-modal btn-modal-primary" id="visitante-btn-registrar">
                             <i class="fas fa-check"></i> Registrar Entrada
                         </button>
                     </div>
@@ -188,13 +227,12 @@
                         <div class="col-md-6">
                             <div class="form-group-modal">
                                 <label for="editar-entrada">
-                                    <i class="fas fa-clock"></i> Hora Entrada <span class="text-danger">*</span>
+                                    <i class="fas fa-clock"></i> Hora Entrada
                                 </label>
                                 <input 
                                     type="time" 
                                     id="editar-entrada" 
                                     class="form-control-modal"
-                                    required
                                 >
                             </div>
                         </div>
@@ -283,6 +321,7 @@
                                     <th>No. Documento</th>
                                     <th>Nombre Completo</th>
                                     <th>Estatus</th>
+                                    <th>Movimiento</th>
                                     <th>Fecha de Ingreso</th>
                                     <th>Hora de Entrada</th>
                                     <th>Hora de Salida</th>
@@ -553,13 +592,14 @@ $(document).ready(function() {
             { data: 'documento', name: 'documento' },
             { data: 'nombre_completo', name: 'nombre_completo' },
             { data: 'estatus_badge', name: 'tipo_persona', orderable: false },
+            { data: 'tipo_registro_badge', name: 'tipo_registro', orderable: false },
             { data: 'fecha_formatted', name: 'fecha' },
             { data: 'hora_entrada_formatted', name: 'hora_entrada' },
             { data: 'hora_salida_formatted', name: 'hora_salida' },
             { data: 'observaciones_formatted', name: 'observaciones', orderable: false },
             { data: 'acciones', name: 'acciones', orderable: false, searchable: false }
         ],
-        order: [[4, 'desc']], // Ordenar por hora de entrada descendente
+        order: [[5, 'desc']], // Ordenar por hora de entrada descendente
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
         },
@@ -593,6 +633,7 @@ $(document).ready(function() {
         e.preventDefault();
         
         const documento = $('#documento').val().trim();
+        const accion = $('#tipo-registro').val();
         
         if (!documento) {
             mostrarMensaje('warning', '¡Atención!', 'Por favor ingrese un número de documento.');
@@ -620,13 +661,13 @@ $(document).ready(function() {
                 if (response.es_visitante) {
                     // Es visitante, abrir modal
                     console.log('👤 VISITANTE DETECTADO - Abriendo modal');
-                    abrirModalVisitante(documento);
+                    abrirModalVisitante(documento, accion);
                     btnSubmit.prop('disabled', false).html('<i class="fas fa-check-circle"></i> Registrar');
                 } else {
                     // No es visitante, registrar normalmente
                     console.log('✅ PERSONA REGISTRADA - Tipo:', response.tipo_persona || response.tipo);
                     console.log('📝 Llamando a registrarPersona() sin nombre');
-                    registrarPersona(documento, null, null);
+                    registrarPersona(documento, null, null, accion);
                 }
             },
             error: function(xhr, status, error) {
@@ -639,11 +680,12 @@ $(document).ready(function() {
     });
 
     // Función para registrar persona
-    function registrarPersona(documento, nombre, observaciones) {
+    function registrarPersona(documento, nombre, observaciones, accion) {
         console.log('🚀 registrarPersona() llamada con:', {
             documento: documento,
             nombre: nombre,
-            observaciones: observaciones
+            observaciones: observaciones,
+            accion: accion
         });
         
         const btnSubmit = $('#form-registro').find('button[type="submit"]');
@@ -657,7 +699,8 @@ $(document).ready(function() {
                 _token: '{{ csrf_token() }}',
                 documento: documento,
                 nombre: nombre,
-                observaciones: observaciones
+                observaciones: observaciones,
+                accion: accion || 'auto'
             },
             success: function(response) {
                 console.log('✅ Respuesta del registro:', response);
@@ -675,8 +718,9 @@ $(document).ready(function() {
                     // Recargar tabla
                     tabla.ajax.reload(null, false);
                     
-                    // Limpiar y enfocar el campo
+                    // Limpiar y enfocar el campo (volver a modo automático)
                     $('#documento').val('').focus();
+                    $('#tipo-registro').val('auto');
                 } else {
                     console.error('❌ Error en respuesta:', response.message);
                     mostrarMensaje('danger', '✗ Error', response.message);
@@ -707,6 +751,7 @@ $(document).ready(function() {
         const documento = $('#visitante-documento').val();
         const nombre = $('#visitante-nombre').val().trim();
         const observaciones = $('#visitante-observaciones').val().trim();
+        const accionVisitante = $('#visitante-tipo-registro').val();
         
         if (!nombre) {
             alert('Por favor ingrese el nombre completo del visitante.');
@@ -714,7 +759,7 @@ $(document).ready(function() {
         }
         
         cerrarModalVisitante();
-        registrarPersona(documento, nombre, observaciones);
+        registrarPersona(documento, nombre, observaciones, accionVisitante);
     });
 
     // Función para mostrar mensajes
@@ -753,10 +798,15 @@ $(document).ready(function() {
 });
 
 // Función para abrir modal de visitante
-function abrirModalVisitante(documento) {
+function abrirModalVisitante(documento, accion) {
+    const accionInicial = accion === 'salida' ? 'salida' : 'entrada';
+
     $('#visitante-documento').val(documento);
+    $('#visitante-documento-texto').val(documento);
     $('#visitante-nombre').val('');
     $('#visitante-observaciones').val('');
+    $('#visitante-tipo-registro').val(accionInicial);
+    actualizarEtiquetaAccionVisitante();
     $('#modal-visitante').fadeIn(300);
     
     // Enfocar el campo de nombre
@@ -764,6 +814,22 @@ function abrirModalVisitante(documento) {
         $('#visitante-nombre').focus();
     }, 300);
 }
+
+// Actualizar textos del modal según el tipo de registro elegido
+function actualizarEtiquetaAccionVisitante() {
+    const esSalida = $('#visitante-tipo-registro').val() === 'salida';
+
+    $('#visitante-btn-registrar').html(
+        '<i class="fas fa-check"></i> Registrar ' + (esSalida ? 'Salida' : 'Entrada')
+    );
+    $('#visitante-accion-ayuda').text(
+        esSalida
+            ? 'Se registrará una salida para este visitante.'
+            : 'Se registrará una entrada para este visitante.'
+    );
+}
+
+$(document).on('change', '#visitante-tipo-registro', actualizarEtiquetaAccionVisitante);
 
 // Función para cerrar modal de visitante
 function cerrarModalVisitante() {

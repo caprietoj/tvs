@@ -54,7 +54,7 @@ class PorteriaDashboardController extends Controller
                 });
             })
             ->orderBy('fecha', 'desc')
-            ->orderBy('hora_entrada', 'desc')
+            ->orderBy('created_at', 'desc')
             ->paginate(10)
             ->appends(['mes' => $mes, 'search' => $search]);
         
@@ -87,24 +87,36 @@ class PorteriaDashboardController extends Controller
                 ->whereNotNull('hora_salida')
                 ->count();
 
+            // Salidas registradas sin una entrada previa (marcan solo la salida)
+            $totalSalidasSinEntrada = RegistroPorteria::whereBetween('fecha', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereNull('hora_entrada')
+                ->whereNotNull('hora_salida')
+                ->count();
+
+            // Registros con entrada y salida completas
+            $totalCompletados = RegistroPorteria::whereBetween('fecha', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereNotNull('hora_entrada')
+                ->whereNotNull('hora_salida')
+                ->count();
+
             // Personas únicas por documento
             $personasUnicas = RegistroPorteria::whereBetween('fecha', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->distinct('documento')
                 ->count('documento');
 
-            // Personas únicas por tipo
+            // Personas únicas por tipo (tipo_persona se guarda en minúsculas)
             $empleadosRegistrados = RegistroPorteria::whereBetween('fecha', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('tipo_persona', 'Empleado')
+                ->whereRaw('LOWER(tipo_persona) = ?', ['empleado'])
                 ->distinct('documento')
                 ->count('documento');
                 
             $estudiantesRegistrados = RegistroPorteria::whereBetween('fecha', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('tipo_persona', 'Estudiante')
+                ->whereRaw('LOWER(tipo_persona) = ?', ['estudiante'])
                 ->distinct('documento')
                 ->count('documento');
                 
             $visitantesRegistrados = RegistroPorteria::whereBetween('fecha', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('tipo_persona', 'Visitante')
+                ->whereRaw('LOWER(tipo_persona) IN (?, ?)', ['externo', 'visitante'])
                 ->distinct('documento')
                 ->count('documento');
 
@@ -122,6 +134,8 @@ class PorteriaDashboardController extends Controller
                 'total_registros' => $totalRegistros,
                 'total_entradas' => $totalEntradas,
                 'total_salidas' => $totalSalidas,
+                'total_salidas_sin_entrada' => $totalSalidasSinEntrada,
+                'total_completados' => $totalCompletados,
                 'personas_unicas' => $personasUnicas,
                 'empleados_registrados' => $empleadosRegistrados,
                 'estudiantes_registrados' => $estudiantesRegistrados,
@@ -137,7 +151,12 @@ class PorteriaDashboardController extends Controller
                 'total_registros' => 0,
                 'total_entradas' => 0,
                 'total_salidas' => 0,
+                'total_salidas_sin_entrada' => 0,
+                'total_completados' => 0,
                 'personas_unicas' => 0,
+                'empleados_registrados' => 0,
+                'estudiantes_registrados' => 0,
+                'visitantes_registrados' => 0,
                 'personas_adentro' => 0,
                 'promedio_diario' => 0,
                 'periodo' => $startDate->format('d/m/Y') . ' - ' . $endDate->format('d/m/Y'),
@@ -292,7 +311,7 @@ class PorteriaDashboardController extends Controller
         // Obtener todos los registros del período
         $registros = RegistroPorteria::whereBetween('fecha', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->orderBy('fecha', 'desc')
-            ->orderBy('hora_entrada', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         $filename = 'reporte_porteria_' . $startDate->format('Y_m') . '.csv';
@@ -311,6 +330,7 @@ class PorteriaDashboardController extends Controller
                 'Documento',
                 'Nombre Completo',
                 'Tipo Persona',
+                'Tipo de Registro',
                 'Hora Entrada',
                 'Hora Salida',
                 'Observaciones'
@@ -323,6 +343,7 @@ class PorteriaDashboardController extends Controller
                     $registro->documento,
                     $registro->nombre,
                     $this->getTipoPersonaTexto($registro->tipo_persona),
+                    $registro->tipo_registro === 'salida' ? 'Salida' : 'Entrada',
                     $registro->hora_entrada ? Carbon::parse($registro->hora_entrada)->format('H:i:s') : '',
                     $registro->hora_salida ? Carbon::parse($registro->hora_salida)->format('H:i:s') : '',
                     $registro->observaciones
@@ -378,7 +399,7 @@ class PorteriaDashboardController extends Controller
         $porteriaStats = $this->getPorteriaStatistics($startDate, $endDate);
         $registros = RegistroPorteria::whereBetween('fecha', [$startDate, $endDate])
             ->orderBy('fecha', 'desc')
-            ->orderBy('hora_entrada', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         $filename = 'Reporte_Porteria_' . str_replace(' ', '_', $mesTexto) . '_' . date('Y-m-d') . '.html';

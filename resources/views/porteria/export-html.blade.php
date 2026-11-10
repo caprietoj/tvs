@@ -498,6 +498,15 @@
                     
                     <div class="kpi-card">
                         <div class="kpi-header">
+                            <div class="kpi-icon">🚶</div>
+                            <div class="kpi-title">Salidas sin Entrada</div>
+                        </div>
+                        <div class="kpi-value">{{ number_format($porteriaStats['total_salidas_sin_entrada']) }}</div>
+                        <div class="kpi-description">Salidas marcadas sin ingreso previo</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
                             <div class="kpi-icon">👥</div>
                             <div class="kpi-title">Personas Únicas</div>
                         </div>
@@ -553,8 +562,9 @@
                             El sistema mantiene un control efectivo del flujo de personas. Actualmente hay 
                             {{ number_format($porteriaStats['personas_adentro']) }} personas en el edificio. 
                             La tasa de completitud de registros (entrada-salida) es del 
-                            {{ $porteriaStats['total_entradas'] > 0 ? round(($porteriaStats['total_salidas']/$porteriaStats['total_entradas'])*100, 1) : 0 }}%, 
-                            indicando un buen nivel de trazabilidad.
+                            {{ $porteriaStats['total_entradas'] > 0 ? round(($porteriaStats['total_completados']/$porteriaStats['total_entradas'])*100, 1) : 0 }}%, 
+                            indicando el nivel de trazabilidad. Se registraron 
+                            {{ number_format($porteriaStats['total_salidas_sin_entrada']) }} salidas sin ingreso previo.
                         </div>
                     </div>
                     
@@ -588,6 +598,7 @@
                                     <th>Documento</th>
                                     <th>Nombre Completo</th>
                                     <th>Categoría</th>
+                                    <th>Movimiento</th>
                                     <th>Hora Ingreso</th>
                                     <th>Hora Salida</th>
                                     <th>Estado</th>
@@ -601,14 +612,22 @@
                                             <td>{{ $registro->documento }}</td>
                                             <td>{{ $registro->nombre }}</td>
                                             <td>
-                                                <span class="badge badge-{{ $registro->tipo_persona == 'Empleado' ? 'primary' : ($registro->tipo_persona == 'Visitante' ? 'warning' : 'info') }}">
+                                                @php $tipoPersona = strtolower($registro->tipo_persona ?? ''); @endphp
+                                                <span class="badge badge-{{ $tipoPersona == 'empleado' ? 'primary' : ($tipoPersona == 'estudiante' ? 'info' : 'warning') }}">
                                                     {{ $registro->tipo_persona ?? 'No especificado' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-{{ $registro->tipo_registro === 'salida' ? 'warning' : 'success' }}">
+                                                    {{ $registro->tipo_registro === 'salida' ? 'Salida' : 'Entrada' }}
                                                 </span>
                                             </td>
                                             <td>{{ $registro->hora_entrada ? \Carbon\Carbon::parse($registro->hora_entrada)->format('H:i:s') : '-' }}</td>
                                             <td>{{ $registro->hora_salida ? \Carbon\Carbon::parse($registro->hora_salida)->format('H:i:s') : '-' }}</td>
                                             <td>
-                                                @if($registro->hora_salida)
+                                                @if(!$registro->hora_entrada && $registro->hora_salida)
+                                                    <span class="badge badge-info">Salida registrada</span>
+                                                @elseif($registro->hora_salida)
                                                     <span class="badge badge-success">Completado</span>
                                                 @else
                                                     <span class="badge badge-danger">En instalaciones</span>
@@ -618,7 +637,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="7" style="text-align: center; color: #666666; padding: 30px;">
+                                        <td colspan="8" style="text-align: center; color: #666666; padding: 30px;">
                                             No hay registros disponibles para el período seleccionado
                                         </td>
                                     </tr>
@@ -658,7 +677,7 @@
                     <div class="footer-stat-label">Promedio Diario</div>
                 </div>
                 <div class="footer-stat">
-                    <div class="footer-stat-value">{{ $porteriaStats['total_entradas'] > 0 ? round(($porteriaStats['total_salidas']/$porteriaStats['total_entradas'])*100, 1) : 0 }}%</div>
+                    <div class="footer-stat-value">{{ $porteriaStats['total_entradas'] > 0 ? round(($porteriaStats['total_completados']/$porteriaStats['total_entradas'])*100, 1) : 0 }}%</div>
                     <div class="footer-stat-label">Trazabilidad</div>
                 </div>
                 <div class="footer-stat">
