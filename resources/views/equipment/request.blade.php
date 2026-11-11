@@ -1247,6 +1247,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Botón de confirmación en la vista previa
     document.getElementById('confirm-submit-btn').addEventListener('click', function() {
+        // Evitar envíos duplicados por doble clic
+        if (this.disabled) return;
+        this.disabled = true;
         $('#previewModal').modal('hide');
         elements.form.submit();
     });

@@ -254,7 +254,11 @@ class EquipmentController extends Controller
 
             DB::beginTransaction();
 
-            $equipment = Equipment::findOrFail($validated['equipment_id']);
+            // Bloquear el registro de equipos para serializar la verificación de
+            // disponibilidad y evitar sobreventa por envíos duplicados/concurrentes.
+            $equipment = Equipment::whereKey($validated['equipment_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
             
             // Si se seleccionó un período específico
             if ($request->filled('period_id')) {

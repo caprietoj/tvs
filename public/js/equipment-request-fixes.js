@@ -363,3 +363,22 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 });
+
+// Evitar envíos duplicados del formulario por doble clic
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('loanRequestForm');
+    if (!form) return;
+
+    form.addEventListener('submit', function(event) {
+        if (event.defaultPrevented) return;
+
+        var submitBtn = form.querySelector('button[type="submit"]');
+        if (!submitBtn || submitBtn.disabled) {
+            event.preventDefault();
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+    });
+});
