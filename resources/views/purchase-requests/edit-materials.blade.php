@@ -308,7 +308,7 @@
                     <tr>
                         <td style="width: 20%;">FECHA DE SOLICITUD:</td>
                         <td style="width: 30%;">
-                            <input type="date" class="form-control" name="request_date" value="{{ $purchaseRequest->request_date }}" readonly>
+                            <input type="date" class="form-control" name="request_date" value="{{ $purchaseRequest->request_date?->format('Y-m-d') }}" readonly>
                         </td>
                         <td style="width: 20%;">DATOS DEL USUARIO</td>
                         <td style="width: 30%;"></td>
@@ -356,7 +356,7 @@
                     <tr>
                         <td>FECHA DE ENTREGA:</td>
                         <td>
-                            <input type="date" class="form-control @error('delivery_date') is-invalid @enderror" name="delivery_date" value="{{ old('delivery_date', $purchaseRequest->delivery_date) }}">
+                            <input type="date" class="form-control @error('delivery_date') is-invalid @enderror" name="delivery_date" value="{{ old('delivery_date', $purchaseRequest->delivery_date?->format('Y-m-d')) }}">
                             @error('delivery_date')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
