@@ -1190,6 +1190,8 @@ class PurchaseRequestController extends Controller
         $rules = [
             'requester' => 'required|string|max:255',
             'section_area' => 'required|string|max:255',
+            'coordinator' => 'nullable|string|max:255',
+            'budget' => 'nullable|string|max:255',
             'purchase_justification' => 'required|string',
             'purchase_items' => 'required|array',
             'purchase_items.*.item' => 'required|integer',
@@ -1234,6 +1236,8 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->update([
             'requester' => $request->requester,
             'section_area' => $request->section_area,
+            'coordinator' => $request->coordinator,
+            'budget' => $request->budget,
             'purchase_justification' => $request->purchase_justification,
             'purchase_items' => $request->purchase_items,
             'is_shared' => $request->is_shared === 'yes' ? true : false,
@@ -1242,6 +1246,11 @@ class PurchaseRequestController extends Controller
             'shared_percentage' => $request->is_shared === 'yes' ? (int)$request->shared_percentage : 0,
             'third_shared_section' => $request->is_shared === 'yes' ? $request->third_shared_section : null,
             'third_shared_percentage' => $request->is_shared === 'yes' ? (int)$request->third_shared_percentage : 0,
+        ]);
+
+        \Log::info('Solicitud de compra actualizada exitosamente', [
+            'purchase_request_id' => $purchaseRequest->id,
+            'user_id' => auth()->id(),
         ]);
         
         return redirect()->route('purchase-requests.show', $purchaseRequest)
