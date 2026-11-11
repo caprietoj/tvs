@@ -19,7 +19,7 @@ class AttendanceController extends Controller
     {
         try {
             \DB::beginTransaction();
-            
+
             $request->validate([
                 'mes' => 'required|string',
                 'datos' => 'required|string'
@@ -29,82 +29,56 @@ class AttendanceController extends Controller
             $errorCount = 0;
             $errors = [];
 
-            $rows = explode("\n", $request->datos);
+            $rows = preg_split('/\r\n|\r|\n/', $request->datos);
             foreach ($rows as $index => $row) {
-                if (empty(trim($row))) continue;
-                
-                $columns = explode("\t", $row);
-                if (count($columns) === 6) {
-                    try {
-                        $fechaStr = trim($columns[2]);
-                        
-                        try {
-                            if (preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $fechaStr)) {
-                                $fecha = Carbon::createFromFormat('d/m/Y', $fechaStr)->format('Y-m-d');
-                            } else {
-                                $fecha = Carbon::parse($fechaStr)->format('Y-m-d');
-                            }
-                        } catch (\Exception $e) {
-                            $errors[] = "Error en fecha (fila " . ($index + 1) . "): " . $fechaStr;
-                            $errorCount++;
-                            continue;
-                        }
+                if (trim($row) === '') continue;
 
-                        // Formatear hora de entrada
-                        $entrada = trim($columns[3]);
-                        if (!empty($entrada)) {
-                            try {
-                                // Convertir la hora al formato correcto
-                                $entrada = Carbon::createFromFormat('H:i', $entrada)->format('H:i:s');
-                            } catch (\Exception $e) {
-                                try {
-                                    $entrada = Carbon::parse($entrada)->format('H:i:s');
-                                } catch (\Exception $e) {
-                                    $entrada = null;
-                                }
-                            }
-                        }
+                $columns = $this->splitAttendanceRow($row);
 
-                        $data = [
-                            'no_id' => trim($columns[0]),
-                            'nombre_apellidos' => trim($columns[1]),
-                            'fecha' => $fecha,
-                            'entrada' => $entrada,
-                            'salida' => trim($columns[4]) ?: null,
-                            'departamento' => trim($columns[5]),
-                            'mes' => $request->mes
-                        ];
+                if ($this->looksLikeAttendanceHeader($columns)) {
+                    continue;
+                }
 
-                        \Log::info("Intentando crear registro:", $data);
-                        
-                        $record = AttendanceRecord::create($data);
-                        
-                        if ($record) {
-                            $successCount++;
-                        } else {
-                            $errorCount++;
-                            $errors[] = "Error al crear registro (fila " . ($index + 1) . ")";
-                        }
+                try {
+                    $data = $this->parseAttendanceRow($columns);
+                    $data['mes'] = $request->mes;
 
-                    } catch (\Exception $e) {
+                    $record = AttendanceRecord::updateOrCreate(
+                        [
+                            'no_id' => $data['no_id'],
+                            'fecha' => $data['fecha'],
+                            'mes' => $data['mes'],
+                        ],
+                        $data
+                    );
+
+                    if ($record) {
+                        $successCount++;
+                    } else {
                         $errorCount++;
-                        $errors[] = "Error en fila " . ($index + 1) . ": " . $e->getMessage();
-                        \Log::error('Error importando registro: ' . $e->getMessage());
-                        continue;
+                        $errors[] = "Error al crear registro (fila " . ($index + 1) . ")";
                     }
-                } else {
+                } catch (\InvalidArgumentException $e) {
                     $errorCount++;
-                    $errors[] = "Formato incorrecto en fila " . ($index + 1) . ")";
+                    $errors[] = "Fila " . ($index + 1) . ": " . $e->getMessage();
+                } catch (\Exception $e) {
+                    $errorCount++;
+                    $errors[] = "Error en fila " . ($index + 1) . ": " . $e->getMessage();
+                    \Log::error('Error importando registro: ' . $e->getMessage());
                 }
             }
 
             \DB::commit();
-            
+
             $message = "Registros importados: {$successCount}. Errores: {$errorCount}";
             if (count($errors) > 0) {
-                $message .= "\nDetalles de errores:\n" . implode("\n", $errors);
+                $message .= "\nPrimeros errores:\n" . implode("\n", array_slice($errors, 0, 15));
+                if (count($errors) > 15) {
+                    $message .= "\n... y " . (count($errors) - 15) . " errores más (ver log).";
+                }
+                \Log::warning('Importación biométrica con errores: ' . $message);
             }
-            
+
             \Log::info($message);
             return redirect()->back()->with('success', $message);
 
@@ -112,6 +86,252 @@ class AttendanceController extends Controller
             \DB::rollback();
             \Log::error('Error general en importación: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al importar datos: ' . $e->getMessage());
+        }
+    }
+
+    private function splitAttendanceRow(string $row): array
+    {
+        $row = str_replace(["\xC2\xA0", "\r", "\n"], [' ', '', ''], $row);
+        $row = trim($row);
+
+        if ($row === '') {
+            return [];
+        }
+
+        $columns = str_contains($row, "\t")
+            ? explode("\t", $row)
+            : preg_split('/\s{2,}/', $row);
+
+        $columns = array_map(fn ($column) => trim((string) $column), $columns ?: []);
+
+        while (count($columns) > 0 && reset($columns) === '') {
+            array_shift($columns);
+        }
+
+        while (count($columns) > 0 && end($columns) === '') {
+            array_pop($columns);
+        }
+
+        return array_values($columns);
+    }
+
+    private function looksLikeAttendanceHeader(array $columns): bool
+    {
+        $text = mb_strtolower(implode(' ', $columns));
+        $keywords = ['documento', 'nombre', 'fecha', 'entrada', 'salida', 'departamento'];
+
+        $matches = 0;
+        foreach ($keywords as $keyword) {
+            if (str_contains($text, $keyword)) {
+                $matches++;
+            }
+        }
+
+        return $matches >= 3;
+    }
+
+    private function parseAttendanceRow(array $columns): array
+    {
+        $dateIndex = null;
+        $dateValue = null;
+        $combinedTime = null;
+
+        foreach ([false, true] as $allowExcelSerial) {
+            foreach ($columns as $index => $column) {
+                $parsedDate = $this->parseAttendanceDate((string) $column, $allowExcelSerial);
+
+                if ($parsedDate !== null) {
+                    $dateIndex = $index;
+                    $dateValue = $parsedDate[0];
+                    $combinedTime = $parsedDate[1];
+                    break 2;
+                }
+            }
+        }
+
+        if ($dateIndex === null) {
+            throw new \InvalidArgumentException('no se encontró una fecha válida');
+        }
+
+        if ($dateIndex < 2) {
+            throw new \InvalidArgumentException('faltan las columnas de documento y nombre antes de la fecha');
+        }
+
+        $noId = trim((string) ($columns[$dateIndex - 2] ?? ''));
+        $name = trim((string) ($columns[$dateIndex - 1] ?? ''));
+
+        if ($noId === '' || $name === '') {
+            throw new \InvalidArgumentException('documento o nombre vacío');
+        }
+
+        $remaining = array_values(array_slice($columns, $dateIndex + 1));
+        $remaining = array_map(fn ($column) => trim((string) $column), $remaining);
+
+        while (count($remaining) > 0 && end($remaining) === '') {
+            array_pop($remaining);
+        }
+
+        $entrada = null;
+        $salida = null;
+        $departamento = null;
+
+        if ($combinedTime !== null) {
+            if (count($remaining) >= 3) {
+                $entrada = $this->normalizeAttendanceTime($remaining[0]) ?: $combinedTime;
+                $salida = $this->normalizeAttendanceTime($remaining[1]);
+                $departamento = $remaining[2];
+            } elseif (count($remaining) === 2) {
+                $entrada = $combinedTime;
+                $salida = $this->normalizeAttendanceTime($remaining[0]);
+                $departamento = $remaining[1];
+            } elseif (count($remaining) === 1) {
+                $entrada = $combinedTime;
+                $departamento = $remaining[0];
+            } else {
+                $entrada = $combinedTime;
+            }
+        } else {
+            if (count($remaining) >= 3) {
+                $entrada = $this->normalizeAttendanceTime($remaining[0]);
+                $salida = $this->normalizeAttendanceTime($remaining[1]);
+                $departamento = $remaining[2];
+            } elseif (count($remaining) === 2) {
+                $entrada = $this->normalizeAttendanceTime($remaining[0]);
+                $departamento = $remaining[1];
+            } elseif (count($remaining) === 1) {
+                $departamento = $remaining[0];
+            }
+        }
+
+        $departamento = trim((string) $departamento);
+
+        if ($departamento === '') {
+            throw new \InvalidArgumentException('departamento vacío');
+        }
+
+        return [
+            'no_id' => $noId,
+            'nombre_apellidos' => $name,
+            'fecha' => $dateValue,
+            'entrada' => $entrada,
+            'salida' => $salida,
+            'departamento' => $departamento,
+        ];
+    }
+
+    private function parseAttendanceDate(string $value, bool $allowExcelSerial = false): ?array
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        $timePart = null;
+
+        if (is_numeric($value)) {
+            if (!$allowExcelSerial) {
+                return null;
+            }
+
+            $numericValue = (float) $value;
+
+            if ($numericValue < 43831 || $numericValue > 73051) {
+                return null;
+            }
+
+            try {
+                $date = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($numericValue);
+                $excelTime = $numericValue - floor($numericValue);
+                $timePart = $excelTime > 0 ? $this->normalizeAttendanceTime($excelTime) : null;
+
+                return [$date->format('Y-m-d'), $timePart];
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        if (preg_match('/(\d{1,2}:\d{2}(?::\d{2})?)/', $value, $matches)) {
+            $timePart = $this->normalizeAttendanceTime($matches[1]);
+            $value = trim(str_replace($matches[1], ' ', $value));
+        }
+
+        $value = trim(preg_replace('/\s+/', ' ', $value));
+
+        if (!preg_match('/\d/', $value)) {
+            return null;
+        }
+
+        $value = str_replace(['.', '-'], '/', $value);
+        $formats = ['d/m/Y', 'd/m/y', 'Y/m/d'];
+
+        foreach ($formats as $format) {
+            $date = \DateTime::createFromFormat('!' . $format, $value);
+            $lastErrors = \DateTime::getLastErrors();
+
+            if ($date instanceof \DateTime && ($lastErrors === false || ($lastErrors['warning_count'] === 0 && $lastErrors['error_count'] === 0))) {
+                return [$date->format('Y-m-d'), $timePart];
+            }
+        }
+
+        try {
+            return [Carbon::parse($value)->format('Y-m-d'), $timePart];
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    private function normalizeAttendanceTime($value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            $numericValue = (float) $value;
+
+            if ($numericValue >= 0 && $numericValue < 1) {
+                $seconds = (int) round($numericValue * 86400);
+                return sprintf('%02d:%02d:%02d', intdiv($seconds, 3600), intdiv($seconds % 3600, 60), $seconds % 60);
+            }
+
+            if ($numericValue >= 1 && $numericValue < 100000) {
+                $fraction = $numericValue - floor($numericValue);
+                $seconds = (int) round($fraction * 86400);
+                return sprintf('%02d:%02d:%02d', intdiv($seconds, 3600), intdiv($seconds % 3600, 60), $seconds % 60);
+            }
+        }
+
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        $value = str_replace(['a. m.', 'a.m.', 'p. m.', 'p.m.'], ['AM', 'AM', 'PM', 'PM'], $value);
+        $value = str_replace('.', ':', $value);
+        $value = trim(preg_replace('/\s+/', ' ', $value));
+
+        if (preg_match('/^\d{3,4}$/', $value)) {
+            $value = str_pad($value, 4, '0', STR_PAD_LEFT);
+            $value = substr($value, 0, 2) . ':' . substr($value, 2, 2);
+        }
+
+        $formats = ['H:i:s', 'H:i', 'G:i', 'g:i A', 'g:iA', 'h:i A', 'h:iA', 'H:i:s A', 'H:i A'];
+
+        foreach ($formats as $format) {
+            $time = \DateTime::createFromFormat('!' . $format, $value);
+            $lastErrors = \DateTime::getLastErrors();
+
+            if ($time instanceof \DateTime && ($lastErrors === false || ($lastErrors['warning_count'] === 0 && $lastErrors['error_count'] === 0))) {
+                return $time->format('H:i:s');
+            }
+        }
+
+        try {
+            return Carbon::parse($value)->format('H:i:s');
+        } catch (\Exception $e) {
+            return null;
         }
     }
 
