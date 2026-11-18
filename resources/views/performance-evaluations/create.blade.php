@@ -225,7 +225,7 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label for="evaluation_type" class="font-weight-bold">
                                 <i class="fas fa-clipboard-list text-success"></i> Tipo de Evaluación 
@@ -245,8 +245,30 @@
                             @enderror
                         </div>
                     </div>
+
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="evaluation_year" class="font-weight-bold">
+                                <i class="fas fa-calendar text-success"></i> Año de Elaboración
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select name="evaluation_year" id="evaluation_year" class="form-control @error('evaluation_year') is-invalid @enderror" required>
+                                @foreach($availableYears as $yearOption)
+                                    <option value="{{ $yearOption }}" {{ (string) old('evaluation_year', date('Y')) === (string) $yearOption ? 'selected' : '' }}>
+                                        {{ $yearOption }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> Año al que pertenece la evaluación
+                            </small>
+                            @error('evaluation_year')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
                     
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label for="evaluation_period_start" class="font-weight-bold">
                                 <i class="fas fa-calendar-alt text-warning"></i> Fecha Inicio Período 
@@ -269,7 +291,7 @@
                         </div>
                     </div>
                     
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label for="evaluation_period_end" class="font-weight-bold">
                                 <i class="fas fa-calendar-check text-danger"></i> Fecha Fin Período 
@@ -898,7 +920,7 @@ $(document).ready(function() {
         }
         
         // Check other required fields
-        var requiredFields = ['evaluation_type', 'evaluation_period_start', 'evaluation_period_end'];
+        var requiredFields = ['evaluation_type', 'evaluation_year', 'evaluation_period_start', 'evaluation_period_end'];
         
         requiredFields.forEach(function(fieldId) {
             var field = $('#' + fieldId);

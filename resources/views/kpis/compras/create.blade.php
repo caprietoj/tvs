@@ -964,13 +964,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const overstockPercentage = ((itemsOverstock / totalItems) * 100).toFixed(2);
             const optimalPercentage = ((itemsOptimal / totalItems) * 100).toFixed(2);
 
-            // Calculate overall inventory health score
-            // Higher weightage to optimal items and penalizing both understock and overstock
-            const healthScore = (((itemsOptimal * 100) + (itemsOverstock * 30)) / totalItems).toFixed(2);
+            // Disponibilidad de recursos: cobertura agregada de stock.
+            // El sobrestock cuenta como recurso disponible y compensa faltantes de reposición;
+            // no debe castigarse porque el recurso sí está en almacén.
+            const totalStock = inventory.reduce((sum, item) => sum + item.current, 0);
+            const totalSuggested = inventory.reduce((sum, item) => sum + item.suggested, 0);
+            const availabilityScore = totalSuggested > 0
+                ? Math.min(100, (totalStock / totalSuggested) * 100).toFixed(2)
+                : (totalItems > 0 ? '100.00' : '0.00');
 
             const analysisText = `Análisis de ${totalItems} productos: ${itemsToOrder} requieren compra (${orderPercentage}%), ` +
                 `${itemsOptimal} en nivel óptimo (${optimalPercentage}%), ${itemsOverstock} con sobrestock (${overstockPercentage}%). ` +
-                `Índice de salud del inventario: ${healthScore}%`;
+                `Disponibilidad de recursos: ${availabilityScore}% (stock total ${totalStock} vs. sugerido ${totalSuggested})`;
 
             // Show results in SweetAlert2 modal
             Swal.fire({
@@ -978,11 +983,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 html: `
                     <div class="inventory-analysis">
                         <div class="mb-4">
-                            <h5>Salud del Inventario: ${healthScore}%</h5>
+                            <h5>Disponibilidad de Recursos: ${availabilityScore}%</h5>
                             <div class="progress mb-2" style="height: 20px;">
-                                <div class="progress-bar bg-${healthScore >= 70 ? 'success' : 'warning'}" 
-                                    style="width: ${healthScore}%">
-                                    ${healthScore}%
+                                <div class="progress-bar bg-${availabilityScore >= 90 ? 'success' : 'warning'}" 
+                                    style="width: ${availabilityScore}%">
+                                    ${availabilityScore}%
                                 </div>
                             </div>
                             <div class="calculation-details mt-3">
@@ -1012,12 +1017,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </table>
                                 </div>
                                 <div class="calculation-formula mt-2">
-                                    <p class="mb-1"><strong>Fórmula de salud del inventario:</strong></p>
+                                    <p class="mb-1"><strong>Fórmula de disponibilidad de recursos:</strong></p>
                                     <code>
-                                        ((Items óptimos × 100) + (Items sobrestock × 30)) ÷ Total items<br>
-                                        ((${itemsOptimal} × 100) + (${itemsOverstock} × 30)) ÷ ${totalItems} = ${healthScore}%
+                                        (Stock total ÷ Cantidad sugerida total) × 100 (máx. 100%)<br>
+                                        (${totalStock} ÷ ${totalSuggested}) × 100 = ${availabilityScore}%
                                     </code>
-                                    <p class="small text-muted mt-1">Nota: El sobrestock se pondera menos porque representa capital inmovilizado.</p>
+                                    <p class="small text-muted mt-1">Nota: el sobrestock cuenta como recurso disponible porque cubre la necesidad de inventario; no se castiga.</p>
                                 </div>
                             </div>
                         </div>
@@ -1093,7 +1098,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 width: 800
             }).then((result) => {
                 if (result.isConfirmed) {
-                    $('#percentage').val(healthScore);
+                    $('#percentage').val(availabilityScore);
                     $('#analysis').val(analysisText);
                     $('#surveyDataModal').modal('hide');
                 }

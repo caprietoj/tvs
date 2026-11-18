@@ -46,9 +46,9 @@
 
             <!-- Filtros -->
             <div class="row mb-3 px-3 pt-3">
-                <div class="col-md-8">
-                    <form method="GET" action="{{ route('performance-evaluations.index') }}" class="form-inline">
-                        <div class="form-group mr-3">
+                <div class="col-md-12">
+                    <form method="GET" action="{{ route('performance-evaluations.index') }}" class="form-inline flex-wrap">
+                        <div class="form-group mr-3 mb-2">
                             <label for="status" class="mr-2"><strong>Estado:</strong></label>
                             <select name="status" id="status" class="form-control">
                                 <option value="">Todos los estados</option>
@@ -66,7 +66,7 @@
                                 </option>
                             </select>
                         </div>
-                        <div class="form-group mr-3">
+                        <div class="form-group mr-3 mb-2">
                             <label for="type" class="mr-2"><strong>Tipo:</strong></label>
                             <select name="type" id="type" class="form-control">
                                 <option value="">Todos los tipos</option>
@@ -78,7 +78,31 @@
                                 </option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mr-3 mb-2">
+                            <label for="year" class="mr-2"><strong>Año:</strong></label>
+                            <select name="year" id="year" class="form-control">
+                                <option value="">Todos los años</option>
+                                @foreach($years as $year)
+                                    <option value="{{ $year }}" {{ (string) request('year') === (string) $year ? 'selected' : '' }}>
+                                        {{ $year }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @if($canViewAll)
+                            <div class="form-group mr-3 mb-2">
+                                <label for="user_id" class="mr-2"><strong>Usuario:</strong></label>
+                                <select name="user_id" id="user_id" class="form-control">
+                                    <option value="">Todos los usuarios</option>
+                                    @foreach($filterUsers as $filterUser)
+                                        <option value="{{ $filterUser->id }}" {{ (string) request('user_id') === (string) $filterUser->id ? 'selected' : '' }}>
+                                            {{ $filterUser->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+                        <div class="form-group mb-2">
                             <button type="submit" class="btn btn-primary mr-2">
                                 <i class="fas fa-filter"></i> Filtrar
                             </button>
@@ -94,15 +118,16 @@
                 <table class="table table-bordered table-striped">
                     <thead>
                         <tr>
-                            <th style="width: 18%;">Empleado</th>
-                            <th style="width: 13%;">Evaluador</th>
-                            <th style="width: 10%;">Tipo</th>
-                            <th style="width: 12%;">Período</th>
+                            <th style="width: 16%;">Empleado</th>
+                            <th style="width: 12%;">Evaluador</th>
+                            <th style="width: 9%;">Tipo</th>
+                            <th style="width: 7%;">Año</th>
+                            <th style="width: 11%;">Período</th>
                             <th style="width: 10%;">Estado</th>
                             <th style="width: 8%;">Puntaje Final</th>
                             <th style="width: 7%;">Nivel</th>
-                            <th style="width: 14%;">Retroalimentación</th>
-                            <th style="width: 8%;">Acciones</th>
+                            <th style="width: 13%;">Retroalimentación</th>
+                            <th style="width: 7%;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,6 +141,9 @@
                                     @else
                                         <span class="badge badge-primary">Periódica</span>
                                     @endif
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-dark">{{ $evaluation->evaluation_year ?? $evaluation->evaluation_period_start->year }}</span>
                                 </td>
                                 <td class="text-nowrap">
                                     <small>{{ $evaluation->evaluation_period_start->format('d/m/Y') }}</small><br>
@@ -208,12 +236,24 @@
                                 <i class="fas fa-user-check"></i>
                             </a>
                         @endif
+
+                                        @if($canDeleteEvaluations)
+                                            <form action="{{ route('performance-evaluations.destroy', $evaluation) }}"
+                                                  method="POST"
+                                                  onsubmit="return confirm('¿Está seguro de eliminar esta evaluación? Esta acción no se puede deshacer.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Eliminar evaluación">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">No hay evaluaciones registradas</td>
+                                <td colspan="10" class="text-center">No hay evaluaciones registradas</td>
                             </tr>
                         @endforelse
                     </tbody>

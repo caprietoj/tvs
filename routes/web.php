@@ -1184,6 +1184,7 @@ Route::middleware(['auth'])->prefix('performance-evaluations')->name('performanc
     Route::get('/export', [App\Http\Controllers\PerformanceEvaluationController::class, 'export'])->name('export');
     Route::get('/create', [App\Http\Controllers\PerformanceEvaluationController::class, 'create'])->name('create');
     Route::post('/', [App\Http\Controllers\PerformanceEvaluationController::class, 'store'])->name('store');
+    Route::delete('/{performanceEvaluation}', [App\Http\Controllers\PerformanceEvaluationController::class, 'destroy'])->name('destroy');
     Route::get('/{performanceEvaluation}', [App\Http\Controllers\PerformanceEvaluationController::class, 'show'])->name('show');
     
     // Rutas para autoevaluación

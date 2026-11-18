@@ -30,6 +30,7 @@ class CreatePerformanceEvaluationRoles extends Command
         // Crear permisos específicos
         $permissions = [
             'create-performance-evaluations',
+            'delete-performance-evaluations',
             'view-all-performance-evaluations',
             'evaluate-as-supervisor',
             'self-evaluate'

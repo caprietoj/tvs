@@ -53,7 +53,15 @@ class PerformanceEvaluationsExport implements FromCollection, WithHeadings, With
             $query->where('evaluation_type', $this->request->type);
         }
 
-        return $query->orderBy('created_at', 'desc')->get();
+        if ($this->request->filled('year')) {
+            $query->where('evaluation_year', (int) $this->request->year);
+        }
+
+        if ($this->request->filled('user_id')) {
+            $query->where('user_id', $this->request->user_id);
+        }
+
+        return $query->orderByDesc('evaluation_year')->orderBy('created_at', 'desc')->get();
     }
 
     /**
@@ -68,6 +76,7 @@ class PerformanceEvaluationsExport implements FromCollection, WithHeadings, With
             'Evaluador',
             'Email Evaluador',
             'Tipo de Evaluación',
+            'Año de Elaboración',
             'Período Inicio',
             'Período Fin',
             'Estado',
@@ -111,6 +120,7 @@ class PerformanceEvaluationsExport implements FromCollection, WithHeadings, With
             $evaluation->evaluator->name ?? 'No asignado',
             $evaluation->evaluator->email ?? 'N/A',
             $evaluation->evaluation_type === 'periodo_prueba' ? 'Período de Prueba' : 'Periódica',
+            $evaluation->evaluation_year ?? ($evaluation->evaluation_period_start ? $evaluation->evaluation_period_start->format('Y') : 'N/A'),
             $evaluation->evaluation_period_start ? $evaluation->evaluation_period_start->format('d/m/Y') : 'N/A',
             $evaluation->evaluation_period_end ? $evaluation->evaluation_period_end->format('d/m/Y') : 'N/A',
             $this->getStatusLabel($evaluation->status),
@@ -164,20 +174,21 @@ class PerformanceEvaluationsExport implements FromCollection, WithHeadings, With
             'D' => 25,  // Evaluador
             'E' => 30,  // Email Evaluador
             'F' => 20,  // Tipo
-            'G' => 15,  // Período Inicio
-            'H' => 15,  // Período Fin
-            'I' => 20,  // Estado
-            'J' => 15,  // Puntaje Auto Objetivos
-            'K' => 20,  // Puntaje Auto Competencias
-            'L' => 20,  // Puntaje Sup Objetivos
-            'M' => 25,  // Puntaje Sup Competencias
-            'N' => 15,  // Puntaje Final
-            'O' => 20,  // Nivel
-            'P' => 30,  // Observaciones Empleado
-            'Q' => 30,  // Observaciones Supervisor
-            'R' => 20,  // Fecha Creación
-            'S' => 20,  // Fecha Autoevaluación
-            'T' => 25,  // Fecha Evaluación Supervisor
+            'G' => 18,  // Año de Elaboración
+            'H' => 15,  // Período Inicio
+            'I' => 15,  // Período Fin
+            'J' => 20,  // Estado
+            'K' => 15,  // Puntaje Auto Objetivos
+            'L' => 20,  // Puntaje Auto Competencias
+            'M' => 20,  // Puntaje Sup Objetivos
+            'N' => 25,  // Puntaje Sup Competencias
+            'O' => 15,  // Puntaje Final
+            'P' => 20,  // Nivel
+            'Q' => 30,  // Observaciones Empleado
+            'R' => 30,  // Observaciones Supervisor
+            'S' => 20,  // Fecha Creación
+            'T' => 20,  // Fecha Autoevaluación
+            'U' => 25,  // Fecha Evaluación Supervisor
         ];
     }
 

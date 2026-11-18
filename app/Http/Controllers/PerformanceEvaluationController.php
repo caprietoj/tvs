@@ -36,8 +36,11 @@ class PerformanceEvaluationController extends Controller
             abort(403, 'No tienes permisos para acceder a las evaluaciones de desempeño');
         }
         
-        $query = PerformanceEvaluation::query();        // Filtrar evaluaciones según el rol del usuario
-        if ($user->hasRole('admin') || $user->can('view-all-performance-evaluations')) {
+        $canViewAll = $user->hasRole('admin') || $user->can('view-all-performance-evaluations');
+
+        $query = PerformanceEvaluation::query();
+        // Filtrar evaluaciones según el rol del usuario
+        if ($canViewAll) {
             // Los admins pueden ver todas las evaluaciones
             $query->with(['user', 'evaluator', 'feedbackSessions' => function($q) {
                 $q->latest('scheduled_datetime');
@@ -61,11 +64,47 @@ class PerformanceEvaluationController extends Controller
         if ($request->filled('type')) {
             $query->where('evaluation_type', $request->type);
         }
+
+        // Filtro por año de elaboración
+        if ($request->filled('year')) {
+            $query->where('evaluation_year', (int) $request->year);
+        }
+
+        // Filtro por usuario evaluado
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
         
-        $evaluations = $query->orderBy('created_at', 'desc')->paginate(10);
+        $evaluations = $query->orderByDesc('evaluation_year')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
         $evaluations->appends($request->query());
+
+        $years = PerformanceEvaluation::query()
+            ->whereNotNull('evaluation_year')
+            ->select('evaluation_year')
+            ->distinct()
+            ->orderByDesc('evaluation_year')
+            ->pluck('evaluation_year');
+
+        $filterUsers = collect();
+        if ($canViewAll) {
+            $filterUsers = User::whereIn('id', PerformanceEvaluation::query()->select('user_id')->distinct())
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
+
+        $canDeleteEvaluations = $user->hasRole('admin')
+            || $user->can('delete-performance-evaluations')
+            || $user->can('create-performance-evaluations');
         
-        return view('performance-evaluations.index', compact('evaluations'));
+        return view('performance-evaluations.index', compact(
+            'evaluations',
+            'years',
+            'filterUsers',
+            'canViewAll',
+            'canDeleteEvaluations'
+        ));
     }
 
     /**
@@ -94,19 +133,16 @@ class PerformanceEvaluationController extends Controller
             abort(403, 'No tienes permisos para crear evaluaciones');
         }
         
-        // Definir todos los departamentos disponibles
-        $availableDepartments = [
-            'Mantenimiento',
-            'Servicios Generales', 
-            'Sistemas',
-            'Almacen',
-            'Enfermeria',
-            'Docentes',
-            'EMC',
-            'Biblioteca',
-            'Contabilidad',
-            'Asistentes'
-        ];
+        // Obtener los departamentos reales registrados en los usuarios
+        $availableDepartments = User::query()
+            ->whereNotNull('department')
+            ->where('department', '<>', '')
+            ->select('department')
+            ->distinct()
+            ->orderBy('department')
+            ->pluck('department')
+            ->values()
+            ->toArray();
         
         // Obtener empleados organizados por departamento (solo departamentos que tienen usuarios)
         $employeesByDepartment = User::select('id', 'name', 'email', 'department')
@@ -123,8 +159,11 @@ class PerformanceEvaluationController extends Controller
         
         // Usar todos los usuarios como posibles supervisores
         $supervisors = User::orderBy('name')->get();
+
+        // Años disponibles para el año de elaboración de la evaluación
+        $availableYears = range((int) date('Y') + 1, (int) date('Y') - 5);
         
-        return view('performance-evaluations.create', compact('employeesByDepartment', 'allUsers', 'supervisors', 'availableDepartments'));
+        return view('performance-evaluations.create', compact('employeesByDepartment', 'allUsers', 'supervisors', 'availableDepartments', 'availableYears'));
     }
 
     /**
@@ -140,6 +179,7 @@ class PerformanceEvaluationController extends Controller
             'user_ids' => 'required|array|min:1',
             'evaluator_id' => 'nullable|exists:users,id',
             'evaluation_type' => 'required|in:periodo_prueba,periodica',
+            'evaluation_year' => 'required|integer|between:2000,2100',
             'evaluation_period_start' => 'required|date',
             'evaluation_period_end' => 'required|date|after:evaluation_period_start'
         ]);
@@ -150,23 +190,20 @@ class PerformanceEvaluationController extends Controller
                            ->withInput();
         }
         
-        // Convertir departamentos seleccionados a IDs de usuarios
-        $availableDepartments = [
-            'Mantenimiento', 'Servicios Generales', 'Sistemas', 'Almacen', 
-            'Enfermeria', 'Docentes', 'EMC', 'Biblioteca', 'Contabilidad', 'Asistentes'
-        ];
-        
+        // Convertir departamentos seleccionados a IDs de usuarios.
+        // Las selecciones numéricas corresponden a usuarios y las demás a departamentos,
+        // evitando depender de una lista fija de nombres (acentos, mayúsculas, etc.).
         $userIds = [];
         foreach ($request->user_ids as $selection) {
-            // Verificar si es un departamento o un ID de usuario
-            if (in_array($selection, $availableDepartments)) {
-                // Es un departamento, obtener todos los usuarios de ese departamento
-                $departmentUsers = User::where('department', $selection)->pluck('id')->toArray();
-                $userIds = array_merge($userIds, $departmentUsers);
-            } elseif (is_numeric($selection)) {
+            if (is_numeric($selection)) {
                 // Es un ID de usuario
-                $userIds[] = $selection;
+                $userIds[] = (int) $selection;
+                continue;
             }
+
+            // Es un departamento, obtener todos los usuarios de ese departamento
+            $departmentUsers = User::where('department', $selection)->pluck('id')->toArray();
+            $userIds = array_merge($userIds, $departmentUsers);
         }
         
         // Eliminar duplicados
@@ -185,6 +222,7 @@ class PerformanceEvaluationController extends Controller
             // Verificar si ya existe una evaluación para este empleado en el mismo período
             $existingEvaluation = PerformanceEvaluation::where('user_id', $userId)
                 ->where('evaluation_type', $request->evaluation_type)
+                ->where('evaluation_year', (int) $request->evaluation_year)
                 ->where(function($query) use ($request) {
                     $query->whereBetween('evaluation_period_start', [$request->evaluation_period_start, $request->evaluation_period_end])
                           ->orWhereBetween('evaluation_period_end', [$request->evaluation_period_start, $request->evaluation_period_end])
@@ -205,6 +243,7 @@ class PerformanceEvaluationController extends Controller
                 'user_id' => $userId,
                 'evaluator_id' => $request->evaluator_id,
                 'evaluation_type' => $request->evaluation_type,
+                'evaluation_year' => (int) $request->evaluation_year,
                 'evaluation_period_start' => $request->evaluation_period_start,
                 'evaluation_period_end' => $request->evaluation_period_end,
                 'status' => 'draft'
@@ -254,6 +293,27 @@ class PerformanceEvaluationController extends Controller
             return redirect()->route('performance-evaluations.index')
                             ->with($messageType, $message);
         }
+    }
+
+    /**
+     * Eliminar una evaluación de desempeño
+     */
+    public function destroy(PerformanceEvaluation $performanceEvaluation)
+    {
+        $user = Auth::user();
+
+        if (!$user->hasRole('admin')
+            && !$user->can('delete-performance-evaluations')
+            && !$user->can('create-performance-evaluations')) {
+            abort(403, 'No tienes permisos para eliminar evaluaciones');
+        }
+
+        $employeeName = $performanceEvaluation->user->name ?? 'el empleado';
+
+        $performanceEvaluation->delete();
+
+        return redirect()->route('performance-evaluations.index')
+            ->with('success', 'La evaluación de ' . $employeeName . ' fue eliminada correctamente.');
     }
 
     /**

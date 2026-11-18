@@ -62,6 +62,14 @@
                                 @endif
                             </td>
                         </tr>
+                        <tr>
+                            <td><strong>Año de Elaboración:</strong></td>
+                            <td>
+                                <span class="badge badge-dark">
+                                    {{ $performanceEvaluation->evaluation_year ?? $performanceEvaluation->evaluation_period_start->year }}
+                                </span>
+                            </td>
+                        </tr>
                     </table>
                 </div>
                 <div class="col-md-6">
@@ -154,7 +162,7 @@
     </div>
 
     <!-- Sesiones de Retroalimentación -->
-    @if($performanceEvaluation->status === 'supervisor_completed')
+    @if(in_array($performanceEvaluation->status, ['completed', 'supervisor_completed']))
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">
@@ -601,7 +609,7 @@
                     <i class="fas fa-user-check bg-info"></i>
                     <div class="timeline-item">
                         <div class="timeline-body">
-                            Evaluación del supervisor completada por {{ $performanceEvaluation->evaluator->name }}
+                            Evaluación del supervisor completada{{ $performanceEvaluation->evaluator ? ' por '.$performanceEvaluation->evaluator->name : '' }}
                         </div>
                     </div>
                 </div>
