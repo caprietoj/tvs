@@ -1147,6 +1147,151 @@ document.addEventListener('DOMContentLoaded', function() {
         </style>
     `);
 
+    // Análisis de Entrega de Materiales
+    function evaluarEntregaMateriales() {
+        const total = parseFloat($('#totalMaterials').val());
+        const colegio = parseFloat($('#materialsAtSchool').val());
+        const casa = parseFloat($('#materialsAtHome').val());
+        const noEntregados = parseFloat($('#materialsNotDelivered').val());
+
+        const completo = [total, colegio, casa, noEntregados].every(function(v) {
+            return !isNaN(v) && v >= 0;
+        });
+        const sumaUbicaciones = (isNaN(colegio) ? 0 : colegio) + (isNaN(casa) ? 0 : casa);
+        const coincide = completo && total > 0 && Math.abs(sumaUbicaciones - total) < 0.01;
+
+        return {
+            total: total,
+            colegio: colegio,
+            casa: casa,
+            noEntregados: noEntregados,
+            completo: completo,
+            coincide: coincide,
+            sumaUbicaciones: sumaUbicaciones
+        };
+    }
+
+    function actualizarValidacionMateriales() {
+        const datos = evaluarEntregaMateriales();
+        const mostrar = datos.completo && datos.total > 0 && !datos.coincide;
+        $('#materialsValidation').toggle(mostrar);
+    }
+
+    $('#totalMaterials, #materialsAtSchool, #materialsAtHome, #materialsNotDelivered')
+        .on('input', actualizarValidacionMateriales);
+
+    $('#calculateMaterialsBtn').click(function() {
+        const datos = evaluarEntregaMateriales();
+
+        if (!datos.completo || datos.total <= 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Datos incompletos',
+                text: 'Ingrese valores numéricos válidos (mayores o iguales a 0) en todos los campos y un total mayor a 0.',
+                confirmButtonColor: '#364E76'
+            });
+            return;
+        }
+
+        if (!datos.coincide) {
+            $('#materialsValidation').show();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Validación de cantidades',
+                html: `La suma de los materiales por ubicación (Colegio + Casa = <strong>${datos.sumaUbicaciones}</strong>) debe ser igual al total de materiales entregados (<strong>${datos.total}</strong>).`,
+                confirmButtonColor: '#364E76'
+            });
+            return;
+        }
+
+        $('#materialsValidation').hide();
+
+        const totalUniverso = datos.total + datos.noEntregados;
+        const porcentaje = totalUniverso > 0
+            ? ((datos.total / totalUniverso) * 100).toFixed(2)
+            : '0.00';
+        const porcentajeColegio = ((datos.colegio / datos.total) * 100).toFixed(1);
+        const porcentajeCasa = ((datos.casa / datos.total) * 100).toFixed(1);
+        const color = getColorClass(porcentaje);
+
+        const analysisText = `Análisis de entrega de materiales: ${datos.total} materiales entregados de ${totalUniverso} en total. ` +
+            `Entregados en colegio: ${datos.colegio} (${porcentajeColegio}%), en casa: ${datos.casa} (${porcentajeCasa}%). ` +
+            `No entregados: ${datos.noEntregados}. ` +
+            `Porcentaje de entrega: ${porcentaje}% (${datos.total} ÷ ${totalUniverso} × 100).`;
+
+        Swal.fire({
+            title: 'Análisis de Entrega de Materiales',
+            html: `
+                <div class="analysis-container">
+                    <div class="satisfaction-score mb-4">
+                        <h5 class="text-center mb-3">Porcentaje de Entrega</h5>
+                        <div class="progress mb-2" style="height: 30px;">
+                            <div class="progress-bar bg-${color}" role="progressbar"
+                                style="width: ${porcentaje}%" aria-valuenow="${porcentaje}"
+                                aria-valuemin="0" aria-valuemax="100">
+                                <strong>${porcentaje}%</strong>
+                            </div>
+                        </div>
+                        <p class="text-muted text-center mb-0">${getPerformanceLabel(porcentaje)}</p>
+                    </div>
+
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-bordered">
+                            <tbody>
+                                <tr>
+                                    <th class="text-left">Total entregados</th>
+                                    <td>${datos.total}</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-left">Entregados en colegio</th>
+                                    <td>${datos.colegio} (${porcentajeColegio}%)</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-left">Entregados en casa</th>
+                                    <td>${datos.casa} (${porcentajeCasa}%)</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-left">No entregados</th>
+                                    <td>${datos.noEntregados}</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-left">Total (entregados + no entregados)</th>
+                                    <td><strong>${totalUniverso}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="calculation-formula text-left">
+                        <p class="mb-1"><strong>Fórmula aplicada:</strong></p>
+                        <code>Total entregados ÷ Total general × 100<br>
+                        ${datos.total} ÷ ${totalUniverso} × 100 = ${porcentaje}%</code>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Aplicar Resultados',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#364E76',
+            cancelButtonColor: '#6c757d',
+            width: 700
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#percentage').val(porcentaje);
+                $('#analysis').val(analysisText);
+                $('#surveyDataModal').modal('hide');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Resultados Aplicados',
+                    html: `<p class="mb-0">Porcentaje de entrega aplicado al KPI: <strong>${porcentaje}%</strong></p>`,
+                    confirmButtonColor: '#364E76',
+                    timer: 2500
+                });
+            }
+        });
+    });
+
     // Vista previa de datos de fotocopias
     $('#previewPhotocopiesBtn').click(function() {
         const data = $('#photocopiesData').val();
