@@ -138,6 +138,12 @@
         </div>
         <div class="card-body">
             <div class="btn-group">
+                @if(auth()->user()->hasRole('admin') || auth()->user()->can('edit-performance-evaluations'))
+                    <a href="{{ route('performance-evaluations.edit', $performanceEvaluation) }}"
+                       class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Editar Evaluación
+                    </a>
+                @endif
                 @if($performanceEvaluation->user_id === auth()->id() && $performanceEvaluation->canSelfEvaluate())
                     <a href="{{ route('performance-evaluations.self-evaluate', $performanceEvaluation) }}" 
                        class="btn btn-success">

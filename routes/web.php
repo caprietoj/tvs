@@ -1184,6 +1184,8 @@ Route::middleware(['auth'])->prefix('performance-evaluations')->name('performanc
     Route::get('/export', [App\Http\Controllers\PerformanceEvaluationController::class, 'export'])->name('export');
     Route::get('/create', [App\Http\Controllers\PerformanceEvaluationController::class, 'create'])->name('create');
     Route::post('/', [App\Http\Controllers\PerformanceEvaluationController::class, 'store'])->name('store');
+    Route::get('/{performanceEvaluation}/edit', [App\Http\Controllers\PerformanceEvaluationController::class, 'edit'])->name('edit');
+    Route::match(['put', 'patch'], '/{performanceEvaluation}', [App\Http\Controllers\PerformanceEvaluationController::class, 'update'])->name('update');
     Route::delete('/{performanceEvaluation}', [App\Http\Controllers\PerformanceEvaluationController::class, 'destroy'])->name('destroy');
     Route::get('/{performanceEvaluation}', [App\Http\Controllers\PerformanceEvaluationController::class, 'show'])->name('show');
     

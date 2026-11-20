@@ -129,6 +129,7 @@ class RolesAndPermissionsSeeder extends Seeder
             // Permisos para evaluaciones de desempeño
             'create-performance-evaluations',
             'delete-performance-evaluations',
+            'edit-performance-evaluations',
             'view-all-performance-evaluations',
             'export-performance-evaluations',
             'view-own-performance-evaluations', // Para ver y realizar sus propias evaluaciones
@@ -356,6 +357,7 @@ class RolesAndPermissionsSeeder extends Seeder
             // Permisos para evaluaciones de desempeño
             Permission::firstOrCreate(['name' => 'create-performance-evaluations']),
             Permission::firstOrCreate(['name' => 'delete-performance-evaluations']),
+            Permission::firstOrCreate(['name' => 'edit-performance-evaluations']),
             Permission::firstOrCreate(['name' => 'view-all-performance-evaluations']),
             Permission::firstOrCreate(['name' => 'export-performance-evaluations']),
         ]);

@@ -97,13 +97,17 @@ class PerformanceEvaluationController extends Controller
         $canDeleteEvaluations = $user->hasRole('admin')
             || $user->can('delete-performance-evaluations')
             || $user->can('create-performance-evaluations');
+
+        $canEditEvaluations = $user->hasRole('admin')
+            || $user->can('edit-performance-evaluations');
         
         return view('performance-evaluations.index', compact(
             'evaluations',
             'years',
             'filterUsers',
             'canViewAll',
-            'canDeleteEvaluations'
+            'canDeleteEvaluations',
+            'canEditEvaluations'
         ));
     }
 
@@ -293,6 +297,149 @@ class PerformanceEvaluationController extends Controller
             return redirect()->route('performance-evaluations.index')
                             ->with($messageType, $message);
         }
+    }
+
+    /**
+     * Mostrar formulario para editar una evaluación existente
+     */
+    public function edit(PerformanceEvaluation $performanceEvaluation)
+    {
+        $user = Auth::user();
+
+        if (!$user->hasRole('admin') && !$user->can('edit-performance-evaluations')) {
+            abort(403, 'No tienes permisos para editar evaluaciones');
+        }
+
+        $performanceEvaluation->load(['user', 'evaluator']);
+
+        $employees = User::select('id', 'name', 'email', 'department')
+            ->orderBy('name')
+            ->get();
+
+        $supervisors = User::orderBy('name')->get();
+
+        $availableYears = range((int) date('Y') + 1, (int) date('Y') - 5);
+        if ($performanceEvaluation->evaluation_year
+            && !in_array($performanceEvaluation->evaluation_year, $availableYears, true)) {
+            $availableYears[] = $performanceEvaluation->evaluation_year;
+            rsort($availableYears);
+        }
+
+        return view('performance-evaluations.edit', compact(
+            'performanceEvaluation',
+            'employees',
+            'supervisors',
+            'availableYears'
+        ));
+    }
+
+    /**
+     * Actualizar una evaluación de desempeño existente
+     */
+    public function update(Request $request, PerformanceEvaluation $performanceEvaluation)
+    {
+        $user = Auth::user();
+
+        if (!$user->hasRole('admin') && !$user->can('edit-performance-evaluations')) {
+            abort(403, 'No tienes permisos para editar evaluaciones');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'evaluator_id' => 'nullable|exists:users,id',
+            'evaluation_type' => 'required|in:periodo_prueba,periodica',
+            'evaluation_year' => 'required|integer|between:2000,2100',
+            'evaluation_period_start' => 'required|date',
+            'evaluation_period_end' => 'required|date|after:evaluation_period_start',
+            'status' => 'required|in:draft,self_completed,supervisor_review,completed',
+            'self_observations' => 'nullable|string|max:2000',
+            'supervisor_observations' => 'nullable|string|max:2000',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $conflictingEvaluation = PerformanceEvaluation::query()
+            ->where('id', '!=', $performanceEvaluation->id)
+            ->where('user_id', $request->user_id)
+            ->where('evaluation_type', $request->evaluation_type)
+            ->where('evaluation_year', (int) $request->evaluation_year)
+            ->where(function ($query) use ($request) {
+                $query->whereBetween('evaluation_period_start', [$request->evaluation_period_start, $request->evaluation_period_end])
+                    ->orWhereBetween('evaluation_period_end', [$request->evaluation_period_start, $request->evaluation_period_end])
+                    ->orWhere(function ($q) use ($request) {
+                        $q->where('evaluation_period_start', '<=', $request->evaluation_period_start)
+                            ->where('evaluation_period_end', '>=', $request->evaluation_period_end);
+                    });
+            })
+            ->exists();
+
+        if ($conflictingEvaluation) {
+            return redirect()->back()
+                ->withErrors(['user_id' => 'El empleado ya tiene una evaluación de este tipo en el mismo período.'])
+                ->withInput();
+        }
+
+        $oldStatus = $performanceEvaluation->status;
+
+        $performanceEvaluation->update([
+            'user_id' => $request->user_id,
+            'evaluator_id' => $request->evaluator_id ?: null,
+            'evaluation_type' => $request->evaluation_type,
+            'evaluation_year' => (int) $request->evaluation_year,
+            'evaluation_period_start' => $request->evaluation_period_start,
+            'evaluation_period_end' => $request->evaluation_period_end,
+            'status' => $request->status,
+            'self_observations' => $request->self_observations,
+            'supervisor_observations' => $request->supervisor_observations,
+        ]);
+
+        // Mantener coherentes las fechas y puntajes finales cuando se modifica el estado
+        if ($request->status !== $oldStatus) {
+            if ($request->status === 'self_completed') {
+                $completionData = [
+                    'self_evaluation_completed_at' => $performanceEvaluation->self_evaluation_completed_at ?? now(),
+                ];
+
+                if ($performanceEvaluation->objectives_self_score !== null
+                    && $performanceEvaluation->competencies_self_score !== null) {
+                    $selfScore = $performanceEvaluation->calculateSelfScore();
+                    $completionData['final_self_score'] = $selfScore;
+                    $completionData['performance_level'] = $performanceEvaluation->getPerformanceLevel($selfScore);
+                }
+
+                $performanceEvaluation->update($completionData);
+            } elseif ($request->status === 'completed') {
+                $completionData = [
+                    'supervisor_evaluation_completed_at' => $performanceEvaluation->supervisor_evaluation_completed_at ?? now(),
+                ];
+
+                if ($performanceEvaluation->objectives_supervisor_score !== null
+                    && $performanceEvaluation->competencies_supervisor_score !== null) {
+                    $supervisorScore = $performanceEvaluation->calculateSupervisorScore();
+                    $completionData['final_supervisor_score'] = $supervisorScore;
+
+                    if ($performanceEvaluation->final_self_score !== null) {
+                        $averageScore = ($performanceEvaluation->final_self_score + $supervisorScore) / 2;
+                        $completionData['final_average_score'] = $averageScore;
+                        $completionData['performance_level'] = $performanceEvaluation->getPerformanceLevel($averageScore);
+                    }
+                }
+
+                $performanceEvaluation->update($completionData);
+            } elseif ($request->status === 'draft') {
+                $performanceEvaluation->update([
+                    'self_evaluation_completed_at' => null,
+                    'supervisor_evaluation_completed_at' => null,
+                ]);
+            }
+        }
+
+        return redirect()->route('performance-evaluations.show', $performanceEvaluation)
+            ->with('success', 'La evaluación de desempeño fue actualizada correctamente.');
     }
 
     /**

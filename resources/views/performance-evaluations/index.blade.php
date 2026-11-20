@@ -221,6 +221,13 @@
                                            class="btn btn-sm btn-info mb-1" title="Ver detalle">
                                             <i class="fas fa-eye"></i>
                                         </a>
+
+                                        @if($canEditEvaluations)
+                                            <a href="{{ route('performance-evaluations.edit', $evaluation) }}"
+                                               class="btn btn-sm btn-warning mb-1" title="Editar evaluación">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        @endif
                                         
                                         @if($evaluation->user_id === auth()->id() && $evaluation->canSelfEvaluate())
                                             <a href="{{ route('performance-evaluations.self-evaluate', $evaluation) }}" 
